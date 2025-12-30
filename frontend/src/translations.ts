@@ -72,6 +72,12 @@ const baseTranslations = defineTranslations({
           bottomCenter: 'Bottom Center',
           bottomRight: 'Bottom Right',
         },
+        serverState: {
+          offline: 'Offline',
+          running: 'Running',
+          starting: 'Starting',
+          stopping: 'Stopping',
+        },
       },
       unlimited: 'Unlimited',
       na: 'N/A',
@@ -270,6 +276,9 @@ const baseTranslations = defineTranslations({
             },
           },
           noServers: 'No Servers could be found, time to add one?',
+        },
+        admin: {
+          title: 'Admin',
         },
         account: {
           title: 'Account',
@@ -520,11 +529,21 @@ const baseTranslations = defineTranslations({
       },
       admin: {},
       server: {
+        viewAdmin: {
+          title: 'View admin',
+        },
         console: {
           title: 'Console',
           input: {
             placeholder: 'Type a command...',
             ariaLabel: 'Console command input.',
+          },
+          toast: {
+            installCancelled: 'Server install cancelled.',
+          },
+          notification: {
+            restoringBackup: 'Your Server is currently restoring from a backup. Please wait...',
+            installing: 'Your Server is currently being installed. Please wait...',
           },
           message: {
             serverMarkedAs: 'Server marked as {state}...',
@@ -543,7 +562,6 @@ const baseTranslations = defineTranslations({
             diskUsage: 'Disk Usage',
             networkIn: 'Network (In)',
             networkOut: 'Network (Out)',
-            offline: 'Offline',
             normalizeCpuLoad: 'Normalize CPU Load (shifted to max 100%)',
           },
           power: {
@@ -565,6 +583,9 @@ const baseTranslations = defineTranslations({
             inbound: 'Inbound',
             outbound: 'Outbound',
           },
+        },
+        files: {
+          title: 'Files',
         },
         databases: {
           title: 'Databases',
@@ -622,6 +643,9 @@ const baseTranslations = defineTranslations({
               },
             },
           },
+        },
+        schedules: {
+          title: 'Schedules',
         },
         subusers: {
           title: 'Subusers',

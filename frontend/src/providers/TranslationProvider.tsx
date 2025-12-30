@@ -25,8 +25,9 @@ String.prototype.md = function (): ReactNode {
   return <Markdown>{this.toString()}</Markdown>;
 };
 
+let globalTranslationHandle: never = null as never;
+
 const TranslationProvider = ({ children }: { children: ReactNode }) => {
-  const [loading, setLoading] = useState(true);
   const [language, setLanguage] = useState('en-US');
   const [languageData, setLanguageData] = useState<LanguageData | null>(null);
 
@@ -45,9 +46,7 @@ const TranslationProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (language === 'en-US') {
       setLanguageData(null);
-      setLoading(false);
     } else {
-      setLoading(true);
       axiosInstance
         .get(`/translations/${language}.json`)
         .then(({ data }) => {
@@ -75,8 +74,7 @@ const TranslationProvider = ({ children }: { children: ReactNode }) => {
 
           setLanguageData(result);
         })
-        .catch(() => setLanguage('en-US'))
-        .finally(() => setLoading(false));
+        .catch(() => setLanguage('en-US'));
     }
 
     loadZod(language);
@@ -109,10 +107,10 @@ const TranslationProvider = ({ children }: { children: ReactNode }) => {
     return translationItem[rules.select(count)].replaceAll('{count}', count.toString());
   };
 
+  globalTranslationHandle = { language, setLanguage, t, tItem } as never;
+
   return (
-    <TranslationContext.Provider value={{ language, setLanguage, t, tItem }}>
-      {loading ? <Spinner.Centered /> : children}
-    </TranslationContext.Provider>
+    <TranslationContext.Provider value={{ language, setLanguage, t, tItem }}>{children}</TranslationContext.Provider>
   );
 };
 
@@ -137,4 +135,12 @@ export const useTranslations = () => {
       return context.tItem(key as string, count);
     },
   };
+};
+
+export const getTranslations = (): ReturnType<typeof useTranslations> => {
+  if (!globalTranslationHandle) {
+    throw new Error('getTranslations called before TranslationProvider initialized');
+  }
+
+  return globalTranslationHandle;
 };
