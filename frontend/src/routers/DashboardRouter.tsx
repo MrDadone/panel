@@ -4,6 +4,7 @@ import { NavLink, Route, Routes } from 'react-router';
 import Container from '@/elements/Container.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import { isAdmin } from '@/lib/permissions.ts';
 import { to } from '@/lib/routes.ts';
 import DashboardHomeAll from '@/pages/dashboard/home/DashboardHomeAll.tsx';
 import DashboardHomeGrouped from '@/pages/dashboard/home/DashboardHomeGrouped.tsx';
@@ -32,7 +33,7 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
           <Sidebar.Divider />
 
           <Sidebar.Link to='/' end icon={faServer} name={t('pages.account.home.title', {})} />
-          {user!.admin && (
+          {isAdmin(user) && (
             <Sidebar.Link to='/admin' end icon={faGraduationCap} name={t('pages.account.admin.title', {})} />
           )}
 

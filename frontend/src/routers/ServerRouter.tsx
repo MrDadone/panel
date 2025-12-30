@@ -12,6 +12,7 @@ import Notification from '@/elements/Notification.tsx';
 import Progress from '@/elements/Progress.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import { isAdmin } from '@/lib/permissions.ts';
 import { to } from '@/lib/routes.ts';
 import NotFound from '@/pages/NotFound.tsx';
 import WebsocketHandler from '@/pages/server/WebsocketHandler.tsx';
@@ -84,7 +85,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
           <Sidebar.Divider />
 
           <Sidebar.Link to='/' end icon={faServer} name={t('pages.account.home.title', {})} />
-          {user!.admin && (
+          {isAdmin(user!) && (
             <>
               <Sidebar.Link to='/admin' end icon={faGraduationCap} name={t('pages.account.admin.title', {})} />
               <Sidebar.Link

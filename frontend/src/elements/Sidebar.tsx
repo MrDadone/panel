@@ -9,6 +9,7 @@ import Card from '@/elements/Card.tsx';
 import CloseButton from '@/elements/CloseButton.tsx';
 import MantineDivider from '@/elements/Divider.tsx';
 import Drawer from '@/elements/Drawer.tsx';
+import { isAdmin } from '@/lib/permissions.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useWindows } from '@/providers/WindowProvider.tsx';
@@ -120,7 +121,7 @@ function Footer() {
             <span className='font-sans font-normal text-sm text-neutral-50 whitespace-nowrap leading-tight lg:w-25 overflow-hidden text-ellipsis'>
               {user!.username}
             </span>
-            {user!.admin && (
+            {isAdmin(user) && (
               <NavLink to='/admin' className='cursor-pointer!'>
                 <Badge size='xs' className='cursor-pointer!'>
                   {t('pages.account.admin.title', {})}
