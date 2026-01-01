@@ -7,7 +7,6 @@ import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { eggRepositoryTableColumns } from '@/lib/tableColumns.ts';
-import DatabaseHostCreateOrUpdate from '@/pages/admin/databaseHosts/DatabaseHostCreateOrUpdate.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';

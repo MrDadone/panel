@@ -14,7 +14,6 @@ import Table from '@/elements/Table.tsx';
 import { adminOAuthProviderSchema } from '@/lib/schemas/admin/oauthProviders.ts';
 import { oauthProviderTableColumns } from '@/lib/tableColumns.ts';
 import { transformKeysToCamelCase } from '@/lib/transformers.ts';
-import NodeCreateOrUpdate from '@/pages/admin/nodes/NodeCreateOrUpdate.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';

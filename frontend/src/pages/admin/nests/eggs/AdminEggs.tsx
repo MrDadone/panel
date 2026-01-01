@@ -12,7 +12,6 @@ import AdminContentContainer from '@/elements/containers/AdminContentContainer.t
 import Table from '@/elements/Table.tsx';
 import { eggTableColumns } from '@/lib/tableColumns.ts';
 import EggView from '@/pages/admin/nests/eggs/EggView.tsx';
-import NestCreateOrUpdate from '@/pages/admin/nests/NestCreateOrUpdate.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';

@@ -7,7 +7,6 @@ import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { mountTableColumns } from '@/lib/tableColumns.ts';
-import LocationCreateOrUpdate from '@/pages/admin/locations/LocationCreateOrUpdate.tsx';
 import MountView from '@/pages/admin/mounts/MountView.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';

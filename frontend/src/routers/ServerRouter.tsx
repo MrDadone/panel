@@ -20,7 +20,6 @@ import WebsocketListener from '@/pages/server/WebsocketListener.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
-import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import ServerPermissionGuard from '@/routers/guards/ServerPermissionGuard.tsx';
 import serverRoutes from '@/routers/routes/serverRoutes.ts';
 import { useGlobalStore } from '@/stores/global.ts';

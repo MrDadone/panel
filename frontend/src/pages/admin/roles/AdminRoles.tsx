@@ -7,7 +7,6 @@ import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { roleTableColumns } from '@/lib/tableColumns.ts';
-import DatabaseHostCreateOrUpdate from '@/pages/admin/oAuthProviders/OAuthProviderCreateOrUpdate.tsx';
 import RoleCreateOrUpdate from '@/pages/admin/roles/RoleCreateOrUpdate.tsx';
 import RoleRow from '@/pages/admin/roles/RoleRow.tsx';
 import RoleView from '@/pages/admin/roles/RoleView.tsx';
