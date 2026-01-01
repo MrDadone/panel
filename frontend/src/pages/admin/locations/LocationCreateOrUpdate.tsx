@@ -9,6 +9,7 @@ import createLocation from '@/api/admin/locations/createLocation.ts';
 import deleteLocation from '@/api/admin/locations/deleteLocation.ts';
 import updateLocation from '@/api/admin/locations/updateLocation.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
@@ -98,18 +99,22 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
           </Group>
 
           <Group>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              Save
-            </Button>
-            {!contextLocation && (
-              <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
-                Save & Stay
+            <AdminCan action={contextLocation ? 'locations.update' : 'locations.create'} cantSave>
+              <Button type='submit' disabled={!form.isValid()} loading={loading}>
+                Save
               </Button>
-            )}
+              {!contextLocation && (
+                <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
+                  Save & Stay
+                </Button>
+              )}
+            </AdminCan>
             {contextLocation && (
-              <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
-                Delete
-              </Button>
+              <AdminCan action='locations.delete' cantDelete>
+                <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
+                  Delete
+                </Button>
+              </AdminCan>
             )}
           </Group>
         </Stack>

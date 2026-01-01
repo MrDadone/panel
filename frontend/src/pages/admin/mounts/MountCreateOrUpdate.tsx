@@ -7,6 +7,7 @@ import createMount from '@/api/admin/mounts/createMount.ts';
 import deleteMount from '@/api/admin/mounts/deleteMount.ts';
 import updateMount from '@/api/admin/mounts/updateMount.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Switch from '@/elements/input/Switch.tsx';
@@ -93,18 +94,22 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: M
           </Group>
 
           <Group>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              Save
-            </Button>
-            {!contextMount && (
-              <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
-                Save & Stay
+            <AdminCan action={contextMount ? 'mounts.update' : 'mounts.create'} cantSave>
+              <Button type='submit' disabled={!form.isValid()} loading={loading}>
+                Save
               </Button>
-            )}
+              {!contextMount && (
+                <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
+                  Save & Stay
+                </Button>
+              )}
+            </AdminCan>
             {contextMount && (
-              <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
-                Delete
-              </Button>
+              <AdminCan action='mounts.delete' cantDelete>
+                <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
+                  Delete
+                </Button>
+              </AdminCan>
             )}
           </Group>
         </Stack>

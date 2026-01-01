@@ -1,22 +1,44 @@
+import { Tooltip } from '@mantine/core';
 import { memo, ReactNode } from 'react';
 import isEqual from 'react-fast-compare';
-import { usePermissions } from '@/plugins/usePermissions.ts';
+import Button from '@/elements/Button.tsx';
+import { useAdminPermissions, useCan, useServerPermissions } from '@/plugins/usePermissions.ts';
 
 interface Props {
   action: string | string[];
   matchAny?: boolean;
-  renderOnError?: ReactNode | null;
+  renderOnCant?: ReactNode | null;
+  cantSave?: boolean;
+  cantDelete?: boolean;
   children: ReactNode;
 }
 
-const Can = ({ action, matchAny = false, renderOnError, children }: Props) => {
-  const can = usePermissions(action);
+const CantSaveTooltip = () => (
+  <Tooltip label='You do not have permission to save.'>
+    <Button disabled>Save</Button>
+  </Tooltip>
+);
 
-  return (
-    <>
-      {(matchAny && can.filter((p) => p).length > 0) || (!matchAny && can.every((p) => p)) ? children : renderOnError}
-    </>
-  );
-};
+const CantDeleteTooltip = () => (
+  <Tooltip label='You do not have permission to delete.'>
+    <Button color='red' disabled>
+      Delete
+    </Button>
+  </Tooltip>
+);
 
-export default memo(Can, isEqual);
+const AdminCan = memo(({ action, matchAny = false, renderOnCant, cantSave, cantDelete, children }: Props) => {
+  const canMatrix = useAdminPermissions(action);
+  const can = useCan(canMatrix, matchAny);
+
+  return can ? children : cantSave ? <CantSaveTooltip /> : cantDelete ? <CantDeleteTooltip /> : renderOnCant;
+}, isEqual);
+
+const ServerCan = memo(({ action, matchAny = false, renderOnCant, children }: Props) => {
+  const canMatrix = useServerPermissions(action);
+  const can = useCan(canMatrix, matchAny);
+
+  return can ? children : renderOnCant;
+}, isEqual);
+
+export { AdminCan, ServerCan };

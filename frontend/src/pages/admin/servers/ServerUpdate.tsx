@@ -15,6 +15,7 @@ import getUsers from '@/api/admin/users/getUsers.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import Alert from '@/elements/Alert.tsx';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import Select from '@/elements/input/Select.tsx';
@@ -379,9 +380,11 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
           </Group>
 
           <Group>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              Save
-            </Button>
+            <AdminCan action='servers.update' cantSave>
+              <Button type='submit' disabled={!form.isValid()} loading={loading}>
+                Save
+              </Button>
+            </AdminCan>
           </Group>
         </Stack>
       </form>

@@ -1,7 +1,7 @@
 import { faBriefcase, faCog, faComputer, faFingerprint } from '@fortawesome/free-solid-svg-icons';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { Route, Routes, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import getUser from '@/api/admin/users/getUser.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Spinner from '@/elements/Spinner.tsx';
@@ -36,36 +36,37 @@ export default function UserView() {
       <Title order={1}>{user.username}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/users/${params.id}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/users/${params.id}`,
+            path: `/`,
+            element: <UserCreateOrUpdate contextUser={user} />,
           },
           {
             name: 'Servers',
             icon: faComputer,
-            link: `/admin/users/${params.id}/servers`,
+            path: `/servers`,
+            element: <AdminUserServers user={user} />,
+            permission: 'servers.read',
           },
           {
             name: 'OAuth Links',
             icon: faFingerprint,
-            link: `/admin/users/${params.id}/oauth-links`,
+            path: `/oauth-links`,
+            element: <AdminUserOAuthLinks user={user} />,
+            permission: 'users.oauth-links',
           },
           {
             name: 'Activity',
             icon: faBriefcase,
-            link: `/admin/users/${params.id}/activity`,
+            path: `/activity`,
+            element: <AdminUserActivity user={user} />,
+            permission: 'users.activity',
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<UserCreateOrUpdate contextUser={user} />} />
-        <Route path='/servers' element={<AdminUserServers user={user} />} />
-        <Route path='/oauth-links' element={<AdminUserOAuthLinks user={user} />} />
-        <Route path='/activity' element={<AdminUserActivity user={user} />} />
-      </Routes>
     </>
   );
 }

@@ -1,4 +1,4 @@
-import { Group } from '@mantine/core';
+import { Group, Tooltip } from '@mantine/core';
 import { UseFormReturnType, useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -6,6 +6,7 @@ import { z } from 'zod';
 import updateStorageSettings from '@/api/admin/settings/updateStorageSettings.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { storageDriverTypeLabelMapping } from '@/lib/enums.ts';
@@ -71,9 +72,18 @@ export default function StorageContainer() {
         ) : null}
 
         <Group mt='md'>
-          <Button type='submit' disabled={!form.isValid()} loading={loading}>
-            Save
-          </Button>
+          <AdminCan
+            action='settings.update'
+            renderOnCant={
+              <Tooltip label='You do not have permission to update settings.'>
+                <Button disabled>Save</Button>
+              </Tooltip>
+            }
+          >
+            <Button type='submit' disabled={!form.isValid()} loading={loading}>
+              Save
+            </Button>
+          </AdminCan>
         </Group>
       </form>
     </AdminContentContainer>

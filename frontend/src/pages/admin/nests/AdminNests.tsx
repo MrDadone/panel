@@ -3,10 +3,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Route, Routes, useNavigate } from 'react-router';
 import getNests from '@/api/admin/nests/getNests.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { nestTableColumns } from '@/lib/tableColumns.ts';
+import MountCreateOrUpdate from '@/pages/admin/mounts/MountCreateOrUpdate.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
+import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import NestCreateOrUpdate from './NestCreateOrUpdate.tsx';
 import NestRow from './NestRow.tsx';
@@ -27,13 +30,15 @@ function NestsContainer() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <Button
-          onClick={() => navigate('/admin/nests/new')}
-          color='blue'
-          leftSection={<FontAwesomeIcon icon={faPlus} />}
-        >
-          Create
-        </Button>
+        <AdminCan action='nests.create'>
+          <Button
+            onClick={() => navigate('/admin/nests/new')}
+            color='blue'
+            leftSection={<FontAwesomeIcon icon={faPlus} />}
+          >
+            Create
+          </Button>
+        </AdminCan>
       }
     >
       <Table columns={nestTableColumns} loading={loading} pagination={nests} onPageSelect={setPage}>
@@ -49,8 +54,10 @@ export default function AdminNests() {
   return (
     <Routes>
       <Route path='/' element={<NestsContainer />} />
-      <Route path='/new' element={<NestCreateOrUpdate />} />
       <Route path='/:nestId/*' element={<NestView />} />
+      <Route element={<AdminPermissionGuard permission='nests.create' />}>
+        <Route path='/new' element={<NestCreateOrUpdate />} />
+      </Route>
     </Routes>
   );
 }

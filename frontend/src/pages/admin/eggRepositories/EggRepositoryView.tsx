@@ -1,7 +1,7 @@
 import { faCog, faEgg } from '@fortawesome/free-solid-svg-icons';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { Route, Routes, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import getEggRepository from '@/api/admin/egg-repositories/getEggRepository.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Spinner from '@/elements/Spinner.tsx';
@@ -34,24 +34,22 @@ export default function EggRepositoryView() {
       <Title order={1}>{eggRepository.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/egg-repositories/${params.eggRepositoryId}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/egg-repositories/${params.eggRepositoryId}`,
+            path: '/',
+            element: <EggRepositoryCreateOrUpdate contextEggRepository={eggRepository} />,
           },
           {
             name: 'Eggs',
             icon: faEgg,
-            link: `/admin/egg-repositories/${params.eggRepositoryId}/eggs`,
+            path: `/eggs`,
+            element: <EggRepositoryEggs contextEggRepository={eggRepository} />,
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<EggRepositoryCreateOrUpdate contextEggRepository={eggRepository} />} />
-        <Route path='/eggs' element={<EggRepositoryEggs contextEggRepository={eggRepository} />} />
-      </Routes>
     </>
   );
 }

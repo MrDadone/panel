@@ -10,6 +10,7 @@ import createOAuthProvider from '@/api/admin/oauth-providers/createOAuthProvider
 import deleteOAuthProvider from '@/api/admin/oauth-providers/deleteOAuthProvider.ts';
 import updateOAuthProvider from '@/api/admin/oauth-providers/updateOAuthProvider.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
@@ -276,16 +277,16 @@ export default function OAuthProviderCreateOrUpdate({
           </Group>
 
           <Group>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              Save
-            </Button>
-            {!contextOAuthProvider && (
-              <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
-                Save & Stay
+            <AdminCan action={contextOAuthProvider ? 'oauth-providers.update' : 'oauth-providers.create'} cantSave>
+              <Button type='submit' disabled={!form.isValid()} loading={loading}>
+                Save
               </Button>
-            )}
-            {contextOAuthProvider && (
-              <>
+              {!contextOAuthProvider && (
+                <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
+                  Save & Stay
+                </Button>
+              )}
+              {contextOAuthProvider && (
                 <ContextMenuProvider menuProps={{ position: 'top', offset: 40 }}>
                   <ContextMenu
                     items={[
@@ -319,10 +320,14 @@ export default function OAuthProviderCreateOrUpdate({
                     )}
                   </ContextMenu>
                 </ContextMenuProvider>
+              )}
+            </AdminCan>
+            {contextOAuthProvider && (
+              <AdminCan action='oauth-provider.delete' cantDelete>
                 <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
                   Delete
                 </Button>
-              </>
+              </AdminCan>
             )}
           </Group>
         </Stack>

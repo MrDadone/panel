@@ -44,47 +44,49 @@ export default function ServerView() {
       <Title order={1}>{server.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/servers/${params.id}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/servers/${params.id}`,
+            path: '/',
+            element: <ServerUpdate contextServer={server} />,
           },
           {
             name: 'Allocations',
             icon: faNetworkWired,
-            link: `/admin/servers/${params.id}/allocations`,
+            path: `/allocations`,
+            element: <AdminServerAllocations server={server} />,
+            permission: 'servers.allocations',
           },
           {
             name: 'Variables',
             icon: faCodeCommit,
-            link: `/admin/servers/${params.id}/variables`,
+            path: `/variables`,
+            element: <AdminServerVariables server={server} />,
+            permission: 'servers.variables',
           },
           {
             name: 'Mounts',
             icon: faFolder,
-            link: `/admin/servers/${params.id}/mounts`,
+            path: `/mounts`,
+            element: <AdminServerMounts server={server} />,
+            permission: 'servers.mounts',
           },
           {
             name: 'Management',
             icon: faWrench,
-            link: `/admin/servers/${params.id}/management`,
+            path: `/management`,
+            element: <AdminServerManagement server={server} />,
           },
           {
             name: 'View',
             icon: faExternalLink,
             link: `/server/${params.id}`,
+            permission: 'servers.read',
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<ServerUpdate contextServer={server} />} />
-        <Route path='/allocations' element={<AdminServerAllocations server={server} />} />
-        <Route path='/variables' element={<AdminServerVariables server={server} />} />
-        <Route path='/mounts' element={<AdminServerMounts server={server} />} />
-        <Route path='/management' element={<AdminServerManagement server={server} />} />
-      </Routes>
     </>
   );
 }

@@ -2,6 +2,7 @@ import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useEffect, useState } from 'react';
 import { NIL as uuidNil } from 'uuid';
+import { z } from 'zod';
 import getRoles from '@/api/admin/roles/getRoles.ts';
 import createUser from '@/api/admin/users/createUser.ts';
 import deleteUser from '@/api/admin/users/deleteUser.ts';
@@ -9,12 +10,14 @@ import disableUserTwoFactor from '@/api/admin/users/disableUserTwoFactor.ts';
 import updateUser from '@/api/admin/users/updateUser.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import { adminUserSchema } from '@/lib/schemas/admin/users.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -26,7 +29,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
 
   const [openModal, setOpenModal] = useState<'delete' | 'disable_two_factor' | null>(null);
 
-  const form = useForm<UpdateUser>({
+  const form = useForm<z.infer<typeof adminUserSchema>>({
     initialValues: {
       username: '',
       email: '',
@@ -34,13 +37,12 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
       nameLast: '',
       password: '',
       admin: false,
-      totpEnabled: false,
       language: settings.app.language,
       roleUuid: uuidNil,
     },
   });
 
-  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<UpdateUser, User>({
+  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminUserSchema>, User>({
     form,
     createFn: () => createUser(form.values),
     updateFn: () => updateUser(contextUser!.uuid, form.values),
@@ -59,7 +61,6 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
         nameLast: contextUser.nameLast,
         password: null,
         admin: contextUser.admin,
-        totpEnabled: contextUser.totpEnabled,
         language: contextUser.language,
         roleUuid: contextUser.role?.uuid ?? uuidNil,
       });
@@ -75,7 +76,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
     await disableUserTwoFactor(contextUser!.uuid)
       .then(() => {
         addToast('User two factor disabled.', 'success');
-        form.setFieldValue('totpEnabled', false);
+        contextUser!.totpEnabled = false;
 
         setOpenModal(null);
       })
@@ -163,28 +164,34 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
         </Stack>
 
         <Group mt='md'>
-          <Button type='submit' disabled={!form.isValid()} loading={loading}>
-            Save
-          </Button>
-          {!contextUser && (
-            <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
-              Save & Stay
+          <AdminCan action={contextUser ? 'users.update' : 'users.create'} cantSave>
+            <Button type='submit' disabled={!form.isValid()} loading={loading}>
+              Save
             </Button>
-          )}
+            {!contextUser && (
+              <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
+                Save & Stay
+              </Button>
+            )}
+          </AdminCan>
           {contextUser && (
             <>
-              <Button
-                color='red'
-                variant='outline'
-                onClick={() => setOpenModal('disable_two_factor')}
-                loading={loading}
-                disabled={!form.values.totpEnabled}
-              >
-                Disable Two Factor
-              </Button>
-              <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
-                Delete
-              </Button>
+              <AdminCan action='users.disable-two-factor'>
+                <Button
+                  color='red'
+                  variant='outline'
+                  onClick={() => setOpenModal('disable_two_factor')}
+                  loading={loading}
+                  disabled={!contextUser.totpEnabled}
+                >
+                  Disable Two Factor
+                </Button>
+              </AdminCan>
+              <AdminCan action='users.delete' cantDelete>
+                <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
+                  Delete
+                </Button>
+              </AdminCan>
             </>
           )}
         </Group>

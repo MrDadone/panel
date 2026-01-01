@@ -1,10 +1,8 @@
 import { faAt, faDatabase, faLayerGroup, faRobot, faServer, faUserCheck } from '@fortawesome/free-solid-svg-icons';
 import { Title } from '@mantine/core';
-import { useEffect, useState } from 'react';
-import { Route, Routes } from 'react-router';
+import { useEffect } from 'react';
 import getSettings from '@/api/admin/settings/getSettings.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
-import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
@@ -19,15 +17,12 @@ export default function AdminSettings() {
   const { addToast } = useToast();
   const { setSettings } = useAdminStore();
 
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     getSettings()
       .then(setSettings)
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
-      })
-      .finally(() => setLoading(false));
+      });
   }, []);
 
   return (
@@ -35,52 +30,46 @@ export default function AdminSettings() {
       <Title order={1}>Settings</Title>
 
       <SubNavigation
+        baseUrl='/admin/settings'
         items={[
           {
             name: 'Application',
             icon: faLayerGroup,
-            link: '/admin/settings',
+            path: '/',
+            element: <ApplicationContainer />,
           },
           {
             name: 'Storage',
             icon: faDatabase,
-            link: '/admin/settings/storage',
+            path: '/storage',
+            element: <StorageContainer />,
           },
           {
             name: 'Mail',
             icon: faAt,
-            link: '/admin/settings/mail',
+            path: '/mail',
+            element: <EmailContainer />,
           },
           {
             name: 'Captcha',
             icon: faRobot,
-            link: '/admin/settings/captcha',
+            path: '/captcha',
+            element: <CaptchaContainer />,
           },
           {
             name: 'Webauthn',
             icon: faUserCheck,
-            link: '/admin/settings/webauthn',
+            path: '/webauthn',
+            element: <WebauthnContainer />,
           },
           {
             name: 'Server',
             icon: faServer,
-            link: '/admin/settings/server',
+            path: '/server',
+            element: <ServerContainer />,
           },
         ]}
       />
-
-      {loading ? (
-        <Spinner.Centered />
-      ) : (
-        <Routes>
-          <Route path='/' element={<ApplicationContainer />} />
-          <Route path='/storage' element={<StorageContainer />} />
-          <Route path='/mail' element={<EmailContainer />} />
-          <Route path='/captcha' element={<CaptchaContainer />} />
-          <Route path='/webauthn' element={<WebauthnContainer />} />
-          <Route path='/server' element={<ServerContainer />} />
-        </Routes>
-      )}
     </>
   );
 }

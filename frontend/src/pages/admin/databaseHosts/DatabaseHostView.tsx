@@ -34,24 +34,22 @@ export default function DatabaseHostView() {
       <Title order={1}>{databaseHost.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/database-hosts/${params.id}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/database-hosts/${params.id}`,
+            path: `/`,
+            element: <DatabaseHostCreateOrUpdate contextDatabaseHost={databaseHost} />,
           },
           {
             name: 'Databases',
             icon: faDatabase,
-            link: `/admin/database-hosts/${params.id}/databases`,
+            path: `/databases`,
+            element: <AdminDatabaseHostDatabases databaseHost={databaseHost} />,
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<DatabaseHostCreateOrUpdate contextDatabaseHost={databaseHost} />} />
-        <Route path='/databases' element={<AdminDatabaseHostDatabases databaseHost={databaseHost} />} />
-      </Routes>
     </>
   );
 }

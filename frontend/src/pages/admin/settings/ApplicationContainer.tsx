@@ -1,4 +1,4 @@
-import { Group, Stack } from '@mantine/core';
+import { Group, Stack, Tooltip } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -7,6 +7,7 @@ import getAdminTelemetry from '@/api/admin/getAdminTelemetry.ts';
 import updateApplicationSettings from '@/api/admin/settings/updateApplicationSettings.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
@@ -166,12 +167,16 @@ export default function ApplicationContainer() {
         </Stack>
 
         <Group mt='md'>
-          <Button type='submit' disabled={!form.isValid()} loading={loading}>
-            Save
-          </Button>
-          <Button variant='outline' loading={loading} onClick={doPreviewTelemetry}>
-            Telemetry Preview
-          </Button>
+          <AdminCan action='settings.update' cantSave>
+            <>
+              <Button type='submit' disabled={!form.isValid()} loading={loading}>
+                Save
+              </Button>
+              <Button variant='outline' loading={loading} onClick={doPreviewTelemetry}>
+                Telemetry Preview
+              </Button>
+            </>
+          </AdminCan>
         </Group>
       </form>
     </AdminContentContainer>

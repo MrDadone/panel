@@ -18,6 +18,7 @@ import updateEggUsingImport from '@/api/admin/nests/eggs/updateEggUsingImport.ts
 import updateEggUsingRepository from '@/api/admin/nests/eggs/updateEggUsingRepository.ts';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
@@ -384,97 +385,101 @@ export default function EggCreateOrUpdate({
         </Stack>
 
         <Group mt='md'>
-          <Button type='submit' disabled={!form.isValid()} loading={loading}>
-            Save
-          </Button>
-          {contextEgg && (
-            <>
-              <ContextMenuProvider menuProps={{ position: 'top', offset: 40 }}>
-                <ContextMenu
-                  items={[
-                    {
-                      icon: faUpload,
-                      label: 'from File',
-                      onClick: () => fileInputRef.current?.click(),
-                      color: 'gray',
-                    },
-                    {
-                      icon: faRefresh,
-                      label: 'from Repository',
-                      disabled: !contextEgg.eggRepositoryEgg,
-                      onClick: doRepositoryUpdate,
-                      color: 'gray',
-                    },
-                  ]}
-                >
-                  {({ openMenu }) => (
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        openMenu(rect.left, rect.bottom);
-                      }}
-                      loading={loading}
-                      variant='outline'
-                      rightSection={<FontAwesomeIcon icon={faChevronDown} />}
-                    >
-                      Update
-                    </Button>
-                  )}
-                </ContextMenu>
-              </ContextMenuProvider>
-              <ContextMenuProvider menuProps={{ position: 'top', offset: 40 }}>
-                <ContextMenu
-                  items={[
-                    {
-                      icon: faFileDownload,
-                      label: 'as JSON',
-                      onClick: () => doExport('json'),
-                      color: 'gray',
-                    },
-                    {
-                      icon: faFileDownload,
-                      label: 'as YAML',
-                      onClick: () => doExport('yaml'),
-                      color: 'gray',
-                    },
-                  ]}
-                >
-                  {({ openMenu }) => (
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        openMenu(rect.left, rect.bottom);
-                      }}
-                      loading={loading}
-                      variant='outline'
-                      rightSection={<FontAwesomeIcon icon={faChevronDown} />}
-                    >
-                      Export
-                    </Button>
-                  )}
-                </ContextMenu>
-              </ContextMenuProvider>
+          <AdminCan action={contextEgg ? 'eggs.update' : 'eggs.create'} cantSave>
+            <Button type='submit' disabled={!form.isValid()} loading={loading}>
+              Save
+            </Button>
+            {contextEgg && (
+              <>
+                <ContextMenuProvider menuProps={{ position: 'top', offset: 40 }}>
+                  <ContextMenu
+                    items={[
+                      {
+                        icon: faUpload,
+                        label: 'from File',
+                        onClick: () => fileInputRef.current?.click(),
+                        color: 'gray',
+                      },
+                      {
+                        icon: faRefresh,
+                        label: 'from Repository',
+                        disabled: !contextEgg.eggRepositoryEgg,
+                        onClick: doRepositoryUpdate,
+                        color: 'gray',
+                      },
+                    ]}
+                  >
+                    {({ openMenu }) => (
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          openMenu(rect.left, rect.bottom);
+                        }}
+                        loading={loading}
+                        variant='outline'
+                        rightSection={<FontAwesomeIcon icon={faChevronDown} />}
+                      >
+                        Update
+                      </Button>
+                    )}
+                  </ContextMenu>
+                </ContextMenuProvider>
+                <ContextMenuProvider menuProps={{ position: 'top', offset: 40 }}>
+                  <ContextMenu
+                    items={[
+                      {
+                        icon: faFileDownload,
+                        label: 'as JSON',
+                        onClick: () => doExport('json'),
+                        color: 'gray',
+                      },
+                      {
+                        icon: faFileDownload,
+                        label: 'as YAML',
+                        onClick: () => doExport('yaml'),
+                        color: 'gray',
+                      },
+                    ]}
+                  >
+                    {({ openMenu }) => (
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          openMenu(rect.left, rect.bottom);
+                        }}
+                        loading={loading}
+                        variant='outline'
+                        rightSection={<FontAwesomeIcon icon={faChevronDown} />}
+                      >
+                        Export
+                      </Button>
+                    )}
+                  </ContextMenu>
+                </ContextMenuProvider>
 
-              <input
-                type='file'
-                accept='.json,.yml,.yaml'
-                ref={fileInputRef}
-                className='hidden'
-                onChange={handleFileUpload}
-              />
-            </>
-          )}
+                <input
+                  type='file'
+                  accept='.json,.yml,.yaml'
+                  ref={fileInputRef}
+                  className='hidden'
+                  onChange={handleFileUpload}
+                />
+              </>
+            )}
+          </AdminCan>
           {contextEgg && (
             <Button variant='outline' onClick={() => setOpenModal('move')} loading={loading}>
               Move
             </Button>
           )}
           {contextEgg && (
-            <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
-              Delete
-            </Button>
+            <AdminCan action='eggs.delete' cantDelete>
+              <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
+                Delete
+              </Button>
+            </AdminCan>
           )}
         </Group>
       </form>

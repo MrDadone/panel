@@ -33,24 +33,13 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
           <Sidebar.Divider />
 
           <Sidebar.Link to='/' end icon={faServer} name={t('pages.account.home.title', {})} />
-          {isAdmin(user) && (
+          {isAdmin(user!) && (
             <Sidebar.Link to='/admin' end icon={faGraduationCap} name={t('pages.account.admin.title', {})} />
           )}
 
           <Sidebar.Divider />
 
-          {accountRoutes
-            .filter((route) => !!route.name && (!route.filter || route.filter()))
-            .map((route) => (
-              <Sidebar.Link
-                key={route.path}
-                to={to(route.path, '/account')}
-                end={route.exact}
-                icon={route.icon}
-                name={typeof route.name === 'function' ? route.name() : route.name}
-              />
-            ))}
-          {window.extensionContext.routes.accountRoutes
+          {[...accountRoutes, ...window.extensionContext.routes.accountRoutes]
             .filter((route) => !!route.name && (!route.filter || route.filter()))
             .map((route) => (
               <Sidebar.Link
@@ -86,12 +75,7 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
                   <Route path='/grouped' element={<DashboardHomeGrouped />} />
                 </>
               )}
-              {accountRoutes
-                .filter((route) => !route.filter || route.filter())
-                .map(({ path, element: Element }) => (
-                  <Route key={path} path={`/account/${path}`.replace('//', '/')} element={<Element />} />
-                ))}
-              {window.extensionContext.routes.accountRoutes
+              {[...accountRoutes, ...window.extensionContext.routes.accountRoutes]
                 .filter((route) => !route.filter || route.filter())
                 .map(({ path, element: Element }) => (
                   <Route key={path} path={`/account/${path}`.replace('//', '/')} element={<Element />} />

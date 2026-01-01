@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Route, Routes, useNavigate } from 'react-router';
 import getBackupConfigurations from '@/api/admin/backup-configurations/getBackupConfigurations.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { backupConfigurationTableColumns } from '@/lib/tableColumns.ts';
@@ -10,6 +11,7 @@ import BackupConfigurationCreateOrUpdate from '@/pages/admin/backupConfiguration
 import BackupConfigurationRow from '@/pages/admin/backupConfigurations/BackupConfigurationRow.tsx';
 import BackupConfigurationView from '@/pages/admin/backupConfigurations/BackupConfigurationView.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
+import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
 function BackupConfigurationsContainer() {
@@ -27,13 +29,15 @@ function BackupConfigurationsContainer() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <Button
-          onClick={() => navigate('/admin/backup-configurations/new')}
-          color='blue'
-          leftSection={<FontAwesomeIcon icon={faPlus} />}
-        >
-          Create
-        </Button>
+        <AdminCan action='backup-configurations.create'>
+          <Button
+            onClick={() => navigate('/admin/backup-configurations/new')}
+            color='blue'
+            leftSection={<FontAwesomeIcon icon={faPlus} />}
+          >
+            Create
+          </Button>
+        </AdminCan>
       }
     >
       <Table
@@ -54,8 +58,10 @@ export default function AdminBackupConfigurations() {
   return (
     <Routes>
       <Route path='/' element={<BackupConfigurationsContainer />} />
-      <Route path='/new' element={<BackupConfigurationCreateOrUpdate />} />
       <Route path='/:id/*' element={<BackupConfigurationView />} />
+      <Route element={<AdminPermissionGuard permission='backup-configurations.create' />}>
+        <Route path='/new' element={<BackupConfigurationCreateOrUpdate />} />
+      </Route>
     </Routes>
   );
 }

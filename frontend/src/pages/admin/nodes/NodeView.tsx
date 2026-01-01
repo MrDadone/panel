@@ -10,7 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { Route, Routes, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import getNode from '@/api/admin/nodes/getNode.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Spinner from '@/elements/Spinner.tsx';
@@ -49,60 +49,62 @@ export default function NodeView() {
       <Title order={1}>{node.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/nodes/${params.id}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/nodes/${params.id}`,
+            path: '/',
+            element: <NodeCreateOrUpdate contextNode={node} />,
           },
           {
             name: 'Configuration',
             icon: faPenRuler,
-            link: `/admin/nodes/${params.id}/configuration`,
+            path: `/admin/nodes/${params.id}/configuration`,
+            element: <AdminNodeConfiguration node={node} />,
           },
           {
             name: 'Statistics',
             icon: faInfoCircle,
-            link: `/admin/nodes/${params.id}/statistics`,
+            path: `/admin/nodes/${params.id}/statistics`,
+            element: <AdminNodeStatistics node={node} />,
           },
           {
             name: 'Logs',
             icon: faFileLines,
-            link: `/admin/nodes/${params.id}/logs`,
+            path: `/admin/nodes/${params.id}/logs`,
+            element: <AdminNodeLogs node={node} />,
           },
           {
             name: 'Allocations',
             icon: faNetworkWired,
-            link: `/admin/nodes/${params.id}/allocations`,
+            path: `/admin/nodes/${params.id}/allocations`,
+            element: <AdminNodeAllocations node={node} />,
+            permission: 'nodes.allocations',
           },
           {
             name: 'Mounts',
             icon: faExternalLink,
-            link: `/admin/nodes/${params.id}/mounts`,
+            path: `/admin/nodes/${params.id}/mounts`,
+            element: <AdminNodeMounts node={node} />,
+            permission: 'nodes.mounts',
           },
           {
             name: 'Backups',
             icon: faArchive,
-            link: `/admin/nodes/${params.id}/backups`,
+            path: `/admin/nodes/${params.id}/backups`,
+            element: <AdminNodeBackups node={node} />,
+            permission: 'nodes.backups',
           },
           {
             name: 'Servers',
             icon: faComputer,
-            link: `/admin/nodes/${params.id}/servers`,
+            path: `/admin/nodes/${params.id}/servers`,
+            element: <AdminNodeServers node={node} />,
+            permission: 'nodes.read',
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<NodeCreateOrUpdate contextNode={node} />} />
-        <Route path='/configuration' element={<AdminNodeConfiguration node={node} />} />
-        <Route path='/statistics' element={<AdminNodeStatistics node={node} />} />
-        <Route path='/logs' element={<AdminNodeLogs node={node} />} />
-        <Route path='/allocations' element={<AdminNodeAllocations node={node} />} />
-        <Route path='/mounts' element={<AdminNodeMounts node={node} />} />
-        <Route path='/backups' element={<AdminNodeBackups node={node} />} />
-        <Route path='/servers' element={<AdminNodeServers node={node} />} />
-      </Routes>
     </>
   );
 }

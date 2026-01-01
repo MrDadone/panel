@@ -1,6 +1,7 @@
 import { Grid, Stack, Text, Title } from '@mantine/core';
 import { useState } from 'react';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Card from '@/elements/Card.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import ServerDeleteModal from '@/pages/admin/servers/management/modals/ServerDeleteModal.tsx';
@@ -28,9 +29,14 @@ export default function AdminServerManagement({ server }: { server: AdminServer 
             <Stack gap='xs'>
               <Title order={2}>Transfer</Title>
               <Text size='sm'>Move this server to another node within this system.</Text>
-              <Button onClick={() => setOpenModal('transfer')} variant='outline' size='xs'>
-                Transfer
-              </Button>
+              <AdminCan
+                action='servers.transfers'
+                renderOnCant={<Text size='sm'>You do not have permission to transfer this server.</Text>}
+              >
+                <Button onClick={() => setOpenModal('transfer')} variant='outline' size='xs'>
+                  Transfer
+                </Button>
+              </AdminCan>
             </Stack>
           </Card>
         </Grid.Col>

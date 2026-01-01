@@ -8,13 +8,16 @@ import createOAuthProvider from '@/api/admin/oauth-providers/createOAuthProvider
 import getOAuthProviders from '@/api/admin/oauth-providers/getOAuthProviders.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { adminOAuthProviderSchema } from '@/lib/schemas/admin/oauthProviders.ts';
 import { oauthProviderTableColumns } from '@/lib/tableColumns.ts';
 import { transformKeysToCamelCase } from '@/lib/transformers.ts';
+import NodeCreateOrUpdate from '@/pages/admin/nodes/NodeCreateOrUpdate.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import DatabaseHostCreateOrUpdate from './OAuthProviderCreateOrUpdate.tsx';
 import DatabaseHostRow from './OAuthProviderRow.tsx';
@@ -71,7 +74,7 @@ function OAuthProvidersContainer() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <>
+        <AdminCan action='oauth-providers.create'>
           <Button onClick={() => fileInputRef.current?.click()} color='blue'>
             <FontAwesomeIcon icon={faUpload} className='mr-2' />
             Import
@@ -91,7 +94,7 @@ function OAuthProvidersContainer() {
             className='hidden'
             onChange={handleFileUpload}
           />
-        </>
+        </AdminCan>
       }
     >
       <Table columns={oauthProviderTableColumns} loading={loading} pagination={oauthProviders} onPageSelect={setPage}>
@@ -107,8 +110,10 @@ export default function AdminOAuthProviders() {
   return (
     <Routes>
       <Route path='/' element={<OAuthProvidersContainer />} />
-      <Route path='/new' element={<DatabaseHostCreateOrUpdate />} />
       <Route path='/:id/*' element={<DatabaseHostView />} />
+      <Route element={<AdminPermissionGuard permission='database-hosts.create' />}>
+        <Route path='/new' element={<DatabaseHostCreateOrUpdate />} />
+      </Route>
     </Routes>
   );
 }

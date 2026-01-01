@@ -36,36 +36,36 @@ export default function EggView({ contextNest }: { contextNest: AdminNest }) {
       <Title order={2}>{egg?.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/nests/${contextNest.uuid}/eggs/${params.eggId}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/nests/${contextNest.uuid}/eggs/${params.eggId}`,
+            path: '/',
+            element: <EggCreateOrUpdate contextNest={contextNest} contextEgg={egg} />,
           },
           {
             name: 'Variables',
             icon: faCodeCommit,
-            link: `/admin/nests/${contextNest.uuid}/eggs/${params.eggId}/variables`,
+            path: `/variables`,
+            element: <AdminEggVariables contextNest={contextNest} contextEgg={egg} />,
           },
           {
             name: 'Mounts',
             icon: faEgg,
-            link: `/admin/nests/${contextNest.uuid}/eggs/${params.eggId}/mounts`,
+            path: `/mounts`,
+            element: <AdminEggMounts contextNest={contextNest} contextEgg={egg} />,
+            permission: 'eggs.mounts',
           },
           {
             name: 'Servers',
             icon: faComputer,
-            link: `/admin/nests/${contextNest.uuid}/eggs/${params.eggId}/servers`,
+            path: `/servers`,
+            element: <AdminEggServers contextNest={contextNest} contextEgg={egg} />,
+            permission: 'servers.read',
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<EggCreateOrUpdate contextNest={contextNest} contextEgg={egg} />} />
-        <Route path='/variables' element={<AdminEggVariables contextNest={contextNest} contextEgg={egg} />} />
-        <Route path='/mounts' element={<AdminEggMounts contextNest={contextNest} contextEgg={egg} />} />
-        <Route path='/servers' element={<AdminEggServers contextNest={contextNest} contextEgg={egg} />} />
-      </Routes>
     </>
   );
 }

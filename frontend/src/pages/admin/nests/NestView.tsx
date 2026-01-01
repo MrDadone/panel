@@ -34,24 +34,23 @@ export default function NestView() {
       <Title order={1}>{nest.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/nests/${params.nestId}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/nests/${params.nestId}`,
+            path: `/`,
+            element: <NestCreateOrUpdate contextNest={nest} />,
           },
           {
             name: 'Eggs',
             icon: faEgg,
-            link: `/admin/nests/${params.nestId}/eggs`,
+            path: `/eggs`,
+            element: <AdminEggs contextNest={nest} />,
+            permission: 'eggs.read',
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<NestCreateOrUpdate contextNest={nest} />} />
-        <Route path='/eggs/*' element={<AdminEggs contextNest={nest} />} />
-      </Routes>
     </>
   );
 }

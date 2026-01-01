@@ -34,24 +34,23 @@ export default function RoleView() {
       <Title order={1}>{role.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/roles/${params.id}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/roles/${params.id}`,
+            path: `/`,
+            element: <RoleCreateOrUpdate contextRole={role} />,
           },
           {
             name: 'Users',
             icon: faUsers,
-            link: `/admin/roles/${params.id}/users`,
+            path: `/users`,
+            element: <AdminRoleUsers role={role} />,
+            permission: 'users.read',
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<RoleCreateOrUpdate contextRole={role} />} />
-        <Route path='/users' element={<AdminRoleUsers role={role} />} />
-      </Routes>
     </>
   );
 }

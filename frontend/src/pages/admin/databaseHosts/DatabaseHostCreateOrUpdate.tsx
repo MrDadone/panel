@@ -9,6 +9,7 @@ import testDatabaseHost from '@/api/admin/database-hosts/testDatabaseHost.ts';
 import updateDatabaseHost from '@/api/admin/database-hosts/updateDatabaseHost.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
@@ -151,22 +152,28 @@ export default function DatabaseHostCreateOrUpdate({
           />
 
           <Group>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              Save
-            </Button>
-            {!contextDatabaseHost && (
-              <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
-                Save & Stay
+            <AdminCan action={contextDatabaseHost ? 'database-hosts.update' : 'database-hosts.create'} cantSave>
+              <Button type='submit' disabled={!form.isValid()} loading={loading}>
+                Save
               </Button>
-            )}
+              {!contextDatabaseHost && (
+                <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
+                  Save & Stay
+                </Button>
+              )}
+            </AdminCan>
             {contextDatabaseHost && (
               <>
-                <Button variant='outline' onClick={doTest} loading={loading}>
-                  Test
-                </Button>
-                <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
-                  Delete
-                </Button>
+                <AdminCan action='database-hosts.test'>
+                  <Button variant='outline' onClick={doTest} loading={loading}>
+                    Test
+                  </Button>
+                </AdminCan>
+                <AdminCan action='database-hosts.delete' cantDelete>
+                  <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
+                    Delete
+                  </Button>
+                </AdminCan>
               </>
             )}
           </Group>

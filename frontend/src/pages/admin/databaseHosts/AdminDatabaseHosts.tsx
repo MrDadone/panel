@@ -3,10 +3,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Route, Routes, useNavigate } from 'react-router';
 import getDatabaseHosts from '@/api/admin/database-hosts/getDatabaseHosts.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { databaseHostTableColumns } from '@/lib/tableColumns.ts';
+import ServerCreate from '@/pages/admin/servers/ServerCreate.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
+import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import DatabaseHostCreateOrUpdate from './DatabaseHostCreateOrUpdate.tsx';
 import DatabaseHostRow from './DatabaseHostRow.tsx';
@@ -27,13 +30,15 @@ function DatabaseHostsContainer() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <Button
-          onClick={() => navigate('/admin/database-hosts/new')}
-          color='blue'
-          leftSection={<FontAwesomeIcon icon={faPlus} />}
-        >
-          Create
-        </Button>
+        <AdminCan action='database-hosts.create'>
+          <Button
+            onClick={() => navigate('/admin/database-hosts/new')}
+            color='blue'
+            leftSection={<FontAwesomeIcon icon={faPlus} />}
+          >
+            Create
+          </Button>
+        </AdminCan>
       }
     >
       <Table columns={databaseHostTableColumns} loading={loading} pagination={databaseHosts} onPageSelect={setPage}>
@@ -49,8 +54,10 @@ export default function AdminDatabaseHosts() {
   return (
     <Routes>
       <Route path='/' element={<DatabaseHostsContainer />} />
-      <Route path='/new' element={<DatabaseHostCreateOrUpdate />} />
       <Route path='/:id/*' element={<DatabaseHostView />} />
+      <Route element={<AdminPermissionGuard permission='database-hosts.create' />}>
+        <Route path='/new' element={<DatabaseHostCreateOrUpdate />} />
+      </Route>
     </Routes>
   );
 }
