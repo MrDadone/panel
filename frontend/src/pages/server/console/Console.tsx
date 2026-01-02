@@ -1,6 +1,8 @@
-import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
+import { faArrowDown, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ActionIcon } from '@mantine/core';
 import { AnsiUp } from 'ansi_up';
+import classNames from 'classnames';
 import DOMPurify from 'dompurify';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@/elements/Button.tsx';
@@ -72,6 +74,8 @@ export default function Terminal() {
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [websocketPing, setWebsocketPing] = useState(0);
+  const [consoleFontSize, setConsoleFontSize] = useState(14);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +84,35 @@ export default function Terminal() {
   const initialScrollTimer = useRef<NodeJS.Timeout | null>(null);
 
   const HISTORY_STORAGE_KEY = `terminal_command_history_${server.uuid}`;
+  const CONSOLE_FONT_SIZE_KEY = 'terminal_console_font_size';
+
+  useEffect(() => {
+    let pingInterval: NodeJS.Timeout;
+
+    if (socketConnected && socketInstance) {
+      const pingFn = () => {
+        const start = Date.now();
+        socketInstance.send(SocketRequest.PING);
+
+        const handlePong = () => {
+          const latency = Date.now() - start;
+          setWebsocketPing(latency);
+          socketInstance.removeListener(SocketEvent.PONG, handlePong);
+        };
+
+        socketInstance.addListener(SocketEvent.PONG, handlePong);
+      };
+
+      pingInterval = setInterval(pingFn, 10000);
+      pingFn();
+    }
+
+    return () => {
+      if (pingInterval) {
+        clearInterval(pingInterval);
+      }
+    };
+  }, [socketConnected, socketInstance]);
 
   useEffect(() => {
     const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
@@ -98,6 +131,20 @@ export default function Terminal() {
   useEffect(() => {
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
   }, [history, HISTORY_STORAGE_KEY]);
+
+  useEffect(() => {
+    const savedFontSize = localStorage.getItem(CONSOLE_FONT_SIZE_KEY);
+    if (savedFontSize) {
+      const size = parseInt(savedFontSize, 10);
+      if (!isNaN(size)) {
+        setConsoleFontSize(size);
+      }
+    }
+  }, [CONSOLE_FONT_SIZE_KEY]);
+
+  useEffect(() => {
+    localStorage.setItem(CONSOLE_FONT_SIZE_KEY, consoleFontSize.toString());
+  }, [consoleFontSize, CONSOLE_FONT_SIZE_KEY]);
 
   const checkIfAtBottom = useCallback(() => {
     if (!containerRef.current) return true;
@@ -275,11 +322,47 @@ export default function Terminal() {
 
   return (
     <Card className='h-full flex flex-col font-mono text-sm relative p-2!'>
+      <div className='flex flex-row justify-between items-center mb-2 text-xs'>
+        <div className='flex flex-row items-center'>
+          <span
+            className={classNames(
+              'rounded-full h-3 w-3 animate-pulse mr-2',
+              socketConnected ? 'bg-green-500' : 'bg-red-500',
+            )}
+          />
+          {socketConnected
+            ? t('pages.server.console.socketConnected', { ping: websocketPing })
+            : t('pages.server.console.socketDisconnected', {})}
+        </div>
+        <div className='flex flex-row items-center'>
+          <ActionIcon
+            className='mr-2'
+            size='xs'
+            variant='subtle'
+            color='gray'
+            onClick={() => setConsoleFontSize((size) => Math.max(10, size - 1))}
+          >
+            <FontAwesomeIcon icon={faMinus} />
+          </ActionIcon>
+          {consoleFontSize}px
+          <ActionIcon
+            className='ml-2'
+            size='xs'
+            variant='subtle'
+            color='gray'
+            onClick={() => setConsoleFontSize((size) => Math.min(24, size + 1))}
+          >
+            <FontAwesomeIcon icon={faPlus} />
+          </ActionIcon>
+        </div>
+      </div>
+
       {!socketConnected && <Spinner.Centered />}
 
       <div
         ref={containerRef}
         className='flex-1 overflow-auto custom-scrollbar space-y-1 select-text'
+        style={{ fontSize: `${consoleFontSize}px` }}
         onScroll={handleScroll}
       >
         {MemoizedLines}

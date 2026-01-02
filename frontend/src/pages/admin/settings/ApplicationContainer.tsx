@@ -3,6 +3,7 @@ import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
+import getAdminTelemetry from '@/api/admin/getAdminTelemetry.ts';
 import updateApplicationSettings from '@/api/admin/settings/updateApplicationSettings.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
@@ -10,10 +11,12 @@ import AdminContentContainer from '@/elements/containers/AdminContentContainer.t
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { adminSettingsApplicationSchema } from '@/lib/schemas/admin/settings.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
+import TelemetryPreviewModal from './modals/TelemetryPreviewModal.tsx';
 
 export default function ApplicationContainer() {
   const { addToast } = useToast();
@@ -21,6 +24,8 @@ export default function ApplicationContainer() {
   const { languages } = useGlobalStore();
 
   const [loading, setLoading] = useState(false);
+  const [telemetryData, setTelemetryData] = useState<object | null>(null);
+  const [openModal, setOpenModal] = useState<'disableTelemetry' | 'enableRegistration' | null>(null);
 
   const form = useForm<z.infer<typeof adminSettingsApplicationSchema>>({
     initialValues: {
@@ -53,8 +58,53 @@ export default function ApplicationContainer() {
       .finally(() => setLoading(false));
   };
 
+  const doPreviewTelemetry = () => {
+    setLoading(true);
+
+    getAdminTelemetry()
+      .then((data) => {
+        setTelemetryData(data);
+      })
+      .catch((msg) => {
+        addToast(httpErrorToHuman(msg), 'error');
+      })
+      .finally(() => setLoading(false));
+  };
+
   return (
     <AdminContentContainer title='Application Settings' titleOrder={2}>
+      <TelemetryPreviewModal
+        telemetry={telemetryData}
+        opened={telemetryData !== null}
+        onClose={() => setTelemetryData(null)}
+      />
+      <ConfirmationModal
+        opened={openModal === 'disableTelemetry'}
+        onClose={() => setOpenModal(null)}
+        title='Confirm Disabling Telemetry'
+        confirm='Disable'
+        onConfirmed={() => {
+          form.setFieldValue('telemetryEnabled', false);
+          setOpenModal(null);
+        }}
+      >
+        Are you sure you want to disable telemetry? Telemetry helps us improve Calagopus by providing anonymous usage
+        data. Disabling telemetry will prevent any data from being sent.
+      </ConfirmationModal>
+      <ConfirmationModal
+        opened={openModal === 'enableRegistration'}
+        onClose={() => setOpenModal(null)}
+        title='Confirm Enabling Registration'
+        confirm='Enable'
+        onConfirmed={() => {
+          form.setFieldValue('registrationEnabled', true);
+          setOpenModal(null);
+        }}
+      >
+        Are you sure you want to enable registration? Enabling registration allows anyone to create an account on this
+        panel. If you do not have a captcha configured, this may be a mistake.
+      </ConfirmationModal>
+
       <form onSubmit={form.onSubmit(() => doUpdate())}>
         <Stack>
           <Group grow>
@@ -92,13 +142,25 @@ export default function ApplicationContainer() {
               label='Enable Telemetry'
               description='Allow Calagopus to collect limited and anonymous usage data to help improve the application.'
               checked={form.values.telemetryEnabled}
-              onChange={(e) => form.setFieldValue('telemetryEnabled', e.target.checked)}
+              onChange={(e) => {
+                if (!e.target.checked) {
+                  setOpenModal('disableTelemetry');
+                } else {
+                  form.setFieldValue('telemetryEnabled', true);
+                }
+              }}
             />
             <Switch
               label='Enable Registration'
               name='registrationEnabled'
               checked={form.values.registrationEnabled}
-              onChange={(e) => form.setFieldValue('registrationEnabled', e.target.checked)}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setOpenModal('enableRegistration');
+                } else {
+                  form.setFieldValue('registrationEnabled', false);
+                }
+              }}
             />
           </Group>
         </Stack>
@@ -106,6 +168,9 @@ export default function ApplicationContainer() {
         <Group mt='md'>
           <Button type='submit' disabled={!form.isValid()} loading={loading}>
             Save
+          </Button>
+          <Button variant='outline' loading={loading} onClick={doPreviewTelemetry}>
+            Telemetry Preview
           </Button>
         </Group>
       </form>
