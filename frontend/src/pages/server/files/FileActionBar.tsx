@@ -8,6 +8,7 @@ import downloadFiles from '@/api/server/files/downloadFiles.ts';
 import renameFiles from '@/api/server/files/renameFiles.ts';
 import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import { useFileKeyboardActions } from './hooks/useFileKeyboardActions.ts';
@@ -117,26 +118,34 @@ export default function FileActionBar() {
           </>
         ) : (
           <>
-            <Button onClick={doDownload} loading={loading}>
-              <FontAwesomeIcon icon={faFileDownload} className='mr-2' /> Download
-            </Button>
+            <ServerCan action='files.read-content'>
+              <Button onClick={doDownload} loading={loading}>
+                <FontAwesomeIcon icon={faFileDownload} className='mr-2' /> Download
+              </Button>
+            </ServerCan>
             {!browsingBackup && (
               <>
-                <Button onClick={() => setOpenModal('archive')}>
-                  <FontAwesomeIcon icon={faArchive} className='mr-2' /> Archive
-                </Button>
-                <Button
-                  onClick={() => {
-                    setMovingFiles(selectedFiles);
-                    setSelectedFiles([]);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faAnglesUp} className='mr-2' /> Move
-                </Button>
-                <Button color='red' onClick={() => setOpenModal('delete')}>
-                  <FontAwesomeIcon icon={faTrash} className='mr-2' />
-                  Delete
-                </Button>
+                <ServerCan action='files.archive'>
+                  <Button onClick={() => setOpenModal('archive')}>
+                    <FontAwesomeIcon icon={faArchive} className='mr-2' /> Archive
+                  </Button>
+                </ServerCan>
+                <ServerCan action='files.update'>
+                  <Button
+                    onClick={() => {
+                      setMovingFiles(selectedFiles);
+                      setSelectedFiles([]);
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faAnglesUp} className='mr-2' /> Move
+                  </Button>
+                </ServerCan>
+                <ServerCan action='files.delete'>
+                  <Button color='red' onClick={() => setOpenModal('delete')}>
+                    <FontAwesomeIcon icon={faTrash} className='mr-2' />
+                    Delete
+                  </Button>
+                </ServerCan>
               </>
             )}
           </>

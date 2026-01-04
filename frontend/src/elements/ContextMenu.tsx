@@ -1,7 +1,7 @@
 import { faEllipsis, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Menu, MenuProps } from '@mantine/core';
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { createContext, memo, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { useCurrentWindow } from '@/providers/CurrentWindowProvider.tsx';
 
 interface Item {
@@ -12,6 +12,7 @@ interface Item {
   onClick?: () => void;
   color?: 'gray' | 'red';
   items?: Omit<Item, 'items'>[];
+  canAccess?: boolean;
 }
 
 interface ContextMenuState {
@@ -70,6 +71,7 @@ export const ContextMenuProvider = ({ children, menuProps }: { children: ReactNo
   return (
     <ContextMenuContext.Provider value={{ state, showMenu, hideMenu }}>
       <Menu
+        disabled={!state.items.some((item) => item.canAccess !== false)}
         opened={state.visible}
         onClose={hideMenu}
         width={200}
@@ -96,6 +98,7 @@ export const ContextMenuProvider = ({ children, menuProps }: { children: ReactNo
         <Menu.Dropdown>
           {state.items
             .filter((item) => !item.hidden)
+            .filter((item) => item.canAccess !== false)
             .map((item, idx) =>
               (item.items || []).length > 0 ? (
                 <Menu.Sub key={idx} position={state.x + 300 > window.innerWidth ? 'left-start' : 'right-start'}>
@@ -162,33 +165,43 @@ export const ContextMenuProvider = ({ children, menuProps }: { children: ReactNo
   );
 };
 
-const ContextMenu = ({
-  items = [],
-  children,
-}: {
-  items: Item[];
-  children: (ctx: { openMenu: (x: number, y: number) => void; hideMenu: () => void }) => ReactNode;
-}) => {
-  const context = useContext(ContextMenuContext);
+const ContextMenu = memo(
+  ({
+    items = [],
+    children,
+  }: {
+    items: Item[];
+    children: (ctx: { items: Item[]; openMenu: (x: number, y: number) => void; hideMenu: () => void }) => ReactNode;
+  }) => {
+    const context = useContext(ContextMenuContext);
 
-  if (!context) {
-    throw new Error('ContextMenu must be used within a ContextMenuProvider');
+    if (!context) {
+      throw new Error('ContextMenu must be used within a ContextMenuProvider');
+    }
+
+    const { showMenu, hideMenu } = context;
+
+    const openMenu = useMemo(() => {
+      return (x: number, y: number) => {
+        showMenu(
+          x,
+          y,
+          items.filter((item) => item),
+        );
+      };
+    }, [items, showMenu]);
+
+    return children({ items, openMenu, hideMenu });
+  },
+);
+
+ContextMenu.displayName = 'ContextMenu';
+
+const ContextMenuToggle = memo(({ openMenu, items }: { openMenu: (x: number, y: number) => void; items: Item[] }) => {
+  if (!items.some((item) => item.canAccess !== false)) {
+    return <td></td>;
   }
 
-  const { showMenu, hideMenu } = context;
-
-  const openMenu = (x: number, y: number) => {
-    showMenu(
-      x,
-      y,
-      items.filter((item) => item),
-    );
-  };
-
-  return children({ openMenu, hideMenu });
-};
-
-ContextMenu.Toggle = ({ openMenu }: { openMenu: (x: number, y: number) => void }) => {
   return (
     <td
       className='relative cursor-pointer w-10 text-center'
@@ -202,6 +215,9 @@ ContextMenu.Toggle = ({ openMenu }: { openMenu: (x: number, y: number) => void }
       <FontAwesomeIcon icon={faEllipsis} />
     </td>
   );
-};
+});
+
+ContextMenuToggle.displayName = 'ContextMenuToggle';
 
 export default ContextMenu;
+export { ContextMenuToggle };

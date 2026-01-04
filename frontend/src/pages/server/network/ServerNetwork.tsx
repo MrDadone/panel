@@ -4,6 +4,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import createAllocation from '@/api/server/allocations/createAllocation.ts';
 import getAllocations from '@/api/server/allocations/getAllocations.ts';
 import Button from '@/elements/Button.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import ConditionalTooltip from '@/elements/ConditionalTooltip.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
@@ -45,19 +46,21 @@ export default function ServerNetwork() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <ConditionalTooltip
-          enabled={allocations.total >= server.featureLimits.allocations}
-          label={t('pages.server.network.tooltip.limitReached', { max: server.featureLimits.allocations })}
-        >
-          <Button
-            disabled={allocations.total >= server.featureLimits.allocations}
-            onClick={doAdd}
-            color='blue'
-            leftSection={<FontAwesomeIcon icon={faPlus} />}
+        <ServerCan action='allocations.create'>
+          <ConditionalTooltip
+            enabled={allocations.total >= server.featureLimits.allocations}
+            label={t('pages.server.network.tooltip.limitReached', { max: server.featureLimits.allocations })}
           >
-            {t('common.button.add', {})}
-          </Button>
-        </ConditionalTooltip>
+            <Button
+              disabled={allocations.total >= server.featureLimits.allocations}
+              onClick={doAdd}
+              color='blue'
+              leftSection={<FontAwesomeIcon icon={faPlus} />}
+            >
+              {t('common.button.add', {})}
+            </Button>
+          </ConditionalTooltip>
+        </ServerCan>
       }
     >
       <ContextMenuProvider>

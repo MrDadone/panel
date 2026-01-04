@@ -3,12 +3,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
 import getDatabaseSize from '@/api/server/databases/getDatabaseSize.ts';
 import Code from '@/elements/Code.tsx';
-import ContextMenu from '@/elements/ContextMenu.tsx';
+import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
 import { bytesToString } from '@/lib/size.ts';
+import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import DatabaseDeleteModal from './modals/DatabaseDeleteModal.tsx';
@@ -37,12 +38,19 @@ export default function DatabaseRow({ database }: { database: ServerDatabase }) 
 
       <ContextMenu
         items={[
-          { icon: faPencil, label: t('common.button.edit', {}), onClick: () => setOpenModal('edit'), color: 'gray' },
+          {
+            icon: faPencil,
+            label: t('common.button.edit', {}),
+            onClick: () => setOpenModal('edit'),
+            color: 'gray',
+            canAccess: useServerCan('databases.update'),
+          },
           {
             icon: faEye,
             label: t('pages.server.databases.button.details', {}),
             onClick: () => setOpenModal('details'),
             color: 'gray',
+            canAccess: useServerCan('databases.read'),
           },
           {
             icon: faTrash,
@@ -50,10 +58,11 @@ export default function DatabaseRow({ database }: { database: ServerDatabase }) 
             disabled: database.isLocked,
             onClick: () => setOpenModal('delete'),
             color: 'red',
+            canAccess: useServerCan('databases.delete'),
           },
         ]}
       >
-        {({ openMenu }) => (
+        {({ items, openMenu }) => (
           <TableRow
             onContextMenu={(e) => {
               e.preventDefault();
@@ -82,7 +91,7 @@ export default function DatabaseRow({ database }: { database: ServerDatabase }) 
               )}
             </TableData>
 
-            <ContextMenu.Toggle openMenu={openMenu} />
+            <ContextMenuToggle items={items} openMenu={openMenu} />
           </TableRow>
         )}
       </ContextMenu>

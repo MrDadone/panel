@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteApiKey from '@/api/me/api-keys/deleteApiKey.ts';
 import Code from '@/elements/Code.tsx';
-import ContextMenu from '@/elements/ContextMenu.tsx';
+import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
@@ -55,7 +55,7 @@ export default function ApiKeyRow({ apiKey }: { apiKey: UserApiKey }) {
           { icon: faTrash, label: t('common.button.remove', {}), onClick: () => setOpenModal('delete'), color: 'red' },
         ]}
       >
-        {({ openMenu }) => (
+        {({ items, openMenu }) => (
           <TableRow
             onContextMenu={(e) => {
               e.preventDefault();
@@ -94,7 +94,7 @@ export default function ApiKeyRow({ apiKey }: { apiKey: UserApiKey }) {
               <Tooltip label={formatDateTime(apiKey.created)}>{formatTimestamp(apiKey.created)}</Tooltip>
             </TableData>
 
-            <ContextMenu.Toggle openMenu={openMenu} />
+            <ContextMenuToggle items={items} openMenu={openMenu} />
           </TableRow>
         )}
       </ContextMenu>

@@ -7,7 +7,7 @@ import updateServerAllocation from '@/api/admin/servers/allocations/updateServer
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
-import ContextMenu from '@/elements/ContextMenu.tsx';
+import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Modal from '@/elements/modals/Modal.tsx';
@@ -143,7 +143,7 @@ export default function ServerAllocationRow({
           { icon: faTrash, label: 'Remove', onClick: () => setOpenModal('remove'), color: 'red' },
         ]}
       >
-        {({ openMenu }) => (
+        {({ items, openMenu }) => (
           <TableRow
             onContextMenu={(e) => {
               e.preventDefault();
@@ -174,7 +174,7 @@ export default function ServerAllocationRow({
               <Tooltip label={formatDateTime(allocation.created)}>{formatTimestamp(allocation.created)}</Tooltip>
             </TableData>
 
-            <ContextMenu.Toggle openMenu={openMenu} />
+            <ContextMenuToggle items={items} openMenu={openMenu} />
           </TableRow>
         )}
       </ContextMenu>

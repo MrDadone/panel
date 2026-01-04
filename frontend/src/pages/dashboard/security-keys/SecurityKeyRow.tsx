@@ -2,7 +2,7 @@ import { faPencil, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteSecurityKey from '@/api/me/security-keys/deleteSecurityKey.ts';
-import ContextMenu from '@/elements/ContextMenu.tsx';
+import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
@@ -64,7 +64,7 @@ export default function SecurityKeyRow({ securityKey }: { securityKey: UserSecur
           },
         ]}
       >
-        {({ openMenu }) => (
+        {({ items, openMenu }) => (
           <TableRow
             onContextMenu={(e) => {
               e.preventDefault();
@@ -85,7 +85,7 @@ export default function SecurityKeyRow({ securityKey }: { securityKey: UserSecur
               <Tooltip label={formatDateTime(securityKey.created)}>{formatTimestamp(securityKey.created)}</Tooltip>
             </TableData>
 
-            <ContextMenu.Toggle openMenu={openMenu} />
+            <ContextMenuToggle items={items} openMenu={openMenu} />
           </TableRow>
         )}
       </ContextMenu>

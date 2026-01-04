@@ -6,6 +6,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import getSchedules from '@/api/server/schedules/getSchedules.ts';
 import importSchedule from '@/api/server/schedules/importSchedule.ts';
 import Button from '@/elements/Button.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import ConditionalTooltip from '@/elements/ConditionalTooltip.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
@@ -66,23 +67,25 @@ export default function ServerSchedules() {
       setSearch={setSearch}
       contentRight={
         <>
-          <Button onClick={() => fileInputRef.current?.click()} color='blue'>
-            <FontAwesomeIcon icon={faUpload} className='mr-2' />
-            Import
-          </Button>
-          <ConditionalTooltip
-            enabled={schedules.total >= server.featureLimits.schedules}
-            label={`This server is limited to ${server.featureLimits.schedules} schedules.`}
-          >
-            <Button
-              disabled={schedules.total >= server.featureLimits.schedules}
-              onClick={() => setOpenModal('create')}
-              color='blue'
-              leftSection={<FontAwesomeIcon icon={faPlus} />}
-            >
-              Create
+          <ServerCan action='schedules.create'>
+            <Button onClick={() => fileInputRef.current?.click()} color='blue'>
+              <FontAwesomeIcon icon={faUpload} className='mr-2' />
+              Import
             </Button>
-          </ConditionalTooltip>
+            <ConditionalTooltip
+              enabled={schedules.total >= server.featureLimits.schedules}
+              label={`This server is limited to ${server.featureLimits.schedules} schedules.`}
+            >
+              <Button
+                disabled={schedules.total >= server.featureLimits.schedules}
+                onClick={() => setOpenModal('create')}
+                color='blue'
+                leftSection={<FontAwesomeIcon icon={faPlus} />}
+              >
+                Create
+              </Button>
+            </ConditionalTooltip>
+          </ServerCan>
 
           <input
             type='file'

@@ -17,7 +17,7 @@ import { createSearchParams, MemoryRouter } from 'react-router';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import decompressFile from '@/api/server/files/decompressFile.ts';
 import downloadFiles from '@/api/server/files/downloadFiles.ts';
-import ContextMenu from '@/elements/ContextMenu.tsx';
+import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
@@ -25,6 +25,7 @@ import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
 import { isArchiveType, isEditableFile } from '@/lib/files.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useWindows } from '@/providers/WindowProvider.tsx';
 import RouterRoutes from '@/RouterRoutes.tsx';
@@ -57,6 +58,12 @@ const FileRow = memo(
       addSelectedFile,
       removeSelectedFile,
     } = useServerStore();
+    const canOpenActionBar = useServerCan(
+      ['files.read-content', 'files.archive', 'files.update', 'files.delete'],
+      true,
+    );
+    const canCreate = useServerCan('files.create');
+    const canArchive = useServerCan('files.archive');
 
     const [openModal, setOpenModal] = useState<'rename' | 'copy' | 'permissions' | 'archive' | 'delete' | null>(null);
 
@@ -116,12 +123,14 @@ const FileRow = memo(
                     <RouterRoutes isNormal={false} />
                   </MemoryRouter>,
                 ),
+              canAccess: useServerCan('files.read-content'),
             },
             {
               icon: faFilePen,
               label: 'Rename',
               hidden: !!browsingBackup,
               onClick: () => setOpenModal('rename'),
+              canAccess: useServerCan('files.update'),
             },
             {
               icon: faCopy,
@@ -129,6 +138,7 @@ const FileRow = memo(
               hidden: !!browsingBackup || file.directory,
               onClick: () => setOpenModal('copy'),
               color: 'gray',
+              canAccess: canCreate,
             },
             {
               icon: faAnglesUp,
@@ -136,6 +146,7 @@ const FileRow = memo(
               hidden: !!browsingBackup,
               onClick: () => setMovingFiles([file]),
               color: 'gray',
+              canAccess: useServerCan('files.update'),
             },
             {
               icon: faFileShield,
@@ -143,6 +154,7 @@ const FileRow = memo(
               hidden: !!browsingBackup,
               onClick: () => setOpenModal('permissions'),
               color: 'gray',
+              canAccess: useServerCan('files.update'),
             },
             isArchiveType(file.mime) && !browsingBackup
               ? {
@@ -151,6 +163,7 @@ const FileRow = memo(
                   hidden: !!browsingBackup,
                   onClick: doUnarchive,
                   color: 'gray',
+                  canAccess: canCreate,
                 }
               : {
                   icon: faFileZipper,
@@ -158,6 +171,7 @@ const FileRow = memo(
                   hidden: !!browsingBackup,
                   onClick: () => setOpenModal('archive'),
                   color: 'gray',
+                  canAccess: canArchive,
                 },
             {
               icon: faFileArrowDown,
@@ -172,6 +186,7 @@ const FileRow = memo(
                     color: 'gray',
                   }))
                 : [],
+              canAccess: useServerCan('files.read-content'),
             },
             {
               icon: faTrash,
@@ -179,10 +194,11 @@ const FileRow = memo(
               hidden: !!browsingBackup,
               onClick: () => setOpenModal('delete'),
               color: 'red',
+              canAccess: useServerCan('files.delete'),
             },
           ]}
         >
-          {({ openMenu }) => (
+          {({ items, openMenu }) => (
             <FileTableRow
               file={file}
               ref={ref}
@@ -197,22 +213,26 @@ const FileRow = memo(
                 }
               }}
             >
-              <td className='pl-4 relative cursor-pointer w-10 text-center py-2'>
-                <Checkbox
-                  id={file.name}
-                  disabled={movingFileNames.size > 0}
-                  checked={isFileSelected(file)}
-                  classNames={{ input: 'cursor-pointer!' }}
-                  onChange={() => {
-                    if (isFileSelected(file)) {
-                      removeSelectedFile(file);
-                    } else {
-                      addSelectedFile(file);
-                    }
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </td>
+              {canOpenActionBar ? (
+                <td className='pl-4 relative cursor-pointer w-10 text-center py-2'>
+                  <Checkbox
+                    id={file.name}
+                    disabled={movingFileNames.size > 0}
+                    checked={isFileSelected(file)}
+                    classNames={{ input: 'cursor-pointer!' }}
+                    onChange={() => {
+                      if (isFileSelected(file)) {
+                        removeSelectedFile(file);
+                      } else {
+                        addSelectedFile(file);
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </td>
+              ) : (
+                <td className='w-0'></td>
+              )}
 
               <TableData>
                 <span className='flex items-center gap-4 leading-[100%]'>
@@ -231,7 +251,7 @@ const FileRow = memo(
                 </Tooltip>
               </TableData>
 
-              <ContextMenu.Toggle openMenu={openMenu} />
+              <ContextMenuToggle items={items} openMenu={openMenu} />
             </FileTableRow>
           )}
         </ContextMenu>

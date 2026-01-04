@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteSshKey from '@/api/me/ssh-keys/deleteSshKey.ts';
 import Code from '@/elements/Code.tsx';
-import ContextMenu from '@/elements/ContextMenu.tsx';
+import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
@@ -52,7 +52,7 @@ export default function SshKeyRow({ sshKey }: { sshKey: UserSshKey }) {
           { icon: faTrash, label: t('common.button.delete', {}), onClick: () => setOpenModal('delete'), color: 'red' },
         ]}
       >
-        {({ openMenu }) => (
+        {({ items, openMenu }) => (
           <TableRow
             onContextMenu={(e) => {
               e.preventDefault();
@@ -71,7 +71,7 @@ export default function SshKeyRow({ sshKey }: { sshKey: UserSshKey }) {
               <Tooltip label={formatDateTime(sshKey.created)}>{formatTimestamp(sshKey.created)}</Tooltip>
             </TableData>
 
-            <ContextMenu.Toggle openMenu={openMenu} />
+            <ContextMenuToggle items={items} openMenu={openMenu} />
           </TableRow>
         )}
       </ContextMenu>

@@ -8,11 +8,12 @@ import exportSchedule from '@/api/server/schedules/exportSchedule.ts';
 import triggerSchedule from '@/api/server/schedules/triggerSchedule.ts';
 import Badge from '@/elements/Badge.tsx';
 import Code from '@/elements/Code.tsx';
-import ContextMenu from '@/elements/ContextMenu.tsx';
+import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -108,6 +109,7 @@ export default function ScheduleRow({ schedule }: { schedule: ServerSchedule }) 
                 color: 'gray',
               },
             ],
+            canAccess: useServerCan('schedules.update'),
           },
           {
             icon: faShareAlt,
@@ -127,16 +129,18 @@ export default function ScheduleRow({ schedule }: { schedule: ServerSchedule }) 
                 color: 'gray',
               },
             ],
+            canAccess: useServerCan('schedules.read'),
           },
           {
             icon: faTrash,
             label: 'Delete',
             onClick: () => setOpenModal('delete'),
             color: 'red',
+            canAccess: useServerCan('schedules.delete'),
           },
         ]}
       >
-        {({ openMenu }) => (
+        {({ items, openMenu }) => (
           <TableRow
             className='cursor-pointer'
             onContextMenu={(e) => {
@@ -167,7 +171,7 @@ export default function ScheduleRow({ schedule }: { schedule: ServerSchedule }) 
               <Tooltip label={formatDateTime(schedule.created)}>{formatTimestamp(schedule.created)}</Tooltip>
             </TableData>
 
-            <ContextMenu.Toggle openMenu={openMenu} />
+            <ContextMenuToggle items={items} openMenu={openMenu} />
           </TableRow>
         )}
       </ContextMenu>

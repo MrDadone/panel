@@ -5,6 +5,7 @@ import { createSearchParams, useNavigate, useParams, useSearchParams } from 'rea
 import getFileContent from '@/api/server/files/getFileContent.ts';
 import saveFileContent from '@/api/server/files/saveFileContent.ts';
 import Button from '@/elements/Button.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { getLanguageFromExtension } from '@/lib/files.ts';
@@ -103,13 +104,17 @@ export default function FileEditor() {
             />
             <div hidden={!!browsingBackup}>
               {params.action === 'edit' ? (
-                <Button loading={saving} onClick={() => saveFile()}>
-                  Save
-                </Button>
+                <ServerCan action='files.update'>
+                  <Button loading={saving} onClick={() => saveFile()}>
+                    Save
+                  </Button>
+                </ServerCan>
               ) : (
-                <Button loading={saving} onClick={() => setNameModalOpen(true)}>
-                  Create
-                </Button>
+                <ServerCan action='files.create'>
+                  <Button loading={saving} onClick={() => setNameModalOpen(true)}>
+                    Create
+                  </Button>
+                </ServerCan>
               )}
             </div>
           </div>

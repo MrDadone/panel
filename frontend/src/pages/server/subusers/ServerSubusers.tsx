@@ -6,6 +6,7 @@ import getPermissions from '@/api/getPermissions.ts';
 import createSubuser from '@/api/server/subusers/createSubuser.ts';
 import getSubusers from '@/api/server/subusers/getSubusers.ts';
 import Button from '@/elements/Button.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
@@ -54,9 +55,11 @@ export default function ServerSubusers() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <Button onClick={() => setOpenModal('create')} color='blue' leftSection={<FontAwesomeIcon icon={faPlus} />}>
-          {t('common.button.create', {})}
-        </Button>
+        <ServerCan action='subusers.create'>
+          <Button onClick={() => setOpenModal('create')} color='blue' leftSection={<FontAwesomeIcon icon={faPlus} />}>
+            {t('common.button.create', {})}
+          </Button>
+        </ServerCan>
       }
     >
       <SubuserCreateOrUpdateModal

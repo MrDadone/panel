@@ -1,4 +1,5 @@
 import { Grid } from '@mantine/core';
+import { ServerCan } from '@/elements/Can.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import AutokillContainer from './AutokillContainer.tsx';
@@ -13,11 +14,21 @@ export default function ServerSettings() {
   return (
     <ServerContentContainer title={t('pages.server.settings.title', {})}>
       <Grid grow mt='xs'>
-        <RenameContainer />
-        <AutokillContainer />
-        <AutostartContainer />
-        <TimezoneContainer />
-        <ReinstallContainer />
+        <ServerCan action='settings.rename'>
+          <RenameContainer />
+        </ServerCan>
+        <ServerCan action='settings.auto-kill'>
+          <AutokillContainer />
+        </ServerCan>
+        <ServerCan action='settings.auto-start'>
+          <AutostartContainer />
+        </ServerCan>
+        <ServerCan action='settings.timezone'>
+          <TimezoneContainer />
+        </ServerCan>
+        <ServerCan action='settings.reinstall'>
+          <ReinstallContainer />
+        </ServerCan>
       </Grid>
     </ServerContentContainer>
   );
