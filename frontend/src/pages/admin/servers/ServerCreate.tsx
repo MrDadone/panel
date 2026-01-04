@@ -377,14 +377,12 @@ export default function ServerCreate() {
                   <Switch
                     label='Start on Completion'
                     description='Start server after installation completes'
-                    checked={form.values.startOnCompletion}
-                    onChange={(e) => form.setFieldValue('startOnCompletion', e.target.checked)}
+                    {...form.getInputProps('startOnCompletion', { type: 'checkbox' })}
                   />
                   <Switch
                     label='Skip Installer'
                     description='Skip running the install script'
-                    checked={form.values.skipInstaller}
-                    onChange={(e) => form.setFieldValue('skipInstaller', e.target.checked)}
+                    {...form.getInputProps('skipInstaller', { type: 'checkbox' })}
                   />
                 </Group>
               </Stack>

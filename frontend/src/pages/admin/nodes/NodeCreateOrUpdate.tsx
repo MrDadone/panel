@@ -212,11 +212,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
 
           <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
 
-          <Switch
-            label='Public'
-            checked={form.values.public}
-            onChange={(e) => form.setFieldValue('public', e.target.checked)}
-          />
+          <Switch label='Public' {...form.getInputProps('public', { type: 'checkbox' })} />
 
           <Group>
             <AdminCan action={contextNode ? 'nodes.update' : 'nodes.create'} cantSave>

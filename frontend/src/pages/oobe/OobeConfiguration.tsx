@@ -114,15 +114,13 @@ export default function OobeConfiguration({ onNext }: OobeComponentProps) {
           <Switch
             label={t('pages.oobe.configuration.form.telemetry', {})}
             description={t('pages.oobe.configuration.form.telemetryDescription', {})}
-            checked={form.values.applicationTelemetry}
-            onChange={(e) => form.setFieldValue('applicationTelemetry', e.target.checked)}
+            {...form.getInputProps('applicationTelemetry', { type: 'checkbox' })}
           />
 
           <Switch
             label={t('pages.oobe.configuration.form.registration', {})}
             description={t('pages.oobe.configuration.form.registrationDescription', {})}
-            checked={form.values.applicationRegistration}
-            onChange={(e) => form.setFieldValue('applicationRegistration', e.target.checked)}
+            {...form.getInputProps('applicationRegistration', { type: 'checkbox' })}
           />
 
           <Group justify='flex-end' mt='xl'>

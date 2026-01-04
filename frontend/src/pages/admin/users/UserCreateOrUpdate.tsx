@@ -156,11 +156,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
             onChange={(e) => form.setFieldValue('password', e.target.value || null)}
           />
 
-          <Switch
-            label='Admin'
-            checked={form.values.admin}
-            onChange={(e) => form.setFieldValue('admin', e.target.checked)}
-          />
+          <Switch label='Admin' {...form.getInputProps('admin', { type: 'checkbox' })} />
         </Stack>
 
         <Group mt='md'>

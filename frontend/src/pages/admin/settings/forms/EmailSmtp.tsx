@@ -26,11 +26,7 @@ export default function EmailSmtp({ form }: { form: UseFormReturnType<z.infer<ty
         <NumberInput withAsterisk label='Port' placeholder='Port' min={0} {...form.getInputProps('port')} />
       </Group>
 
-      <Switch
-        label='Use TLS'
-        checked={form.values.useTls}
-        onChange={(e) => form.setFieldValue('useTls', e.target.checked)}
-      />
+      <Switch label='Use TLS' {...form.getInputProps('useTls', { type: 'checkbox' })} />
 
       <Group grow>
         <TextInput label='Username' placeholder='Username' {...form.getInputProps('username')} />

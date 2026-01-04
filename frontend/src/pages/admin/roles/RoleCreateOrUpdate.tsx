@@ -92,8 +92,7 @@ export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role
           <Switch
             label='Require Two Factor'
             description='Require users with this role to use two factor authentication.'
-            checked={form.values.requireTwoFactor}
-            onChange={(e) => form.setFieldValue('requireTwoFactor', e.target.checked)}
+            {...form.getInputProps('requireTwoFactor', { type: 'checkbox' })}
           />
 
           <Group grow align='normal'>

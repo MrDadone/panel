@@ -53,8 +53,7 @@ export default function AutokillContainer() {
 
             <Switch
               label={t('pages.server.settings.autokill.form.enabled', {})}
-              checked={form.values.enabled}
-              onChange={(e) => form.setFieldValue('enabled', e.target.checked)}
+              {...form.getInputProps('enabled', { type: 'checkbox' })}
             />
             <NumberInput
               label={t('pages.server.settings.autokill.form.secondsUntilAutoKill', {})}

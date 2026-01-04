@@ -81,16 +81,8 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: M
           </Group>
 
           <Group grow>
-            <Switch
-              label='Read Only'
-              checked={form.values.readOnly}
-              onChange={(e) => form.setFieldValue('readOnly', e.target.checked)}
-            />
-            <Switch
-              label='User Mountable'
-              checked={form.values.userMountable}
-              onChange={(e) => form.setFieldValue('userMountable', e.target.checked)}
-            />
+            <Switch label='Read Only' {...form.getInputProps('readOnly', { type: 'checkbox' })} />
+            <Switch label='User Mountable' {...form.getInputProps('userMountable', { type: 'checkbox' })} />
           </Group>
 
           <Group>

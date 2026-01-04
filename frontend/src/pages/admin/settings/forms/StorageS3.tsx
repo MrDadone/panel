@@ -35,8 +35,7 @@ export default function StorageS3({ form }: { form: UseFormReturnType<z.infer<ty
 
       <Switch
         label={form.values.pathStyle ? 'Using path-style URLs' : 'Using virtual-hosted-style URLs'}
-        checked={form.values.pathStyle}
-        onChange={(e) => form.setFieldValue('pathStyle', e.target.checked)}
+        {...form.getInputProps('pathStyle', { type: 'checkbox' })}
       />
     </Stack>
   );

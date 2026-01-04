@@ -147,8 +147,7 @@ export default function AccountContainer({ blurred }: AccountCardProps) {
               />
               <Switch
                 label={t('pages.account.account.containers.account.form.startOnGroupedServers', {})}
-                checked={form.values.startOnGroupedServers}
-                onChange={(e) => form.setFieldValue('startOnGroupedServers', e.target.checked)}
+                {...form.getInputProps('startOnGroupedServers', { type: 'checkbox' })}
               />
             </Group>
             <Group>

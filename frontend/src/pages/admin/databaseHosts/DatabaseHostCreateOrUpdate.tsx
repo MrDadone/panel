@@ -145,11 +145,7 @@ export default function DatabaseHostCreateOrUpdate({
             />
           </Group>
 
-          <Switch
-            label='Public'
-            checked={form.values.public}
-            onChange={(e) => form.setFieldValue('public', e.target.checked)}
-          />
+          <Switch label='Public' {...form.getInputProps('public', { type: 'checkbox' })} />
 
           <Group>
             <AdminCan action={contextDatabaseHost ? 'database-hosts.update' : 'database-hosts.create'} cantSave>

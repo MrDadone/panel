@@ -302,8 +302,7 @@ export default function EggCreateOrUpdate({
 
           <Switch
             label='Strip ANSI from startup messages'
-            checked={form.values.configStartup.stripAnsi}
-            onChange={(e) => form.setFieldValue('configStartup.stripAnsi', e.target.checked)}
+            {...form.getInputProps('configStartup.stripAnsi', { type: 'checkbox' })}
           />
 
           {/* TODO: configStop */}
@@ -333,16 +332,12 @@ export default function EggCreateOrUpdate({
 
           <Switch
             label='Allocation Self Assign'
-            checked={form.values.configAllocations.userSelfAssign.enabled}
-            onChange={(e) => form.setFieldValue('configAllocations.userSelfAssign.enabled', e.target.checked)}
+            {...form.getInputProps('configAllocations.userSelfAssign.enabled', { type: 'checkbox' })}
           />
 
           <Switch
             label='Require Primary Allocation'
-            checked={form.values.configAllocations.userSelfAssign.requirePrimaryAllocation}
-            onChange={(e) =>
-              form.setFieldValue('configAllocations.userSelfAssign.requirePrimaryAllocation', e.target.checked)
-            }
+            {...form.getInputProps('configAllocations.userSelfAssign.requirePrimaryAllocation', { type: 'checkbox' })}
           />
 
           <Group grow>
@@ -360,16 +355,11 @@ export default function EggCreateOrUpdate({
 
           <TextInput withAsterisk label='Startup' placeholder='Startup' {...form.getInputProps('startup')} />
 
-          <Switch
-            label='Force Outgoing IP'
-            checked={form.values.forceOutgoingIp}
-            onChange={(e) => form.setFieldValue('forceOutgoingIp', e.target.checked)}
-          />
+          <Switch label='Force Outgoing IP' {...form.getInputProps('forceOutgoingIp', { type: 'checkbox' })} />
           <Switch
             label='Separate IP and Port'
             description='Separates the primary IP and Port in the Console page instead of joining them with ":"'
-            checked={form.values.separatePort}
-            onChange={(e) => form.setFieldValue('separatePort', e.target.checked)}
+            {...form.getInputProps('separatePort', { type: 'checkbox' })}
           />
 
           <TagsInput label='Features' placeholder='Feature' {...form.getInputProps('features')} />

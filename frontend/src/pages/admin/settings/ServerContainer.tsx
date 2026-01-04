@@ -97,14 +97,12 @@ export default function ServerContainer() {
             <Switch
               label='Allow Overwriting Custom Docker Image'
               description='If enabled, users will be able to overwrite the Docker image specified in the server configuration using the Eggs list, even if an admin has set a custom Docker image.'
-              checked={form.values.allowOverwritingCustomDockerImage}
-              onChange={(e) => form.setFieldValue('allowOverwritingCustomDockerImage', e.target.checked)}
+              {...form.getInputProps('allowOverwritingCustomDockerImage', { type: 'checkbox' })}
             />
 
             <Switch
               label='Allow Editing Startup Command'
-              checked={form.values.allowEditingStartupCommand}
-              onChange={(e) => form.setFieldValue('allowEditingStartupCommand', e.target.checked)}
+              {...form.getInputProps('allowEditingStartupCommand', { type: 'checkbox' })}
             />
           </Group>
         </Stack>

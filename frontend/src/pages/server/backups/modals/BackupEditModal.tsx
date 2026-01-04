@@ -64,8 +64,7 @@ export default function BackupEditModal({ backup, opened, onClose }: Props) {
           <Switch
             label={t('pages.server.backups.modal.editBackup.form.locked', {})}
             name='locked'
-            checked={form.values.locked}
-            onChange={(e) => form.setFieldValue('locked', e.target.checked)}
+            {...form.getInputProps('locked', { type: 'checkbox' })}
           />
 
           <Group>
