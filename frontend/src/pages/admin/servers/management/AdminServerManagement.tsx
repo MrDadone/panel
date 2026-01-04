@@ -1,7 +1,6 @@
 import { Grid, Stack, Text, Title } from '@mantine/core';
 import { useState } from 'react';
 import Button from '@/elements/Button.tsx';
-import { AdminCan } from '@/elements/Can.tsx';
 import Card from '@/elements/Card.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import ServerDeleteModal from '@/pages/admin/servers/management/modals/ServerDeleteModal.tsx';
