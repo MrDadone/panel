@@ -331,6 +331,8 @@ async fn main() {
 
                     let settings = state.settings.get().await;
                     if !settings.app.telemetry_enabled {
+                        tokio::time::sleep(std::time::Duration::from_mins(60)).await;
+
                         return Ok(());
                     }
                     let cron_schedule = settings

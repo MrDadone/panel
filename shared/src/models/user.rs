@@ -26,6 +26,7 @@ pub type GetPermissionManager = axum::extract::Extension<PermissionManager>;
 #[derive(Clone)]
 pub struct PermissionManager {
     user_admin: bool,
+    user_server_owner: bool,
     role_admin_permissions: Option<Arc<Vec<compact_str::CompactString>>>,
     role_server_permissions: Option<Arc<Vec<compact_str::CompactString>>>,
     api_key_user_permissions: Option<Arc<Vec<compact_str::CompactString>>>,
@@ -38,6 +39,7 @@ impl PermissionManager {
     pub fn new(user: &User) -> Self {
         Self {
             user_admin: user.admin,
+            user_server_owner: false,
             role_admin_permissions: user.role.as_ref().map(|r| r.admin_permissions.clone()),
             role_server_permissions: user.role.as_ref().map(|r| r.server_permissions.clone()),
             api_key_user_permissions: None,
@@ -51,6 +53,12 @@ impl PermissionManager {
         self.api_key_user_permissions = Some(api_key.user_permissions.clone());
         self.api_key_admin_permissions = Some(api_key.admin_permissions.clone());
         self.api_key_server_permissions = Some(api_key.server_permissions.clone());
+
+        self
+    }
+
+    pub fn set_user_server_owner(mut self, is_owner: bool) -> Self {
+        self.user_server_owner = is_owner;
 
         self
     }
@@ -136,7 +144,7 @@ impl PermissionManager {
         let has_subuser_permission = if let Some(permissions) = &self.server_subuser_permissions {
             permissions.iter().any(|p| p == permission)
         } else {
-            false
+            self.user_server_owner
         };
 
         let has_base_permission = has_role_permission || has_subuser_permission;
