@@ -23,7 +23,9 @@ const checkPermissions = (permissions: string[], action: string | string[]): boo
 
 export const useServerPermissions = (action: string | string[]): boolean[] => {
   const server = useServerStore((state) => state.server);
-  const serverPermissions = server?.permissions || [];
+  const { user } = useAuth();
+
+  const serverPermissions = [...(server?.permissions || []), ...(user?.role?.serverPermissions || [])];
   const actionLength = Array.isArray(action) ? action.length : 1;
 
   if (!serverPermissions) {
