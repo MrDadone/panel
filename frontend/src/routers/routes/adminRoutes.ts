@@ -37,7 +37,6 @@ const routes: AdminRouteDefinition[] = [
     path: '/',
     element: AdminHome,
     exact: true,
-    permission: ['stats.*'],
   },
   {
     name: 'Settings',

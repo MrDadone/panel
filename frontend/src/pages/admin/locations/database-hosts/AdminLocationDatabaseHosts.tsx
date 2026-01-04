@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import getLocationDatabaseHosts from '@/api/admin/locations/database-hosts/getLocationDatabaseHosts.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
@@ -29,16 +30,20 @@ export default function AdminLocationDatabaseHosts({ location }: { location: Loc
       search={search}
       setSearch={setSearch}
       contentRight={
-        <Button onClick={() => setOpenModal('create')} color='blue' leftSection={<FontAwesomeIcon icon={faPlus} />}>
-          Add
-        </Button>
+        <AdminCan action='database-hosts.read'>
+          <Button onClick={() => setOpenModal('create')} color='blue' leftSection={<FontAwesomeIcon icon={faPlus} />}>
+            Add
+          </Button>
+        </AdminCan>
       }
     >
-      <LocationDatabaseHostCreateModal
-        location={location}
-        opened={openModal === 'create'}
-        onClose={() => setOpenModal(null)}
-      />
+      <AdminCan action='database-hosts.read'>
+        <LocationDatabaseHostCreateModal
+          location={location}
+          opened={openModal === 'create'}
+          onClose={() => setOpenModal(null)}
+        />
+      </AdminCan>
 
       <ContextMenuProvider>
         <Table

@@ -23,6 +23,7 @@ import SizeInput from '@/elements/input/SizeInput.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { adminServerUpdateSchema } from '@/lib/schemas/admin/servers.ts';
+import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 
@@ -34,6 +35,11 @@ const timezones = Object.keys(zones)
   }));
 
 export default function ServerUpdate({ contextServer }: { contextServer: AdminServer }) {
+  const canReadUsers = useAdminCan('users.read');
+  const canReadNests = useAdminCan('nests.read');
+  const canReadEggs = useAdminCan('eggs.read');
+  const canReadBackupConfigurations = useAdminCan('backup-configurations.read');
+
   const form = useForm<z.infer<typeof adminServerUpdateSchema>>({
     initialValues: {
       ownerUuid: uuidNil,
@@ -96,20 +102,24 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
   const users = useSearchableResource<User>({
     fetcher: (search) => getUsers(1, search),
     defaultSearchValue: contextServer?.owner.username,
+    canRequest: canReadUsers,
   });
   const nests = useSearchableResource<AdminNest>({
     fetcher: (search) => getNests(1, search),
     defaultSearchValue: contextServer?.nest.name,
+    canRequest: canReadNests,
   });
   const eggs = useSearchableResource<AdminNestEgg>({
     fetcher: (search) =>
       selectedNestUuid ? getEggs(selectedNestUuid, 1, search) : Promise.resolve(getEmptyPaginationSet()),
     defaultSearchValue: contextServer?.egg.name,
     deps: [selectedNestUuid],
+    canRequest: canReadEggs,
   });
   const backupConfigurations = useSearchableResource<BackupConfiguration>({
     fetcher: (search) => getBackupConfigurations(1, search),
     defaultSearchValue: contextServer?.backupConfiguration?.name,
+    canRequest: canReadBackupConfigurations,
   });
 
   useEffect(() => {
@@ -180,6 +190,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     searchable
                     searchValue={users.search}
                     onSearchChange={users.setSearch}
+                    disabled={!canReadUsers}
                     {...form.getInputProps('ownerUuid')}
                   />
                   <Select
@@ -198,6 +209,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     searchable
                     searchValue={backupConfigurations.search}
                     onSearchChange={backupConfigurations.setSearch}
+                    disabled={!canReadBackupConfigurations}
                     {...form.getInputProps('backupConfigurationUuid')}
                   />
                 </Group>
@@ -216,12 +228,13 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     searchable
                     searchValue={nests.search}
                     onSearchChange={nests.setSearch}
+                    disabled={!canReadNests}
                   />
                   <Select
                     withAsterisk
                     label='Egg'
                     placeholder='Egg'
-                    disabled={!selectedNestUuid}
+                    disabled={!canReadEggs || !selectedNestUuid}
                     data={eggs.items.map((egg) => ({
                       label: egg.name,
                       value: egg.uuid,

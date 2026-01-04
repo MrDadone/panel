@@ -53,7 +53,7 @@ export const useCan = (permissionMatrix: boolean[], matchAny: boolean) => {
   return matchAny ? permissionMatrix.some((p) => p) : permissionMatrix.every((p) => p);
 };
 
-export const useAdminCan = (action: string | string[], matchAny: boolean) => {
+export const useAdminCan = (action: string | string[], matchAny: boolean = true) => {
   return useCan(useAdminPermissions(action), matchAny);
 };
 
