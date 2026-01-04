@@ -320,9 +320,9 @@ async fn main() {
                 Box::pin(async move {
                     fn generate_randomized_cron_schedule() -> cron::Schedule {
                         let mut rng = rand::rng();
-                        let seconds: u32 = rng.random_range(0..60);
-                        let minutes: u32 = rng.random_range(0..60);
-                        let hours: u32 = rng.random_range(0..24);
+                        let seconds: u8 = rng.random_range(0..60);
+                        let minutes: u8 = rng.random_range(0..60);
+                        let hours: u8 = rng.random_range(0..24);
 
                         format!("{} {} {} * * *", seconds, minutes, hours)
                             .parse()
@@ -331,6 +331,7 @@ async fn main() {
 
                     let settings = state.settings.get().await;
                     if !settings.app.telemetry_enabled {
+                        drop(settings);
                         tokio::time::sleep(std::time::Duration::from_mins(60)).await;
 
                         return Ok(());

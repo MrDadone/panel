@@ -140,6 +140,8 @@ mod post {
                     .build(),
             );
 
+            drop(settings);
+
             if let Err(err) = UserActivity::log(
                 &state.database,
                 user.uuid,

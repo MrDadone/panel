@@ -764,7 +764,7 @@ impl Settings {
         let rows = sqlx::query!("SELECT * FROM settings")
             .fetch_all(database.read())
             .await
-            .expect("Failed to fetch settings");
+            .expect("failed to fetch settings");
 
         let mut map = HashMap::new();
         for row in rows {
