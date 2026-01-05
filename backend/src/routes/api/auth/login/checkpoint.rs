@@ -9,7 +9,6 @@ pub struct TwoFactorRequiredJwt {
     pub base: BasePayload,
 
     pub user_uuid: uuid::Uuid,
-    pub user_totp_secret: String,
 }
 
 mod post {
@@ -70,15 +69,51 @@ mod post {
                 .ok();
         }
 
+        state
+            .cache
+            .ratelimit("auth/login/checkpoint", 10, 300, ip.to_string())
+            .await?;
+        state
+            .cache
+            .ratelimit(
+                "auth/login/checkpoint:user",
+                10,
+                300,
+                payload.user_uuid.to_string(),
+            )
+            .await?;
+
+        let user = User::by_uuid(&state.database, payload.user_uuid).await?;
+
         match data.code.len() {
             6 => {
+                let user_totp_secret = match &user.totp_secret {
+                    Some(secret) => secret.clone(),
+                    None => {
+                        return ApiResponse::error("invalid confirmation code")
+                            .with_status(StatusCode::BAD_REQUEST)
+                            .ok();
+                    }
+                };
+
                 let totp = totp_rs::TOTP::new(
                     totp_rs::Algorithm::SHA1,
                     6,
-                    1,
+                    0,
                     30,
-                    totp_rs::Secret::Encoded(payload.user_totp_secret).to_bytes()?,
+                    totp_rs::Secret::Encoded(user_totp_secret).to_bytes()?,
                 )?;
+
+                if let Some(totp_last_used) = &user.totp_last_used {
+                    let last_step = totp.next_step(totp_last_used.and_utc().timestamp() as u64);
+                    let current_step = totp.next_step_current()?;
+
+                    if last_step == current_step {
+                        return ApiResponse::error("this code has already been used")
+                            .with_status(StatusCode::BAD_REQUEST)
+                            .ok();
+                    }
+                }
 
                 if !totp.check_current(&data.code).is_ok_and(|valid| valid) {
                     return ApiResponse::error("invalid confirmation code")
@@ -106,12 +141,13 @@ mod post {
                 }
             }
             10 => {
-                if let Some(code) = UserRecoveryCode::delete_by_user_uuid_code(
+                if UserRecoveryCode::delete_by_user_uuid_code(
                     &state.database,
                     payload.user_uuid,
                     &data.code,
                 )
                 .await?
+                .is_some()
                 {
                     if let Err(err) = UserActivity::log(
                         &state.database,
@@ -121,7 +157,6 @@ mod post {
                         Some(ip.0.into()),
                         serde_json::json!({
                             "using": "recovery_code",
-                            "code": code,
                         }),
                     )
                     .await
@@ -144,8 +179,6 @@ mod post {
                     .ok();
             }
         }
-
-        let user = User::by_uuid(&state.database, payload.user_uuid).await?;
 
         let key = UserSession::create(
             &state.database,

@@ -815,13 +815,14 @@ impl Settings {
 
     pub async fn get_mut(&self) -> SettingsGuard<'_> {
         let now = std::time::Instant::now();
-        let cached_expires = self.cached_expires.read().await;
 
-        if now >= *cached_expires {
-            drop(cached_expires);
+        let is_expired = {
+            let guard = self.cached_expires.read().await;
+            now >= *guard
+        };
 
+        if is_expired {
             let settings = Self::fetch_setttings(&self.database).await;
-
             *self.cached.write().await = settings;
             *self.cached_expires.write().await = now + std::time::Duration::from_secs(60);
         }

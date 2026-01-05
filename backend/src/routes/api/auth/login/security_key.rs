@@ -113,6 +113,11 @@ mod post {
         cookies: Cookies,
         axum::Json(data): axum::Json<Payload>,
     ) -> ApiResponseResult {
+        state
+            .cache
+            .ratelimit("auth/login/security-key", 10, 300, ip.to_string())
+            .await?;
+
         let webauthn = state.settings.get_webauthn().await?;
 
         let authentication: PasskeyAuthentication = match state
