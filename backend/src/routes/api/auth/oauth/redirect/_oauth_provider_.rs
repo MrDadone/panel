@@ -35,7 +35,7 @@ mod get {
                 .ok();
         }
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         let client = BasicClient::new(ClientId::new(oauth_provider.client_id.to_string()))
             .set_auth_uri(AuthUrl::new(oauth_provider.auth_url.clone())?)

@@ -60,7 +60,7 @@ mod post {
                 .ok();
         }
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
         if !settings.app.registration_enabled {
             return ApiResponse::error("registration is disabled")
                 .with_status(StatusCode::BAD_REQUEST)
@@ -132,7 +132,7 @@ mod post {
         );
 
         ApiResponse::json(Response {
-            user: user.into_api_full_object(&state.storage.retrieve_urls().await),
+            user: user.into_api_full_object(&state.storage.retrieve_urls().await?),
         })
         .ok()
     }

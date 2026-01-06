@@ -80,3 +80,35 @@ impl SqlxErrorExtension for sqlx::Error {
             .is_some_and(|e| e.is_check_violation())
     }
 }
+
+pub trait StringExt: Sized {
+    /// Returns Some if the string has content, otherwise None.
+    fn optional(&self) -> Option<&Self>;
+
+    /// Returns Some if the string has content, otherwise None.
+    fn into_optional(self) -> Option<Self>;
+}
+
+impl StringExt for String {
+    #[inline]
+    fn optional(&self) -> Option<&Self> {
+        if self.is_empty() { None } else { Some(self) }
+    }
+
+    #[inline]
+    fn into_optional(self) -> Option<Self> {
+        if self.is_empty() { None } else { Some(self) }
+    }
+}
+
+impl StringExt for compact_str::CompactString {
+    #[inline]
+    fn optional(&self) -> Option<&Self> {
+        if self.is_empty() { None } else { Some(self) }
+    }
+
+    #[inline]
+    fn into_optional(self) -> Option<Self> {
+        if self.is_empty() { None } else { Some(self) }
+    }
+}

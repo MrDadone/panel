@@ -111,7 +111,7 @@ mod get {
             user: user
                 .0
                 .0
-                .into_api_full_object(&state.storage.retrieve_urls().await),
+                .into_api_full_object(&state.storage.retrieve_urls().await?),
         })
         .ok()
     }

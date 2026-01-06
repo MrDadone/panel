@@ -40,7 +40,7 @@ mod post {
 
         session.delete(&state.database, ()).await?;
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         cookies.add(
             Cookie::build(("session", ""))

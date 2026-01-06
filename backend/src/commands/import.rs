@@ -1,3 +1,4 @@
+use anyhow::Context;
 use base64::Engine;
 use clap::{Args, FromArgMatches};
 use colored::Colorize;
@@ -192,14 +193,19 @@ impl shared::extensions::commands::CliCommand<ImportArgs> for ImportCommand {
 
                 let cache = Arc::new(shared::cache::Cache::new(&env).await);
                 let database = Arc::new(shared::database::Database::new(&env, cache.clone()).await);
-                let settings = Arc::new(shared::settings::Settings::new(database.clone()).await);
+                let settings = Arc::new(
+                    shared::settings::Settings::new(database.clone())
+                        .await
+                        .context("failed to load settings")
+                        .unwrap(),
+                );
 
                 if let Err(err) = process_table(
                     &source_database,
                     "settings",
                     None,
                     async |rows| {
-                        let mut settings = settings.get_mut().await;
+                        let mut settings = settings.get_mut().await?;
 
                         let mut source_settings: HashMap<&str, compact_str::CompactString> = rows
                             .iter()

@@ -50,7 +50,7 @@ mod get {
                 .ok();
         }
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         let contents = match server
             .node

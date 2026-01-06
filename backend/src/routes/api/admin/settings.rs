@@ -22,7 +22,7 @@ mod get {
     pub async fn route(state: GetState, permissions: GetPermissionManager) -> ApiResponseResult {
         permissions.has_admin_permission("settings.read")?;
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         ApiResponse::json(Response {
             settings: &settings,
@@ -113,7 +113,7 @@ mod put {
 
         permissions.has_admin_permission("settings.update")?;
 
-        let mut settings = state.settings.get_mut().await;
+        let mut settings = state.settings.get_mut().await?;
 
         if let Some(oobe_step) = data.oobe_step {
             if oobe_step.is_empty() {

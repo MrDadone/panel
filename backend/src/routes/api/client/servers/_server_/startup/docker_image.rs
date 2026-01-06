@@ -63,7 +63,7 @@ mod put {
                 .ok();
         }
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         if !settings.server.allow_overwriting_custom_docker_image
             && !server

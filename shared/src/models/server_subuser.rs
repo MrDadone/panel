@@ -95,7 +95,7 @@ impl ServerSubuser {
                 );
                 let password = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 32);
 
-                let app_settings = settings.get().await;
+                let app_settings = settings.get().await?;
 
                 let user = match super::user::User::create(
                     database,
@@ -124,7 +124,7 @@ impl ServerSubuser {
                     .await
                 {
                     Ok(token) => {
-                        let settings = settings.get().await;
+                        let settings = settings.get().await?;
 
                         let mail_content = crate::mail::MAIL_ACCOUNT_CREATED
                             .replace("{{app_name}}", &settings.app.name)

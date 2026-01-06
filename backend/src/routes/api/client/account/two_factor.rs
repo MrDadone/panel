@@ -49,7 +49,7 @@ mod get {
         .execute(state.database.write())
         .await?;
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         ApiResponse::json(Response {
             otp_url: format!(

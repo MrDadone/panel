@@ -17,7 +17,7 @@ impl Captcha {
     }
 
     pub async fn verify(&self, ip: crate::GetIp, captcha: Option<String>) -> Result<(), String> {
-        let settings = self.settings.get().await;
+        let settings = self.settings.get().await.map_err(|e| e.to_string())?;
 
         let captcha = match captcha {
             Some(c) => c,

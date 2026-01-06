@@ -61,7 +61,7 @@ mod get {
         )
         .await?;
 
-        let storage_url_retriever = state.storage.retrieve_urls().await;
+        let storage_url_retriever = state.storage.retrieve_urls().await?;
 
         ApiResponse::json(Response {
             servers: servers
@@ -337,7 +337,7 @@ mod post {
 
         ApiResponse::json(Response {
             server: server
-                .into_admin_api_object(&state.database, &state.storage.retrieve_urls().await)
+                .into_admin_api_object(&state.database, &state.storage.retrieve_urls().await?)
                 .await?,
         })
         .ok()

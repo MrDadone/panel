@@ -200,7 +200,7 @@ mod post {
         .execute(state.database.write())
         .await?;
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         cookies.add(
             Cookie::build(("session", key))
@@ -218,7 +218,7 @@ mod post {
         drop(settings);
 
         ApiResponse::json(Response {
-            user: user.into_api_full_object(&state.storage.retrieve_urls().await),
+            user: user.into_api_full_object(&state.storage.retrieve_urls().await?),
         })
         .ok()
     }

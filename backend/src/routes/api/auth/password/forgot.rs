@@ -73,7 +73,17 @@ mod post {
                 }
             };
 
-            let settings = state.settings.get().await;
+            let settings = match state.settings.get().await {
+                Ok(settings) => settings,
+                Err(err) => {
+                    tracing::warn!(
+                        user = %user.uuid,
+                        "failed to get settings for password reset email: {:#?}",
+                        err
+                    );
+                    return;
+                }
+            };
 
             let mail = shared::mail::MAIL_PASSWORD_RESET
                 .replace("{{app_name}}", &settings.app.name)

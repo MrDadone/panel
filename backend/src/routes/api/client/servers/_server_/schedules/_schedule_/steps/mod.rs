@@ -124,7 +124,7 @@ mod post {
 
         permissions.has_server_permission("schedules.update")?;
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         let schedule_steps =
             ServerScheduleStep::count_by_schedule_uuid(&state.database, schedule.uuid).await;

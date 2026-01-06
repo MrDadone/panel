@@ -1,3 +1,4 @@
+use anyhow::Context;
 use axum::{
     ServiceExt,
     body::Body,
@@ -211,7 +212,12 @@ async fn main() {
 
     let background_tasks =
         Arc::new(shared::extensions::background_tasks::BackgroundTaskManager::default());
-    let settings = Arc::new(shared::settings::Settings::new(database.clone()).await);
+    let settings = Arc::new(
+        shared::settings::Settings::new(database.clone())
+            .await
+            .context("failed to load settings")
+            .unwrap(),
+    );
     let storage = Arc::new(shared::storage::Storage::new(settings.clone()));
     let captcha = Arc::new(shared::captcha::Captcha::new(settings.clone()));
     let mail = Arc::new(shared::mail::Mail::new(settings.clone()));
@@ -329,7 +335,7 @@ async fn main() {
                             .unwrap()
                     }
 
-                    let settings = state.settings.get().await;
+                    let settings = state.settings.get().await?;
                     if !settings.app.telemetry_enabled {
                         drop(settings);
                         tokio::time::sleep(std::time::Duration::from_mins(60)).await;
@@ -342,7 +348,7 @@ async fn main() {
                         .unwrap_or_else(generate_randomized_cron_schedule);
                     if settings.telemetry_cron_schedule.is_none() {
                         drop(settings);
-                        let mut new_settings = state.settings.get_mut().await;
+                        let mut new_settings = state.settings.get_mut().await?;
                         new_settings.telemetry_cron_schedule = Some(cron_schedule.clone());
                         new_settings.save().await?;
                     } else {
@@ -448,7 +454,7 @@ async fn main() {
                             .ok();
                     }
 
-                    let settings = state.settings.get().await;
+                    let settings = state.settings.get().await?;
 
                     let base_filesystem = match settings.storage_driver.get_cap_filesystem().await {
                         Some(filesystem) => filesystem?,
@@ -499,7 +505,7 @@ async fn main() {
                 };
 
                 if entry.as_file().is_none() && path.starts_with("assets") {
-                    let settings = state.settings.get().await;
+                    let settings = state.settings.get().await?;
 
                     let base_filesystem = match settings.storage_driver.get_cap_filesystem().await {
                         Some(filesystem) => filesystem?,
@@ -609,7 +615,13 @@ async fn main() {
         .bright_black()
     );
 
-    let settings = settings.get().await;
+    let settings = match settings.get().await {
+        Ok(settings) => settings,
+        Err(err) => {
+            tracing::error!("failed to load settings: {:#?}", err);
+            std::process::exit(1);
+        }
+    };
 
     let (router, mut openapi) = app.split_for_parts();
     openapi.info.version = state.version.clone();
