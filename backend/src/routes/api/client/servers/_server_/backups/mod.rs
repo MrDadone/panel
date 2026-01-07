@@ -152,7 +152,7 @@ mod post {
             .ratelimit(
                 format!("client/servers/{}/backups/create", server.uuid),
                 4,
-                120,
+                300,
                 server.uuid,
             )
             .await?;

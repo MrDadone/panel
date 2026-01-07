@@ -37,8 +37,13 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
             cookies: Cookies,
             params: Query<Params>,
             Path(oauth_provider): Path<uuid::Uuid>| async move {
+            state
+                .cache
+                .ratelimit(format!("auth/oauth/{}", oauth_provider), 6, 300, ip.to_string())
+                .await?;
+
             let oauth_provider =
-                match OAuthProvider::by_uuid_optional_cached(&state.database, oauth_provider).await? {
+                match OAuthProvider::by_uuid_optional_cached(&state.database,oauth_provider).await? {
                     Some(oauth_provider) => oauth_provider,
                     None => {
                         return ApiResponse::error("oauth provider not found")

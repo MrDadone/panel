@@ -75,12 +75,7 @@ mod post {
             .await?;
         state
             .cache
-            .ratelimit(
-                "auth/login/checkpoint:user",
-                10,
-                300,
-                payload.user_uuid.to_string(),
-            )
+            .ratelimit("auth/login/checkpoint:user", 10, 300, payload.user_uuid)
             .await?;
 
         let user = User::by_uuid(&state.database, payload.user_uuid).await?;
