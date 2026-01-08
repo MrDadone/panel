@@ -1,4 +1,11 @@
-import { faAnglesDown, faAnglesUp, faArchive, faFileDownload, faTrash } from '@fortawesome/free-solid-svg-icons';
+import {
+  faAnglesDown,
+  faAnglesUp,
+  faArchive,
+  faCopy,
+  faFileDownload,
+  faTrash,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { join } from 'pathe';
 import { useState } from 'react';
@@ -13,6 +20,7 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import { useFileKeyboardActions } from './hooks/useFileKeyboardActions.ts';
 import ArchiveCreateModal from './modals/ArchiveCreateModal.tsx';
+import CopyFileRemoteModal from './modals/FileCopyRemoteModal.tsx';
 import FileDeleteModal from './modals/FileDeleteModal.tsx';
 
 export default function FileActionBar() {
@@ -32,7 +40,7 @@ export default function FileActionBar() {
     refreshFiles,
   } = useServerStore();
 
-  const [openModal, setOpenModal] = useState<'archive' | 'delete' | null>(null);
+  const [openModal, setOpenModal] = useState<'copy-remote' | 'archive' | 'delete' | null>(null);
   const [loading, setLoading] = useState(false);
 
   const doMove = () => {
@@ -93,6 +101,12 @@ export default function FileActionBar() {
 
   return (
     <>
+      <CopyFileRemoteModal
+        key='CopyFileRemoteModal'
+        files={[...selectedFiles]}
+        opened={openModal === 'copy-remote'}
+        onClose={() => setOpenModal(null)}
+      />
       <ArchiveCreateModal
         key='ArchiveCreateModal'
         files={[...selectedFiles]}
@@ -125,6 +139,11 @@ export default function FileActionBar() {
             </ServerCan>
             {!browsingBackup && (
               <>
+                <ServerCan action='files.read'>
+                  <Button onClick={() => setOpenModal('copy-remote')}>
+                    <FontAwesomeIcon icon={faCopy} className='mr-2' /> Remote Copy
+                  </Button>
+                </ServerCan>
                 <ServerCan action='files.archive'>
                   <Button onClick={() => setOpenModal('archive')}>
                     <FontAwesomeIcon icon={faArchive} className='mr-2' /> Archive

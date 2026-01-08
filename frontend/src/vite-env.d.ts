@@ -840,7 +840,7 @@ declare global {
   interface FileOperationDecompress {
     type: 'decompress';
     path: string;
-    destination: string;
+    destinationPath: string;
 
     progress: number;
     total: number;
@@ -857,13 +857,29 @@ declare global {
   interface FileOperationCopy {
     type: 'copy';
     path: string;
-    destination: string;
+    destinationPath: string;
 
     progress: number;
     total: number;
   }
 
-  type FileOperation = FileOperationCompress | FileOperationDecompress | FileOperationPull | FileOperationCopy;
+  interface FileOperationCopyRemote {
+    type: 'copy_remote';
+    server: string;
+    path: string;
+    destinationServer: string;
+    destinationPath: string;
+
+    progress: number;
+    total: number;
+  }
+
+  type FileOperation =
+    | FileOperationCompress
+    | FileOperationDecompress
+    | FileOperationPull
+    | FileOperationCopy
+    | FileOperationCopyRemote;
   type UserToastPosition = 'top_left' | 'top_center' | 'top_right' | 'bottom_left' | 'bottom_center' | 'bottom_right';
 
   interface UpdateUser {

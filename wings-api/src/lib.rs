@@ -757,6 +757,59 @@ pub mod servers_server_files_copy {
         }
     }
 }
+pub mod servers_server_files_copy_remote {
+    use super::*;
+
+    pub mod post {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
+                #[schema(inline)]
+                pub url: compact_str::CompactString,
+                #[schema(inline)]
+                pub token: compact_str::CompactString,
+                #[schema(inline)]
+                pub archive_format: TransferArchiveFormat,
+                #[schema(inline)]
+                pub compression_level: Option<CompressionLevel>,
+                #[schema(inline)]
+                pub root: compact_str::CompactString,
+                #[schema(inline)]
+                pub files: Vec<compact_str::CompactString>,
+                #[schema(inline)]
+                pub destination_server: uuid::Uuid,
+                #[schema(inline)]
+                pub destination_path: compact_str::CompactString,
+                #[schema(inline)]
+                pub foreground: bool,
+            }
+        }
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
+            }
+        }
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response202 {
+                #[schema(inline)]
+                pub identifier: uuid::Uuid,
+            }
+        }
+
+        pub type Response404 = ApiError;
+
+        pub type Response417 = ApiError;
+
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        pub enum Response {
+            Ok(Response200),
+            Accepted(Response202),
+        }
+    }
+}
 pub mod servers_server_files_create_directory {
     use super::*;
 
@@ -1475,6 +1528,8 @@ pub mod system_config {
                     #[schema(inline)]
                     pub file_search_threads: u64,
                     #[schema(inline)]
+                    pub file_copy_threads: u64,
+                    #[schema(inline)]
                     pub file_decompression_threads: u64,
                     #[schema(inline)]
                     pub file_compression_threads: u64,
@@ -1961,6 +2016,24 @@ pub mod system_upgrade {
     }
 }
 pub mod transfers {
+    use super::*;
+
+    pub mod post {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
+            }
+        }
+
+        pub type Response401 = ApiError;
+
+        pub type Response409 = ApiError;
+
+        pub type Response = Response200;
+    }
+}
+pub mod transfers_files {
     use super::*;
 
     pub mod post {

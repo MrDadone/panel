@@ -13,6 +13,7 @@ interface FileUploadInfo {
 }
 
 interface FileOperationsProgressProps {
+  serverUuid: string;
   uploadingFiles: Map<string, FileUploadInfo>;
   fileOperations: Map<string, FileOperation>;
   aggregatedUploadProgress: Map<
@@ -31,6 +32,7 @@ interface FileOperationsProgressProps {
 }
 
 const FileOperationsProgress = memo(function FileOperationsProgress({
+  serverUuid,
   uploadingFiles,
   fileOperations,
   aggregatedUploadProgress,
@@ -138,8 +140,12 @@ const FileOperationsProgress = memo(function FileOperationsProgress({
                       : operation.type === 'pull'
                         ? `Pulling ${operation.path}`
                         : operation.type === 'copy'
-                          ? `Copying ${operation.path} to ${operation.destination}`
-                          : null}
+                          ? `Copying ${operation.path} to ${operation.destinationPath}`
+                          : operation.type === 'copy_remote'
+                            ? operation.destinationServer === serverUuid
+                              ? `Receiving files from remote server`
+                              : `Sending files to remote server`
+                            : null}
                 </p>
                 <Progress value={progress} />
               </div>

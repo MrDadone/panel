@@ -172,6 +172,7 @@ export default function ServerFiles() {
           {!browsingBackup && (
             <Group>
               <FileOperationsProgress
+                serverUuid={server.uuid}
                 uploadingFiles={uploadingFiles}
                 fileOperations={fileOperations}
                 aggregatedUploadProgress={aggregatedUploadProgress}
