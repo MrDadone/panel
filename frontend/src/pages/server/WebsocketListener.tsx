@@ -168,6 +168,9 @@ export default function WebsocketListener() {
       case 'pull':
         addToast(`Pulled ${fileOperation.path} successfully.`, 'success');
         break;
+      case 'copy':
+        addToast(`Copied ${fileOperation.path} to ${fileOperation.destination} successfully.`, 'success');
+        break;
       default:
         break;
     }
@@ -192,6 +195,9 @@ export default function WebsocketListener() {
         break;
       case 'pull':
         addToast(`Failed to pull ${fileOperation.path}:\n${error}`, 'error');
+        break;
+      case 'copy':
+        addToast(`Failed to copy ${fileOperation.path} to ${fileOperation.destination}:\n${error}`, 'error');
         break;
       default:
         break;

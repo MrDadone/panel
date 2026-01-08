@@ -97,6 +97,20 @@ nestify::nest! {
     }
 }
 
+#[derive(Debug, ToSchema, Deserialize, Serialize, Clone, Copy)]
+pub enum DiskLimiterMode {
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "btrfs_subvolume")]
+    BtrfsSubvolume,
+    #[serde(rename = "zfs_dataset")]
+    ZfsDataset,
+    #[serde(rename = "xfs_quota")]
+    XfsQuota,
+    #[serde(rename = "fuse_quota")]
+    FuseQuota,
+}
+
 nestify::nest! {
     #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Download {
         #[schema(inline)]
@@ -340,18 +354,6 @@ pub enum SystemBackupsDdupBakCompressionFormat {
     Gzip,
     #[serde(rename = "brotli")]
     Brotli,
-}
-
-#[derive(Debug, ToSchema, Deserialize, Serialize, Clone, Copy)]
-pub enum SystemDiskLimiterMode {
-    #[serde(rename = "none")]
-    None,
-    #[serde(rename = "btrfs_subvolume")]
-    BtrfsSubvolume,
-    #[serde(rename = "zfs_dataset")]
-    ZfsDataset,
-    #[serde(rename = "xfs_quota")]
-    XfsQuota,
 }
 
 nestify::nest! {
@@ -729,16 +731,30 @@ pub mod servers_server_files_copy {
                 pub location: compact_str::CompactString,
                 #[schema(inline)]
                 pub name: Option<compact_str::CompactString>,
+                #[schema(inline)]
+                pub foreground: bool,
             }
         }
 
         pub type Response200 = DirectoryEntry;
 
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response202 {
+                #[schema(inline)]
+                pub identifier: uuid::Uuid,
+            }
+        }
+
         pub type Response404 = ApiError;
 
         pub type Response417 = ApiError;
 
-        pub type Response = Response200;
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        pub enum Response {
+            Ok(Response200),
+            Accepted(Response202),
+        }
     }
 }
 pub mod servers_server_files_create_directory {
@@ -1519,7 +1535,7 @@ pub mod system_config {
                     #[schema(inline)]
                     pub disk_check_threads: u64,
                     #[schema(inline)]
-                    pub disk_limiter_mode: SystemDiskLimiterMode,
+                    pub disk_limiter_mode: DiskLimiterMode,
                     #[schema(inline)]
                     pub activity_send_interval: u64,
                     #[schema(inline)]

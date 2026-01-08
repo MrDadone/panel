@@ -20,7 +20,7 @@ type Props = ModalProps & {
 
 export default function FileCopyModal({ file, opened, onClose }: Props) {
   const { addToast } = useToast();
-  const { server, browsingDirectory, browsingEntries, addBrowsingEntry } = useServerStore();
+  const { server, browsingDirectory, browsingEntries } = useServerStore();
 
   const [loading, setLoading] = useState(false);
 
@@ -77,10 +77,9 @@ export default function FileCopyModal({ file, opened, onClose }: Props) {
     setLoading(true);
 
     copyFile(server.uuid, join(browsingDirectory!, file.name), form.values.name || null)
-      .then((entry) => {
-        addToast('File has been copied.', 'success');
+      .then(() => {
+        addToast('File copying has started.', 'success');
         onClose();
-        addBrowsingEntry(entry);
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');

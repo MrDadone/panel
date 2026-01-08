@@ -854,7 +854,16 @@ declare global {
     total: number;
   }
 
-  type FileOperation = FileOperationCompress | FileOperationDecompress | FileOperationPull;
+  interface FileOperationCopy {
+    type: 'copy';
+    path: string;
+    destination: string;
+
+    progress: number;
+    total: number;
+  }
+
+  type FileOperation = FileOperationCompress | FileOperationDecompress | FileOperationPull | FileOperationCopy;
   type UserToastPosition = 'top_left' | 'top_center' | 'top_right' | 'bottom_left' | 'bottom_center' | 'bottom_right';
 
   interface UpdateUser {

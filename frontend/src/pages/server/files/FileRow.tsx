@@ -135,7 +135,7 @@ const FileRow = memo(
             {
               icon: faCopy,
               label: 'Copy',
-              hidden: !!browsingBackup || file.directory,
+              hidden: !!browsingBackup || (!file.file && !file.directory),
               onClick: () => setOpenModal('copy'),
               color: 'gray',
               canAccess: canCreate,

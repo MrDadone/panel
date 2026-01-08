@@ -12,13 +12,6 @@ interface FileUploadInfo {
   status: 'pending' | 'uploading' | 'completed' | 'cancelled' | 'error';
 }
 
-interface FileOperation {
-  type: 'compress' | 'decompress' | 'pull';
-  path: string;
-  progress: number;
-  total: number;
-}
-
 interface FileOperationsProgressProps {
   uploadingFiles: Map<string, FileUploadInfo>;
   fileOperations: Map<string, FileOperation>;
@@ -144,7 +137,9 @@ const FileOperationsProgress = memo(function FileOperationsProgress({
                       ? `Decompressing ${operation.path}`
                       : operation.type === 'pull'
                         ? `Pulling ${operation.path}`
-                        : null}
+                        : operation.type === 'copy'
+                          ? `Copying ${operation.path} to ${operation.destination}`
+                          : null}
                 </p>
                 <Progress value={progress} />
               </div>

@@ -48,7 +48,7 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
       files: files.map((f) => f.name),
     })
       .then(() => {
-        addToast('Archive has been created.', 'success');
+        addToast('Archive creation has begun.', 'success');
         onClose();
       })
       .catch((msg) => {
