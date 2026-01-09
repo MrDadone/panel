@@ -166,6 +166,7 @@ export default function Login() {
         })
         .catch((msg) => {
           setError(httpErrorToHuman(msg));
+          captchaRef.current?.resetCaptcha();
         })
         .finally(() => setLoading(false));
     });

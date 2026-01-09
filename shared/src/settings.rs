@@ -95,6 +95,10 @@ pub enum CaptchaProvider {
         site_key: compact_str::CompactString,
         secret_key: compact_str::CompactString,
     },
+    Hcaptcha {
+        site_key: compact_str::CompactString,
+        secret_key: compact_str::CompactString,
+    },
 }
 
 impl CaptchaProvider {
@@ -108,6 +112,9 @@ impl CaptchaProvider {
                 v3: *v3,
                 site_key: site_key.as_str(),
             },
+            CaptchaProvider::Hcaptcha { site_key, .. } => PublicCaptchaProvider::Hcaptcha {
+                site_key: site_key.as_str(),
+            },
         }
     }
 }
@@ -118,6 +125,7 @@ pub enum PublicCaptchaProvider<'a> {
     None,
     Turnstile { site_key: &'a str },
     Recaptcha { v3: bool, site_key: &'a str },
+    Hcaptcha { site_key: &'a str },
 }
 
 #[derive(ToSchema, Serialize, Deserialize)]
@@ -549,6 +557,15 @@ impl SettingsSerializeExt for AppSettings {
                     .write_raw_setting("recaptcha_site_key", &**site_key)
                     .write_raw_setting("recaptcha_secret_key", &**secret_key);
             }
+            CaptchaProvider::Hcaptcha {
+                site_key,
+                secret_key,
+            } => {
+                serializer = serializer
+                    .write_raw_setting("captcha_provider", "hcaptcha")
+                    .write_raw_setting("hcaptcha_site_key", &**site_key)
+                    .write_raw_setting("hcaptcha_secret_key", &**secret_key);
+            }
         }
 
         serializer = serializer
@@ -757,6 +774,14 @@ impl SettingsDeserializeExt for AppSettingsDeserializer {
                         .unwrap_or_default(),
                     secret_key: deserializer
                         .take_raw_setting("recaptcha_secret_key")
+                        .unwrap_or_default(),
+                },
+                Some("hcaptcha") => CaptchaProvider::Hcaptcha {
+                    site_key: deserializer
+                        .take_raw_setting("hcaptcha_site_key")
+                        .unwrap_or_default(),
+                    secret_key: deserializer
+                        .take_raw_setting("hcaptcha_secret_key")
                         .unwrap_or_default(),
                 },
                 _ => CaptchaProvider::None,

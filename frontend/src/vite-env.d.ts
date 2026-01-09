@@ -971,7 +971,17 @@ declare global {
     v3: boolean;
   }
 
-  type CaptchaProvider = CaptchaProviderNone | CaptchaProviderTurnstile | CaptchaProviderRecaptcha;
+  interface CaptchaProviderHcaptcha {
+    type: 'hcaptcha';
+    siteKey: string;
+    secretKey: string;
+  }
+
+  type CaptchaProvider =
+    | CaptchaProviderNone
+    | CaptchaProviderTurnstile
+    | CaptchaProviderRecaptcha
+    | CaptchaProviderHcaptcha;
 
   type CompressionLevel = 'best_speed' | 'good_speed' | 'good_compression' | 'best_compression';
 
@@ -1110,10 +1120,16 @@ declare global {
     v3: boolean;
   }
 
+  interface PublicCaptchaProviderHcaptcha {
+    type: 'hcaptcha';
+    siteKey: string;
+  }
+
   type PublicCaptchaProvider =
     | PublicCaptchaProviderNone
     | PublicCaptchaProviderTurnstile
-    | PublicCaptchaProviderRecaptcha;
+    | PublicCaptchaProviderRecaptcha
+    | PublicCaptchaProviderHcaptcha;
 
   interface PublicSettings {
     version: string;

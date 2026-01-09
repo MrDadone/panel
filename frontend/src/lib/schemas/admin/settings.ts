@@ -26,10 +26,17 @@ export const adminSettingsCaptchaProviderRecaptchaSchema = z.object({
   v3: z.boolean(),
 });
 
+export const adminSettingsCaptchaProviderHcaptchaSchema = z.object({
+  type: z.literal('hcaptcha'),
+  siteKey: z.string(),
+  secretKey: z.string(),
+});
+
 export const adminSettingsCaptchaProviderSchema = z.discriminatedUnion('type', [
   adminSettingsCaptchaProviderNoneSchema,
   adminSettingsCaptchaProviderTurnstileSchema,
   adminSettingsCaptchaProviderRecaptchaSchema,
+  adminSettingsCaptchaProviderHcaptchaSchema,
 ]);
 
 export const adminSettingsEmailNoneSchema = z.object({

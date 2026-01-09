@@ -61,8 +61,8 @@ impl Captcha {
             }
             super::settings::CaptchaProvider::Recaptcha { v3, secret_key, .. } => {
                 let response = CLIENT
-                    .get("https://www.google.com/recaptcha/api/siteverify")
-                    .query(&[
+                    .post("https://www.google.com/recaptcha/api/siteverify")
+                    .form(&[
                         ("secret", secret_key.as_str()),
                         ("response", captcha.as_str()),
                         ("remoteip", ip.to_string().as_str()),
@@ -86,6 +86,34 @@ impl Captcha {
                         } else {
                             return Ok(());
                         }
+                    }
+                }
+
+                Err("captcha: verification failed".to_string())
+            }
+            super::settings::CaptchaProvider::Hcaptcha {
+                secret_key,
+                site_key,
+            } => {
+                let response = CLIENT
+                    .post("https://hcaptcha.com/siteverify")
+                    .form(&[
+                        ("secret", secret_key.as_str()),
+                        ("sitekey", site_key.as_str()),
+                        ("response", captcha.as_str()),
+                        ("remoteip", ip.to_string().as_str()),
+                    ])
+                    .send()
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                if response.status().is_success() {
+                    let body: serde_json::Value =
+                        response.json().await.map_err(|e| e.to_string())?;
+                    if let Some(success) = body.get("success")
+                        && success.as_bool().unwrap_or(false)
+                    {
+                        return Ok(());
                     }
                 }
 
