@@ -129,7 +129,11 @@ mod post {
         url.set_path("/api/transfers/files");
 
         let request_body = wings_api::servers_server_files_copy_remote::post::RequestBody {
-            url: url.to_compact_string(),
+            url: if server.node.uuid == destination_node.uuid {
+                "".to_compact_string()
+            } else {
+                url.to_compact_string()
+            },
             token: format!("Bearer {token}").into(),
             archive_format: if server.node.uuid == destination_node.uuid {
                 wings_api::TransferArchiveFormat::Tar

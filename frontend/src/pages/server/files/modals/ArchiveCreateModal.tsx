@@ -23,7 +23,7 @@ type Props = ModalProps & {
 
 export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
   const { addToast } = useToast();
-  const { server, browsingDirectory } = useServerStore();
+  const { server, browsingDirectory, setSelectedFiles } = useServerStore();
 
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +48,7 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
       files: files.map((f) => f.name),
     })
       .then(() => {
+        setSelectedFiles([]);
         addToast('Archive creation has begun.', 'success');
         onClose();
       })

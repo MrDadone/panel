@@ -22,7 +22,7 @@ type Props = ModalProps & {
 
 export default function FileCopyModal({ files, opened, onClose }: Props) {
   const { addToast } = useToast();
-  const { server, browsingDirectory } = useServerStore();
+  const { server, browsingDirectory, setSelectedFiles } = useServerStore();
 
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +48,7 @@ export default function FileCopyModal({ files, opened, onClose }: Props) {
       files: files.map((f) => f.name),
     })
       .then(() => {
+        setSelectedFiles([]);
         addToast('File copying has started.', 'success');
         onClose();
       })
