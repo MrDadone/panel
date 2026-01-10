@@ -38,7 +38,6 @@ export default function SftpDetailsModal({ opened, onClose }: ModalProps) {
           label='Password'
           value='Your Control Panel Password'
           className='col-span-4 pointer-events-none'
-          classNames={{ input: 'text-white/80!' }}
           readOnly
         />
       </div>

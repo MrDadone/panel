@@ -1,6 +1,6 @@
-import { faChevronDown, faFileDownload, faRefresh, faUpload } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faFileDownload, faMinus, faPlus, faRefresh, faUpload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Group, Stack } from '@mantine/core';
+import { ActionIcon, Group, Stack, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import jsYaml from 'js-yaml';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
@@ -19,6 +19,7 @@ import updateEggUsingRepository from '@/api/admin/nests/eggs/updateEggUsingRepos
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
+import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
@@ -30,6 +31,7 @@ import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import { processConfigurationParserLabelMapping } from '@/lib/enums.ts';
 import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
@@ -67,11 +69,6 @@ export default function EggCreateOrUpdate({
         type: '',
         value: null,
       },
-      configScript: {
-        container: '',
-        entrypoint: '',
-        content: '',
-      },
       configAllocations: {
         userSelfAssign: {
           enabled: false,
@@ -96,7 +93,15 @@ export default function EggCreateOrUpdate({
     AdminNestEgg
   >({
     form,
-    createFn: () => createEgg(contextNest.uuid, form.values),
+    createFn: () =>
+      createEgg(contextNest.uuid, {
+        ...form.values,
+        configScript: {
+          container: 'ghcr.io/ptero-eggs/installers:debian',
+          entrypoint: 'bash',
+          content: '#!/bin/bash\n\n# Install script content goes here\n',
+        },
+      }),
     updateFn: () => updateEgg(contextNest.uuid, contextEgg!.uuid, form.values),
     deleteFn: () => deleteEgg(contextNest.uuid, contextEgg!.uuid),
     doUpdate: !!contextEgg,
@@ -114,7 +119,6 @@ export default function EggCreateOrUpdate({
         configFiles: contextEgg.configFiles,
         configStartup: contextEgg.configStartup,
         configStop: contextEgg.configStop,
-        configScript: contextEgg.configScript,
         configAllocations: contextEgg.configAllocations,
         startup: contextEgg.startup,
         forceOutgoingIp: contextEgg.forceOutgoingIp,
@@ -291,78 +295,278 @@ export default function EggCreateOrUpdate({
             />
           </Group>
 
-          {/* TODO: configFiles */}
+          <Card>
+            <Title order={4} mb='xs'>
+              Startup Configuration
+            </Title>
 
-          <TagsInput
-            withAsterisk
-            label='Startup Done'
-            placeholder='Startup Done'
-            {...form.getInputProps('configStartup.done')}
-          />
+            <Group grow>
+              <TagsInput
+                withAsterisk
+                label='Startup Done'
+                placeholder='Startup Done'
+                description='Console message indicating startup completion.'
+                {...form.getInputProps('configStartup.done')}
+              />
 
-          <Switch
-            label='Strip ANSI from startup messages'
-            {...form.getInputProps('configStartup.stripAnsi', { type: 'checkbox' })}
-          />
+              <Switch
+                label='Strip ANSI from startup messages'
+                description='Removes ANSI control characters from the console output before matching startup completion.'
+                {...form.getInputProps('configStartup.stripAnsi', { type: 'checkbox' })}
+              />
+            </Group>
+          </Card>
 
-          {/* TODO: configStop */}
+          <Card>
+            <Title order={4} mb='xs'>
+              Stop Configuration
+            </Title>
 
-          <Group grow>
-            <TextInput
-              withAsterisk
-              label='Install Script Container'
-              placeholder='Install Script Container'
-              {...form.getInputProps('configScript.container')}
-            />
-            <TextInput
-              withAsterisk
-              label='Install Script Entrypoint'
-              placeholder='Install Script Entrypoint'
-              {...form.getInputProps('configScript.entrypoint')}
-            />
-          </Group>
+            <Group grow>
+              <Select
+                withAsterisk
+                label='Stop Type'
+                placeholder='Stop Type'
+                data={[
+                  { label: 'Send Command', value: 'command' },
+                  { label: 'Send Signal', value: 'signal' },
+                  { label: 'Docker Shutdown', value: 'docker' },
+                ]}
+                {...form.getInputProps('configStop.type')}
+              />
+              {form.values.configStop.type === 'command' ? (
+                <TextInput
+                  withAsterisk
+                  label='Stop Command'
+                  placeholder='Stop Command'
+                  {...form.getInputProps('configStop.value')}
+                />
+              ) : form.values.configStop.type === 'signal' ? (
+                <Select
+                  withAsterisk
+                  label='Stop Signal'
+                  placeholder='Stop Signal'
+                  data={[
+                    { label: 'SIGABRT', value: 'SIGABRT' },
+                    { label: 'SIGINT (^C)', value: 'SIGINT' },
+                    { label: 'SIGTERM', value: 'SIGTERM' },
+                    { label: 'SIGQUIT', value: 'SIGQUIT' },
+                    { label: 'SIGKILL', value: 'SIGKILL' },
+                  ]}
+                  {...form.getInputProps('configStop.value')}
+                  value={form.values.configStop.value || 'SIGKILL'}
+                />
+              ) : null}
+            </Group>
+          </Card>
 
-          <TextArea
-            withAsterisk
-            label='Install Script Content'
-            placeholder='Install Script Content'
-            rows={6}
-            {...form.getInputProps('configScript.content')}
-          />
+          <Card>
+            <Title order={4} mb='xs'>
+              Allocation Configuration
+            </Title>
 
-          <Switch
-            label='Allocation Self Assign'
-            {...form.getInputProps('configAllocations.userSelfAssign.enabled', { type: 'checkbox' })}
-          />
+            <Stack>
+              <Group grow>
+                <Switch
+                  label='User Self Assign'
+                  description='Allow users to create their own allocations from a specified port range.'
+                  {...form.getInputProps('configAllocations.userSelfAssign.enabled', { type: 'checkbox' })}
+                />
 
-          <Switch
-            label='Require Primary Allocation'
-            {...form.getInputProps('configAllocations.userSelfAssign.requirePrimaryAllocation', { type: 'checkbox' })}
-          />
+                <Switch
+                  label='Require Primary Allocation'
+                  description='Whether users must have always have a primary allocation.'
+                  {...form.getInputProps('configAllocations.userSelfAssign.requirePrimaryAllocation', {
+                    type: 'checkbox',
+                  })}
+                />
+              </Group>
 
-          <Group grow>
-            <NumberInput
-              label='Automatic Allocation Start'
-              placeholder='Automatic Allocation Start'
-              {...form.getInputProps('configAllocations.userSelfAssign.startPort')}
-            />
-            <NumberInput
-              label='Automatic Allocation End'
-              placeholder='Automatic Allocation End'
-              {...form.getInputProps('configAllocations.userSelfAssign.endPort')}
-            />
-          </Group>
+              <Group grow>
+                <NumberInput
+                  label='Automatic Allocation Start'
+                  placeholder='Automatic Allocation Start'
+                  {...form.getInputProps('configAllocations.userSelfAssign.startPort')}
+                />
+                <NumberInput
+                  label='Automatic Allocation End'
+                  placeholder='Automatic Allocation End'
+                  {...form.getInputProps('configAllocations.userSelfAssign.endPort')}
+                />
+              </Group>
+            </Stack>
+          </Card>
+
+          <Card>
+            <Title order={4} mb='xs'>
+              Config Files Configuration
+            </Title>
+
+            {form.values.configFiles.length === 0 ? (
+              <p className='mb-2'>No config files defined.</p>
+            ) : (
+              form.values.configFiles.map((_, index) => (
+                <Card key={index} className='flex flex-row! justify-between mb-2'>
+                  <Stack w='100%'>
+                    <Group grow>
+                      <TextInput
+                        withAsterisk
+                        label='File Path'
+                        placeholder='File Path'
+                        {...form.getInputProps(`configFiles.${index}.file`)}
+                      />
+                      <Select
+                        withAsterisk
+                        label='Parser'
+                        placeholder='Parser'
+                        data={Object.entries(processConfigurationParserLabelMapping).map(([value, label]) => ({
+                          label,
+                          value,
+                        }))}
+                        {...form.getInputProps(`configFiles.${index}.parser`)}
+                      />
+                    </Group>
+
+                    <div className='flex flex-col'>
+                      {form.values.configFiles[index].replace.length === 0 ? (
+                        <p className='mb-2'>No replacements defined.</p>
+                      ) : (
+                        form.values.configFiles[index].replace.map((_, replaceIndex) => (
+                          <Card key={replaceIndex} className='flex flex-row! mb-2'>
+                            <Group grow w='100%'>
+                              <TextInput
+                                withAsterisk
+                                label='Match'
+                                placeholder='Match'
+                                {...form.getInputProps(`configFiles.${index}.replace.${replaceIndex}.match`)}
+                              />
+                              <TextInput
+                                label='If Value'
+                                placeholder='If Value'
+                                {...form.getInputProps(`configFiles.${index}.replace.${replaceIndex}.ifValue`)}
+                                onChange={(e) =>
+                                  form.setFieldValue(
+                                    `configFiles.${index}.replace.${replaceIndex}.ifValue`,
+                                    e.currentTarget.value || null,
+                                  )
+                                }
+                              />
+                              <TextInput
+                                withAsterisk
+                                label='Replace With'
+                                placeholder='Replace With'
+                                {...form.getInputProps(`configFiles.${index}.replace.${replaceIndex}.replaceWith`)}
+                              />
+                            </Group>
+
+                            <ActionIcon
+                              color='red'
+                              variant='light'
+                              size='input-md'
+                              className='ml-4'
+                              onClick={() =>
+                                form.setValues({
+                                  ...form.values,
+                                  configFiles: form.values.configFiles.map((configFile, i) => {
+                                    if (i !== index) return configFile;
+                                    return {
+                                      ...configFile,
+                                      replace: configFile.replace.filter((_, j) => j !== replaceIndex),
+                                    };
+                                  }),
+                                })
+                              }
+                            >
+                              <FontAwesomeIcon icon={faMinus} />
+                            </ActionIcon>
+                          </Card>
+                        ))
+                      )}
+
+                      <Button
+                        variant='light'
+                        onClick={() =>
+                          form.setValues({
+                            ...form.values,
+                            configFiles: form.values.configFiles.map((configFile, i) => {
+                              if (i !== index) return configFile;
+                              return {
+                                ...configFile,
+                                replace: [
+                                  ...configFile.replace,
+                                  {
+                                    match: '',
+                                    ifValue: null,
+                                    replaceWith: '',
+                                  },
+                                ],
+                              };
+                            }),
+                          })
+                        }
+                        className='w-fit!'
+                        leftSection={<FontAwesomeIcon icon={faPlus} />}
+                      >
+                        Add Replacement
+                      </Button>
+                    </div>
+                  </Stack>
+
+                  <ActionIcon
+                    color='red'
+                    variant='light'
+                    size='input-md'
+                    className='ml-4'
+                    onClick={() =>
+                      form.setValues({
+                        ...form.values,
+                        configFiles: form.values.configFiles.filter((_, i) => i !== index),
+                      })
+                    }
+                  >
+                    <FontAwesomeIcon icon={faMinus} />
+                  </ActionIcon>
+                </Card>
+              ))
+            )}
+
+            <Button
+              variant='light'
+              onClick={() =>
+                form.setValues({
+                  ...form.values,
+                  configFiles: [
+                    ...form.values.configFiles,
+                    {
+                      file: '',
+                      parser: 'file',
+                      replace: [],
+                    },
+                  ],
+                })
+              }
+              className='w-fit!'
+              leftSection={<FontAwesomeIcon icon={faPlus} />}
+            >
+              Add Config File
+            </Button>
+          </Card>
 
           <TextInput withAsterisk label='Startup' placeholder='Startup' {...form.getInputProps('startup')} />
 
-          <Switch label='Force Outgoing IP' {...form.getInputProps('forceOutgoingIp', { type: 'checkbox' })} />
-          <Switch
-            label='Separate IP and Port'
-            description='Separates the primary IP and Port in the Console page instead of joining them with ":"'
-            {...form.getInputProps('separatePort', { type: 'checkbox' })}
-          />
+          <Group grow>
+            <Switch label='Force Outgoing IP' {...form.getInputProps('forceOutgoingIp', { type: 'checkbox' })} />
+            <Switch
+              label='Separate IP and Port'
+              description='Separates the primary IP and Port in the Console page instead of joining them with ":"'
+              {...form.getInputProps('separatePort', { type: 'checkbox' })}
+            />
+          </Group>
 
-          <TagsInput label='Features' placeholder='Feature' {...form.getInputProps('features')} />
+          <Group grow>
+            <TagsInput label='Features' placeholder='Feature' {...form.getInputProps('features')} />
+            <TagsInput label='File Deny List' placeholder='File Deny List' {...form.getInputProps('fileDenylist')} />
+          </Group>
 
           <MultiKeyValueInput
             label='Docker Images'
@@ -370,8 +574,6 @@ export default function EggCreateOrUpdate({
             options={form.values.dockerImages}
             onChange={(e) => form.setFieldValue('dockerImages', e)}
           />
-
-          <TagsInput label='File Deny List' placeholder='File Deny List' {...form.getInputProps('fileDenylist')} />
         </Stack>
 
         <Group mt='md'>

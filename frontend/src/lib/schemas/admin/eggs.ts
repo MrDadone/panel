@@ -26,17 +26,12 @@ export const adminEggSchema = z.object({
     type: z.string(),
     value: z.string().nullable(),
   }),
-  configScript: z.object({
-    container: z.string(),
-    entrypoint: z.string(),
-    content: z.string(),
-  }),
   configAllocations: z.object({
     userSelfAssign: z.object({
       enabled: z.boolean(),
       requirePrimaryAllocation: z.boolean(),
-      startPort: z.number().min(0).max(65535),
-      endPort: z.number().min(0).max(65535),
+      startPort: z.number().min(1024).max(65535),
+      endPort: z.number().min(1024).max(65535),
     }),
   }),
   startup: z.string().min(1).max(4096),
@@ -45,6 +40,12 @@ export const adminEggSchema = z.object({
   features: z.array(z.string()),
   dockerImages: z.record(z.string(), z.string()),
   fileDenylist: z.array(z.string()),
+});
+
+export const adminEggScriptSchema = z.object({
+  container: z.string(),
+  entrypoint: z.string(),
+  content: z.string(),
 });
 
 export const adminEggVariableSchema = z.object({

@@ -56,6 +56,15 @@ export const compressionLevelLabelMapping: Record<CompressionLevel, string> = {
   best_compression: 'Best Compression',
 };
 
+export const processConfigurationParserLabelMapping: Record<ProcessConfigurationConfigParser, string> = {
+  file: 'File',
+  yaml: 'YAML',
+  properties: 'Properties',
+  ini: 'INI',
+  json: 'JSON',
+  xml: 'XML',
+};
+
 export const databaseTypeLabelMapping: Record<DatabaseType, string> = {
   mysql: 'MySQL',
   postgres: 'PostgreSQL',
