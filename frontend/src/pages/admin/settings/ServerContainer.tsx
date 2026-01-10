@@ -1,4 +1,4 @@
-import { Group, Stack } from '@mantine/core';
+import { Group, Stack, Tooltip } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -6,6 +6,7 @@ import { z } from 'zod';
 import updateServerSettings from '@/api/admin/settings/updateServerSettings.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import SizeInput from '@/elements/input/SizeInput.tsx';
@@ -96,22 +97,29 @@ export default function ServerContainer() {
             <Switch
               label='Allow Overwriting Custom Docker Image'
               description='If enabled, users will be able to overwrite the Docker image specified in the server configuration using the Eggs list, even if an admin has set a custom Docker image.'
-              checked={form.values.allowOverwritingCustomDockerImage}
-              onChange={(e) => form.setFieldValue('allowOverwritingCustomDockerImage', e.target.checked)}
+              {...form.getInputProps('allowOverwritingCustomDockerImage', { type: 'checkbox' })}
             />
 
             <Switch
               label='Allow Editing Startup Command'
-              checked={form.values.allowEditingStartupCommand}
-              onChange={(e) => form.setFieldValue('allowEditingStartupCommand', e.target.checked)}
+              {...form.getInputProps('allowEditingStartupCommand', { type: 'checkbox' })}
             />
           </Group>
         </Stack>
 
         <Group mt='md'>
-          <Button type='submit' disabled={!form.isValid()} loading={loading}>
-            Save
-          </Button>
+          <AdminCan
+            action='settings.update'
+            renderOnCant={
+              <Tooltip label='You do not have permission to update settings.'>
+                <Button disabled>Save</Button>
+              </Tooltip>
+            }
+          >
+            <Button type='submit' disabled={!form.isValid()} loading={loading}>
+              Save
+            </Button>
+          </AdminCan>
         </Group>
       </form>
     </AdminContentContainer>

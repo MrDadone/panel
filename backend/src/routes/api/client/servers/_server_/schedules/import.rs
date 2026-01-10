@@ -79,7 +79,7 @@ mod post {
             }
         };
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         for schedule_step in data
             .steps

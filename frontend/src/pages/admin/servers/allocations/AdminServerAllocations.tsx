@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import getServerAllocations from '@/api/admin/servers/allocations/getServerAllocations.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
@@ -29,12 +30,16 @@ export default function AdminServerAllocations({ server }: { server: AdminServer
       search={search}
       setSearch={setSearch}
       contentRight={
-        <Button onClick={() => setOpenModal('add')} color='blue' leftSection={<FontAwesomeIcon icon={faPlus} />}>
-          Add
-        </Button>
+        <AdminCan action='nodes.read'>
+          <Button onClick={() => setOpenModal('add')} color='blue' leftSection={<FontAwesomeIcon icon={faPlus} />}>
+            Add
+          </Button>
+        </AdminCan>
       }
     >
-      <ServerAllocationAddModal server={server} opened={openModal === 'add'} onClose={() => setOpenModal(null)} />
+      <AdminCan action='nodes.read'>
+        <ServerAllocationAddModal server={server} opened={openModal === 'add'} onClose={() => setOpenModal(null)} />
+      </AdminCan>
 
       <ContextMenuProvider>
         <Table

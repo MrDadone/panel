@@ -1,6 +1,7 @@
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import ReCAPTCHA, { ReCAPTCHA as ReCAPTCHAInstance } from 'react-google-recaptcha';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { useGlobalStore } from '@/stores/global.ts';
 
 export interface CaptchaRef {
@@ -11,7 +12,8 @@ export interface CaptchaRef {
 const Captcha = forwardRef((_, ref) => {
   const { captchaProvider } = useGlobalStore((state) => state.settings);
   const turnstileRef = useRef<TurnstileInstance>(null);
-  const recaptchaRef = useRef<ReCAPTCHAInstance>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const hcaptchaRef = useRef<HCaptcha>(null);
 
   // Expose getToken and resetCaptcha
   useImperativeHandle(ref, () => ({
@@ -34,6 +36,10 @@ const Captcha = forwardRef((_, ref) => {
         }
       }
 
+      if (captchaProvider.type === 'hcaptcha') {
+        return hcaptchaRef.current?.getResponse?.();
+      }
+
       return null;
     },
 
@@ -42,6 +48,8 @@ const Captcha = forwardRef((_, ref) => {
         turnstileRef.current?.reset?.();
       } else if (captchaProvider.type === 'recaptcha' && !captchaProvider.v3) {
         recaptchaRef.current?.reset?.();
+      } else if (captchaProvider.type === 'hcaptcha') {
+        hcaptchaRef.current?.resetCaptcha?.();
       }
     },
   }));
@@ -70,6 +78,10 @@ const Captcha = forwardRef((_, ref) => {
     }
 
     return <ReCAPTCHA sitekey={captchaProvider.siteKey} ref={recaptchaRef} size='normal' />;
+  }
+
+  if (captchaProvider.type === 'hcaptcha') {
+    return <HCaptcha sitekey={captchaProvider.siteKey} ref={hcaptchaRef} />;
   }
 
   return null;

@@ -56,6 +56,11 @@ mod post {
                 .ok();
         }
 
+        state
+            .cache
+            .ratelimit("auth/login", 20, 300, ip.to_string())
+            .await?;
+
         if let Err(error) = state.captcha.verify(ip, data.captcha).await {
             return ApiResponse::error(&error)
                 .with_status(StatusCode::BAD_REQUEST)
@@ -82,9 +87,7 @@ mod post {
             }
         };
 
-        if user.totp_enabled
-            && let Some(secret) = &user.totp_secret
-        {
+        if user.totp_enabled {
             let token = state.jwt.create(&TwoFactorRequiredJwt {
                 base: BasePayload {
                     issuer: "panel".into(),
@@ -96,7 +99,6 @@ mod post {
                     jwt_id: user.uuid.to_string(),
                 },
                 user_uuid: user.uuid,
-                user_totp_secret: secret.clone(),
             })?;
 
             if let Err(err) = UserActivity::log(
@@ -125,7 +127,7 @@ mod post {
             )
             .await?;
 
-            let settings = state.settings.get().await;
+            let settings = state.settings.get().await?;
 
             cookies.add(
                 Cookie::build(("session", key))
@@ -139,6 +141,8 @@ mod post {
                     )
                     .build(),
             );
+
+            drop(settings);
 
             if let Err(err) = UserActivity::log(
                 &state.database,
@@ -156,7 +160,7 @@ mod post {
             }
 
             ApiResponse::json(Response::Completed {
-                user: Box::new(user.into_api_full_object(&state.storage.retrieve_urls().await)),
+                user: Box::new(user.into_api_full_object(&state.storage.retrieve_urls().await?)),
             })
             .ok()
         }

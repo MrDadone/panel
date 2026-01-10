@@ -5,9 +5,9 @@ import { createSearchParams, useNavigate, useParams, useSearchParams } from 'rea
 import getFileContent from '@/api/server/files/getFileContent.ts';
 import saveFileContent from '@/api/server/files/saveFileContent.ts';
 import Button from '@/elements/Button.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
-import { getLanguageFromExtension } from '@/lib/files.ts';
 import NotFound from '@/pages/NotFound.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -28,7 +28,6 @@ export default function FileEditor() {
   const [nameModalOpen, setNameModalOpen] = useState(false);
   const [fileName, setFileName] = useState('');
   const [content, setContent] = useState('');
-  const [language, setLanguage] = useState('plaintext');
 
   const editorRef = useRef<Parameters<OnMount>[0]>(null);
   const contentRef = useRef(content);
@@ -45,7 +44,6 @@ export default function FileEditor() {
     setLoading(true);
     getFileContent(server.uuid, join(browsingDirectory, fileName)).then((content) => {
       setContent(content);
-      setLanguage(getLanguageFromExtension(fileName.split('.').pop()!));
       setLoading(false);
     });
   }, [fileName]);
@@ -103,13 +101,17 @@ export default function FileEditor() {
             />
             <div hidden={!!browsingBackup}>
               {params.action === 'edit' ? (
-                <Button loading={saving} onClick={() => saveFile()}>
-                  Save
-                </Button>
+                <ServerCan action='files.update'>
+                  <Button loading={saving} onClick={() => saveFile()}>
+                    Save
+                  </Button>
+                </ServerCan>
               ) : (
-                <Button loading={saving} onClick={() => setNameModalOpen(true)}>
-                  Create
-                </Button>
+                <ServerCan action='files.create'>
+                  <Button loading={saving} onClick={() => setNameModalOpen(true)}>
+                    Create
+                  </Button>
+                </ServerCan>
               )}
             </div>
           </div>
@@ -117,8 +119,8 @@ export default function FileEditor() {
             <Editor
               height='77vh'
               theme='vs-dark'
-              defaultLanguage={language}
               defaultValue={content}
+              path={fileName}
               onChange={(value) => setContent(value || '')}
               onMount={(editor, monaco) => {
                 editorRef.current = editor;

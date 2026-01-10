@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Button from '@/elements/Button.tsx';
-import Can from '@/elements/Can.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -42,7 +42,7 @@ export default function ServerPowerControls() {
         {t('pages.server.console.power.modal.forceStop.content', {})}
       </ConfirmationModal>
 
-      <Can action='control.start'>
+      <ServerCan action='control.start'>
         <Button
           color='green'
           disabled={state !== 'offline'}
@@ -51,17 +51,17 @@ export default function ServerPowerControls() {
         >
           {t('pages.server.console.power.start', {})}
         </Button>
-      </Can>
-      <Can action='control.restart'>
+      </ServerCan>
+      <ServerCan action='control.restart'>
         <Button color='gray' disabled={!state} onClick={() => onButtonClick('restart')}>
           {t('pages.server.console.power.restart', {})}
         </Button>
-      </Can>
-      <Can action='control.stop'>
+      </ServerCan>
+      <ServerCan action='control.stop'>
         <Button color='red' disabled={state === 'offline'} onClick={() => onButtonClick(killable ? 'kill' : 'stop')}>
           {killable ? t('pages.server.console.power.kill', {}) : t('pages.server.console.power.stop', {})}
         </Button>
-      </Can>
+      </ServerCan>
     </div>
   );
 }

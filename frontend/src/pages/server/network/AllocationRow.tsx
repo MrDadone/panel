@@ -5,11 +5,12 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteAllocation from '@/api/server/allocations/deleteAllocation.ts';
 import updateAllocation from '@/api/server/allocations/updateAllocation.ts';
 import Code from '@/elements/Code.tsx';
-import ContextMenu from '@/elements/ContextMenu.tsx';
+import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -87,13 +88,20 @@ export default function AllocationRow({ allocation }: { allocation: ServerAlloca
 
       <ContextMenu
         items={[
-          { icon: faPencil, label: t('common.button.edit', {}), onClick: () => setOpenModal('edit'), color: 'gray' },
+          {
+            icon: faPencil,
+            label: t('common.button.edit', {}),
+            onClick: () => setOpenModal('edit'),
+            color: 'gray',
+            canAccess: useServerCan('allocations.update'),
+          },
           {
             icon: faStar,
             label: t('pages.server.network.button.setPrimary', {}),
             hidden: allocation.isPrimary,
             onClick: doSetPrimary,
             color: 'gray',
+            canAccess: useServerCan('allocations.update'),
           },
           {
             icon: faStar,
@@ -101,16 +109,18 @@ export default function AllocationRow({ allocation }: { allocation: ServerAlloca
             hidden: !allocation.isPrimary,
             onClick: doUnsetPrimary,
             color: 'red',
+            canAccess: useServerCan('allocations.update'),
           },
           {
             icon: faTrash,
             label: t('common.button.remove', {}),
             onClick: () => setOpenModal('remove'),
             color: 'red',
+            canAccess: useServerCan('allocations.delete'),
           },
         ]}
       >
-        {({ openMenu }) => (
+        {({ items, openMenu }) => (
           <TableRow
             onContextMenu={(e) => {
               e.preventDefault();
@@ -139,7 +149,7 @@ export default function AllocationRow({ allocation }: { allocation: ServerAlloca
               <Tooltip label={formatDateTime(allocation.created)}>{formatTimestamp(allocation.created)}</Tooltip>
             </TableData>
 
-            <ContextMenu.Toggle openMenu={openMenu} />
+            <ContextMenuToggle items={items} openMenu={openMenu} />
           </TableRow>
         )}
       </ContextMenu>

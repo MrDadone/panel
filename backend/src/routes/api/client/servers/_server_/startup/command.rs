@@ -52,7 +52,7 @@ mod put {
 
         permissions.has_server_permission("startup.command")?;
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         if !settings.server.allow_editing_startup_command {
             return ApiResponse::error("editing the startup command is not allowed")

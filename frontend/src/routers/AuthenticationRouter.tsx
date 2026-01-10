@@ -5,12 +5,7 @@ import authenticationRoutes from '@/routers/routes/authenticationRoutes.ts';
 export default function AuthenticationRouter() {
   return (
     <Routes>
-      {authenticationRoutes
-        .filter((route) => !route.filter || route.filter())
-        .map(({ path, element: Element }) => (
-          <Route key={path} path={path} element={<Element />} />
-        ))}
-      {window.extensionContext.routes.authenticationRoutes
+      {[...authenticationRoutes, ...window.extensionContext.routes.authenticationRoutes]
         .filter((route) => !route.filter || route.filter())
         .map(({ path, element: Element }) => (
           <Route key={path} path={path} element={<Element />} />

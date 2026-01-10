@@ -15,6 +15,7 @@ import Select from '@/elements/input/Select.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import VariableContainer from '@/elements/VariableContainer.tsx';
 import { useKeyboardShortcut } from '@/plugins/useKeyboardShortcuts.ts';
+import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
@@ -25,6 +26,7 @@ export default function ServerStartup() {
   const { addToast } = useToast();
   const { settings } = useGlobalStore();
   const { server, updateServer, variables, setVariables, updateVariable } = useServerStore();
+  const canModifyVariables = useServerCan('startup.update');
 
   const [command, setCommand] = useState(server.startup);
   const [dockerImage, setDockerImage] = useState(server.image);
@@ -114,7 +116,7 @@ export default function ServerStartup() {
             placeholder={t('pages.server.startup.form.startupCommand', {})}
             value={command}
             onChange={(e) => setCommand(e.target.value)}
-            disabled={!settings.server.allowEditingStartupCommand}
+            disabled={!useServerCan('startup.command') || !settings.server.allowEditingStartupCommand}
             autosize
             rightSection={
               <ActionIcon
@@ -139,7 +141,7 @@ export default function ServerStartup() {
               label: key,
             }))}
             searchable
-            disabled={!settings.server.allowOverwritingCustomDockerImage}
+            disabled={!useServerCan('startup.docker-image') || !settings.server.allowOverwritingCustomDockerImage}
           />
           <p className='text-gray-400 mt-2'>
             {Object.values(server.egg.dockerImages).includes(server.image) ||
@@ -165,6 +167,7 @@ export default function ServerStartup() {
             key={variable.envVariable}
             variable={variable}
             loading={loading}
+            disabled={!canModifyVariables}
             value={values[variable.envVariable] ?? variable.value ?? variable.defaultValue ?? ''}
             setValue={(value) => setValues((prev) => ({ ...prev, [variable.envVariable]: value }))}
           />

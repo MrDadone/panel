@@ -14,6 +14,11 @@ export const serverFilesCopySchema = z.object({
   name: z.string(),
 });
 
+export const serverFilesCopyRemoteSchema = z.object({
+  destination: z.string(),
+  destinationServer: z.uuid(),
+});
+
 export const serverFilesNameSchema = z.object({
   name: z.string(),
 });

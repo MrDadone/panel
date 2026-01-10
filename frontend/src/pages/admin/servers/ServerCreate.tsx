@@ -18,6 +18,7 @@ import getUsers from '@/api/admin/users/getUsers.ts';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import Alert from '@/elements/Alert.tsx';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import MultiSelect from '@/elements/input/MultiSelect.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
@@ -30,6 +31,7 @@ import Spinner from '@/elements/Spinner.tsx';
 import VariableContainer from '@/elements/VariableContainer.tsx';
 import { adminServerCreateSchema } from '@/lib/schemas/admin/servers.ts';
 import { formatAllocation } from '@/lib/server.ts';
+import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -43,6 +45,11 @@ const timezones = Object.keys(zones)
 
 export default function ServerCreate() {
   const { addToast } = useToast();
+  const canReadNodes = useAdminCan('nodes.read');
+  const canReadUsers = useAdminCan('users.read');
+  const canReadNests = useAdminCan('nests.read');
+  const canReadEggs = useAdminCan('eggs.read');
+  const canReadBackupConfigurations = useAdminCan('backup-configurations.read');
 
   const form = useForm<z.infer<typeof adminServerCreateSchema>>({
     initialValues: {
@@ -95,17 +102,21 @@ export default function ServerCreate() {
 
   const nodes = useSearchableResource<Node>({
     fetcher: (search) => getNodes(1, search),
+    canRequest: canReadNodes,
   });
   const users = useSearchableResource<User>({
     fetcher: (search) => getUsers(1, search),
+    canRequest: canReadUsers,
   });
   const nests = useSearchableResource<AdminNest>({
     fetcher: (search) => getNests(1, search),
+    canRequest: canReadNests,
   });
   const eggs = useSearchableResource<AdminNestEgg>({
     fetcher: (search) =>
       selectedNestUuid ? getEggs(selectedNestUuid, 1, search) : Promise.resolve(getEmptyPaginationSet()),
     deps: [selectedNestUuid],
+    canRequest: canReadEggs,
   });
   const availablePrimaryAllocations = useSearchableResource<NodeAllocation>({
     fetcher: (search) =>
@@ -123,6 +134,7 @@ export default function ServerCreate() {
   });
   const backupConfigurations = useSearchableResource<BackupConfiguration>({
     fetcher: (search) => getBackupConfigurations(1, search),
+    canRequest: canReadBackupConfigurations,
   });
 
   useEffect(() => {
@@ -199,6 +211,7 @@ export default function ServerCreate() {
                     searchable
                     searchValue={nodes.search}
                     onSearchChange={nodes.setSearch}
+                    disabled={!canReadNodes}
                     {...form.getInputProps('nodeUuid')}
                   />
                   <Select
@@ -212,6 +225,7 @@ export default function ServerCreate() {
                     searchable
                     searchValue={users.search}
                     onSearchChange={users.setSearch}
+                    disabled={!canReadUsers}
                     {...form.getInputProps('ownerUuid')}
                   />
                 </Group>
@@ -230,12 +244,13 @@ export default function ServerCreate() {
                     searchable
                     searchValue={nests.search}
                     onSearchChange={nests.setSearch}
+                    disabled={!canReadNests}
                   />
                   <Select
                     withAsterisk
                     label='Egg'
                     placeholder='Egg'
-                    disabled={!selectedNestUuid}
+                    disabled={!canReadEggs || !selectedNestUuid}
                     data={eggs.items.map((egg) => ({
                       label: egg.name,
                       value: egg.uuid,
@@ -264,6 +279,7 @@ export default function ServerCreate() {
                     searchable
                     searchValue={backupConfigurations.search}
                     onSearchChange={backupConfigurations.setSearch}
+                    disabled={!canReadBackupConfigurations}
                     {...form.getInputProps('backupConfigurationUuid')}
                   />
                 </Group>
@@ -376,14 +392,12 @@ export default function ServerCreate() {
                   <Switch
                     label='Start on Completion'
                     description='Start server after installation completes'
-                    checked={form.values.startOnCompletion}
-                    onChange={(e) => form.setFieldValue('startOnCompletion', e.target.checked)}
+                    {...form.getInputProps('startOnCompletion', { type: 'checkbox' })}
                   />
                   <Switch
                     label='Skip Installer'
                     description='Skip running the install script'
-                    checked={form.values.skipInstaller}
-                    onChange={(e) => form.setFieldValue('skipInstaller', e.target.checked)}
+                    {...form.getInputProps('skipInstaller', { type: 'checkbox' })}
                   />
                 </Group>
               </Stack>
@@ -504,12 +518,14 @@ export default function ServerCreate() {
           </Paper>
 
           <Group>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              Save
-            </Button>
-            <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
-              Save & Stay
-            </Button>
+            <AdminCan action='servers.create' cantSave>
+              <Button type='submit' disabled={!form.isValid()} loading={loading}>
+                Save
+              </Button>
+              <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
+                Save & Stay
+              </Button>
+            </AdminCan>
           </Group>
         </Stack>
       </form>

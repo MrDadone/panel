@@ -17,8 +17,19 @@ mod get {
     ))]
     pub async fn route(
         state: GetState,
+        ip: shared::GetIp,
         Path(oauth_provider): Path<uuid::Uuid>,
     ) -> ApiResponseResult {
+        state
+            .cache
+            .ratelimit(
+                format!("auth/oauth/redirect/{}", oauth_provider),
+                6,
+                300,
+                ip.to_string(),
+            )
+            .await?;
+
         let oauth_provider =
             match OAuthProvider::by_uuid_optional_cached(&state.database, oauth_provider).await? {
                 Some(oauth_provider) => oauth_provider,
@@ -35,7 +46,7 @@ mod get {
                 .ok();
         }
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         let client = BasicClient::new(ClientId::new(oauth_provider.client_id.to_string()))
             .set_auth_uri(AuthUrl::new(oauth_provider.auth_url.clone())?)

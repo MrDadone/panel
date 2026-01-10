@@ -6,12 +6,13 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import getServer from '@/api/server/getServer.ts';
 import cancelServerInstall from '@/api/server/settings/cancelServerInstall.ts';
 import Button from '@/elements/Button.tsx';
-import Can from '@/elements/Can.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import Container from '@/elements/Container.tsx';
 import Notification from '@/elements/Notification.tsx';
 import Progress from '@/elements/Progress.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import { isAdmin } from '@/lib/permissions.ts';
 import { to } from '@/lib/routes.ts';
 import NotFound from '@/pages/NotFound.tsx';
 import WebsocketHandler from '@/pages/server/WebsocketHandler.tsx';
@@ -19,6 +20,7 @@ import WebsocketListener from '@/pages/server/WebsocketListener.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
+import ServerPermissionGuard from '@/routers/guards/ServerPermissionGuard.tsx';
 import serverRoutes from '@/routers/routes/serverRoutes.ts';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
@@ -84,7 +86,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
           <Sidebar.Divider />
 
           <Sidebar.Link to='/' end icon={faServer} name={t('pages.account.home.title', {})} />
-          {user!.admin && (
+          {isAdmin(user!) && (
             <>
               <Sidebar.Link to='/admin' end icon={faGraduationCap} name={t('pages.account.admin.title', {})} />
               <Sidebar.Link
@@ -98,40 +100,18 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
 
           <Sidebar.Divider />
 
-          {serverRoutes
+          {[...serverRoutes, ...window.extensionContext.routes.serverRoutes]
             .filter((route) => !!route.name && (!route.filter || route.filter()))
             .map((route) =>
               route.permission ? (
-                <Can key={route.path} action={route.permission} matchAny>
+                <ServerCan key={route.path} action={route.permission} matchAny>
                   <Sidebar.Link
                     to={to(route.path, `/server/${params.id}`)}
                     end={route.exact}
                     icon={route.icon}
                     name={typeof route.name === 'function' ? route.name() : route.name}
                   />
-                </Can>
-              ) : (
-                <Sidebar.Link
-                  key={route.path}
-                  to={to(route.path, `/server/${params.id}`)}
-                  end={route.exact}
-                  icon={route.icon}
-                  name={typeof route.name === 'function' ? route.name() : route.name}
-                />
-              ),
-            )}
-          {window.extensionContext.routes.serverRoutes
-            .filter((route) => !!route.name && (!route.filter || route.filter()))
-            .map((route) =>
-              route.permission ? (
-                <Can key={route.path} action={route.permission} matchAny>
-                  <Sidebar.Link
-                    to={to(route.path, `/server/${params.id}`)}
-                    end={route.exact}
-                    icon={route.icon}
-                    name={typeof route.name === 'function' ? route.name() : route.name}
-                  />
-                </Can>
+                </ServerCan>
               ) : (
                 <Sidebar.Link
                   key={route.path}
@@ -182,15 +162,12 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
 
               <Suspense fallback={<Spinner.Centered />}>
                 <Routes>
-                  {serverRoutes
+                  {[...serverRoutes, ...window.extensionContext.routes.serverRoutes]
                     .filter((route) => !route.filter || route.filter())
-                    .map(({ path, element: Element }) => (
-                      <Route key={path} path={path} element={<Element />} />
-                    ))}
-                  {window.extensionContext.routes.serverRoutes
-                    .filter((route) => !route.filter || route.filter())
-                    .map(({ path, element: Element }) => (
-                      <Route key={path} path={path} element={<Element />} />
+                    .map(({ path, element: Element, permission }) => (
+                      <Route key={path} element={<ServerPermissionGuard permission={permission ?? []} />}>
+                        <Route path={path} element={<Element />} />
+                      </Route>
                     ))}
                   <Route path='*' element={<NotFound />} />
                 </Routes>

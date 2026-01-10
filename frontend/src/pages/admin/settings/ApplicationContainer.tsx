@@ -7,6 +7,7 @@ import getAdminTelemetry from '@/api/admin/getAdminTelemetry.ts';
 import updateApplicationSettings from '@/api/admin/settings/updateApplicationSettings.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
@@ -141,7 +142,7 @@ export default function ApplicationContainer() {
             <Switch
               label='Enable Telemetry'
               description='Allow Calagopus to collect limited and anonymous usage data to help improve the application.'
-              checked={form.values.telemetryEnabled}
+              {...form.getInputProps('telemetryEnabled', { type: 'checkbox' })}
               onChange={(e) => {
                 if (!e.target.checked) {
                   setOpenModal('disableTelemetry');
@@ -153,7 +154,7 @@ export default function ApplicationContainer() {
             <Switch
               label='Enable Registration'
               name='registrationEnabled'
-              checked={form.values.registrationEnabled}
+              {...form.getInputProps('registrationEnabled', { type: 'checkbox' })}
               onChange={(e) => {
                 if (e.target.checked) {
                   setOpenModal('enableRegistration');
@@ -166,12 +167,16 @@ export default function ApplicationContainer() {
         </Stack>
 
         <Group mt='md'>
-          <Button type='submit' disabled={!form.isValid()} loading={loading}>
-            Save
-          </Button>
-          <Button variant='outline' loading={loading} onClick={doPreviewTelemetry}>
-            Telemetry Preview
-          </Button>
+          <AdminCan action='settings.update' cantSave>
+            <>
+              <Button type='submit' disabled={!form.isValid()} loading={loading}>
+                Save
+              </Button>
+              <Button variant='outline' loading={loading} onClick={doPreviewTelemetry}>
+                Telemetry Preview
+              </Button>
+            </>
+          </AdminCan>
         </Group>
       </form>
     </AdminContentContainer>

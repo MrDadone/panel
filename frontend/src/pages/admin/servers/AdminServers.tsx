@@ -3,10 +3,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Route, Routes, useNavigate } from 'react-router';
 import getServers from '@/api/admin/servers/getServers.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
+import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import ServerCreate from './ServerCreate.tsx';
 import ServerRow from './ServerRow.tsx';
@@ -27,13 +29,15 @@ function ServersContainer() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <Button
-          onClick={() => navigate('/admin/servers/new')}
-          color='blue'
-          leftSection={<FontAwesomeIcon icon={faPlus} />}
-        >
-          Create
-        </Button>
+        <AdminCan action='servers.create'>
+          <Button
+            onClick={() => navigate('/admin/servers/new')}
+            color='blue'
+            leftSection={<FontAwesomeIcon icon={faPlus} />}
+          >
+            Create
+          </Button>
+        </AdminCan>
       }
     >
       <Table columns={serverTableColumns} loading={loading} pagination={servers} onPageSelect={setPage}>
@@ -49,8 +53,10 @@ export default function AdminServers() {
   return (
     <Routes>
       <Route path='/' element={<ServersContainer />} />
-      <Route path='/new' element={<ServerCreate />} />
       <Route path='/:id/*' element={<ServerView />} />
+      <Route element={<AdminPermissionGuard permission='servers.create' />}>
+        <Route path='/new' element={<ServerCreate />} />
+      </Route>
     </Routes>
   );
 }

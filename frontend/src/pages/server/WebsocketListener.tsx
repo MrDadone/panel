@@ -9,6 +9,7 @@ export default function WebsocketListener() {
   const [searchParams, _] = useSearchParams();
   const { addToast } = useToast();
   const {
+    server,
     socketConnected,
     socketInstance,
     schedule,
@@ -146,7 +147,7 @@ export default function WebsocketListener() {
   useWebsocketEvent(SocketEvent.OPERATION_PROGRESS, (uuid, data) => {
     let wsData: FileOperation;
     try {
-      wsData = JSON.parse(data);
+      wsData = transformKeysToCamelCase(JSON.parse(data)) as FileOperation;
     } catch {
       return;
     }
@@ -163,10 +164,23 @@ export default function WebsocketListener() {
         addToast(`Compressed files to ${fileOperation.path} successfully.`, 'success');
         break;
       case 'decompress':
-        addToast(`Decompressed ${fileOperation.path} to ${fileOperation.destination || '/'} successfully.`, 'success');
+        addToast(
+          `Decompressed ${fileOperation.path} to ${fileOperation.destinationPath || '/'} successfully.`,
+          'success',
+        );
         break;
       case 'pull':
         addToast(`Pulled ${fileOperation.path} successfully.`, 'success');
+        break;
+      case 'copy':
+        addToast(`Copied ${fileOperation.path} to ${fileOperation.destinationPath} successfully.`, 'success');
+        break;
+      case 'copy_remote':
+        if (fileOperation.destinationServer === server.uuid) {
+          addToast(`Received files from remote server successfully.`, 'success');
+        } else {
+          addToast(`Sent files to remote server successfully.`, 'success');
+        }
         break;
       default:
         break;
@@ -186,12 +200,22 @@ export default function WebsocketListener() {
         break;
       case 'decompress':
         addToast(
-          `Failed to decompress ${fileOperation.path} to ${fileOperation.destination || '/'}:\n${error}`,
+          `Failed to decompress ${fileOperation.path} to ${fileOperation.destinationPath || '/'}:\n${error}`,
           'error',
         );
         break;
       case 'pull':
         addToast(`Failed to pull ${fileOperation.path}:\n${error}`, 'error');
+        break;
+      case 'copy':
+        addToast(`Failed to copy ${fileOperation.path} to ${fileOperation.destinationPath}:\n${error}`, 'error');
+        break;
+      case 'copy_remote':
+        if (fileOperation.destinationServer === server.uuid) {
+          addToast(`Failed to receive files from remote server:\n${error}`, 'error');
+        } else {
+          addToast(`Failed to send files to remote server:\n${error}`, 'error');
+        }
         break;
       default:
         break;

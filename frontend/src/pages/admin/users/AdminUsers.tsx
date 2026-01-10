@@ -3,11 +3,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Route, Routes, useNavigate } from 'react-router';
 import getUsers from '@/api/admin/users/getUsers.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { userTableColumns } from '@/lib/tableColumns.ts';
 import UserView from '@/pages/admin/users/UserView.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
+import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import UserCreateOrUpdate from './UserCreateOrUpdate.tsx';
 import UserRow from './UserRow.tsx';
@@ -27,13 +29,15 @@ function UsersContainer() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <Button
-          onClick={() => navigate('/admin/users/new')}
-          color='blue'
-          leftSection={<FontAwesomeIcon icon={faPlus} />}
-        >
-          Create
-        </Button>
+        <AdminCan action='users.create'>
+          <Button
+            onClick={() => navigate('/admin/users/new')}
+            color='blue'
+            leftSection={<FontAwesomeIcon icon={faPlus} />}
+          >
+            Create
+          </Button>
+        </AdminCan>
       }
     >
       <Table columns={userTableColumns} loading={loading} pagination={users} onPageSelect={setPage}>
@@ -49,8 +53,10 @@ export default function AdminUsers() {
   return (
     <Routes>
       <Route path='/' element={<UsersContainer />} />
-      <Route path='/new' element={<UserCreateOrUpdate />} />
       <Route path='/:id/*' element={<UserView />} />
+      <Route element={<AdminPermissionGuard permission='users.create' />}>
+        <Route path='/new' element={<UserCreateOrUpdate />} />
+      </Route>
     </Routes>
   );
 }

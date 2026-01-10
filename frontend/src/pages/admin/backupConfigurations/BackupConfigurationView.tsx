@@ -1,7 +1,7 @@
 import { faArchive, faChartBar, faCog, faDesktop, faEarthAmerica, faServer } from '@fortawesome/free-solid-svg-icons';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { Route, Routes, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import getBackupConfiguration from '@/api/admin/backup-configurations/getBackupConfiguration.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Spinner from '@/elements/Spinner.tsx';
@@ -38,60 +38,50 @@ export default function BackupConfigurationView() {
       <Title order={1}>{backupConfiguration.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/backup-configurations/${params.id}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/backup-configurations/${params.id}`,
+            path: `/`,
+            element: <BackupConfigurationCreateOrUpdate contextBackupConfiguration={backupConfiguration} />,
           },
           {
             name: 'Stats',
             icon: faChartBar,
-            link: `/admin/backup-configurations/${params.id}/stats`,
+            path: `/stats`,
+            element: <AdminBackupConfigurationStats backupConfiguration={backupConfiguration} />,
           },
           {
             name: 'Backups',
             icon: faArchive,
-            link: `/admin/backup-configurations/${params.id}/backups`,
+            path: `/backups`,
+            permission: 'backup-configurations.backups',
+            element: <AdminBackupConfigurationBackups backupConfiguration={backupConfiguration} />,
           },
           {
             name: 'Locations',
             icon: faEarthAmerica,
-            link: `/admin/backup-configurations/${params.id}/locations`,
+            path: `/locations`,
+            permission: 'locations.read',
+            element: <AdminBackupConfigurationLocations backupConfiguration={backupConfiguration} />,
           },
           {
             name: 'Nodes',
             icon: faServer,
-            link: `/admin/backup-configurations/${params.id}/nodes`,
+            path: `/nodes`,
+            permission: 'nodes.read',
+            element: <AdminBackupConfigurationNodes backupConfiguration={backupConfiguration} />,
           },
           {
             name: 'Servers',
             icon: faDesktop,
-            link: `/admin/backup-configurations/${params.id}/servers`,
+            path: `/servers`,
+            permission: 'servers.read',
+            element: <AdminBackupConfigurationServers backupConfiguration={backupConfiguration} />,
           },
         ]}
       />
-
-      <Routes>
-        <Route
-          path='/'
-          element={<BackupConfigurationCreateOrUpdate contextBackupConfiguration={backupConfiguration} />}
-        />
-        <Route path='/stats' element={<AdminBackupConfigurationStats backupConfiguration={backupConfiguration} />} />
-        <Route
-          path='/backups'
-          element={<AdminBackupConfigurationBackups backupConfiguration={backupConfiguration} />}
-        />
-        <Route
-          path='/locations'
-          element={<AdminBackupConfigurationLocations backupConfiguration={backupConfiguration} />}
-        />
-        <Route path='/nodes' element={<AdminBackupConfigurationNodes backupConfiguration={backupConfiguration} />} />
-        <Route
-          path='/servers'
-          element={<AdminBackupConfigurationServers backupConfiguration={backupConfiguration} />}
-        />
-      </Routes>
     </>
   );
 }

@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Route, Routes, useNavigate } from 'react-router';
 import getRoles from '@/api/admin/roles/getRoles.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { roleTableColumns } from '@/lib/tableColumns.ts';
@@ -10,6 +11,7 @@ import RoleCreateOrUpdate from '@/pages/admin/roles/RoleCreateOrUpdate.tsx';
 import RoleRow from '@/pages/admin/roles/RoleRow.tsx';
 import RoleView from '@/pages/admin/roles/RoleView.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
+import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
 function RolesContainer() {
@@ -27,13 +29,15 @@ function RolesContainer() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <Button
-          onClick={() => navigate('/admin/roles/new')}
-          color='blue'
-          leftSection={<FontAwesomeIcon icon={faPlus} />}
-        >
-          Create
-        </Button>
+        <AdminCan action='roles.create'>
+          <Button
+            onClick={() => navigate('/admin/roles/new')}
+            color='blue'
+            leftSection={<FontAwesomeIcon icon={faPlus} />}
+          >
+            Create
+          </Button>
+        </AdminCan>
       }
     >
       <Table columns={roleTableColumns} loading={loading} pagination={roles} onPageSelect={setPage}>
@@ -49,8 +53,10 @@ export default function AdminRoles() {
   return (
     <Routes>
       <Route path='/' element={<RolesContainer />} />
-      <Route path='/new' element={<RoleCreateOrUpdate />} />
       <Route path='/:id/*' element={<RoleView />} />
+      <Route element={<AdminPermissionGuard permission='roles.create' />}>
+        <Route path='/new' element={<RoleCreateOrUpdate />} />
+      </Route>
     </Routes>
   );
 }

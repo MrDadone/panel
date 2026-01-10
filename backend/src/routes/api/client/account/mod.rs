@@ -34,7 +34,7 @@ mod get {
         ApiResponse::json(Response {
             user: user
                 .0
-                .into_api_full_object(&state.storage.retrieve_urls().await),
+                .into_api_full_object(&state.storage.retrieve_urls().await?),
         })
         .ok()
     }

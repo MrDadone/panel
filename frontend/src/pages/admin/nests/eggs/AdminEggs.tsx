@@ -7,12 +7,14 @@ import getEggs from '@/api/admin/nests/eggs/getEggs.ts';
 import importEgg from '@/api/admin/nests/eggs/importEgg.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { eggTableColumns } from '@/lib/tableColumns.ts';
 import EggView from '@/pages/admin/nests/eggs/EggView.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import EggCreateOrUpdate from './EggCreateOrUpdate.tsx';
 import EggRow from './EggRow.tsx';
@@ -65,7 +67,7 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <>
+        <AdminCan action='eggs.create'>
           <Button onClick={() => fileInputRef.current?.click()} color='blue'>
             <FontAwesomeIcon icon={faUpload} className='mr-2' />
             Import
@@ -85,7 +87,7 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
             className='hidden'
             onChange={handleFileUpload}
           />
-        </>
+        </AdminCan>
       }
     >
       <Table columns={eggTableColumns} loading={loading} pagination={eggs} onPageSelect={setPage}>
@@ -101,8 +103,10 @@ export default function AdminEggs({ contextNest }: { contextNest: AdminNest }) {
   return (
     <Routes>
       <Route path='/' element={<EggsContainer contextNest={contextNest} />} />
-      <Route path='/new' element={<EggCreateOrUpdate contextNest={contextNest} />} />
       <Route path='/:eggId/*' element={<EggView contextNest={contextNest} />} />
+      <Route element={<AdminPermissionGuard permission='eggs.create' />}>
+        <Route path='/new' element={<EggCreateOrUpdate contextNest={contextNest} />} />
+      </Route>
     </Routes>
   );
 }

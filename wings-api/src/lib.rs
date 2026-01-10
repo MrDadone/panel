@@ -97,6 +97,20 @@ nestify::nest! {
     }
 }
 
+#[derive(Debug, ToSchema, Deserialize, Serialize, Clone, Copy)]
+pub enum DiskLimiterMode {
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "btrfs_subvolume")]
+    BtrfsSubvolume,
+    #[serde(rename = "zfs_dataset")]
+    ZfsDataset,
+    #[serde(rename = "xfs_quota")]
+    XfsQuota,
+    #[serde(rename = "fuse_quota")]
+    FuseQuota,
+}
+
 nestify::nest! {
     #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Download {
         #[schema(inline)]
@@ -196,6 +210,16 @@ nestify::nest! {
     }
 }
 
+#[derive(Debug, ToSchema, Deserialize, Serialize, Clone, Copy)]
+pub enum ServerAutoStartBehavior {
+    #[serde(rename = "always")]
+    Always,
+    #[serde(rename = "unless_stopped")]
+    UnlessStopped,
+    #[serde(rename = "never")]
+    Never,
+}
+
 nestify::nest! {
     #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct ServerConfiguration {
         #[schema(inline)]
@@ -291,6 +315,8 @@ nestify::nest! {
             pub seconds: u64,
         },
 
+        #[schema(inline)]
+        pub auto_start_behavior: ServerAutoStartBehavior,
     }
 }
 
@@ -328,18 +354,6 @@ pub enum SystemBackupsDdupBakCompressionFormat {
     Gzip,
     #[serde(rename = "brotli")]
     Brotli,
-}
-
-#[derive(Debug, ToSchema, Deserialize, Serialize, Clone, Copy)]
-pub enum SystemDiskLimiterMode {
-    #[serde(rename = "none")]
-    None,
-    #[serde(rename = "btrfs_subvolume")]
-    BtrfsSubvolume,
-    #[serde(rename = "zfs_dataset")]
-    ZfsDataset,
-    #[serde(rename = "xfs_quota")]
-    XfsQuota,
 }
 
 nestify::nest! {
@@ -717,16 +731,83 @@ pub mod servers_server_files_copy {
                 pub location: compact_str::CompactString,
                 #[schema(inline)]
                 pub name: Option<compact_str::CompactString>,
+                #[schema(inline)]
+                pub foreground: bool,
             }
         }
 
         pub type Response200 = DirectoryEntry;
 
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response202 {
+                #[schema(inline)]
+                pub identifier: uuid::Uuid,
+            }
+        }
+
         pub type Response404 = ApiError;
 
         pub type Response417 = ApiError;
 
-        pub type Response = Response200;
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        pub enum Response {
+            Ok(Response200),
+            Accepted(Response202),
+        }
+    }
+}
+pub mod servers_server_files_copy_remote {
+    use super::*;
+
+    pub mod post {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
+                #[schema(inline)]
+                pub url: compact_str::CompactString,
+                #[schema(inline)]
+                pub token: compact_str::CompactString,
+                #[schema(inline)]
+                pub archive_format: TransferArchiveFormat,
+                #[schema(inline)]
+                pub compression_level: Option<CompressionLevel>,
+                #[schema(inline)]
+                pub root: compact_str::CompactString,
+                #[schema(inline)]
+                pub files: Vec<compact_str::CompactString>,
+                #[schema(inline)]
+                pub destination_server: uuid::Uuid,
+                #[schema(inline)]
+                pub destination_path: compact_str::CompactString,
+                #[schema(inline)]
+                pub foreground: bool,
+            }
+        }
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
+            }
+        }
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response202 {
+                #[schema(inline)]
+                pub identifier: uuid::Uuid,
+            }
+        }
+
+        pub type Response404 = ApiError;
+
+        pub type Response417 = ApiError;
+
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        pub enum Response {
+            Ok(Response200),
+            Accepted(Response202),
+        }
     }
 }
 pub mod servers_server_files_create_directory {
@@ -1429,6 +1510,8 @@ pub mod system_config {
                     },
 
                     #[schema(inline)]
+                    pub redirects: IndexMap<compact_str::CompactString, compact_str::CompactString>,
+                    #[schema(inline)]
                     pub disable_openapi_docs: bool,
                     #[schema(inline)]
                     pub disable_remote_download: bool,
@@ -1444,6 +1527,8 @@ pub mod system_config {
                     pub send_offline_server_logs: bool,
                     #[schema(inline)]
                     pub file_search_threads: u64,
+                    #[schema(inline)]
+                    pub file_copy_threads: u64,
                     #[schema(inline)]
                     pub file_decompression_threads: u64,
                     #[schema(inline)]
@@ -1505,7 +1590,7 @@ pub mod system_config {
                     #[schema(inline)]
                     pub disk_check_threads: u64,
                     #[schema(inline)]
-                    pub disk_limiter_mode: SystemDiskLimiterMode,
+                    pub disk_limiter_mode: DiskLimiterMode,
                     #[schema(inline)]
                     pub activity_send_interval: u64,
                     #[schema(inline)]
@@ -1931,6 +2016,24 @@ pub mod system_upgrade {
     }
 }
 pub mod transfers {
+    use super::*;
+
+    pub mod post {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
+            }
+        }
+
+        pub type Response401 = ApiError;
+
+        pub type Response409 = ApiError;
+
+        pub type Response = Response200;
+    }
+}
+pub mod transfers_files {
     use super::*;
 
     pub mod post {

@@ -86,7 +86,7 @@ mod put {
             .await;
 
         ApiResponse::json(Response {
-            avatar: state.storage.retrieve_urls().await.get_url(&avatar_path),
+            avatar: state.storage.retrieve_urls().await?.get_url(&avatar_path),
         })
         .ok()
     }

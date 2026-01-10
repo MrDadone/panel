@@ -4,6 +4,7 @@ import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import { isAdmin } from '@/lib/permissions.ts';
 import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 
 export default function UserRow({ user }: { user: User }) {
@@ -24,7 +25,7 @@ export default function UserRow({ user }: { user: User }) {
       <TableData>
         <span className='flex gap-2 items-center'>
           {user.username}&nbsp;
-          {user.admin && (
+          {isAdmin(user) && (
             <Tooltip label='Admin'>
               <FontAwesomeIcon icon={faCrown} className='text-yellow-400' />
             </Tooltip>

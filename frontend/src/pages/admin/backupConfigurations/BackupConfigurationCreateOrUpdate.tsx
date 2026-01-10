@@ -7,6 +7,7 @@ import createBackupConfiguration from '@/api/admin/backup-configurations/createB
 import deleteBackupConfiguration from '@/api/admin/backup-configurations/deleteBackupConfiguration.ts';
 import updateBackupConfiguration from '@/api/admin/backup-configurations/updateBackupConfiguration.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
@@ -128,21 +129,12 @@ export default function BackupConfigurationCreateOrUpdate({
             <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
           </Group>
           <Group>
-            <Button
-              type='submit'
-              disabled={
-                !form.isValid() ||
-                ((form.values.backupDisk === 's3' || backupConfigS3Form.isDirty()) && !backupConfigS3Form.isValid()) ||
-                ((form.values.backupDisk === 'restic' || backupConfigResticForm.isDirty()) &&
-                  !backupConfigResticForm.isValid())
-              }
-              loading={loading}
+            <AdminCan
+              action={contextBackupConfiguration ? 'backup-configurations.update' : 'backup-configurations.create'}
+              cantSave
             >
-              Save
-            </Button>
-            {!contextBackupConfiguration && (
               <Button
-                onClick={() => doCreateOrUpdate(true)}
+                type='submit'
                 disabled={
                   !form.isValid() ||
                   ((form.values.backupDisk === 's3' || backupConfigS3Form.isDirty()) &&
@@ -152,13 +144,30 @@ export default function BackupConfigurationCreateOrUpdate({
                 }
                 loading={loading}
               >
-                Save & Stay
+                Save
               </Button>
-            )}
+              {!contextBackupConfiguration && (
+                <Button
+                  onClick={() => doCreateOrUpdate(true)}
+                  disabled={
+                    !form.isValid() ||
+                    ((form.values.backupDisk === 's3' || backupConfigS3Form.isDirty()) &&
+                      !backupConfigS3Form.isValid()) ||
+                    ((form.values.backupDisk === 'restic' || backupConfigResticForm.isDirty()) &&
+                      !backupConfigResticForm.isValid())
+                  }
+                  loading={loading}
+                >
+                  Save & Stay
+                </Button>
+              )}
+            </AdminCan>
             {contextBackupConfiguration && (
-              <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
-                Delete
-              </Button>
+              <AdminCan action='backup-configurations.delete' cantDelete>
+                <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
+                  Delete
+                </Button>
+              </AdminCan>
             )}
           </Group>
           {(form.values.backupDisk === 's3' || backupConfigS3Form.isDirty()) && <BackupS3 form={backupConfigS3Form} />}

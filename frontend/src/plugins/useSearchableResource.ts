@@ -8,6 +8,7 @@ interface UseSearchableResourceOptions<T> {
   defaultSearchValue?: string;
   deps?: unknown[];
   debounceMs?: number;
+  canRequest?: boolean;
 }
 
 export function useSearchableResource<T>({
@@ -15,6 +16,7 @@ export function useSearchableResource<T>({
   defaultSearchValue = '',
   deps = [],
   debounceMs = 150,
+  canRequest = true,
 }: UseSearchableResourceOptions<T>) {
   const { addToast } = useToast();
 
@@ -22,6 +24,8 @@ export function useSearchableResource<T>({
   const [search, setSearch] = useState(defaultSearchValue);
 
   const fetchData = (searchValue: string) => {
+    if (!canRequest) return;
+
     fetcher(searchValue)
       .then((response) => {
         setItems(response.data);

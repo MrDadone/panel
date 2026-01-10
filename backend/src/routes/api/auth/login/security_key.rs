@@ -113,6 +113,11 @@ mod post {
         cookies: Cookies,
         axum::Json(data): axum::Json<Payload>,
     ) -> ApiResponseResult {
+        state
+            .cache
+            .ratelimit("auth/login/security-key", 10, 300, ip.to_string())
+            .await?;
+
         let webauthn = state.settings.get_webauthn().await?;
 
         let authentication: PasskeyAuthentication = match state
@@ -188,7 +193,7 @@ mod post {
         )
         .await?;
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         cookies.add(
             Cookie::build(("session", key))
@@ -202,6 +207,8 @@ mod post {
                 )
                 .build(),
         );
+
+        drop(settings);
 
         if let Err(err) = UserActivity::log(
             &state.database,
@@ -220,7 +227,7 @@ mod post {
         }
 
         ApiResponse::json(Response {
-            user: user.into_api_full_object(&state.storage.retrieve_urls().await),
+            user: user.into_api_full_object(&state.storage.retrieve_urls().await?),
         })
         .ok()
     }

@@ -1,9 +1,12 @@
 import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
-import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminEggSchema, adminEggScriptSchema } from '@/lib/schemas/admin/eggs.ts';
 import { transformKeysToSnakeCase } from '@/lib/transformers.ts';
 
-export default async (nestUuid: string, data: z.infer<typeof adminEggSchema>): Promise<AdminNestEgg> => {
+export default async (
+  nestUuid: string,
+  data: z.infer<typeof adminEggSchema> & { configScript: z.infer<typeof adminEggScriptSchema> },
+): Promise<AdminNestEgg> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .post(`/api/admin/nests/${nestUuid}/eggs`, {

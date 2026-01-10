@@ -1,7 +1,7 @@
 import { Group, Title } from '@mantine/core';
 import debounce from 'debounce';
 import { useEffect, useRef, useState } from 'react';
-import Can from '@/elements/Can.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -43,9 +43,9 @@ export default function ServerConsole() {
           </Title>
           <p className='text-sm text-gray-300!'>{server.description}</p>
         </div>
-        <Can action={['control.start', 'control.stop', 'control.restart']} matchAny>
+        <ServerCan action={['control.start', 'control.stop', 'control.restart']} matchAny>
           <ServerPowerControls />
-        </Can>
+        </ServerCan>
       </Group>
 
       <div className='grid xl:grid-cols-4 gap-4 mb-4'>

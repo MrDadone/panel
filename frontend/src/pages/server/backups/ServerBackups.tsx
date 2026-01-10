@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import getBackups from '@/api/server/backups/getBackups.ts';
 import Button from '@/elements/Button.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import ConditionalTooltip from '@/elements/ConditionalTooltip.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
@@ -34,19 +35,21 @@ export default function ServerBackups() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <ConditionalTooltip
-          enabled={backups.total >= server.featureLimits.backups}
-          label={t('pages.server.backups.tooltip.limitReached', { max: server.featureLimits.backups })}
-        >
-          <Button
-            disabled={backups.total >= server.featureLimits.backups}
-            onClick={() => setOpenModal('create')}
-            color='blue'
-            leftSection={<FontAwesomeIcon icon={faPlus} />}
+        <ServerCan action='backups.create'>
+          <ConditionalTooltip
+            enabled={backups.total >= server.featureLimits.backups}
+            label={t('pages.server.backups.tooltip.limitReached', { max: server.featureLimits.backups })}
           >
-            {t('common.button.create', {})}
-          </Button>
-        </ConditionalTooltip>
+            <Button
+              disabled={backups.total >= server.featureLimits.backups}
+              onClick={() => setOpenModal('create')}
+              color='blue'
+              leftSection={<FontAwesomeIcon icon={faPlus} />}
+            >
+              {t('common.button.create', {})}
+            </Button>
+          </ConditionalTooltip>
+        </ServerCan>
       }
     >
       <BackupCreateModal opened={openModal === 'create'} onClose={() => setOpenModal(null)} />

@@ -1,7 +1,7 @@
 import { faCog, faEgg } from '@fortawesome/free-solid-svg-icons';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { Route, Routes, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import getNest from '@/api/admin/nests/getNest.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Spinner from '@/elements/Spinner.tsx';
@@ -34,24 +34,23 @@ export default function NestView() {
       <Title order={1}>{nest.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/nests/${params.nestId}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/nests/${params.nestId}`,
+            path: `/`,
+            element: <NestCreateOrUpdate contextNest={nest} />,
           },
           {
             name: 'Eggs',
             icon: faEgg,
-            link: `/admin/nests/${params.nestId}/eggs`,
+            path: `/eggs/*`,
+            element: <AdminEggs contextNest={nest} />,
+            permission: 'eggs.read',
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<NestCreateOrUpdate contextNest={nest} />} />
-        <Route path='/eggs/*' element={<AdminEggs contextNest={nest} />} />
-      </Routes>
     </>
   );
 }

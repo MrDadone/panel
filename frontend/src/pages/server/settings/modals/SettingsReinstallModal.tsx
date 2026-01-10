@@ -52,8 +52,7 @@ export default function SettingsReinstallModal({ opened, onClose }: ModalProps) 
         <Switch
           label={t('common.form.truncateDirectory', {})}
           name='truncate'
-          defaultChecked={form.values.truncateDirectory}
-          onChange={(e) => form.setFieldValue('truncateDirectory', e.target.checked)}
+          {...form.getInputProps('truncateDirectory', { type: 'checkbox' })}
         />
 
         <Group mt='md'>

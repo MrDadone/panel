@@ -37,8 +37,13 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
             cookies: Cookies,
             params: Query<Params>,
             Path(oauth_provider): Path<uuid::Uuid>| async move {
+            state
+                .cache
+                .ratelimit(format!("auth/oauth/{}", oauth_provider), 6, 300, ip.to_string())
+                .await?;
+
             let oauth_provider =
-                match OAuthProvider::by_uuid_optional_cached(&state.database, oauth_provider).await? {
+                match OAuthProvider::by_uuid_optional_cached(&state.database,oauth_provider).await? {
                     Some(oauth_provider) => oauth_provider,
                     None => {
                         return ApiResponse::error("oauth provider not found")
@@ -65,7 +70,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                     .ok();
             }
 
-            let settings = state.settings.get().await;
+            let settings = state.settings.get().await?;
 
             let client = BasicClient::new(ClientId::new(oauth_provider.client_id.to_string()))
                 .set_client_secret(ClientSecret::new(
@@ -159,7 +164,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                     })
                     .await;
 
-                let settings = state.settings.get().await;
+                let settings = state.settings.get().await?;
                 let secure = settings.app.url.starts_with("https://");
                 drop(settings);
 
@@ -218,7 +223,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                     tracing::warn!(user = %user.uuid, "failed to log user activity: {:?}", err);
                 }
 
-                let settings = state.settings.get().await;
+                let settings = state.settings.get().await?;
 
                 ApiResponse::new(Body::empty())
                     .with_header("Location", &format!("{}/account/oauth-links", settings.app.url.trim_end_matches('/')))
@@ -263,7 +268,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                         )
                         .await?;
 
-                        let settings = state.settings.get().await;
+                        let settings = state.settings.get().await?;
                         let secure = settings.app.url.starts_with("https://");
                         drop(settings);
 
@@ -305,7 +310,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                         .execute(state.database.write())
                         .await?;
 
-                        let settings = state.settings.get().await;
+                        let settings = state.settings.get().await?;
 
                         ApiResponse::new(Body::empty())
                             .with_header("Location", &settings.app.url)
@@ -313,7 +318,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                             .ok()
                     }
                     None => {
-                        let settings = state.settings.get().await;
+                        let settings = state.settings.get().await?;
                         if !settings.app.registration_enabled {
                             return ApiResponse::error("registration is disabled")
                                 .with_status(StatusCode::BAD_REQUEST)
@@ -410,7 +415,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                                 .build(),
                         );
 
-                        let settings = state.settings.get().await;
+                        let settings = state.settings.get().await?;
 
                         ApiResponse::new(Body::empty())
                             .with_header("Location", &settings.app.url)

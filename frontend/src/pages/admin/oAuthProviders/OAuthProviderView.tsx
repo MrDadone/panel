@@ -1,7 +1,7 @@
 import { faCog, faUsers } from '@fortawesome/free-solid-svg-icons';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { Route, Routes, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import getOAuthProvider from '@/api/admin/oauth-providers/getOAuthProvider.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Spinner from '@/elements/Spinner.tsx';
@@ -34,24 +34,23 @@ export default function OAuthProviderView() {
       <Title order={1}>{oauthProvider.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/oauth-providers/${params.id}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/oauth-providers/${params.id}`,
+            path: '/',
+            element: <OAuthProviderCreateOrUpdate contextOAuthProvider={oauthProvider} />,
           },
           {
             name: 'Users',
             icon: faUsers,
-            link: `/admin/oauth-providers/${params.id}/users`,
+            path: `/admin/oauth-providers/${params.id}/users`,
+            element: <AdminOAuthProviderUsers oauthProvider={oauthProvider} />,
+            permission: 'users.read',
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<OAuthProviderCreateOrUpdate contextOAuthProvider={oauthProvider} />} />
-        <Route path='/users' element={<AdminOAuthProviderUsers oauthProvider={oauthProvider} />} />
-      </Routes>
     </>
   );
 }

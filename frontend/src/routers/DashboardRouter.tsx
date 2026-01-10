@@ -4,6 +4,7 @@ import { NavLink, Route, Routes } from 'react-router';
 import Container from '@/elements/Container.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import { isAdmin } from '@/lib/permissions.ts';
 import { to } from '@/lib/routes.ts';
 import DashboardHomeAll from '@/pages/dashboard/home/DashboardHomeAll.tsx';
 import DashboardHomeGrouped from '@/pages/dashboard/home/DashboardHomeGrouped.tsx';
@@ -32,24 +33,13 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
           <Sidebar.Divider />
 
           <Sidebar.Link to='/' end icon={faServer} name={t('pages.account.home.title', {})} />
-          {user!.admin && (
+          {isAdmin(user!) && (
             <Sidebar.Link to='/admin' end icon={faGraduationCap} name={t('pages.account.admin.title', {})} />
           )}
 
           <Sidebar.Divider />
 
-          {accountRoutes
-            .filter((route) => !!route.name && (!route.filter || route.filter()))
-            .map((route) => (
-              <Sidebar.Link
-                key={route.path}
-                to={to(route.path, '/account')}
-                end={route.exact}
-                icon={route.icon}
-                name={typeof route.name === 'function' ? route.name() : route.name}
-              />
-            ))}
-          {window.extensionContext.routes.accountRoutes
+          {[...accountRoutes, ...window.extensionContext.routes.accountRoutes]
             .filter((route) => !!route.name && (!route.filter || route.filter()))
             .map((route) => (
               <Sidebar.Link
@@ -85,12 +75,7 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
                   <Route path='/grouped' element={<DashboardHomeGrouped />} />
                 </>
               )}
-              {accountRoutes
-                .filter((route) => !route.filter || route.filter())
-                .map(({ path, element: Element }) => (
-                  <Route key={path} path={`/account/${path}`.replace('//', '/')} element={<Element />} />
-                ))}
-              {window.extensionContext.routes.accountRoutes
+              {[...accountRoutes, ...window.extensionContext.routes.accountRoutes]
                 .filter((route) => !route.filter || route.filter())
                 .map(({ path, element: Element }) => (
                   <Route key={path} path={`/account/${path}`.replace('//', '/')} element={<Element />} />

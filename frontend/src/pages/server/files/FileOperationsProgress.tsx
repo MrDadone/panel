@@ -12,14 +12,8 @@ interface FileUploadInfo {
   status: 'pending' | 'uploading' | 'completed' | 'cancelled' | 'error';
 }
 
-interface FileOperation {
-  type: 'compress' | 'decompress' | 'pull';
-  path: string;
-  progress: number;
-  total: number;
-}
-
 interface FileOperationsProgressProps {
+  serverUuid: string;
   uploadingFiles: Map<string, FileUploadInfo>;
   fileOperations: Map<string, FileOperation>;
   aggregatedUploadProgress: Map<
@@ -38,6 +32,7 @@ interface FileOperationsProgressProps {
 }
 
 const FileOperationsProgress = memo(function FileOperationsProgress({
+  serverUuid,
   uploadingFiles,
   fileOperations,
   aggregatedUploadProgress,
@@ -144,7 +139,13 @@ const FileOperationsProgress = memo(function FileOperationsProgress({
                       ? `Decompressing ${operation.path}`
                       : operation.type === 'pull'
                         ? `Pulling ${operation.path}`
-                        : null}
+                        : operation.type === 'copy'
+                          ? `Copying ${operation.path} to ${operation.destinationPath}`
+                          : operation.type === 'copy_remote'
+                            ? operation.destinationServer === serverUuid
+                              ? `Receiving files from remote server`
+                              : `Sending files to remote server`
+                            : null}
                 </p>
                 <Progress value={progress} />
               </div>

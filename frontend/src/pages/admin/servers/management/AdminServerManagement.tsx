@@ -7,16 +7,21 @@ import ServerDeleteModal from '@/pages/admin/servers/management/modals/ServerDel
 import ServerSuspendModal from '@/pages/admin/servers/management/modals/ServerSuspendModal.tsx';
 import ServerTransferModal from '@/pages/admin/servers/management/modals/ServerTransferModal.tsx';
 import ServerUnsuspendModal from '@/pages/admin/servers/management/modals/ServerUnsuspendModal.tsx';
+import { useAdminCan } from '@/plugins/usePermissions.ts';
 import ServerClearStateModal from './modals/ServerClearStateModal.tsx';
 
 export default function AdminServerManagement({ server }: { server: AdminServer }) {
+  const canTransfer = useAdminCan(['server.transfer', 'nodes.read'], false);
+
   const [openModal, setOpenModal] = useState<'transfer' | 'suspend' | 'unsuspend' | 'clear-state' | 'delete' | null>(
     null,
   );
 
   return (
     <AdminContentContainer title='Server Management' hideTitleComponent>
-      <ServerTransferModal server={server} opened={openModal === 'transfer'} onClose={() => setOpenModal(null)} />
+      {canTransfer && (
+        <ServerTransferModal server={server} opened={openModal === 'transfer'} onClose={() => setOpenModal(null)} />
+      )}
       <ServerSuspendModal server={server} opened={openModal === 'suspend'} onClose={() => setOpenModal(null)} />
       <ServerUnsuspendModal server={server} opened={openModal === 'unsuspend'} onClose={() => setOpenModal(null)} />
       <ServerClearStateModal server={server} opened={openModal === 'clear-state'} onClose={() => setOpenModal(null)} />
@@ -28,9 +33,13 @@ export default function AdminServerManagement({ server }: { server: AdminServer 
             <Stack gap='xs'>
               <Title order={2}>Transfer</Title>
               <Text size='sm'>Move this server to another node within this system.</Text>
-              <Button onClick={() => setOpenModal('transfer')} variant='outline' size='xs'>
-                Transfer
-              </Button>
+              {canTransfer ? (
+                <Button onClick={() => setOpenModal('transfer')} variant='outline' size='xs'>
+                  Transfer
+                </Button>
+              ) : (
+                <Text size='sm'>You do not have permission to transfer this server.</Text>
+              )}
             </Stack>
           </Card>
         </Grid.Col>

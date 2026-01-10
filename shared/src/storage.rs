@@ -59,10 +59,10 @@ impl Storage {
         Self { settings }
     }
 
-    pub async fn retrieve_urls(&self) -> StorageUrlRetriever<'_> {
-        let settings = self.settings.get().await;
+    pub async fn retrieve_urls(&self) -> Result<StorageUrlRetriever<'_>, anyhow::Error> {
+        let settings = self.settings.get().await?;
 
-        StorageUrlRetriever::new(settings)
+        Ok(StorageUrlRetriever::new(settings))
     }
 
     pub async fn remove(&self, path: Option<&str>) -> Result<(), anyhow::Error> {
@@ -75,7 +75,7 @@ impl Storage {
             return Err(anyhow::anyhow!("invalid path"));
         }
 
-        let settings = self.settings.get().await;
+        let settings = self.settings.get().await?;
 
         tracing::debug!(path, "removing file");
 
@@ -142,7 +142,7 @@ impl Storage {
             return Err(anyhow::anyhow!("invalid path"));
         }
 
-        let settings = self.settings.get().await;
+        let settings = self.settings.get().await?;
 
         tracing::debug!(path, "storing file: {} bytes", data.len());
 

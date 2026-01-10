@@ -27,7 +27,7 @@ export default function CaptchaRecaptcha({
         <PasswordInput withAsterisk label='Secret Key' placeholder='Secret Key' {...form.getInputProps('secretKey')} />
       </Group>
 
-      <Switch label='V3' checked={form.values.v3} onChange={(e) => form.setFieldValue('v3', e.target.checked)} />
+      <Switch label='V3' {...form.getInputProps('v3', { type: 'checkbox' })} />
     </Stack>
   );
 }

@@ -46,6 +46,7 @@ export const captchaProviderTypeLabelMapping: Record<CaptchaProvider['type'], st
   none: 'None',
   turnstile: 'Turnstile',
   recaptcha: 'reCAPTCHA',
+  hcaptcha: 'hCaptcha',
 };
 
 export const compressionLevelLabelMapping: Record<CompressionLevel, string> = {
@@ -53,6 +54,15 @@ export const compressionLevelLabelMapping: Record<CompressionLevel, string> = {
   good_speed: 'Good Speed',
   good_compression: 'Good Compression',
   best_compression: 'Best Compression',
+};
+
+export const processConfigurationParserLabelMapping: Record<ProcessConfigurationConfigParser, string> = {
+  file: 'File',
+  yaml: 'YAML',
+  properties: 'Properties',
+  ini: 'INI',
+  json: 'JSON',
+  xml: 'XML',
 };
 
 export const databaseTypeLabelMapping: Record<DatabaseType, string> = {

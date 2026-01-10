@@ -125,8 +125,7 @@ export default function FileSearchModal({ opened, onClose }: ModalProps) {
                     <Switch
                       label='Search Case Insensitive'
                       description='Search file paths in insensitive mode, "A" will still match "a".'
-                      checked={form.values.pathFilter.caseInsensitive}
-                      onChange={(e) => form.setFieldValue('pathFilter.caseInsensitive', e.target.checked)}
+                      {...form.getInputProps('pathFilter.caseInsensitive', { type: 'checkbox' })}
                     />
                   </Stack>
                 )}
@@ -179,14 +178,12 @@ export default function FileSearchModal({ opened, onClose }: ModalProps) {
                       <Switch
                         label='Include Unmatched Files'
                         description='If a file matches the other filters, but cannot match the content filter due to being too big, still include it.'
-                        checked={form.values.contentFilter.includeUnmatched}
-                        onChange={(e) => form.setFieldValue('contentFilter.includeUnmatched', e.target.checked)}
+                        {...form.getInputProps('contentFilter.includeUnmatched', { type: 'checkbox' })}
                       />
                       <Switch
                         label='Search Case Insensitive'
                         description='Search file content using the query in insensitive mode, "A" will still match "a".'
-                        checked={form.values.contentFilter.caseInsensitive}
-                        onChange={(e) => form.setFieldValue('contentFilter.caseInsensitive', e.target.checked)}
+                        {...form.getInputProps('contentFilter.caseInsensitive', { type: 'checkbox' })}
                       />
                     </Group>
                   </Stack>

@@ -68,7 +68,7 @@ mod get {
         )
         .await?;
 
-        let storage_url_retriever = state.storage.retrieve_urls().await;
+        let storage_url_retriever = state.storage.retrieve_urls().await?;
 
         ApiResponse::json(Response {
             user_oauth_links: user_oauth_links

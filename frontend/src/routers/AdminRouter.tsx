@@ -1,12 +1,13 @@
 import { faReply } from '@fortawesome/free-solid-svg-icons';
 import { Suspense } from 'react';
 import { NavLink, Route, Routes } from 'react-router';
-import Can from '@/elements/Can.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Container from '@/elements/Container.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { to } from '@/lib/routes.ts';
 import NotFound from '@/pages/NotFound.tsx';
+import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import adminRoutes from '@/routers/routes/adminRoutes.ts';
 import { useGlobalStore } from '@/stores/global.ts';
 
@@ -30,11 +31,11 @@ export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
 
           <Sidebar.Divider />
 
-          {adminRoutes
+          {[...adminRoutes, ...window.extensionContext.routes.adminRoutes]
             .filter((route) => !!route.name && (!route.filter || route.filter()))
             .map((route) =>
               route.permission ? (
-                <Can key={route.path} action={route.permission} matchAny>
+                <AdminCan key={route.path} action={route.permission} matchAny>
                   <Sidebar.Link
                     key={route.path}
                     to={to(route.path, '/admin')}
@@ -42,30 +43,7 @@ export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
                     icon={route.icon}
                     name={typeof route.name === 'function' ? route.name() : route.name}
                   />
-                </Can>
-              ) : (
-                <Sidebar.Link
-                  key={route.path}
-                  to={to(route.path, '/admin')}
-                  end={route.exact}
-                  icon={route.icon}
-                  name={typeof route.name === 'function' ? route.name() : route.name}
-                />
-              ),
-            )}
-          {window.extensionContext.routes.adminRoutes
-            .filter((route) => !!route.name && (!route.filter || route.filter()))
-            .map((route) =>
-              route.permission ? (
-                <Can key={route.path} action={route.permission} matchAny>
-                  <Sidebar.Link
-                    key={route.path}
-                    to={to(route.path, '/admin')}
-                    end={route.exact}
-                    icon={route.icon}
-                    name={typeof route.name === 'function' ? route.name() : route.name}
-                  />
-                </Can>
+                </AdminCan>
               ) : (
                 <Sidebar.Link
                   key={route.path}
@@ -90,15 +68,12 @@ export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
         <Container isNormal={isNormal}>
           <Suspense fallback={<Spinner.Centered />}>
             <Routes>
-              {adminRoutes
+              {[...adminRoutes, ...window.extensionContext.routes.adminRoutes]
                 .filter((route) => !route.filter || route.filter())
-                .map(({ path, element: Element }) => (
-                  <Route key={path} path={path} element={<Element />} />
-                ))}
-              {window.extensionContext.routes.adminRoutes
-                .filter((route) => !route.filter || route.filter())
-                .map(({ path, element: Element }) => (
-                  <Route key={path} path={path} element={<Element />} />
+                .map(({ path, element: Element, permission }) => (
+                  <Route key={path} element={<AdminPermissionGuard permission={permission ?? []} />}>
+                    <Route path={path} element={<Element />} />
+                  </Route>
                 ))}
               <Route path='*' element={<NotFound />} />
             </Routes>

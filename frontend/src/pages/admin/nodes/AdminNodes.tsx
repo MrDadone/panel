@@ -3,10 +3,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Route, Routes, useNavigate } from 'react-router';
 import getNodes from '@/api/admin/nodes/getNodes.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { nodeTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
+import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import NodeCreateOrUpdate from './NodeCreateOrUpdate.tsx';
 import NodeRow from './NodeRow.tsx';
@@ -27,13 +29,15 @@ function NodesContainer() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <Button
-          onClick={() => navigate('/admin/nodes/new')}
-          color='blue'
-          leftSection={<FontAwesomeIcon icon={faPlus} />}
-        >
-          Create
-        </Button>
+        <AdminCan action='nodes.create'>
+          <Button
+            onClick={() => navigate('/admin/nodes/new')}
+            color='blue'
+            leftSection={<FontAwesomeIcon icon={faPlus} />}
+          >
+            Create
+          </Button>
+        </AdminCan>
       }
     >
       <Table columns={nodeTableColumns} loading={loading} pagination={nodes} onPageSelect={setPage}>
@@ -49,8 +53,10 @@ export default function AdminNodes() {
   return (
     <Routes>
       <Route path='/' element={<NodesContainer />} />
-      <Route path='/new' element={<NodeCreateOrUpdate />} />
       <Route path='/:id/*' element={<NodeView />} />
+      <Route element={<AdminPermissionGuard permission='nodes.create' />}>
+        <Route path='/new' element={<NodeCreateOrUpdate />} />
+      </Route>
     </Routes>
   );
 }

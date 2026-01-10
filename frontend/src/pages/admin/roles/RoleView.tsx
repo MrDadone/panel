@@ -1,7 +1,7 @@
 import { faCog, faUsers } from '@fortawesome/free-solid-svg-icons';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { Route, Routes, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import getRole from '@/api/admin/roles/getRole.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Spinner from '@/elements/Spinner.tsx';
@@ -34,24 +34,23 @@ export default function RoleView() {
       <Title order={1}>{role.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/roles/${params.id}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/roles/${params.id}`,
+            path: `/`,
+            element: <RoleCreateOrUpdate contextRole={role} />,
           },
           {
             name: 'Users',
             icon: faUsers,
-            link: `/admin/roles/${params.id}/users`,
+            path: `/users`,
+            element: <AdminRoleUsers role={role} />,
+            permission: 'users.read',
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<RoleCreateOrUpdate contextRole={role} />} />
-        <Route path='/users' element={<AdminRoleUsers role={role} />} />
-      </Routes>
     </>
   );
 }

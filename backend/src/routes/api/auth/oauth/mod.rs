@@ -22,7 +22,12 @@ mod get {
         (status = OK, body = inline(Response)),
         (status = NOT_FOUND, body = ApiError),
     ))]
-    pub async fn route(state: GetState) -> ApiResponseResult {
+    pub async fn route(state: GetState, ip: shared::GetIp) -> ApiResponseResult {
+        state
+            .cache
+            .ratelimit("auth/oauth", 6, 60, ip.to_string())
+            .await?;
+
         let oauth_providers = OAuthProvider::all_by_usable(&state.database).await?;
 
         ApiResponse::json(Response {

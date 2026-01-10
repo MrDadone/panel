@@ -1,7 +1,7 @@
 import { faCog, faDatabase } from '@fortawesome/free-solid-svg-icons';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { Route, Routes, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import getDatabaseHost from '@/api/admin/database-hosts/getDatabaseHost.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Spinner from '@/elements/Spinner.tsx';
@@ -34,24 +34,22 @@ export default function DatabaseHostView() {
       <Title order={1}>{databaseHost.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/database-hosts/${params.id}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/database-hosts/${params.id}`,
+            path: `/`,
+            element: <DatabaseHostCreateOrUpdate contextDatabaseHost={databaseHost} />,
           },
           {
             name: 'Databases',
             icon: faDatabase,
-            link: `/admin/database-hosts/${params.id}/databases`,
+            path: `/databases`,
+            element: <AdminDatabaseHostDatabases databaseHost={databaseHost} />,
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<DatabaseHostCreateOrUpdate contextDatabaseHost={databaseHost} />} />
-        <Route path='/databases' element={<AdminDatabaseHostDatabases databaseHost={databaseHost} />} />
-      </Routes>
     </>
   );
 }

@@ -10,6 +10,7 @@ import createOAuthProvider from '@/api/admin/oauth-providers/createOAuthProvider
 import deleteOAuthProvider from '@/api/admin/oauth-providers/deleteOAuthProvider.ts';
 import updateOAuthProvider from '@/api/admin/oauth-providers/updateOAuthProvider.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
@@ -165,14 +166,14 @@ export default function OAuthProviderCreateOrUpdate({
             <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
           </Group>
 
-          {contextOAuthProvider && (
-            <Card className='flex flex-row! items-center justify-between'>
-              <Title order={4}>Redirect URL</Title>
-              <Code>
-                {settings.app.url}/api/auth/oauth/{contextOAuthProvider.uuid}
-              </Code>
-            </Card>
-          )}
+          <Card className='flex flex-row! items-center justify-between'>
+            <Title order={4}>Redirect URL</Title>
+            <Code>
+              {contextOAuthProvider
+                ? `${settings.app.url}/api/auth/oauth/${contextOAuthProvider.uuid}`
+                : 'Available after creation'}
+            </Code>
+          </Card>
 
           <Group grow>
             <TextInput withAsterisk label='Client Id' placeholder='Client Id' {...form.getInputProps('clientId')} />
@@ -195,14 +196,14 @@ export default function OAuthProviderCreateOrUpdate({
             <Switch
               label='Basic Auth'
               description='Uses HTTP Basic Authentication to transmit client id and secret, not common anymore'
-              checked={form.values.basicAuth}
-              onChange={(e) => form.setFieldValue('basicAuth', e.target.checked)}
+              {...form.getInputProps('basicAuth', { type: 'checkbox' })}
             />
           </Group>
 
           <Group grow>
             <TagsInput
               label='Scopes'
+              placeholder='Scopes'
               description='The OAuth2 Scopes to request, make sure to include scopes for email/profile info when needed'
               {...form.getInputProps('scopes')}
             />
@@ -247,44 +248,34 @@ export default function OAuthProviderCreateOrUpdate({
           </Group>
 
           <Group grow>
-            <Switch
-              label='Enabled'
-              checked={form.values.enabled}
-              onChange={(e) => form.setFieldValue('enabled', e.target.checked)}
-            />
-            <Switch
-              label='Only allow Login'
-              checked={form.values.loginOnly}
-              onChange={(e) => form.setFieldValue('loginOnly', e.target.checked)}
-            />
+            <Switch label='Enabled' {...form.getInputProps('enabled', { type: 'checkbox' })} />
+            <Switch label='Only allow Login' {...form.getInputProps('loginOnly', { type: 'checkbox' })} />
           </Group>
 
           <Group grow>
             <Switch
               label='Link Viewable to User'
               description='Allows the User to see the Connection and its identifier in the Client UI'
-              checked={form.values.linkViewable}
-              onChange={(e) => form.setFieldValue('linkViewable', e.target.checked)}
+              {...form.getInputProps('linkViewable', { type: 'checkbox' })}
             />
             <Switch
               label='Link Manageable by User'
               description='Allows the User to connect and disconnect with this provider'
-              checked={form.values.userManageable}
-              onChange={(e) => form.setFieldValue('userManageable', e.target.checked)}
+              {...form.getInputProps('userManageable', { type: 'checkbox' })}
             />
           </Group>
 
           <Group>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              Save
-            </Button>
-            {!contextOAuthProvider && (
-              <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
-                Save & Stay
+            <AdminCan action={contextOAuthProvider ? 'oauth-providers.update' : 'oauth-providers.create'} cantSave>
+              <Button type='submit' disabled={!form.isValid()} loading={loading}>
+                Save
               </Button>
-            )}
-            {contextOAuthProvider && (
-              <>
+              {!contextOAuthProvider && (
+                <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
+                  Save & Stay
+                </Button>
+              )}
+              {contextOAuthProvider && (
                 <ContextMenuProvider menuProps={{ position: 'top', offset: 40 }}>
                   <ContextMenu
                     items={[
@@ -318,10 +309,14 @@ export default function OAuthProviderCreateOrUpdate({
                     )}
                   </ContextMenu>
                 </ContextMenuProvider>
+              )}
+            </AdminCan>
+            {contextOAuthProvider && (
+              <AdminCan action='oauth-provider.delete' cantDelete>
                 <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
                   Delete
                 </Button>
-              </>
+              </AdminCan>
             )}
           </Group>
         </Stack>

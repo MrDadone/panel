@@ -59,15 +59,17 @@ const linkifyText = (html: string): string => {
   });
 };
 
+const RAW_PRELUDE = '\u001b[1m\u001b[33mcontainer@calagopus~ \u001b[0m';
+const PRELUDE_HTML = linkifyText(ansiUp.ansi_to_html(RAW_PRELUDE));
+
 interface TerminalLine {
+  id: number;
   html: string;
-  isPrelude: boolean;
   content: string;
 }
 
 export default function Terminal() {
   const { t } = useTranslations();
-  const TERMINAL_PRELUDE = '\u001b[1m\u001b[33mcontainer@calagopus~ \u001b[0m';
   const { server, imagePulls, socketConnected, socketInstance, state } = useServerStore();
 
   const [lines, setLines] = useState<TerminalLine[]>([]);
@@ -81,7 +83,8 @@ export default function Terminal() {
   const inputRef = useRef<HTMLInputElement>(null);
   const isAutoScrolling = useRef(false);
   const isInitialLoad = useRef(true);
-  const initialScrollTimer = useRef<NodeJS.Timeout | null>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lineIdCounter = useRef(0);
 
   const HISTORY_STORAGE_KEY = `terminal_command_history_${server.uuid}`;
   const CONSOLE_FONT_SIZE_KEY = 'terminal_console_font_size';
@@ -94,11 +97,19 @@ export default function Terminal() {
         const start = Date.now();
         socketInstance.send(SocketRequest.PING);
 
+        let timeout: NodeJS.Timeout | null = null;
         const handlePong = () => {
           const latency = Date.now() - start;
           setWebsocketPing(latency);
           socketInstance.removeListener(SocketEvent.PONG, handlePong);
+          if (timeout) {
+            clearTimeout(timeout);
+          }
         };
+
+        timeout = setTimeout(() => {
+          socketInstance.removeListener(SocketEvent.PONG, handlePong);
+        }, 10000);
 
         socketInstance.addListener(SocketEvent.PONG, handlePong);
       };
@@ -151,8 +162,7 @@ export default function Terminal() {
 
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
     const threshold = 50;
-    const atBottom = scrollHeight - scrollTop - clientHeight < threshold;
-    return atBottom;
+    return scrollHeight - scrollTop - clientHeight < threshold;
   }, []);
 
   const handleScroll = useCallback(() => {
@@ -167,9 +177,15 @@ export default function Terminal() {
       isAutoScrolling.current = true;
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
       setIsAtBottom(true);
-      setTimeout(() => {
+
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      scrollTimeoutRef.current = setTimeout(() => {
         isAutoScrolling.current = false;
-      }, 50);
+        scrollTimeoutRef.current = null;
+      }, 100);
     }
   }, []);
 
@@ -181,13 +197,17 @@ export default function Terminal() {
 
       const processed = text.replace(/(?:\r\n|\r|\n)$/im, '');
       const ansiHtml = ansiUp.ansi_to_html(processed);
-      const html = linkifyText(ansiHtml);
+      let html = linkifyText(ansiHtml);
+
+      if (prelude && !processed.includes('\u001b[1m\u001b[41m')) {
+        html = PRELUDE_HTML + html;
+      }
 
       setLines((prev) => {
         const newLine: TerminalLine = {
+          id: lineIdCounter.current++,
           html,
           content: processed,
-          isPrelude: prelude,
         };
 
         const updated = [...prev, newLine];
@@ -195,14 +215,14 @@ export default function Terminal() {
       });
 
       if (isInitialLoad.current) {
-        if (initialScrollTimer.current) {
-          clearTimeout(initialScrollTimer.current);
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
         }
 
-        initialScrollTimer.current = setTimeout(() => {
+        scrollTimeoutRef.current = setTimeout(() => {
           isInitialLoad.current = false;
           scrollToBottom();
-          initialScrollTimer.current = null;
+          scrollTimeoutRef.current = null;
         }, 100);
       }
     },
@@ -214,12 +234,18 @@ export default function Terminal() {
 
     if (isAtBottom && containerRef.current) {
       isAutoScrolling.current = true;
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
       requestAnimationFrame(() => {
         if (containerRef.current) {
           containerRef.current.scrollTop = containerRef.current.scrollHeight;
-          setTimeout(() => {
+
+          scrollTimeoutRef.current = setTimeout(() => {
             isAutoScrolling.current = false;
-          }, 50);
+            scrollTimeoutRef.current = null;
+          }, 100);
         }
       });
     }
@@ -229,6 +255,7 @@ export default function Terminal() {
     if (!socketConnected || !socketInstance) return;
 
     setLines([]);
+    lineIdCounter.current = 0;
     isInitialLoad.current = true;
     setIsAtBottom(true);
 
@@ -264,8 +291,8 @@ export default function Terminal() {
 
     return () => {
       Object.entries(listeners).forEach(([k, fn]) => socketInstance.removeListener(k, fn));
-      if (initialScrollTimer.current) {
-        clearTimeout(initialScrollTimer.current);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
       }
     };
   }, [socketConnected, socketInstance, addLine]);
@@ -305,15 +332,12 @@ export default function Terminal() {
 
   const MemoizedLines = useMemo(
     () =>
-      lines.map((line, index) => (
+      lines.map((line) => (
         <div
-          key={`line-${index}`}
+          key={line.id}
           className='whitespace-pre-wrap break-all'
           dangerouslySetInnerHTML={{
-            __html:
-              line.isPrelude && !line.content.includes('\u001b[1m\u001b[41m')
-                ? linkifyText(ansiUp.ansi_to_html(TERMINAL_PRELUDE)) + line.html
-                : line.html,
+            __html: line.html,
           }}
         />
       )),
@@ -330,7 +354,7 @@ export default function Terminal() {
               socketConnected ? 'bg-green-500' : 'bg-red-500',
             )}
           />
-          {socketConnected
+          {socketConnected && socketInstance
             ? t('pages.server.console.socketConnected', { ping: websocketPing })
             : t('pages.server.console.socketDisconnected', {})}
         </div>

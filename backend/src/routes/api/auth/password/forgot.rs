@@ -40,6 +40,15 @@ mod post {
                 .ok();
         }
 
+        state
+            .cache
+            .ratelimit("auth/password/forgot", 10, 3600, ip.to_string())
+            .await?;
+        state
+            .cache
+            .ratelimit("auth/password/forgot:email", 5, 3600, &data.email)
+            .await?;
+
         if let Err(error) = state.captcha.verify(ip, data.captcha).await {
             return ApiResponse::error(&error)
                 .with_status(StatusCode::BAD_REQUEST)
@@ -64,7 +73,17 @@ mod post {
                 }
             };
 
-            let settings = state.settings.get().await;
+            let settings = match state.settings.get().await {
+                Ok(settings) => settings,
+                Err(err) => {
+                    tracing::warn!(
+                        user = %user.uuid,
+                        "failed to get settings for password reset email: {:#?}",
+                        err
+                    );
+                    return;
+                }
+            };
 
             let mail = shared::mail::MAIL_PASSWORD_RESET
                 .replace("{{app_name}}", &settings.app.name)

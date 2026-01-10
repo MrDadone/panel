@@ -12,6 +12,7 @@ import resetNodeToken from '@/api/admin/nodes/resetNodeToken.ts';
 import updateNode from '@/api/admin/nodes/updateNode.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
@@ -211,30 +212,32 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
 
           <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
 
-          <Switch
-            label='Public'
-            checked={form.values.public}
-            onChange={(e) => form.setFieldValue('public', e.target.checked)}
-          />
+          <Switch label='Public' {...form.getInputProps('public', { type: 'checkbox' })} />
 
           <Group>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              Save
-            </Button>
-            {!contextNode && (
-              <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
-                Save & Stay
+            <AdminCan action={contextNode ? 'nodes.update' : 'nodes.create'} cantSave>
+              <Button type='submit' disabled={!form.isValid()} loading={loading}>
+                Save
               </Button>
-            )}
+              {!contextNode && (
+                <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
+                  Save & Stay
+                </Button>
+              )}
+            </AdminCan>
             {contextNode && (
-              <Button color='red' variant='outline' onClick={doResetToken} loading={loading}>
-                Reset Token
-              </Button>
-            )}
-            {contextNode && (
-              <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
-                Delete
-              </Button>
+              <>
+                <AdminCan action='nodes.reset-token'>
+                  <Button color='red' variant='outline' onClick={doResetToken} loading={loading}>
+                    Reset Token
+                  </Button>
+                </AdminCan>
+                <AdminCan action='nodes.delete' cantDelete>
+                  <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
+                    Delete
+                  </Button>
+                </AdminCan>
+              </>
             )}
           </Group>
         </Stack>

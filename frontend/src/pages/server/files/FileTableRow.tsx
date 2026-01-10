@@ -2,6 +2,7 @@ import { forwardRef, type MouseEventHandler, memo, type ReactNode, useCallback }
 import { createSearchParams, useNavigate, useSearchParams } from 'react-router';
 import { TableRow } from '@/elements/Table.tsx';
 import { isEditableFile } from '@/lib/files.ts';
+import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -22,6 +23,7 @@ export const FileTableRow = memo(
     const server = useServerStore((state) => state.server);
     const { browsingDirectory, movingFileNames, movingFilesDirectory, isFileSelected } = useServerStore();
     const { settings } = useGlobalStore();
+    const canOpenFile = useServerCan('files.read-content');
 
     const isSelected =
       isFileSelected(file) || (movingFilesDirectory === browsingDirectory && movingFileNames.has(file.name));
@@ -34,6 +36,8 @@ export const FileTableRow = memo(
               directory: `${browsingDirectory}/${file.name}`.replace('//', '/'),
             });
           } else {
+            if (!canOpenFile) return;
+
             navigate(
               `/server/${server.uuidShort}/files/edit?${createSearchParams({
                 directory: browsingDirectory,
@@ -52,7 +56,8 @@ export const FileTableRow = memo(
       <TableRow
         ref={ref}
         className={
-          (isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) || file.directory
+          canOpenFile &&
+          ((isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) || file.directory)
             ? 'cursor-pointer select-none'
             : 'select-none'
         }

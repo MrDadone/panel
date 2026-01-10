@@ -69,7 +69,7 @@ mod get {
         )
         .await?;
 
-        let storage_url_retriever = state.storage.retrieve_urls().await;
+        let storage_url_retriever = state.storage.retrieve_urls().await?;
 
         ApiResponse::json(Response {
             subusers: Pagination {
@@ -221,7 +221,7 @@ mod post {
                     username
                 )
             })?
-            .into_api_object(&state.storage.retrieve_urls().await),
+            .into_api_object(&state.storage.retrieve_urls().await?),
         })
         .ok()
     }

@@ -301,6 +301,21 @@ impl WingsClient {
         .await
     }
 
+    pub async fn post_servers_server_files_copy_remote(
+        &self,
+        server: uuid::Uuid,
+        data: &super::servers_server_files_copy_remote::post::RequestBody,
+    ) -> Result<super::servers_server_files_copy_remote::post::Response, ApiHttpError> {
+        request_impl(
+            self,
+            Method::POST,
+            format!("/api/servers/{server}/files/copy-remote"),
+            Some(data),
+            None,
+        )
+        .await
+    }
+
     pub async fn post_servers_server_files_create_directory(
         &self,
         server: uuid::Uuid,
@@ -780,6 +795,19 @@ impl WingsClient {
 
     pub async fn post_transfers(&self) -> Result<super::transfers::post::Response, ApiHttpError> {
         request_impl(self, Method::POST, "/api/transfers", None::<&()>, None).await
+    }
+
+    pub async fn post_transfers_files(
+        &self,
+    ) -> Result<super::transfers_files::post::Response, ApiHttpError> {
+        request_impl(
+            self,
+            Method::POST,
+            "/api/transfers/files",
+            None::<&()>,
+            None,
+        )
+        .await
     }
 
     pub async fn delete_transfers_server(

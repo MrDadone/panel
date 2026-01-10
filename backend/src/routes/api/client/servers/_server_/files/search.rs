@@ -57,7 +57,7 @@ mod post {
                 .ok();
         }
 
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
 
         let request_body = wings_api::servers_server_files_search::post::RequestBody {
             root: data.root,

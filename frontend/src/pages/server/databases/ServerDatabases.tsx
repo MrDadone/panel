@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import getDatabases from '@/api/server/databases/getDatabases.ts';
 import Button from '@/elements/Button.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import ConditionalTooltip from '@/elements/ConditionalTooltip.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
@@ -34,19 +35,21 @@ export default function ServerDatabases() {
       search={search}
       setSearch={setSearch}
       contentRight={
-        <ConditionalTooltip
-          enabled={databases.total >= server.featureLimits.databases}
-          label={t('pages.server.databases.tooltip.limitReached', { max: server.featureLimits.databases })}
-        >
-          <Button
-            disabled={databases.total >= server.featureLimits.databases}
-            onClick={() => setOpenModal('create')}
-            color='blue'
-            leftSection={<FontAwesomeIcon icon={faPlus} />}
+        <ServerCan action='databases.create'>
+          <ConditionalTooltip
+            enabled={databases.total >= server.featureLimits.databases}
+            label={t('pages.server.databases.tooltip.limitReached', { max: server.featureLimits.databases })}
           >
-            {t('common.button.create', {})}
-          </Button>
-        </ConditionalTooltip>
+            <Button
+              disabled={databases.total >= server.featureLimits.databases}
+              onClick={() => setOpenModal('create')}
+              color='blue'
+              leftSection={<FontAwesomeIcon icon={faPlus} />}
+            >
+              {t('common.button.create', {})}
+            </Button>
+          </ConditionalTooltip>
+        </ServerCan>
       }
     >
       <DatabaseCreateModal opened={openModal === 'create'} onClose={() => setOpenModal(null)} />

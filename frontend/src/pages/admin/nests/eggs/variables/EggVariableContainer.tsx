@@ -43,6 +43,7 @@ export default function EggVariableContainer({
       defaultValue: null,
       userViewable: true,
       userEditable: false,
+      secret: false,
       rules: [],
     },
     validateInputOnBlur: true,
@@ -59,6 +60,7 @@ export default function EggVariableContainer({
         defaultValue: contextVariable.defaultValue,
         userViewable: contextVariable.userViewable,
         userEditable: contextVariable.userEditable,
+        secret: contextVariable.isSecret,
         rules: contextVariable.rules,
       });
     }
@@ -136,7 +138,12 @@ export default function EggVariableContainer({
           <Stack>
             <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
 
-            <TextArea label='Description' placeholder='Description' {...form.getInputProps('description')} />
+            <TextArea
+              label='Description'
+              placeholder='Description'
+              description='Supports Markdown formatting.'
+              {...form.getInputProps('description')}
+            />
 
             <Group grow>
               <TextInput
@@ -144,24 +151,34 @@ export default function EggVariableContainer({
                 label='Environment Variable'
                 placeholder='Environment Variable'
                 {...form.getInputProps('envVariable')}
-                onChange={(e) => form.setFieldValue('envVariable', e.target.value.toUpperCase())}
+                onChange={(e) => form.setFieldValue('envVariable', e.target.value.toUpperCase().replace(/-| /g, '_'))}
               />
 
-              <TextInput
-                withAsterisk
-                label='Default Value'
-                placeholder='server.jar'
-                {...form.getInputProps('defaultValue')}
-              />
+              <TextInput label='Default Value' placeholder='server.jar' {...form.getInputProps('defaultValue')} />
             </Group>
 
             <Group grow>
-              <Switch label='User Viewable' name='user_viewable' {...form.getInputProps('userViewable')} />
+              <Switch
+                label='User Viewable'
+                name='user_viewable'
+                {...form.getInputProps('userViewable', { type: 'checkbox' })}
+              />
 
-              <Switch label='User Editable' name='user_editable' {...form.getInputProps('userEditable')} />
+              <Switch
+                label='User Editable'
+                name='user_editable'
+                {...form.getInputProps('userEditable', { type: 'checkbox' })}
+              />
             </Group>
 
-            <TagsInput label='Rules' {...form.getInputProps('rules')} />
+            <Switch label='Secret' name='secret' {...form.getInputProps('secret', { type: 'checkbox' })} />
+
+            <TagsInput
+              label='Rules'
+              placeholder='Rules'
+              description='Inspired by https://laravel.com/docs/12.x/validation#available-validation-rules'
+              {...form.getInputProps('rules')}
+            />
           </Stack>
 
           <Group pt='md' mt='auto'>

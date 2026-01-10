@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 pub use crate::models::{
     BaseModel, ByUuid, DeletableModel, DeleteListenerList, Fetchable, ListenerList,
     ListenerPriority,
@@ -59,6 +61,9 @@ pub trait SqlxErrorExtension {
     fn is_unique_violation(&self) -> bool;
     fn is_foreign_key_violation(&self) -> bool;
     fn is_check_violation(&self) -> bool;
+
+    fn code(&self) -> Option<Cow<'_, str>>;
+    fn message(&self) -> Option<&str>;
 }
 
 impl SqlxErrorExtension for sqlx::Error {
@@ -78,5 +83,47 @@ impl SqlxErrorExtension for sqlx::Error {
     fn is_check_violation(&self) -> bool {
         self.as_database_error()
             .is_some_and(|e| e.is_check_violation())
+    }
+
+    #[inline]
+    fn code(&self) -> Option<Cow<'_, str>> {
+        self.as_database_error().and_then(|e| e.code())
+    }
+
+    #[inline]
+    fn message(&self) -> Option<&str> {
+        self.as_database_error().map(|e| e.message())
+    }
+}
+
+pub trait StringExt: Sized {
+    /// Returns Some if the string has content, otherwise None.
+    fn optional(&self) -> Option<&Self>;
+
+    /// Returns Some if the string has content, otherwise None.
+    fn into_optional(self) -> Option<Self>;
+}
+
+impl StringExt for String {
+    #[inline]
+    fn optional(&self) -> Option<&Self> {
+        if self.is_empty() { None } else { Some(self) }
+    }
+
+    #[inline]
+    fn into_optional(self) -> Option<Self> {
+        if self.is_empty() { None } else { Some(self) }
+    }
+}
+
+impl StringExt for compact_str::CompactString {
+    #[inline]
+    fn optional(&self) -> Option<&Self> {
+        if self.is_empty() { None } else { Some(self) }
+    }
+
+    #[inline]
+    fn into_optional(self) -> Option<Self> {
+        if self.is_empty() { None } else { Some(self) }
     }
 }

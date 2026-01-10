@@ -24,6 +24,7 @@ import updateSchedule from '@/api/server/schedules/updateSchedule.ts';
 import AnimatedHourglass from '@/elements/AnimatedHourglass.tsx';
 import Badge from '@/elements/Badge.tsx';
 import Button from '@/elements/Button.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
@@ -352,43 +353,30 @@ export default function ScheduleView() {
             </Badge>
           </Group>
 
-          <Group>
-            {scheduleSteps.length > 0 && (
-              <ContextMenuProvider>
-                <ContextMenu
-                  items={[
-                    {
-                      icon: faPlayCircle,
-                      label: 'Trigger (do not skip condition)',
-                      onClick: () => doTriggerSchedule(false),
-                      color: 'gray',
-                    },
-                    {
-                      icon: faPlay,
-                      label: 'Trigger (skip condition)',
-                      onClick: () => doTriggerSchedule(true),
-                      color: 'gray',
-                    },
-                  ]}
-                >
-                  {({ openMenu }) =>
-                    schedule.enabled ? (
-                      <Button
-                        loading={loading}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          openMenu(rect.left, rect.bottom);
-                        }}
-                        color='green'
-                        rightSection={<FontAwesomeIcon icon={faChevronDown} />}
-                      >
-                        Trigger
-                      </Button>
-                    ) : (
-                      <Tooltip label='Cannot Trigger disabled schedule'>
+          <ServerCan action='schedules.update'>
+            <Group>
+              {scheduleSteps.length > 0 && (
+                <ContextMenuProvider>
+                  <ContextMenu
+                    items={[
+                      {
+                        icon: faPlayCircle,
+                        label: 'Trigger (do not skip condition)',
+                        onClick: () => doTriggerSchedule(false),
+                        color: 'gray',
+                      },
+                      {
+                        icon: faPlay,
+                        label: 'Trigger (skip condition)',
+                        onClick: () => doTriggerSchedule(true),
+                        color: 'gray',
+                      },
+                    ]}
+                  >
+                    {({ openMenu }) =>
+                      schedule.enabled ? (
                         <Button
-                          disabled
+                          loading={loading}
                           onClick={(e) => {
                             e.stopPropagation();
                             const rect = e.currentTarget.getBoundingClientRect();
@@ -399,20 +387,35 @@ export default function ScheduleView() {
                         >
                           Trigger
                         </Button>
-                      </Tooltip>
-                    )
-                  }
-                </ContextMenu>
-              </ContextMenuProvider>
-            )}
-            <Button
-              onClick={() => setOpenModal('update')}
-              color='blue'
-              leftSection={<FontAwesomeIcon icon={faPencil} />}
-            >
-              Edit
-            </Button>
-          </Group>
+                      ) : (
+                        <Tooltip label='Cannot Trigger disabled schedule'>
+                          <Button
+                            disabled
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              openMenu(rect.left, rect.bottom);
+                            }}
+                            color='green'
+                            rightSection={<FontAwesomeIcon icon={faChevronDown} />}
+                          >
+                            Trigger
+                          </Button>
+                        </Tooltip>
+                      )
+                    }
+                  </ContextMenu>
+                </ContextMenuProvider>
+              )}
+              <Button
+                onClick={() => setOpenModal('update')}
+                color='blue'
+                leftSection={<FontAwesomeIcon icon={faPencil} />}
+              >
+                Edit
+              </Button>
+            </Group>
+          </ServerCan>
         </Group>
 
         <div className='flex flex-row space-x-2'>
@@ -443,15 +446,17 @@ export default function ScheduleView() {
                 <Title order={3} mb='md'>
                   Schedule Actions
                 </Title>
-                <Group>
-                  <Button
-                    onClick={() => setOpenModal(openModal === 'actions' ? null : 'actions')}
-                    variant='outline'
-                    leftSection={<FontAwesomeIcon icon={openModal === 'actions' ? faReply : faPencil} />}
-                  >
-                    {openModal === 'actions' ? 'Exit Editor' : 'Edit'}
-                  </Button>
-                </Group>
+                <ServerCan action='schedules.update'>
+                  <Group>
+                    <Button
+                      onClick={() => setOpenModal(openModal === 'actions' ? null : 'actions')}
+                      variant='outline'
+                      leftSection={<FontAwesomeIcon icon={openModal === 'actions' ? faReply : faPencil} />}
+                    >
+                      {openModal === 'actions' ? 'Exit Editor' : 'Edit'}
+                    </Button>
+                  </Group>
+                </ServerCan>
               </Group>
               {openModal === 'actions' ? (
                 <StepsEditor schedule={schedule} />
@@ -490,11 +495,13 @@ export default function ScheduleView() {
                 onChange={(condition) => setSchedule({ ...schedule, condition })}
               />
 
-              <div className='flex flex-row mt-6'>
-                <Button loading={loading} onClick={doUpdate}>
-                  Update
-                </Button>
-              </div>
+              <ServerCan action='schedules.update'>
+                <div className='flex flex-row mt-6'>
+                  <Button loading={loading} onClick={doUpdate}>
+                    Update
+                  </Button>
+                </div>
+              </ServerCan>
             </Card>
           </Tabs.Panel>
 

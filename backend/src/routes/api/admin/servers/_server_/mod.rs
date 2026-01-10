@@ -79,7 +79,7 @@ mod get {
         ApiResponse::json(Response {
             server: server
                 .0
-                .into_admin_api_object(&state.database, &state.storage.retrieve_urls().await)
+                .into_admin_api_object(&state.database, &state.storage.retrieve_urls().await?)
                 .await?,
         })
         .ok()

@@ -92,7 +92,10 @@ pub async fn auth(
             })
             .await;
 
-        let settings = state.settings.get().await;
+        let settings = match state.settings.get().await {
+            Ok(settings) => settings,
+            Err(err) => return Ok(ApiResponse::from(err).into_response()),
+        };
         let require_two_factor = user.require_two_factor(&settings);
         let secure = settings.app.url.starts_with("https://");
         drop(settings);
@@ -187,7 +190,10 @@ pub async fn auth(
             })
             .await;
 
-        let settings = state.settings.get().await;
+        let settings = match state.settings.get().await {
+            Ok(settings) => settings,
+            Err(err) => return Ok(ApiResponse::from(err).into_response()),
+        };
         let require_two_factor = user.require_two_factor(&settings);
         drop(settings);
 

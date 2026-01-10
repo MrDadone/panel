@@ -34,7 +34,7 @@ impl Mail {
     }
 
     async fn get_transport(&self) -> Result<Transport, anyhow::Error> {
-        let settings = self.settings.get().await;
+        let settings = self.settings.get().await?;
 
         match &settings.mail_mode {
             super::settings::MailMode::None => Ok(Transport::None),

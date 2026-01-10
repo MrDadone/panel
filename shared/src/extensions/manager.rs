@@ -45,6 +45,12 @@ impl ExtensionManager {
             permissions_builder = ext
                 .initialize_permissions(state.clone(), permissions_builder)
                 .await;
+
+            let deserializer = ext.settings_deserializer(state.clone()).await;
+            crate::settings::SETTINGS_DESER_EXTENSIONS
+                .write()
+                .unwrap()
+                .insert(ext.package_name, deserializer);
         }
 
         crate::permissions::USER_PERMISSIONS

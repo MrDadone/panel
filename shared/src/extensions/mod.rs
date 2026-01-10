@@ -14,6 +14,7 @@ pub mod background_tasks;
 pub mod commands;
 pub mod distr;
 pub mod manager;
+pub mod settings;
 
 pub struct ExtensionRouteBuilder {
     state: State,
@@ -238,6 +239,13 @@ pub trait Extension: Send + Sync {
         builder
     }
 
+    /// Your extension settings deserializer, this is used to deserialize your extension settings from the database
+    /// Whatever value you return in the `deserialize_boxed` method must match the trait `ExtensionSettings`, which requires
+    /// `SettingsSerializeExt` to be implemented for it.
+    async fn settings_deserializer(&self, state: State) -> settings::ExtensionSettingsDeserializer {
+        Arc::new(settings::EmptySettings)
+    }
+
     /// Your extension call processor, this can be called by other extensions to interact with yours,
     /// if the call does not apply to your extension, simply return `None` to continue the matching process.
     ///
@@ -268,6 +276,7 @@ pub trait Extension: Send + Sync {
 #[derive(ToSchema, Serialize)]
 pub struct ConstructedExtension {
     pub metadata_toml: distr::MetadataToml,
+    pub package_name: &'static str,
     pub description: &'static str,
     pub authors: &'static [&'static str],
     #[schema(value_type = String)]

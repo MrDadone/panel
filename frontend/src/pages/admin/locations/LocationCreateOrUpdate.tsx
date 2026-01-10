@@ -9,6 +9,7 @@ import createLocation from '@/api/admin/locations/createLocation.ts';
 import deleteLocation from '@/api/admin/locations/deleteLocation.ts';
 import updateLocation from '@/api/admin/locations/updateLocation.ts';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
@@ -16,10 +17,13 @@ import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
+import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 
 export default ({ contextLocation }: { contextLocation?: Location }) => {
+  const canReadBackupConfigurations = useAdminCan('backup-configurations.read');
+
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
   const form = useForm<z.infer<typeof adminLocationSchema>>({
@@ -55,6 +59,7 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
   const backupConfigurations = useSearchableResource<BackupConfiguration>({
     fetcher: (search) => getBackupConfigurations(1, search),
     defaultSearchValue: contextLocation?.backupConfiguration?.name,
+    canRequest: canReadBackupConfigurations,
   });
 
   return (
@@ -89,6 +94,7 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
               searchable
               searchValue={backupConfigurations.search}
               onSearchChange={backupConfigurations.setSearch}
+              disabled={!canReadBackupConfigurations}
               {...form.getInputProps('backupConfigurationUuid')}
             />
           </Group>
@@ -98,18 +104,22 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
           </Group>
 
           <Group>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              Save
-            </Button>
-            {!contextLocation && (
-              <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
-                Save & Stay
+            <AdminCan action={contextLocation ? 'locations.update' : 'locations.create'} cantSave>
+              <Button type='submit' disabled={!form.isValid()} loading={loading}>
+                Save
               </Button>
-            )}
+              {!contextLocation && (
+                <Button onClick={() => doCreateOrUpdate(true)} disabled={!form.isValid()} loading={loading}>
+                  Save & Stay
+                </Button>
+              )}
+            </AdminCan>
             {contextLocation && (
-              <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
-                Delete
-              </Button>
+              <AdminCan action='locations.delete' cantDelete>
+                <Button color='red' onClick={() => setOpenModal('delete')} loading={loading}>
+                  Delete
+                </Button>
+              </AdminCan>
             )}
           </Group>
         </Stack>

@@ -1,7 +1,7 @@
 import { faCog, faDatabase, faServer } from '@fortawesome/free-solid-svg-icons';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { Route, Routes, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import getLocation from '@/api/admin/locations/getLocation.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Spinner from '@/elements/Spinner.tsx';
@@ -35,30 +35,30 @@ export default () => {
       <Title order={1}>{location.name}</Title>
 
       <SubNavigation
+        baseUrl={`/admin/locations/${params.id}`}
         items={[
           {
             name: 'General',
             icon: faCog,
-            link: `/admin/locations/${params.id}`,
+            path: '/',
+            element: <LocationCreateOrUpdate contextLocation={location} />,
           },
           {
             name: 'Database Hosts',
             icon: faDatabase,
-            link: `/admin/locations/${params.id}/database-hosts`,
+            path: `/database-hosts`,
+            element: <AdminLocationDatabaseHosts location={location} />,
+            permission: 'locations.database-hosts',
           },
           {
             name: 'Nodes',
             icon: faServer,
-            link: `/admin/locations/${params.id}/nodes`,
+            path: `/nodes`,
+            element: <AdminLocationNodes location={location} />,
+            permission: 'nodes.read',
           },
         ]}
       />
-
-      <Routes>
-        <Route path='/' element={<LocationCreateOrUpdate contextLocation={location} />} />
-        <Route path='/database-hosts' element={<AdminLocationDatabaseHosts location={location} />} />
-        <Route path='/nodes' element={<AdminLocationNodes location={location} />} />
-      </Routes>
     </>
   );
 };

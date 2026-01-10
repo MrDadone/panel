@@ -38,6 +38,7 @@ export default function PullFileModal({ opened, onClose }: ModalProps) {
       name: form.values.name,
     })
       .then(() => {
+        addToast('File pulling has started.', 'success');
         onClose();
       })
       .catch((msg) => {

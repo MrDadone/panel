@@ -2,24 +2,29 @@ import { Group, Title } from '@mantine/core';
 import Badge from '@/elements/Badge.tsx';
 import Card from '@/elements/Card.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
+import PasswordInput from '@/elements/input/PasswordInput.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 
+interface Props {
+  variable: ServerVariable;
+  overrideReadonly?: boolean;
+  loading?: boolean;
+  disabled?: boolean;
+  value: string;
+  setValue: (value: string) => void;
+}
+
 export default function VariableContainer({
   variable,
   overrideReadonly = false,
   loading = false,
+  disabled = false,
   value,
   setValue,
-}: {
-  variable: ServerVariable;
-  overrideReadonly?: boolean;
-  loading?: boolean;
-  value: string;
-  setValue: (value: string) => void;
-}) {
+}: Props) {
   return (
     <Card className='flex flex-col justify-between rounded-md p-4 h-full'>
       <Title order={2} c='white'>
@@ -56,7 +61,7 @@ export default function VariableContainer({
                     : 'false',
               )
             }
-            disabled={loading || (!variable.isEditable && !overrideReadonly)}
+            disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
             label={variable.name}
           />
         ) : variable.rules.includes('string') && variable.rules.some((rule) => rule.startsWith('in:')) ? (
@@ -70,7 +75,7 @@ export default function VariableContainer({
               .map((option) => ({ value: option, label: option }))}
             value={value}
             onChange={(value) => setValue(value ?? '')}
-            disabled={loading || (!variable.isEditable && !overrideReadonly)}
+            disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
           />
         ) : variable.rules.includes('integer') ||
           variable.rules.includes('int') ||
@@ -82,7 +87,16 @@ export default function VariableContainer({
             placeholder={variable.defaultValue ?? ''}
             value={value}
             onChange={(value) => setValue(String(value))}
-            disabled={loading || (!variable.isEditable && !overrideReadonly)}
+            disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
+          />
+        ) : variable.isSecret ? (
+          <PasswordInput
+            withAsterisk={variable.rules.includes('required')}
+            id={variable.envVariable}
+            placeholder={variable.defaultValue ?? ''}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
           />
         ) : (
           <TextInput
@@ -91,10 +105,10 @@ export default function VariableContainer({
             placeholder={variable.defaultValue ?? ''}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            disabled={loading || (!variable.isEditable && !overrideReadonly)}
+            disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
           />
         )}
-        <p className='text-gray-400 text-sm mt-4'>{variable.description}</p>
+        <p className='text-gray-400 text-sm mt-4'>{variable.description?.md()}</p>
       </div>
     </Card>
   );

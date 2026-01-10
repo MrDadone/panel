@@ -12,6 +12,7 @@ import { Group } from '@mantine/core';
 import { memo } from 'react';
 import { createSearchParams, useNavigate } from 'react-router';
 import Button from '@/elements/Button.tsx';
+import { ServerCan } from '@/elements/Can.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 
 interface FileToolbarProps {
@@ -37,62 +38,66 @@ const FileToolbar = memo(function FileToolbar({
 
   return (
     <Group>
-      <Button variant='outline' leftSection={<FontAwesomeIcon icon={faServer} />} onClick={onSftpDetailsClick}>
-        SFTP Details
-      </Button>
-      <ContextMenuProvider>
-        <ContextMenu
-          items={[
-            {
-              icon: faFileCirclePlus,
-              label: 'File from Editor',
-              onClick: () =>
-                navigate(
-                  `/server/${serverUuidShort}/files/new?${createSearchParams({ directory: browsingDirectory })}`,
-                ),
-              color: 'gray',
-            },
-            {
-              icon: faFolderPlus,
-              label: 'Directory',
-              onClick: onNewDirectoryClick,
-              color: 'gray',
-            },
-            {
-              icon: faDownload,
-              label: 'File from Pull',
-              onClick: onPullFileClick,
-              color: 'gray',
-            },
-            {
-              icon: faFileUpload,
-              label: 'File from Upload',
-              onClick: onFileUploadClick,
-              color: 'gray',
-            },
-            {
-              icon: faFolderOpen,
-              label: 'Directory from Upload',
-              onClick: onFolderUploadClick,
-              color: 'gray',
-            },
-          ]}
-        >
-          {({ openMenu }) => (
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                const rect = e.currentTarget.getBoundingClientRect();
-                openMenu(rect.left, rect.bottom);
-              }}
-              color='blue'
-              rightSection={<FontAwesomeIcon icon={faChevronDown} />}
-            >
-              New
-            </Button>
-          )}
-        </ContextMenu>
-      </ContextMenuProvider>
+      <ServerCan action='files.sftp'>
+        <Button variant='outline' leftSection={<FontAwesomeIcon icon={faServer} />} onClick={onSftpDetailsClick}>
+          SFTP Details
+        </Button>
+      </ServerCan>
+      <ServerCan action='files.create'>
+        <ContextMenuProvider>
+          <ContextMenu
+            items={[
+              {
+                icon: faFileCirclePlus,
+                label: 'File from Editor',
+                onClick: () =>
+                  navigate(
+                    `/server/${serverUuidShort}/files/new?${createSearchParams({ directory: browsingDirectory })}`,
+                  ),
+                color: 'gray',
+              },
+              {
+                icon: faFolderPlus,
+                label: 'Directory',
+                onClick: onNewDirectoryClick,
+                color: 'gray',
+              },
+              {
+                icon: faDownload,
+                label: 'File from Pull',
+                onClick: onPullFileClick,
+                color: 'gray',
+              },
+              {
+                icon: faFileUpload,
+                label: 'File from Upload',
+                onClick: onFileUploadClick,
+                color: 'gray',
+              },
+              {
+                icon: faFolderOpen,
+                label: 'Directory from Upload',
+                onClick: onFolderUploadClick,
+                color: 'gray',
+              },
+            ]}
+          >
+            {({ openMenu }) => (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  openMenu(rect.left, rect.bottom);
+                }}
+                color='blue'
+                rightSection={<FontAwesomeIcon icon={faChevronDown} />}
+              >
+                New
+              </Button>
+            )}
+          </ContextMenu>
+        </ContextMenuProvider>
+      </ServerCan>
     </Group>
   );
 });

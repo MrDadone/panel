@@ -14,13 +14,14 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteBackup from '@/api/server/backups/deleteBackup.ts';
 import downloadBackup from '@/api/server/backups/downloadBackup.ts';
 import Code from '@/elements/Code.tsx';
-import ContextMenu from '@/elements/ContextMenu.tsx';
+import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Progress from '@/elements/Progress.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { formatTimestamp } from '@/lib/time.ts';
+import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -75,7 +76,13 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
 
       <ContextMenu
         items={[
-          { icon: faPencil, label: t('common.button.edit', {}), onClick: () => setOpenModal('edit'), color: 'gray' },
+          {
+            icon: faPencil,
+            label: t('common.button.edit', {}),
+            onClick: () => setOpenModal('edit'),
+            color: 'gray',
+            canAccess: useServerCan('backups.update'),
+          },
           {
             icon: faShare,
             label: t('pages.server.backups.button.browse', {}),
@@ -87,6 +94,7 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
                 })}`,
               ),
             color: 'gray',
+            canAccess: useServerCan('files.read'),
           },
           {
             icon: faFileArrowDown,
@@ -101,12 +109,14 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
                   color: 'gray',
                 }))
               : [],
+            canAccess: useServerCan('backups.download'),
           },
           {
             icon: faRotateLeft,
             label: t('pages.server.backups.button.restore', {}),
             onClick: () => setOpenModal('restore'),
             color: 'gray',
+            canAccess: useServerCan('backups.restore'),
           },
           {
             icon: faTrash,
@@ -114,10 +124,11 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
             disabled: backup.isLocked,
             onClick: () => setOpenModal('delete'),
             color: 'red',
+            canAccess: useServerCan('backups.delete'),
           },
         ]}
       >
-        {({ openMenu }) => (
+        {({ items, openMenu }) => (
           <TableRow
             onContextMenu={(e) => {
               e.preventDefault();
@@ -148,7 +159,7 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
               )}
             </TableData>
 
-            <ContextMenu.Toggle openMenu={openMenu} />
+            <ContextMenuToggle items={items} openMenu={openMenu} />
           </TableRow>
         )}
       </ContextMenu>

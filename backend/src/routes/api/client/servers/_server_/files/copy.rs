@@ -18,6 +18,9 @@ mod post {
     pub struct Payload {
         file: compact_str::CompactString,
         destination: Option<compact_str::CompactString>,
+
+        #[serde(default)]
+        foreground: bool,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -25,8 +28,14 @@ mod post {
         entry: wings_api::DirectoryEntry,
     }
 
+    #[derive(ToSchema, Serialize)]
+    struct ResponseAccepted {
+        identifier: uuid::Uuid,
+    }
+
     #[utoipa::path(post, path = "/", responses(
         (status = OK, body = inline(Response)),
+        (status = ACCEPTED, body = inline(ResponseAccepted)),
         (status = UNAUTHORIZED, body = ApiError),
         (status = NOT_FOUND, body = ApiError),
         (status = EXPECTATION_FAILED, body = ApiError),
@@ -63,41 +72,54 @@ mod post {
         let request_body = wings_api::servers_server_files_copy::post::RequestBody {
             location: data.file,
             name: data.destination,
+            foreground: data.foreground,
         };
 
-        let entry = match server
-            .node
-            .fetch_cached(&state.database)
-            .await?
-            .api_client(&state.database)
-            .post_servers_server_files_copy(server.uuid, &request_body)
-            .await
-        {
-            Ok(data) => data,
-            Err(wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, err)) => {
-                return ApiResponse::json(ApiError::new_wings_value(err))
-                    .with_status(StatusCode::NOT_FOUND)
-                    .ok();
-            }
-            Err(wings_api::client::ApiHttpError::Http(StatusCode::EXPECTATION_FAILED, err)) => {
-                return ApiResponse::json(ApiError::new_wings_value(err))
-                    .with_status(StatusCode::EXPECTATION_FAILED)
-                    .ok();
-            }
-            Err(err) => return Err(err.into()),
-        };
+        tokio::spawn(async move {
+            let response = match server
+                .node
+                .fetch_cached(&state.database)
+                .await?
+                .api_client(&state.database)
+                .post_servers_server_files_copy(server.uuid, &request_body)
+                .await
+            {
+                Ok(wings_api::servers_server_files_copy::post::Response::Ok(data)) => {
+                    ApiResponse::json(Response { entry: data }).ok()
+                }
+                Ok(wings_api::servers_server_files_copy::post::Response::Accepted(data)) => {
+                    ApiResponse::json(ResponseAccepted {
+                        identifier: data.identifier,
+                    })
+                    .with_status(StatusCode::ACCEPTED)
+                    .ok()
+                }
+                Err(wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, err)) => {
+                    return ApiResponse::json(ApiError::new_wings_value(err))
+                        .with_status(StatusCode::NOT_FOUND)
+                        .ok();
+                }
+                Err(wings_api::client::ApiHttpError::Http(StatusCode::EXPECTATION_FAILED, err)) => {
+                    return ApiResponse::json(ApiError::new_wings_value(err))
+                        .with_status(StatusCode::EXPECTATION_FAILED)
+                        .ok();
+                }
+                Err(err) => return Err(err.into()),
+            };
 
-        activity_logger
-            .log(
-                "server:file.copy",
-                serde_json::json!({
-                    "file": request_body.location,
-                    "name": request_body.name.as_ref(),
-                }),
-            )
-            .await;
+            activity_logger
+                .log(
+                    "server:file.copy",
+                    serde_json::json!({
+                        "file": request_body.location,
+                        "name": request_body.name.as_ref(),
+                    }),
+                )
+                .await;
 
-        ApiResponse::json(Response { entry }).ok()
+            response
+        })
+        .await?
     }
 }
 

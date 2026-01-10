@@ -55,12 +55,12 @@ nestify::nest! {
 
 impl TelemetryData {
     pub async fn collect(state: &crate::State) -> Result<Self, anyhow::Error> {
-        let settings = state.settings.get().await;
+        let settings = state.settings.get().await?;
         let uuid = settings.telemetry_uuid.unwrap_or_else(uuid::Uuid::new_v4);
 
         if settings.telemetry_uuid.is_none() {
             drop(settings);
-            let mut new_settings = state.settings.get_mut().await;
+            let mut new_settings = state.settings.get_mut().await?;
             new_settings.telemetry_uuid = Some(uuid);
             new_settings.save().await?;
         } else {

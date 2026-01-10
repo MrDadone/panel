@@ -182,6 +182,7 @@ declare global {
     defaultValue: string | null;
     userViewable: boolean;
     userEditable: boolean;
+    isSecret: boolean;
     rules: string[];
     created: Date;
   }
@@ -252,6 +253,7 @@ declare global {
       enabled: boolean;
       seconds: number;
     };
+    autoStartBehavior: ServerAutostartBehavior;
     timezone: string;
     created: Date;
   }
@@ -334,6 +336,7 @@ declare global {
       enabled: boolean;
       seconds: number;
     };
+    autoStartBehavior: ServerAutostartBehavior;
     timezone: string | null;
     created: Date;
   }
@@ -464,6 +467,7 @@ declare global {
     defaultValue: string | null;
     value: string;
     isEditable: boolean;
+    isSecret: boolean;
     rules: string[];
     created: Date;
   }
@@ -836,7 +840,7 @@ declare global {
   interface FileOperationDecompress {
     type: 'decompress';
     path: string;
-    destination: string;
+    destinationPath: string;
 
     progress: number;
     total: number;
@@ -850,7 +854,32 @@ declare global {
     total: number;
   }
 
-  type FileOperation = FileOperationCompress | FileOperationDecompress | FileOperationPull;
+  interface FileOperationCopy {
+    type: 'copy';
+    path: string;
+    destinationPath: string;
+
+    progress: number;
+    total: number;
+  }
+
+  interface FileOperationCopyRemote {
+    type: 'copy_remote';
+    server: string;
+    path: string;
+    destinationServer: string;
+    destinationPath: string;
+
+    progress: number;
+    total: number;
+  }
+
+  type FileOperation =
+    | FileOperationCompress
+    | FileOperationDecompress
+    | FileOperationPull
+    | FileOperationCopy
+    | FileOperationCopyRemote;
   type UserToastPosition = 'top_left' | 'top_center' | 'top_right' | 'bottom_left' | 'bottom_center' | 'bottom_right';
 
   interface UpdateUser {
@@ -942,7 +971,17 @@ declare global {
     v3: boolean;
   }
 
-  type CaptchaProvider = CaptchaProviderNone | CaptchaProviderTurnstile | CaptchaProviderRecaptcha;
+  interface CaptchaProviderHcaptcha {
+    type: 'hcaptcha';
+    siteKey: string;
+    secretKey: string;
+  }
+
+  type CaptchaProvider =
+    | CaptchaProviderNone
+    | CaptchaProviderTurnstile
+    | CaptchaProviderRecaptcha
+    | CaptchaProviderHcaptcha;
 
   type CompressionLevel = 'best_speed' | 'good_speed' | 'good_compression' | 'best_compression';
 
@@ -1081,10 +1120,16 @@ declare global {
     v3: boolean;
   }
 
+  interface PublicCaptchaProviderHcaptcha {
+    type: 'hcaptcha';
+    siteKey: string;
+  }
+
   type PublicCaptchaProvider =
     | PublicCaptchaProviderNone
     | PublicCaptchaProviderTurnstile
-    | PublicCaptchaProviderRecaptcha;
+    | PublicCaptchaProviderRecaptcha
+    | PublicCaptchaProviderHcaptcha;
 
   interface PublicSettings {
     version: string;
@@ -1162,6 +1207,8 @@ declare global {
   type ServerBackupStatus = 'starting' | 'finished' | 'failed';
 
   type ServerStatus = 'installing' | 'install_failed' | 'restoring_backup';
+
+  type ServerAutoStartBehavior = 'always' | 'unless_stopped' | 'never';
 
   interface PermissionMap {
     [category: string]: {

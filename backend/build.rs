@@ -81,6 +81,7 @@ fn main() {
                 name: {}.to_string(),
                 panel_version: semver::VersionReq::parse({}).unwrap(),
             }},
+            package_name: {},
             description: {},
             authors: &{},
             version: semver::Version::parse({}).unwrap(),
@@ -89,6 +90,7 @@ fn main() {
             toml::Value::String(metadata.package_name.clone()),
             toml::Value::String(metadata.name),
             toml::Value::String(metadata.panel_version.to_string()),
+            toml::Value::String(metadata.package_name.clone()),
             toml::Value::String(package.description.unwrap_or_default()),
             toml::Value::Array(
                 package
