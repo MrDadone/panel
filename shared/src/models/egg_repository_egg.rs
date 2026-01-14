@@ -84,7 +84,7 @@ impl EggRepositoryEgg {
     pub async fn create(
         database: &crate::database::Database,
         egg_repository_uuid: uuid::Uuid,
-        path: &str,
+        path: impl AsRef<str>,
         name: &str,
         description: Option<&str>,
         author: &str,
@@ -104,7 +104,7 @@ impl EggRepositoryEgg {
             Self::columns_sql(None)
         ))
         .bind(egg_repository_uuid)
-        .bind(path)
+        .bind(path.as_ref())
         .bind(author)
         .bind(name)
         .bind(description)
@@ -181,7 +181,7 @@ impl EggRepositoryEgg {
     pub async fn delete_unused(
         database: &crate::database::Database,
         egg_repository_uuid: uuid::Uuid,
-        paths: &[String],
+        paths: &[compact_str::CompactString],
     ) -> Result<(), crate::database::DatabaseError> {
         sqlx::query(
             r#"

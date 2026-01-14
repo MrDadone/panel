@@ -30,6 +30,7 @@ export default function FileActionBar() {
     server,
     browsingDirectory,
     browsingBackup,
+    browsingWritableDirectory,
     selectedFileNames,
     setSelectedFiles,
     movingFileNames,
@@ -137,13 +138,13 @@ export default function FileActionBar() {
                 <FontAwesomeIcon icon={faFileDownload} className='mr-2' /> Download
               </Button>
             </ServerCan>
-            {!browsingBackup && (
+            <ServerCan action='files.read'>
+              <Button onClick={() => setOpenModal('copy-remote')}>
+                <FontAwesomeIcon icon={faCopy} className='mr-2' /> Remote Copy
+              </Button>
+            </ServerCan>
+            {!browsingBackup && browsingWritableDirectory && (
               <>
-                <ServerCan action='files.read'>
-                  <Button onClick={() => setOpenModal('copy-remote')}>
-                    <FontAwesomeIcon icon={faCopy} className='mr-2' /> Remote Copy
-                  </Button>
-                </ServerCan>
                 <ServerCan action='files.archive'>
                   <Button onClick={() => setOpenModal('archive')}>
                     <FontAwesomeIcon icon={faArchive} className='mr-2' /> Archive

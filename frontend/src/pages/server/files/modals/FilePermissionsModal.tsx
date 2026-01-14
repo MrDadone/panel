@@ -21,7 +21,7 @@ type PermissionType = 'read' | 'write' | 'execute';
 
 export default function FilePermissionsModal({ file, opened, onClose }: Props) {
   const { addToast } = useToast();
-  const { server, browsingDirectory } = useServerStore();
+  const { server, browsingWritableDirectory, browsingDirectory } = useServerStore();
 
   const [permissions, setPermissions] = useState<Record<PermissionKey, Record<PermissionType, boolean>>>({
     owner: { read: false, write: false, execute: false },
@@ -112,6 +112,7 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
             label={type[0].toUpperCase().concat(type.slice(1))}
             checked={value}
             onChange={() => togglePermission(category, type as PermissionType)}
+            disabled={!browsingWritableDirectory}
           />
         ))}
       </Stack>
@@ -183,7 +184,7 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
       </Card>
 
       <Group mt='md'>
-        <Button onClick={doChmod} loading={loading}>
+        <Button onClick={doChmod} loading={loading} disabled={!browsingWritableDirectory}>
           Save
         </Button>
         <Button variant='default' onClick={onClose}>

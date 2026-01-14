@@ -3,7 +3,7 @@ resolver = "3"
 members = ["backend", "rule-validator", "wings-api", "shared", "backend-extensions/*"]
 default-members = ["backend"]
 package.license = "MIT"
-package.version = "0.17.10"
+package.version = "0.18.0"
 package.edition = "2024"
 
 [workspace.dependencies]
@@ -13,12 +13,12 @@ shared = { path = "shared" }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["chrono"] }
 tracing-appender = "0.2.3"
-sentry = { version = "0.46.0", default-features = false, features = ["rustls", "reqwest", "backtrace", "contexts", "debug-images", "panic"] }
+sentry = { version = "0.46.0", default-features = false, features = ["native-tls", "reqwest", "backtrace", "contexts", "debug-images", "panic"] }
 sentry-tower = { version = "0.46.0", default-features = false, features = ["http", "axum-matched-path"] }
 sentry-anyhow = "0.46.0"
 axum = "0.8.1"
 include_dir = "0.7.4"
-sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls-ring-webpki", "postgres", "mysql", "chrono", "ipnetwork", "uuid"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "tls-native-tls", "postgres", "mysql", "chrono", "ipnetwork", "uuid"] }
 tokio = { version = "1.43.0", features = ["full"] }
 tokio-util = { version = "0.7.16", features = ["full"] }
 async-trait = "0.1.89"
@@ -30,7 +30,7 @@ validator = { version = "0.20.0", features = ["derive"] }
 serde = { version = "1.0.218", features = ["derive", "rc"] }
 serde_json = { version = "1.0.140", features = ["preserve_order"] }
 serde_yml = "0.0.12"
-reqwest = { version = "0.13.0", features = ["json", "form", "query"] }
+reqwest = { version = "0.13.0", default-features = false, features = ["native-tls-vendored", "charset", "http2", "json", "form", "query"] }
 chrono = { version = "0.4.40", features = ["serde"] }
 uuid = { version = "1.17.0", features = ["v4", "serde"] }
 indexmap = { version = "2.7.1", features = ["serde"] }
@@ -44,11 +44,11 @@ colored = "3.0.0"
 russh = "0.56.0"
 futures-util = "0.3.31"
 clap = { version = "4.5.37", features = ["derive"] }
-rust-s3 = { version = "0.37.0", default-features = false, features = ["tokio-rustls-tls"] }
+rust-s3 = "0.37.0"
 rand = "0.9.0"
 rustis = "0.17.0"
 dotenvy = "0.15.7"
-oauth2 = "5.0.0"
+oauth2 = { version = "5.0.0", default-features = false }
 semver = { version = "1.0.27", features = ["serde"] }
 tempfile = "3.23.0"
 compact_str = { git = "https://github.com/0x7d8/compact_str.git", version = "0.9.0", features = ["serde", "utoipa", "sqlx", "sqlx-postgres", "sqlx-mysql"] }
@@ -56,7 +56,7 @@ nestify = "0.3.3"
 
 # dev (for development)
 [profile.dev.package."*"]
-opt-level = 3
+opt-level = 2
 
 [profile.dev]
 codegen-units = 512
@@ -66,23 +66,23 @@ debug = false
 [profile.release.package."*"]
 opt-level = "s"
 codegen-units = 1
-strip = "symbols"
+strip = true
 
 [profile.release]
 opt-level = "s"
 lto = "fat"
 codegen-units = 1
-strip = "symbols"
+strip = true
 
 # heavy-release (mainly for extension builds)
 [profile.heavy-release.package."*"]
 opt-level = "s"
 codegen-units = 32
-strip = "symbols"
+strip = true
 
 [profile.heavy-release]
 inherits = "release"
 opt-level = "s"
 lto = false
 codegen-units = 32
-strip = "symbols"
+strip = true

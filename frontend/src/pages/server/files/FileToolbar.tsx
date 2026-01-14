@@ -18,6 +18,7 @@ import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 interface FileToolbarProps {
   serverUuidShort: string;
   browsingDirectory: string;
+  browsingWritableDirectory: boolean;
   onSftpDetailsClick: () => void;
   onNewDirectoryClick: () => void;
   onPullFileClick: () => void;
@@ -28,6 +29,7 @@ interface FileToolbarProps {
 const FileToolbar = memo(function FileToolbar({
   serverUuidShort,
   browsingDirectory,
+  browsingWritableDirectory,
   onSftpDetailsClick,
   onNewDirectoryClick,
   onPullFileClick,
@@ -43,61 +45,63 @@ const FileToolbar = memo(function FileToolbar({
           SFTP Details
         </Button>
       </ServerCan>
-      <ServerCan action='files.create'>
-        <ContextMenuProvider>
-          <ContextMenu
-            items={[
-              {
-                icon: faFileCirclePlus,
-                label: 'File from Editor',
-                onClick: () =>
-                  navigate(
-                    `/server/${serverUuidShort}/files/new?${createSearchParams({ directory: browsingDirectory })}`,
-                  ),
-                color: 'gray',
-              },
-              {
-                icon: faFolderPlus,
-                label: 'Directory',
-                onClick: onNewDirectoryClick,
-                color: 'gray',
-              },
-              {
-                icon: faDownload,
-                label: 'File from Pull',
-                onClick: onPullFileClick,
-                color: 'gray',
-              },
-              {
-                icon: faFileUpload,
-                label: 'File from Upload',
-                onClick: onFileUploadClick,
-                color: 'gray',
-              },
-              {
-                icon: faFolderOpen,
-                label: 'Directory from Upload',
-                onClick: onFolderUploadClick,
-                color: 'gray',
-              },
-            ]}
-          >
-            {({ openMenu }) => (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  openMenu(rect.left, rect.bottom);
-                }}
-                color='blue'
-                rightSection={<FontAwesomeIcon icon={faChevronDown} />}
-              >
-                New
-              </Button>
-            )}
-          </ContextMenu>
-        </ContextMenuProvider>
-      </ServerCan>
+      {browsingWritableDirectory && (
+        <ServerCan action='files.create'>
+          <ContextMenuProvider>
+            <ContextMenu
+              items={[
+                {
+                  icon: faFileCirclePlus,
+                  label: 'File from Editor',
+                  onClick: () =>
+                    navigate(
+                      `/server/${serverUuidShort}/files/new?${createSearchParams({ directory: browsingDirectory })}`,
+                    ),
+                  color: 'gray',
+                },
+                {
+                  icon: faFolderPlus,
+                  label: 'Directory',
+                  onClick: onNewDirectoryClick,
+                  color: 'gray',
+                },
+                {
+                  icon: faDownload,
+                  label: 'File from Pull',
+                  onClick: onPullFileClick,
+                  color: 'gray',
+                },
+                {
+                  icon: faFileUpload,
+                  label: 'File from Upload',
+                  onClick: onFileUploadClick,
+                  color: 'gray',
+                },
+                {
+                  icon: faFolderOpen,
+                  label: 'Directory from Upload',
+                  onClick: onFolderUploadClick,
+                  color: 'gray',
+                },
+              ]}
+            >
+              {({ openMenu }) => (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    openMenu(rect.left, rect.bottom);
+                  }}
+                  color='blue'
+                  rightSection={<FontAwesomeIcon icon={faChevronDown} />}
+                >
+                  New
+                </Button>
+              )}
+            </ContextMenu>
+          </ContextMenuProvider>
+        </ServerCan>
+      )}
     </Group>
   );
 });

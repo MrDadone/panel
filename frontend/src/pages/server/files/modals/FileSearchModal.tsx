@@ -21,7 +21,7 @@ import { useServerStore } from '@/stores/server.ts';
 export default function FileSearchModal({ opened, onClose }: ModalProps) {
   const { addToast } = useToast();
   const { settings } = useGlobalStore();
-  const { server, browsingDirectory, setBrowsingEntries } = useServerStore();
+  const { server, browsingFastDirectory, browsingDirectory, setBrowsingEntries } = useServerStore();
 
   const [loading, setLoading] = useState(false);
   const [advanced, setAdvanced] = useState(false);
@@ -131,64 +131,66 @@ export default function FileSearchModal({ opened, onClose }: ModalProps) {
                 )}
               </Card>
 
-              <Card>
-                <div className='flex flex-row items-center justify-between'>
-                  File Content filter
-                  <Switch
-                    checked={!!form.values.contentFilter}
-                    onChange={(e) =>
-                      form.setFieldValue(
-                        'contentFilter',
-                        e.target.checked
-                          ? {
-                              query: '',
-                              maxSearchSize: settings.server.maxFileManagerContentSearchSize,
-                              includeUnmatched: false,
-                              caseInsensitive: true,
-                            }
-                          : null,
-                      )
-                    }
-                  />
-                </div>
-                {form.values.contentFilter && (
-                  <Stack mt='md'>
-                    <Divider />
+              {browsingFastDirectory && (
+                <Card>
+                  <div className='flex flex-row items-center justify-between'>
+                    File Content filter
+                    <Switch
+                      checked={!!form.values.contentFilter}
+                      onChange={(e) =>
+                        form.setFieldValue(
+                          'contentFilter',
+                          e.target.checked
+                            ? {
+                                query: '',
+                                maxSearchSize: settings.server.maxFileManagerContentSearchSize,
+                                includeUnmatched: false,
+                                caseInsensitive: true,
+                              }
+                            : null,
+                        )
+                      }
+                    />
+                  </div>
+                  {form.values.contentFilter && (
+                    <Stack mt='md'>
+                      <Divider />
 
-                    <Group grow align='start'>
-                      <TextInput
-                        withAsterisk
-                        label='Query'
-                        placeholder='Query'
-                        className='col-span-3'
-                        {...form.getInputProps('contentFilter.query')}
-                      />
+                      <Group grow align='start'>
+                        <TextInput
+                          withAsterisk
+                          label='Query'
+                          placeholder='Query'
+                          className='col-span-3'
+                          {...form.getInputProps('contentFilter.query')}
+                        />
 
-                      <SizeInput
-                        withAsterisk
-                        label='Maximum Search File Size'
-                        mode='b'
-                        min={0}
-                        value={form.values.contentFilter.maxSearchSize}
-                        onChange={(value) => form.setFieldValue('contentFilter.maxSearchSize', value)}
-                      />
-                    </Group>
+                        <SizeInput
+                          withAsterisk
+                          label='Maximum Search File Size'
+                          mode='b'
+                          min={0}
+                          value={form.values.contentFilter.maxSearchSize}
+                          onChange={(value) => form.setFieldValue('contentFilter.maxSearchSize', value)}
+                        />
+                      </Group>
 
-                    <Group grow align='start'>
-                      <Switch
-                        label='Include Unmatched Files'
-                        description='If a file matches the other filters, but cannot match the content filter due to being too big, still include it.'
-                        {...form.getInputProps('contentFilter.includeUnmatched', { type: 'checkbox' })}
-                      />
-                      <Switch
-                        label='Search Case Insensitive'
-                        description='Search file content using the query in insensitive mode, "A" will still match "a".'
-                        {...form.getInputProps('contentFilter.caseInsensitive', { type: 'checkbox' })}
-                      />
-                    </Group>
-                  </Stack>
-                )}
-              </Card>
+                      <Group grow align='start'>
+                        <Switch
+                          label='Include Unmatched Files'
+                          description='If a file matches the other filters, but cannot match the content filter due to being too big, still include it.'
+                          {...form.getInputProps('contentFilter.includeUnmatched', { type: 'checkbox' })}
+                        />
+                        <Switch
+                          label='Search Case Insensitive'
+                          description='Search file content using the query in insensitive mode, "A" will still match "a".'
+                          {...form.getInputProps('contentFilter.caseInsensitive', { type: 'checkbox' })}
+                        />
+                      </Group>
+                    </Stack>
+                  )}
+                </Card>
+              )}
 
               <Card>
                 <div className='flex flex-row items-center justify-between'>
