@@ -60,7 +60,7 @@ mod post {
         }
 
         let request_body = wings_api::servers_server_files_create_directory::post::RequestBody {
-            path: data.root,
+            root: data.root,
             name: data.name,
         };
 
@@ -90,7 +90,7 @@ mod post {
             .log(
                 "server:file.create-directory",
                 serde_json::json!({
-                    "directory": request_body.path,
+                    "directory": request_body.root,
                     "name": request_body.name,
                 }),
             )

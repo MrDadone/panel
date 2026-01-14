@@ -22,7 +22,7 @@ import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
-import { isArchiveType, isEditableFile } from '@/lib/files.ts';
+import { isArchiveType, isEditableFile, isViewableArchive } from '@/lib/files.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
@@ -52,6 +52,7 @@ const FileRow = memo(
       server,
       browsingDirectory,
       browsingBackup,
+      browsingWritableDirectory,
       movingFileNames,
       setMovingFiles,
       isFileSelected,
@@ -110,7 +111,7 @@ const FileRow = memo(
                   file.name,
                   <MemoryRouter
                     initialEntries={[
-                      file.directory
+                      file.directory || isViewableArchive(file)
                         ? `/server/${server.uuidShort}/files?${createSearchParams({
                             directory: `${browsingDirectory}/${file.name}`.replace('//', '/'),
                           })}`
@@ -128,14 +129,14 @@ const FileRow = memo(
             {
               icon: faFilePen,
               label: 'Rename',
-              hidden: !!browsingBackup,
+              hidden: !!browsingBackup || !browsingWritableDirectory,
               onClick: () => setOpenModal('rename'),
               canAccess: useServerCan('files.update'),
             },
             {
               icon: faCopy,
               label: 'Copy',
-              hidden: !!browsingBackup || (!file.file && !file.directory),
+              hidden: !!browsingBackup || !browsingWritableDirectory || (!file.file && !file.directory),
               onClick: () => setOpenModal('copy'),
               color: 'gray',
               canAccess: canCreate,
@@ -143,7 +144,7 @@ const FileRow = memo(
             {
               icon: faAnglesUp,
               label: 'Move',
-              hidden: !!browsingBackup,
+              hidden: !!browsingBackup || !browsingWritableDirectory,
               onClick: () => setMovingFiles([file]),
               color: 'gray',
               canAccess: useServerCan('files.update'),
@@ -151,7 +152,6 @@ const FileRow = memo(
             {
               icon: faFileShield,
               label: 'Permissions',
-              hidden: !!browsingBackup,
               onClick: () => setOpenModal('permissions'),
               color: 'gray',
               canAccess: useServerCan('files.update'),
@@ -160,7 +160,7 @@ const FileRow = memo(
               ? {
                   icon: faEnvelopesBulk,
                   label: 'Unarchive',
-                  hidden: !!browsingBackup,
+                  hidden: !!browsingBackup || !browsingWritableDirectory,
                   onClick: doUnarchive,
                   color: 'gray',
                   canAccess: canCreate,
@@ -168,7 +168,7 @@ const FileRow = memo(
               : {
                   icon: faFileZipper,
                   label: 'Archive',
-                  hidden: !!browsingBackup,
+                  hidden: !!browsingBackup || !browsingWritableDirectory,
                   onClick: () => setOpenModal('archive'),
                   color: 'gray',
                   canAccess: canArchive,
@@ -191,7 +191,7 @@ const FileRow = memo(
             {
               icon: faTrash,
               label: 'Delete',
-              hidden: !!browsingBackup,
+              hidden: !!browsingBackup || !browsingWritableDirectory,
               onClick: () => setOpenModal('delete'),
               color: 'red',
               canAccess: useServerCan('files.delete'),

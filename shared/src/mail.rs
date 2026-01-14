@@ -57,7 +57,7 @@ impl Mail {
                             lettre::transport::smtp::client::TlsParametersBuilder::new(
                                 host.to_string(),
                             )
-                            .build_rustls()
+                            .build_native()
                             .unwrap(),
                         )
                     } else {

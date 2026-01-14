@@ -10,6 +10,11 @@ export interface FilesSlice {
   browsingBackup: ServerBackup | null;
   setBrowsingBackup: (backup: ServerBackup | null) => void;
 
+  browsingWritableDirectory: boolean;
+  setBrowsingWritableDirectory: (writable: boolean) => void;
+  browsingFastDirectory: boolean;
+  setBrowsingFastDirectory: (fast: boolean) => void;
+
   browsingEntries: ResponseMeta<DirectoryEntry>;
   setBrowsingEntries: (entries: ResponseMeta<DirectoryEntry>) => void;
   addBrowsingEntry: (entry: DirectoryEntry) => void;
@@ -40,6 +45,11 @@ export const createFilesSlice: StateCreator<ServerStore, [], [], FilesSlice> = (
 
   browsingBackup: null,
   setBrowsingBackup: (value) => set((state) => ({ ...state, browsingBackup: value })),
+
+  browsingWritableDirectory: true,
+  setBrowsingWritableDirectory: (value) => set((state) => ({ ...state, browsingWritableDirectory: value })),
+  browsingFastDirectory: true,
+  setBrowsingFastDirectory: (value) => set((state) => ({ ...state, browsingFastDirectory: value })),
 
   browsingEntries: getEmptyPaginationSet<DirectoryEntry>(),
   setBrowsingEntries: (value) => set((state) => ({ ...state, browsingEntries: value })),
@@ -109,7 +119,12 @@ export const createFilesSlice: StateCreator<ServerStore, [], [], FilesSlice> = (
     const state = get();
 
     loadDirectory(state.server.uuid, state.browsingDirectory!, page).then((data) => {
-      set((state) => ({ ...state, browsingEntries: data }));
+      set((state) => ({
+        ...state,
+        browsingWritableDirectory: data.isFilesystemWritable,
+        browsingFastDirectory: data.isFilesystemFast,
+        browsingEntries: data.entries,
+      }));
     });
   },
 });

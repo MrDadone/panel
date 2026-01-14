@@ -21,7 +21,7 @@ export default function FileEditor() {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const server = useServerStore((state) => state.server);
-  const { browsingDirectory, setBrowsingDirectory, browsingBackup } = useServerStore();
+  const { browsingBackup, browsingWritableDirectory, browsingDirectory, setBrowsingDirectory } = useServerStore();
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -53,7 +53,7 @@ export default function FileEditor() {
   }, [content]);
 
   const saveFile = (name?: string) => {
-    if (!editorRef.current) return;
+    if (!editorRef.current || browsingBackup || !browsingWritableDirectory) return;
 
     const currentContent = editorRef.current.getValue();
     setSaving(true);
@@ -99,7 +99,7 @@ export default function FileEditor() {
               path={join(decodeURIComponent(browsingDirectory!), fileName)}
               browsingBackup={browsingBackup}
             />
-            <div hidden={!!browsingBackup}>
+            <div hidden={!!browsingBackup || !browsingWritableDirectory}>
               {params.action === 'edit' ? (
                 <ServerCan action='files.update'>
                   <Button loading={saving} onClick={() => saveFile()}>
@@ -121,6 +121,16 @@ export default function FileEditor() {
               theme='vs-dark'
               defaultValue={content}
               path={fileName}
+              options={{
+                readOnly: !!browsingBackup || !browsingWritableDirectory,
+                stickyScroll: { enabled: false },
+                minimap: { enabled: false },
+                codeLens: false,
+                scrollBeyondLastLine: false,
+                smoothScrolling: true,
+                // @ts-expect-error this is valid
+                touchScrollEnabled: true,
+              }}
               onChange={(value) => setContent(value || '')}
               onMount={(editor, monaco) => {
                 editorRef.current = editor;

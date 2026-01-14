@@ -5,7 +5,7 @@ import { useAuth } from '@/providers/AuthProvider.tsx';
 export default function AdminGuard() {
   const { user } = useAuth();
 
-  if (!isAdmin(user!)) return <Navigate to='/' />;
+  if (!isAdmin(user)) return <Navigate to='/' />;
 
   return <Outlet />;
 }

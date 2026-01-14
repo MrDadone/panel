@@ -27,6 +27,9 @@ mod get {
 
     #[derive(ToSchema, Serialize)]
     struct Response {
+        is_filesystem_writable: bool,
+        is_filesystem_fast: bool,
+
         #[schema(inline)]
         entries: Pagination<wings_api::DirectoryEntry>,
     }
@@ -102,6 +105,8 @@ mod get {
         };
 
         ApiResponse::json(Response {
+            is_filesystem_writable: entries.filesystem_writable,
+            is_filesystem_fast: entries.filesystem_fast,
             entries: Pagination {
                 total: entries.total as i64,
                 per_page: params.per_page,

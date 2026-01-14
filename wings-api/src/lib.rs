@@ -32,6 +32,8 @@ pub enum ArchiveFormat {
     TarGz,
     #[serde(rename = "tar_xz")]
     TarXz,
+    #[serde(rename = "tar_lzip")]
+    TarLzip,
     #[serde(rename = "tar_bz2")]
     TarBz2,
     #[serde(rename = "tar_lz4")]
@@ -415,6 +417,8 @@ pub enum TransferArchiveFormat {
     TarGz,
     #[serde(rename = "tar_xz")]
     TarXz,
+    #[serde(rename = "tar_lzip")]
+    TarLzip,
     #[serde(rename = "tar_bz2")]
     TarBz2,
     #[serde(rename = "tar_lz4")]
@@ -728,7 +732,7 @@ pub mod servers_server_files_copy {
         nestify::nest! {
             #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
                 #[schema(inline)]
-                pub location: compact_str::CompactString,
+                pub path: compact_str::CompactString,
                 #[schema(inline)]
                 pub name: Option<compact_str::CompactString>,
                 #[schema(inline)]
@@ -819,9 +823,9 @@ pub mod servers_server_files_create_directory {
         nestify::nest! {
             #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
                 #[schema(inline)]
-                pub name: compact_str::CompactString,
+                pub root: compact_str::CompactString,
                 #[schema(inline)]
-                pub path: compact_str::CompactString,
+                pub name: compact_str::CompactString,
             }
         }
 
@@ -933,6 +937,10 @@ pub mod servers_server_files_list {
             #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
                 #[schema(inline)]
                 pub total: u64,
+                #[schema(inline)]
+                pub filesystem_writable: bool,
+                #[schema(inline)]
+                pub filesystem_fast: bool,
                 #[schema(inline)]
                 pub entries: Vec<DirectoryEntry>,
             }
@@ -1547,6 +1555,8 @@ pub mod system_config {
                     pub root_directory: compact_str::CompactString,
                     #[schema(inline)]
                     pub log_directory: compact_str::CompactString,
+                    #[schema(inline)]
+                    pub vmount_directory: compact_str::CompactString,
                     #[schema(inline)]
                     pub data: compact_str::CompactString,
                     #[schema(inline)]

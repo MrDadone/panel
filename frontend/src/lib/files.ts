@@ -9,10 +9,20 @@ export function isArchiveType(mimetype: string) {
     'application/x-gzip',
     'application/x-lz4', // .tar.lz4, .lz4
     'application/x-xz', // .tar.xz, .xz
+    'application/x-lzip', // .tar.lz, .lz
     'application/zstd', // .tar.zst, .zst
     'application/zip', // .zip
     'application/x-7z-compressed', // .7z
   ].includes(mimetype);
+}
+
+export function isViewableArchive(file: DirectoryEntry) {
+  const validExtensions = ['.zip', '.7z', '.ddup'];
+
+  return (
+    (['application/zip', 'application/x-7z-compressed'].includes(file.mime) || file.name.endsWith('.ddup')) &&
+    validExtensions.some((ext) => file.name.endsWith(ext))
+  );
 }
 
 export function isEditableFile(mimetype: string) {
@@ -34,7 +44,7 @@ export function permissionStringToNumber(mode: string) {
     throw new Error('Invalid permission string length.');
   }
 
-  const perms = mode.slice(1); // Skip the first character
+  const perms = mode.slice(1);
 
   const mapping: Record<string, number> = {
     r: 4,

@@ -94,26 +94,46 @@ mod post {
                 let totp = totp_rs::TOTP::new(
                     totp_rs::Algorithm::SHA1,
                     6,
-                    0,
+                    1,
                     30,
                     totp_rs::Secret::Encoded(user_totp_secret).to_bytes()?,
                 )?;
 
-                if let Some(totp_last_used) = &user.totp_last_used {
-                    let last_step = totp.next_step(totp_last_used.and_utc().timestamp() as u64);
-                    let current_step = totp.next_step_current()?;
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs();
+                let current_step_idx = now / totp.step;
+                let mut matched_step_idx = None;
 
-                    if last_step == current_step {
+                for offset in -(totp.skew as i64)..=(totp.skew as i64) {
+                    let check_step_idx = (current_step_idx as i64 + offset) as u64;
+                    let check_time = check_step_idx * totp.step;
+
+                    if totp.generate(check_time) == data.code {
+                        matched_step_idx = Some(check_step_idx);
+                        break;
+                    }
+                }
+
+                let matched_step_idx = match matched_step_idx {
+                    Some(idx) => idx,
+                    None => {
+                        return ApiResponse::error("invalid confirmation code")
+                            .with_status(StatusCode::BAD_REQUEST)
+                            .ok();
+                    }
+                };
+
+                if let Some(totp_last_used) = &user.totp_last_used {
+                    let last_used_step_idx =
+                        totp_last_used.and_utc().timestamp() as u64 / totp.step;
+
+                    if matched_step_idx <= last_used_step_idx {
                         return ApiResponse::error("this code has already been used")
                             .with_status(StatusCode::BAD_REQUEST)
                             .ok();
                     }
-                }
-
-                if !totp.check_current(&data.code).is_ok_and(|valid| valid) {
-                    return ApiResponse::error("invalid confirmation code")
-                        .with_status(StatusCode::BAD_REQUEST)
-                        .ok();
                 }
 
                 if let Err(err) = UserActivity::log(

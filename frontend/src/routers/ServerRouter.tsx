@@ -86,7 +86,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
           <Sidebar.Divider />
 
           <Sidebar.Link to='/' end icon={faServer} name={t('pages.account.home.title', {})} />
-          {isAdmin(user!) && (
+          {isAdmin(user) && (
             <>
               <Sidebar.Link to='/admin' end icon={faGraduationCap} name={t('pages.account.admin.title', {})} />
               <Sidebar.Link

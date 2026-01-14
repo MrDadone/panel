@@ -1,4 +1,7 @@
 use crate::prelude::*;
+use compact_str::ToCompactString;
+use futures_util::StreamExt;
+use git2::FetchOptions;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -143,18 +146,30 @@ impl EggRepository {
                 let temp_dir = tempfile::tempdir()?;
                 let filesystem = crate::cap::CapFilesystem::new(temp_dir.path().to_path_buf())?;
 
-                git2::Repository::clone(&git_repository, temp_dir.path())?;
+                let mut fetch_options = FetchOptions::new();
+                fetch_options.depth(1);
+                git2::build::RepoBuilder::new()
+                    .fetch_options(fetch_options)
+                    .clone(&git_repository, temp_dir.path())?;
 
                 let mut walker = filesystem.walk_dir(".")?;
                 while let Some(Ok((is_dir, entry))) = walker.next_entry() {
-                    if is_dir {
+                    if is_dir
+                        || !matches!(
+                            entry.extension().and_then(|s| s.to_str()),
+                            Some("json") | Some("yml") | Some("yaml")
+                        )
+                    {
                         continue;
                     }
 
-                    if !matches!(
-                        entry.extension().and_then(|s| s.to_str()),
-                        Some("json") | Some("yaml")
-                    ) {
+                    let metadata = match filesystem.metadata(&entry) {
+                        Ok(metadata) => metadata,
+                        Err(_) => continue,
+                    };
+
+                    // if any egg is larger than 1 MB, something went horribly wrong in development
+                    if !metadata.is_file() || metadata.len() > 1024 * 1024 {
                         continue;
                     }
 
@@ -188,24 +203,29 @@ impl EggRepository {
             self.uuid,
             &exported_eggs
                 .iter()
-                .map(|(path, _)| path.to_string_lossy().to_string())
-                .collect::<Vec<String>>(),
+                .map(|(path, _)| path.to_string_lossy().to_compact_string())
+                .collect::<Vec<_>>(),
         )
         .await?;
 
-        let exported_eggs_len = exported_eggs.len();
+        let mut futures = Vec::new();
+        futures.reserve_exact(exported_eggs.len());
 
-        for (path, exported_egg) in exported_eggs {
-            super::egg_repository_egg::EggRepositoryEgg::create(
+        for (path, exported_egg) in exported_eggs.iter() {
+            futures.push(super::egg_repository_egg::EggRepositoryEgg::create(
                 database,
                 self.uuid,
-                &path.to_string_lossy(),
+                path.to_string_lossy(),
                 &exported_egg.name,
                 exported_egg.description.as_deref(),
                 &exported_egg.author,
-                &exported_egg,
-            )
-            .await?;
+                exported_egg,
+            ));
+        }
+
+        let mut results_stream = futures_util::stream::iter(futures).buffer_unordered(25);
+        while let Some(result) = results_stream.next().await {
+            result?;
         }
 
         sqlx::query(
@@ -219,7 +239,7 @@ impl EggRepository {
         .execute(database.write())
         .await?;
 
-        Ok(exported_eggs_len)
+        Ok(exported_eggs.len())
     }
 
     #[inline]

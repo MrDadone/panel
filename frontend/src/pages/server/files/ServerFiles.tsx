@@ -33,6 +33,9 @@ export default function ServerFiles() {
     setBrowsingDirectory,
     browsingBackup,
     setBrowsingBackup,
+    browsingWritableDirectory,
+    setBrowsingWritableDirectory,
+    setBrowsingFastDirectory,
     browsingEntries,
     setBrowsingEntries,
     selectedFileNames,
@@ -79,7 +82,9 @@ export default function ServerFiles() {
 
     loadDirectory(server.uuid, browsingDirectory!, page)
       .then((data) => {
-        setBrowsingEntries(data);
+        setBrowsingWritableDirectory(data.isFilesystemWritable);
+        setBrowsingFastDirectory(data.isFilesystemFast);
+        setBrowsingEntries(data.entries);
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
@@ -169,28 +174,27 @@ export default function ServerFiles() {
           <Title order={1} c='white'>
             Files
           </Title>
-          {!browsingBackup && (
-            <Group>
-              <FileOperationsProgress
-                serverUuid={server.uuid}
-                uploadingFiles={uploadingFiles}
-                fileOperations={fileOperations}
-                aggregatedUploadProgress={aggregatedUploadProgress}
-                onCancelFileUpload={cancelFileUpload}
-                onCancelFolderUpload={cancelFolderUpload}
-                onCancelOperation={doCancelOperation}
-              />
-              <FileToolbar
-                serverUuidShort={server.uuidShort}
-                browsingDirectory={browsingDirectory}
-                onSftpDetailsClick={() => setOpenModal('sftpDetails')}
-                onNewDirectoryClick={() => setOpenModal('nameDirectory')}
-                onPullFileClick={() => setOpenModal('pullFile')}
-                onFileUploadClick={() => fileInputRef.current?.click()}
-                onFolderUploadClick={() => folderInputRef.current?.click()}
-              />
-            </Group>
-          )}
+          <Group>
+            <FileOperationsProgress
+              serverUuid={server.uuid}
+              uploadingFiles={uploadingFiles}
+              fileOperations={fileOperations}
+              aggregatedUploadProgress={aggregatedUploadProgress}
+              onCancelFileUpload={cancelFileUpload}
+              onCancelFolderUpload={cancelFolderUpload}
+              onCancelOperation={doCancelOperation}
+            />
+            <FileToolbar
+              serverUuidShort={server.uuidShort}
+              browsingDirectory={browsingDirectory}
+              browsingWritableDirectory={browsingWritableDirectory}
+              onSftpDetailsClick={() => setOpenModal('sftpDetails')}
+              onNewDirectoryClick={() => setOpenModal('nameDirectory')}
+              onPullFileClick={() => setOpenModal('pullFile')}
+              onFileUploadClick={() => fileInputRef.current?.click()}
+              onFolderUploadClick={() => folderInputRef.current?.click()}
+            />
+          </Group>
         </Group>
 
         {loading ? (

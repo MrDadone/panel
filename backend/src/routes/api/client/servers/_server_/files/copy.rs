@@ -16,7 +16,7 @@ mod post {
 
     #[derive(ToSchema, Deserialize)]
     pub struct Payload {
-        file: compact_str::CompactString,
+        path: compact_str::CompactString,
         destination: Option<compact_str::CompactString>,
 
         #[serde(default)]
@@ -55,7 +55,7 @@ mod post {
     ) -> ApiResponseResult {
         permissions.has_server_permission("files.create")?;
 
-        if server.is_ignored(&data.file, false) {
+        if server.is_ignored(&data.path, false) {
             return ApiResponse::error("file not found")
                 .with_status(StatusCode::NOT_FOUND)
                 .ok();
@@ -70,7 +70,7 @@ mod post {
         }
 
         let request_body = wings_api::servers_server_files_copy::post::RequestBody {
-            location: data.file,
+            path: data.path,
             name: data.destination,
             foreground: data.foreground,
         };
@@ -111,7 +111,7 @@ mod post {
                 .log(
                     "server:file.copy",
                     serde_json::json!({
-                        "file": request_body.location,
+                        "path": request_body.path,
                         "name": request_body.name.as_ref(),
                     }),
                 )
