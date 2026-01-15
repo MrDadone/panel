@@ -38,6 +38,7 @@
     "chart.js": "^4.5.1",
     "chartjs-adapter-moment": "^1.0.1",
     "classnames": "^2.5.1",
+    "cron-parser": "^5.4.0",
     "debounce": "^2.2.0",
     "deepmerge-ts": "^7.1.5",
     "dompurify": "^3.3.1",

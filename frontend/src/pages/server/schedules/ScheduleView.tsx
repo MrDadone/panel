@@ -15,6 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Alert, Group, Stack, Tabs, Text, ThemeIcon, Timeline, Title } from '@mantine/core';
+import { CronExpressionParser } from 'cron-parser';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getSchedule from '@/api/server/schedules/getSchedule.ts';
@@ -32,7 +33,7 @@ import ServerContentContainer from '@/elements/containers/ServerContentContainer
 import Spinner from '@/elements/Spinner.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import { scheduleStepIconMapping } from '@/lib/enums.ts';
-import { formatDateTime } from '@/lib/time.ts';
+import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import ScheduleCreateOrUpdateModal from './modals/ScheduleCreateOrUpdateModal.tsx';
@@ -64,7 +65,7 @@ function DetailCard({ icon, label, value, color = 'blue' }: DetailCardProps) {
   );
 }
 
-function TriggerCard({ trigger }: { trigger: ScheduleTrigger }) {
+function TriggerCard({ date, timezone, trigger }: { date: Date; timezone: string; trigger: ScheduleTrigger }) {
   const getTriggerIcon = (type: string) => {
     switch (type) {
       case 'cron':
@@ -105,8 +106,14 @@ function TriggerCard({ trigger }: { trigger: ScheduleTrigger }) {
 
   const getTriggerLabel = () => {
     switch (trigger.type) {
-      case 'cron':
-        return `Cron: ${trigger.schedule}`;
+      case 'cron': {
+        const interval = CronExpressionParser.parse(trigger.schedule, {
+          currentDate: date,
+          tz: timezone,
+        });
+
+        return `Cron: ${trigger.schedule}\nNext Run: ${formatTimestamp(interval.next().toDate())}`;
+      }
       case 'power_action':
         return `Power Action: ${trigger.action}`;
       case 'server_state':
@@ -292,7 +299,13 @@ export default function ScheduleView() {
   const { server, schedule, setSchedule, runningScheduleSteps, scheduleSteps, setScheduleSteps } = useServerStore();
 
   const [openModal, setOpenModal] = useState<'actions' | 'update' | null>(null);
+  const [date, setDate] = useState(new Date());
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => setDate(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (params.id) {
@@ -517,7 +530,7 @@ export default function ScheduleView() {
               ) : (
                 <Stack gap='md'>
                   {schedule.triggers.map((trigger, index) => (
-                    <TriggerCard key={index} trigger={trigger} />
+                    <TriggerCard key={index} date={date} timezone={server.timezone || 'UTC'} trigger={trigger} />
                   ))}
                 </Stack>
               )}
