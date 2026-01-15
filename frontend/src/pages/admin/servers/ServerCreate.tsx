@@ -69,6 +69,7 @@ export default function ServerCreate() {
       startup: '',
       image: '',
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      hugepagesPassthroughEnabled: false,
       featureLimits: {
         allocations: 5,
         databases: 5,
@@ -400,6 +401,12 @@ export default function ServerCreate() {
                     {...form.getInputProps('skipInstaller', { type: 'checkbox' })}
                   />
                 </Group>
+
+                <Switch
+                  label='Enable Hugepages Passthrough'
+                  description='Enable hugepages passthrough for the server (mounts /dev/hugepages into the container)'
+                  {...form.getInputProps('hugepagesPassthroughEnabled', { type: 'checkbox' })}
+                />
               </Stack>
             </Paper>
           </Group>

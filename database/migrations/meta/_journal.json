@@ -407,6 +407,13 @@
       "when": 1767446850440,
       "tag": "0057_giant_silver_fox",
       "breakpoints": false
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1768509371536,
+      "tag": "0058_complex_sprite",
+      "breakpoints": false
     }
   ]
 }

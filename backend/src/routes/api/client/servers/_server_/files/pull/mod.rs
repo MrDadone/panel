@@ -1,6 +1,8 @@
 use super::State;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
+mod query;
+
 mod post {
     use axum::http::StatusCode;
     use serde::{Deserialize, Serialize};
@@ -60,6 +62,16 @@ mod post {
         axum::Json(data): axum::Json<Payload>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("files.create")?;
+
+        state
+            .cache
+            .ratelimit(
+                format!("client/servers/{}/files/pull", server.uuid),
+                5,
+                60,
+                server.uuid,
+            )
+            .await?;
 
         if let Some(name) = &data.name
             && server.is_ignored(name, false)
@@ -124,6 +136,7 @@ mod post {
 
 pub fn router(state: &State) -> OpenApiRouter<State> {
     OpenApiRouter::new()
+        .nest("/query", query::router(state))
         .routes(routes!(post::route))
         .with_state(state.clone())
 }

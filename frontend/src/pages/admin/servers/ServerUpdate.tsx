@@ -20,6 +20,7 @@ import AdminContentContainer from '@/elements/containers/AdminContentContainer.t
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import Select from '@/elements/input/Select.tsx';
 import SizeInput from '@/elements/input/SizeInput.tsx';
+import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { adminServerUpdateSchema } from '@/lib/schemas/admin/servers.ts';
@@ -59,6 +60,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
       startup: '',
       image: '',
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      hugepagesPassthroughEnabled: false,
       featureLimits: {
         allocations: 5,
         databases: 5,
@@ -92,6 +94,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
         startup: contextServer.startup,
         image: contextServer.image,
         timezone: contextServer.timezone,
+        hugepagesPassthroughEnabled: contextServer.hugepagesPassthroughEnabled,
         featureLimits: contextServer.featureLimits,
       });
     }
@@ -348,6 +351,12 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     </ActionIcon>
                   }
                   {...form.getInputProps('startup')}
+                />
+
+                <Switch
+                  label='Enable Hugepages Passthrough'
+                  description='Enable hugepages passthrough for the server (mounts /dev/hugepages into the container)'
+                  {...form.getInputProps('hugepagesPassthroughEnabled', { type: 'checkbox' })}
                 />
               </Stack>
             </Paper>

@@ -460,6 +460,21 @@ impl WingsClient {
         .await
     }
 
+    pub async fn post_servers_server_files_pull_query(
+        &self,
+        server: uuid::Uuid,
+        data: &super::servers_server_files_pull_query::post::RequestBody,
+    ) -> Result<super::servers_server_files_pull_query::post::Response, ApiHttpError> {
+        request_impl(
+            self,
+            Method::POST,
+            format!("/api/servers/{server}/files/pull/query"),
+            Some(data),
+            None,
+        )
+        .await
+    }
+
     pub async fn delete_servers_server_files_pull_pull(
         &self,
         server: uuid::Uuid,

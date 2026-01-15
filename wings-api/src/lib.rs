@@ -296,11 +296,11 @@ nestify::nest! {
         #[schema(inline)]
         pub container: #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct ServerConfigurationContainer {
             #[schema(inline)]
-            pub privileged: bool,
-            #[schema(inline)]
             pub image: compact_str::CompactString,
             #[schema(inline)]
             pub timezone: Option<compact_str::CompactString>,
+            #[schema(inline)]
+            pub hugepages_passthrough_enabled: bool,
             #[schema(inline)]
             pub seccomp: #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct ServerConfigurationContainerSeccomp {
                 #[schema(inline)]
@@ -1038,6 +1038,37 @@ pub mod servers_server_files_pull {
             Ok(Response200),
             Accepted(Response202),
         }
+    }
+}
+pub mod servers_server_files_pull_query {
+    use super::*;
+
+    pub mod post {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
+                #[schema(inline)]
+                pub url: compact_str::CompactString,
+            }
+        }
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
+                #[schema(inline)]
+                pub file_name: Option<compact_str::CompactString>,
+                #[schema(inline)]
+                pub file_size: Option<u64>,
+                #[schema(inline)]
+                pub final_url: compact_str::CompactString,
+                #[schema(inline)]
+                pub headers: IndexMap<compact_str::CompactString, compact_str::CompactString>,
+            }
+        }
+
+        pub type Response417 = ApiError;
+
+        pub type Response = Response200;
     }
 }
 pub mod servers_server_files_pull_pull {

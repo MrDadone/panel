@@ -140,6 +140,8 @@ mod post {
         #[schema(min_length = 3, max_length = 255, value_type = String)]
         timezone: Option<chrono_tz::Tz>,
 
+        hugepages_passthrough_enabled: bool,
+
         feature_limits: shared::models::server::ApiServerFeatureLimits,
         #[schema(inline)]
         variables: Vec<PayloadVariable>,
@@ -286,6 +288,7 @@ mod post {
             &data.startup,
             &data.image,
             data.timezone.as_ref().map(|tz| tz.name()),
+            data.hugepages_passthrough_enabled,
             &data.feature_limits,
             &server_variables,
         )
@@ -329,6 +332,9 @@ mod post {
                     "startup": data.startup,
                     "image": data.image,
                     "timezone": data.timezone,
+
+                    "hugepages_passthrough_enabled": data.hugepages_passthrough_enabled,
+
                     "feature_limits": data.feature_limits,
                     "variables": data.variables,
                 }),

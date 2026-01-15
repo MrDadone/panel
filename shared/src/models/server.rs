@@ -109,6 +109,8 @@ pub struct Server {
     pub auto_start_behavior: ServerAutoStartBehavior,
     pub timezone: Option<compact_str::CompactString>,
 
+    pub hugepages_passthrough_enabled: bool,
+
     pub allocation_limit: i32,
     pub database_limit: i32,
     pub backup_limit: i32,
@@ -204,6 +206,10 @@ impl BaseModel for Server {
                 compact_str::format_compact!("{prefix}timezone"),
             ),
             (
+                "servers.hugepages_passthrough_enabled",
+                compact_str::format_compact!("{prefix}hugepages_passthrough_enabled"),
+            ),
+            (
                 "servers.allocation_limit",
                 compact_str::format_compact!("{prefix}allocation_limit"),
             ),
@@ -297,6 +303,9 @@ impl BaseModel for Server {
             auto_start_behavior: row
                 .try_get(compact_str::format_compact!("{prefix}auto_start_behavior").as_str())?,
             timezone: row.try_get(compact_str::format_compact!("{prefix}timezone").as_str())?,
+            hugepages_passthrough_enabled: row.try_get(
+                compact_str::format_compact!("{prefix}hugepages_passthrough_enabled").as_str(),
+            )?,
             allocation_limit: row
                 .try_get(compact_str::format_compact!("{prefix}allocation_limit").as_str())?,
             database_limit: row
@@ -338,6 +347,7 @@ impl Server {
         startup: &str,
         image: &str,
         timezone: Option<&str>,
+        hugepages_passthrough_enabled: bool,
         feature_limits: &ApiServerFeatureLimits,
         variables: &HashMap<uuid::Uuid, &'_ str>,
     ) -> Result<uuid::Uuid, crate::database::DatabaseError> {
@@ -370,6 +380,7 @@ impl Server {
                     startup,
                     image,
                     timezone,
+                    hugepages_passthrough_enabled,
                     allocation_limit,
                     database_limit,
                     backup_limit,
@@ -378,7 +389,8 @@ impl Server {
                 VALUES (
                     $1, $2, $3, $4, $5, $6, $7, $8, $9,
                     $10, $11, $12, $13, $14, $15, $16,
-                    $17, $18, $19, $20, $21, $22, $23
+                    $17, $18, $19, $20, $21, $22, $23,
+                    $24
                 )
                 RETURNING uuid
                 "#,
@@ -406,6 +418,7 @@ impl Server {
             .bind(startup)
             .bind(image)
             .bind(timezone)
+            .bind(hugepages_passthrough_enabled)
             .bind(feature_limits.allocations)
             .bind(feature_limits.databases)
             .bind(feature_limits.backups)
@@ -1362,9 +1375,9 @@ impl Server {
                     file_denylist: self.egg.file_denylist,
                 },
                 container: wings_api::ServerConfigurationContainer {
-                    privileged: false,
                     image: self.image,
                     timezone: self.timezone,
+                    hugepages_passthrough_enabled: self.hugepages_passthrough_enabled,
                     seccomp: wings_api::ServerConfigurationContainerSeccomp {
                         remove_allowed: vec![],
                     },
@@ -1447,6 +1460,7 @@ impl Server {
             auto_kill: self.auto_kill,
             auto_start_behavior: self.auto_start_behavior,
             timezone: self.timezone,
+            hugepages_passthrough_enabled: self.hugepages_passthrough_enabled,
             created: self.created.and_utc(),
         })
     }
@@ -1687,6 +1701,8 @@ pub struct AdminApiServer {
     pub auto_kill: wings_api::ServerConfigurationAutoKill,
     pub auto_start_behavior: ServerAutoStartBehavior,
     pub timezone: Option<compact_str::CompactString>,
+
+    pub hugepages_passthrough_enabled: bool,
 
     pub created: chrono::DateTime<chrono::Utc>,
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "servers" ADD COLUMN "hugepages_passthrough_enabled" boolean DEFAULT false NOT NULL;

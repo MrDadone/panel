@@ -228,6 +228,8 @@ mod patch {
         #[schema(max_length = 255)]
         timezone: Option<compact_str::CompactString>,
 
+        hugepages_passthrough_enabled: Option<bool>,
+
         feature_limits: Option<shared::models::server::ApiServerFeatureLimits>,
     }
 
@@ -357,6 +359,9 @@ mod patch {
                 server.timezone = Some(timezone);
             }
         }
+        if let Some(hugepages_passthrough_enabled) = data.hugepages_passthrough_enabled {
+            server.hugepages_passthrough_enabled = hugepages_passthrough_enabled;
+        }
         if let Some(feature_limits) = &data.feature_limits {
             server.allocation_limit = feature_limits.allocations;
             server.backup_limit = feature_limits.backups;
@@ -371,9 +376,9 @@ mod patch {
                 suspended = $4, external_id = $5, name = $6, description = $7,
                 cpu = $8, memory = $9, swap = $10, disk = $11, io_weight = $12,
                 pinned_cpus = $13, startup = $14, image = $15, timezone = $16,
-                allocation_limit = $17, backup_limit = $18, database_limit = $19,
-                schedule_limit = $20
-            WHERE servers.uuid = $21",
+                hugepages_passthrough_enabled = $17, allocation_limit = $18, backup_limit = $19,
+                database_limit = $20, schedule_limit = $21
+            WHERE servers.uuid = $22",
             server.owner.uuid,
             server.egg.uuid,
             server
@@ -393,6 +398,7 @@ mod patch {
             &server.startup,
             &server.image,
             server.timezone.as_deref(),
+            server.hugepages_passthrough_enabled,
             server.allocation_limit,
             server.backup_limit,
             server.database_limit,
@@ -428,6 +434,9 @@ mod patch {
                     "startup": server.startup,
                     "image": server.image,
                     "timezone": server.timezone,
+
+                    "hugepages_passthrough_enabled": server.hugepages_passthrough_enabled,
+
                     "feature_limits": data.feature_limits,
                 }),
             )

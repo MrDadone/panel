@@ -255,6 +255,7 @@ declare global {
     };
     autoStartBehavior: ServerAutostartBehavior;
     timezone: string;
+    hugepagesPassthroughEnabled: boolean;
     created: Date;
   }
 
@@ -470,6 +471,13 @@ declare global {
     isSecret: boolean;
     rules: string[];
     created: Date;
+  }
+
+  interface ServerPullQueryResult {
+    fileName: string | null;
+    fileSize: number | null;
+    finalUrl: string;
+    headers: Record<string, string>;
   }
 
   interface ScheduleTriggerCron {
