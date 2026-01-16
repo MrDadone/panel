@@ -1,6 +1,8 @@
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useEffect, useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router';
+import getLocations from '@/api/admin/locations/getLocations.ts';
 import getNodes from '@/api/admin/nodes/getNodes.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
@@ -10,6 +12,7 @@ import { nodeTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
+import LocationCreateOrUpdateModal from './LocationCreateOrUpdateModal.tsx';
 import NodeCreateOrUpdate from './NodeCreateOrUpdate.tsx';
 import NodeRow from './NodeRow.tsx';
 import NodeView from './NodeView.tsx';
@@ -17,35 +20,66 @@ import NodeView from './NodeView.tsx';
 function NodesContainer() {
   const navigate = useNavigate();
   const { nodes, setNodes } = useAdminStore();
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [checkingLocations, setCheckingLocations] = useState(true);
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: getNodes,
     setStoreData: setNodes,
   });
 
+  useEffect(() => {
+    // Check if user has any locations
+    getLocations(1)
+      .then((response) => {
+        if (response.data.length === 0) {
+          setShowLocationModal(true);
+        }
+      })
+      .catch(() => {
+        // If there's an error, don't show the modal
+        // (might be a permissions issue)
+      })
+      .finally(() => {
+        setCheckingLocations(false);
+      });
+  }, []);
+
+  const handleLocationCreated = () => {
+    setShowLocationModal(false);
+  };
+
   return (
-    <AdminContentContainer
-      title='Nodes'
-      search={search}
-      setSearch={setSearch}
-      contentRight={
-        <AdminCan action='nodes.create'>
-          <Button
-            onClick={() => navigate('/admin/nodes/new')}
-            color='blue'
-            leftSection={<FontAwesomeIcon icon={faPlus} />}
-          >
-            Create
-          </Button>
-        </AdminCan>
-      }
-    >
-      <Table columns={nodeTableColumns} loading={loading} pagination={nodes} onPageSelect={setPage}>
-        {nodes.data.map((node) => (
-          <NodeRow key={node.uuid} node={node} />
-        ))}
-      </Table>
-    </AdminContentContainer>
+    <>
+      <AdminContentContainer
+        title='Nodes'
+        search={search}
+        setSearch={setSearch}
+        contentRight={
+          <AdminCan action='nodes.create'>
+            <Button
+              onClick={() => navigate('/admin/nodes/new')}
+              color='blue'
+              leftSection={<FontAwesomeIcon icon={faPlus} />}
+            >
+              Create
+            </Button>
+          </AdminCan>
+        }
+      >
+        <Table columns={nodeTableColumns} loading={loading} pagination={nodes} onPageSelect={setPage}>
+          {nodes.data.map((node) => (
+            <NodeRow key={node.uuid} node={node} />
+          ))}
+        </Table>
+      </AdminContentContainer>
+
+      <LocationCreateOrUpdateModal
+        opened={showLocationModal && !checkingLocations}
+        onClose={() => setShowLocationModal(false)}
+        onLocationCreated={handleLocationCreated}
+      />
+    </>
   );
 }
 
