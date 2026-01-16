@@ -13,7 +13,7 @@ interface CrontabEditorProps {
 }
 
 function CrontabEditor({ value, setValue }: CrontabEditorProps) {
-  const [segments, setSegments] = useState(['0', '0', '0', '0', '0', '0']);
+  const [segments, setSegments] = useState(['*', '*', '*', '*', '*', '*']);
 
   useEffect(() => {
     const newSegments = value.split(' ');
@@ -23,7 +23,7 @@ function CrontabEditor({ value, setValue }: CrontabEditorProps) {
 
     for (let i = 0; i < CRON_SEGMENTS.length; i++) {
       if (!newSegments[i]) {
-        newSegments[i] = '0';
+        newSegments[i] = '*';
       }
     }
 
