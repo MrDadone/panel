@@ -13,6 +13,7 @@ import Spinner from '@/elements/Spinner.tsx';
 import { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
+import EulaModal from './modals/EulaModal.tsx';
 
 const ansiUp = new AnsiUp();
 const MAX_LINES = 1000;
@@ -78,6 +79,7 @@ export default function Terminal() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [websocketPing, setWebsocketPing] = useState(0);
   const [consoleFontSize, setConsoleFontSize] = useState(14);
+  const [eulaModalOpen, setEulaModalOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -201,6 +203,11 @@ export default function Terminal() {
 
       if (prelude && !processed.includes('\u001b[1m\u001b[41m')) {
         html = PRELUDE_HTML + html;
+      }
+
+      // Detect Minecraft EULA requirement
+      if (processed.includes('You need to agree to the EULA')) {
+        setEulaModalOpen(true);
       }
 
       setLines((prev) => {
@@ -427,6 +434,8 @@ export default function Terminal() {
           className='w-full'
         />
       </div>
+
+      <EulaModal opened={eulaModalOpen} onClose={() => setEulaModalOpen(false)} />
     </Card>
   );
 }

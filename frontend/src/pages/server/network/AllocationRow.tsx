@@ -22,6 +22,7 @@ export default function AllocationRow({ allocation }: { allocation: ServerAlloca
   const { server, allocations, removeAllocation, setAllocations, updateServer } = useServerStore();
 
   const [openModal, setOpenModal] = useState<'edit' | 'remove' | null>(null);
+  const canUpdate = useServerCan('allocations.update');
 
   const doSetPrimary = () => {
     updateAllocation(server.uuid, allocation.uuid, { primary: true })
@@ -122,6 +123,12 @@ export default function AllocationRow({ allocation }: { allocation: ServerAlloca
       >
         {({ items, openMenu }) => (
           <TableRow
+            className={canUpdate ? 'cursor-pointer' : undefined}
+            onClick={() => {
+              if (canUpdate) {
+                setOpenModal('edit');
+              }
+            }}
             onContextMenu={(e) => {
               e.preventDefault();
               openMenu(e.pageX, e.pageY);

@@ -3,3 +3,4 @@ target/
 /logs/
 **/.idea
 exported-extensions/
+postgres/

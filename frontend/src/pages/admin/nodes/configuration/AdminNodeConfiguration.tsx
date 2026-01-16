@@ -1,4 +1,6 @@
-import { Stack, Title } from '@mantine/core';
+import { ActionIcon, Group, Stack, Title, Tooltip } from '@mantine/core';
+import { faCopy } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import hljs from 'highlight.js/lib/core';
 import yaml from 'highlight.js/lib/languages/yaml';
 import Card from '@/elements/Card.tsx';
@@ -9,10 +11,12 @@ import 'highlight.js/styles/a11y-dark.min.css';
 import jsYaml from 'js-yaml';
 import { useState } from 'react';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import { useToast } from '@/providers/ToastProvider.tsx';
 
 hljs.registerLanguage('yaml', yaml);
 
 export default function AdminNodeConfiguration({ node }: { node: Node }) {
+  const { addToast } = useToast();
   const [remote, setRemote] = useState(window.location.origin);
   const [apiPort, setApiPort] = useState(parseInt(new URL(node.url).port || '8080'));
   const [sftpPort, setSftpPort] = useState(node.sftpPort);
@@ -44,6 +48,27 @@ export default function AdminNodeConfiguration({ node }: { node: Node }) {
     };
   };
 
+  const getCommand = () => {
+    return `wings configure --join-data ${btoa(jsYaml.dump(getNodeConfiguration(), { condenseFlow: true, indent: 1, noArrayIndent: true }))}`;
+  };
+
+  const handleCopyCommand = () => {
+    if (!window.isSecureContext) {
+      addToast('Copying is only available in secure contexts (HTTPS).', 'error');
+      return;
+    }
+
+    navigator.clipboard
+      .writeText(getCommand())
+      .then(() => {
+        addToast('Copied to clipboard', 'success');
+      })
+      .catch((err) => {
+        console.error(err);
+        addToast('Failed to copy to clipboard', 'error');
+      });
+  };
+
   return (
     <AdminContentContainer title='Node Configuration' titleOrder={2}>
       <div className='grid md:grid-cols-4 grid-cols-1 grid-rows-2 gap-4'>
@@ -55,13 +80,21 @@ export default function AdminNodeConfiguration({ node }: { node: Node }) {
             }}
           />
 
-          <p className='mt-2'>
-            Place this into the configuration file at <Code>/etc/pterodactyl/config.yml</Code> or run{' '}
-            <Code block>
-              wings configure --join-data{' '}
-              {btoa(jsYaml.dump(getNodeConfiguration(), { condenseFlow: true, indent: 1, noArrayIndent: true }))}
-            </Code>
-          </p>
+          <div className='mt-2'>
+            <p>
+              Place this into the configuration file at <Code>/etc/pterodactyl/config.yml</Code> or run
+            </p>
+            <Group gap='xs' align='flex-start' wrap='nowrap' className='mt-2'>
+              <Code block className='flex-1'>
+                {getCommand()}
+              </Code>
+              <Tooltip label='Copy command'>
+                <ActionIcon variant='subtle' onClick={handleCopyCommand} size='lg'>
+                  <FontAwesomeIcon icon={faCopy} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          </div>
         </div>
         <Card>
           <Title className='text-right'>Configuration</Title>
