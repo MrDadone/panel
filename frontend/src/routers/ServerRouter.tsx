@@ -10,6 +10,7 @@ import { ServerCan } from '@/elements/Can.tsx';
 import Container from '@/elements/Container.tsx';
 import Notification from '@/elements/Notification.tsx';
 import Progress from '@/elements/Progress.tsx';
+import ServerSwitcher from '@/elements/ServerSwitcher.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { isAdmin } from '@/lib/permissions.ts';
@@ -82,6 +83,8 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
               <h1 className='grow font-logo text-xl'>{settings.app.name}</h1>
             </div>
           </NavLink>
+
+          <ServerSwitcher className='mb-4' />
 
           <Sidebar.Divider />
 
