@@ -1,297 +1,37 @@
 import {
-  faArchive,
-  faBolt,
   faChevronDown,
-  faClock,
   faClockRotateLeft,
   faExclamationTriangle,
   faPencil,
   faPlay,
   faPlayCircle,
   faReply,
-  faServer,
-  faSkull,
-  faTerminal,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Alert, Group, Stack, Tabs, Text, ThemeIcon, Timeline, Title } from '@mantine/core';
-import { CronExpressionParser } from 'cron-parser';
+import { Alert, Group, Stack, Tabs, Timeline, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getSchedule from '@/api/server/schedules/getSchedule.ts';
 import getScheduleSteps from '@/api/server/schedules/steps/getScheduleSteps.ts';
 import triggerSchedule from '@/api/server/schedules/triggerSchedule.ts';
 import updateSchedule from '@/api/server/schedules/updateSchedule.ts';
-import AnimatedHourglass from '@/elements/AnimatedHourglass.tsx';
 import Badge from '@/elements/Badge.tsx';
 import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
 import Card from '@/elements/Card.tsx';
-import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
-import { scheduleStepIconMapping } from '@/lib/enums.ts';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import { formatDateTime } from '@/lib/time.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import ScheduleCreateOrUpdateModal from './modals/ScheduleCreateOrUpdateModal.tsx';
-import ScheduleDynamicParameterRenderer from './ScheduleDynamicParameterRenderer.tsx';
+import ActionStep from './renderers/ActionStep.tsx';
+import DetailCard from './renderers/DetailCard.tsx';
+import TriggerCard from './renderers/TriggerCard.tsx';
 import SchedulePreConditionBuilder from './SchedulePreConditionBuilder.tsx';
 import StepsEditor from './StepsEditor.tsx';
-
-interface DetailCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  color?: string;
-  className?: string;
-}
-
-function DetailCard({ icon, label, value, color = 'blue' }: DetailCardProps) {
-  return (
-    <Card className='flex flex-row! items-center flex-1'>
-      <ThemeIcon size='xl' radius='md' color={color}>
-        {icon}
-      </ThemeIcon>
-      <div className='flex flex-col ml-4 w-full'>
-        <div className='w-full flex justify-between'>
-          <span className='text-sm text-gray-400 font-bold'>{label}</span>
-        </div>
-        <span className='text-lg font-bold'>{value}</span>
-      </div>
-    </Card>
-  );
-}
-
-function TriggerCard({ date, timezone, trigger }: { date: Date; timezone: string; trigger: ScheduleTrigger }) {
-  const getTriggerIcon = (type: string) => {
-    switch (type) {
-      case 'cron':
-        return faClock;
-      case 'power_action':
-        return faBolt;
-      case 'server_state':
-        return faServer;
-      case 'backup_status':
-        return faArchive;
-      case 'console_line':
-        return faTerminal;
-      case 'crash':
-        return faSkull;
-      default:
-        return faClock;
-    }
-  };
-
-  const getTriggerColor = (type: string) => {
-    switch (type) {
-      case 'cron':
-        return 'blue';
-      case 'power_action':
-        return 'orange';
-      case 'server_state':
-        return 'green';
-      case 'backup_status':
-        return 'green';
-      case 'console_line':
-        return 'gray';
-      case 'crash':
-        return 'red';
-      default:
-        return 'gray';
-    }
-  };
-
-  const getTriggerLabel = () => {
-    switch (trigger.type) {
-      case 'cron': {
-        const interval = CronExpressionParser.parse(trigger.schedule, {
-          currentDate: date,
-          tz: timezone,
-        });
-
-        return `Cron: ${trigger.schedule}\nNext Run: ${formatTimestamp(interval.next().toDate())}`;
-      }
-      case 'power_action':
-        return `Power Action: ${trigger.action}`;
-      case 'server_state':
-        return `Server State: ${trigger.state}`;
-      case 'backup_status':
-        return `Backup Status: ${trigger.status}`;
-      case 'console_line':
-        return `Console Line contains: ${trigger.contains}`;
-      case 'crash':
-        return 'Server Crash';
-      default:
-        return 'Unknown Trigger';
-    }
-  };
-
-  return (
-    <Card>
-      <Group>
-        <ThemeIcon color={getTriggerColor(trigger.type)}>
-          <FontAwesomeIcon icon={getTriggerIcon(trigger.type)} />
-        </ThemeIcon>
-        <Text fw={500}>{getTriggerLabel()}</Text>
-      </Group>
-    </Card>
-  );
-}
-
-function ActionStep({ step, isActive }: { step: ScheduleStep; isActive: boolean }) {
-  const renderActionDetails = () => {
-    const action = step.action;
-    switch (action.type) {
-      case 'sleep':
-        return <Text size='sm'>Sleep for {action.duration}ms</Text>;
-      case 'ensure':
-        return <Text size='sm'>Ensure a condition matches</Text>;
-      case 'format':
-        return (
-          <Text size='sm'>
-            Format a string into <ScheduleDynamicParameterRenderer value={action.outputInto} />
-          </Text>
-        );
-      case 'match_regex':
-        return (
-          <Text size='sm'>
-            Match <ScheduleDynamicParameterRenderer value={action.input} /> with regex <Code>{action.regex}</Code>
-          </Text>
-        );
-      case 'wait_for_console_line':
-        return (
-          <Stack gap='xs'>
-            <Text size='sm'>
-              Line must contain: <ScheduleDynamicParameterRenderer value={action.contains} />
-            </Text>
-            <Text size='sm'>
-              Timeout: <Code>{action.timeout}ms</Code>
-            </Text>
-            <Text size='xs' c='dimmed'>
-              Ignore Failure: {action.ignoreFailure ? 'Yes' : 'No'}
-            </Text>
-          </Stack>
-        );
-      case 'send_power':
-        return (
-          <Stack gap='xs'>
-            <Text size='sm'>
-              Power Action: <Code>{action.action}</Code>
-            </Text>
-            <Text size='xs' c='dimmed'>
-              Ignore Failure: {action.ignoreFailure ? 'Yes' : 'No'}
-            </Text>
-          </Stack>
-        );
-      case 'send_command':
-        return (
-          <Stack gap='xs'>
-            <Text size='sm'>
-              Command: <ScheduleDynamicParameterRenderer value={action.command} />
-            </Text>
-            <Text size='xs' c='dimmed'>
-              Ignore Failure: {action.ignoreFailure ? 'Yes' : 'No'}
-            </Text>
-          </Stack>
-        );
-      case 'create_backup':
-        return (
-          <Stack gap='xs'>
-            <Text size='sm'>
-              Backup Name: <ScheduleDynamicParameterRenderer value={action.name} />
-            </Text>
-            <Text size='xs' c='dimmed'>
-              Foreground: {action.foreground ? 'Yes' : 'No'} | Ignore Failure: {action.ignoreFailure ? 'Yes' : 'No'}
-            </Text>
-            {action.ignoredFiles.length > 0 && (
-              <Text size='xs' c='dimmed'>
-                Ignored Files: {action.ignoredFiles.join(', ')}
-              </Text>
-            )}
-          </Stack>
-        );
-      case 'write_file':
-        return (
-          <Stack gap='xs'>
-            <Text size='sm'>
-              File: <ScheduleDynamicParameterRenderer value={action.file} />
-            </Text>
-            <Text size='xs' c='dimmed'>
-              Append: <Code>{action.append ? 'Yes' : 'No'}</Code>
-            </Text>
-            <Text size='xs' c='dimmed'>
-              Ignore Failure: {action.ignoreFailure ? 'Yes' : 'No'}
-            </Text>
-          </Stack>
-        );
-      case 'copy_file':
-        return (
-          <Stack gap='xs'>
-            <Text size='sm'>
-              From: <ScheduleDynamicParameterRenderer value={action.file} />
-            </Text>
-            <Text size='sm'>
-              To: <ScheduleDynamicParameterRenderer value={action.destination} />
-            </Text>
-            <Text size='xs' c='dimmed'>
-              Foreground: {action.foreground ? 'Yes' : 'No'} | Ignore Failure: {action.ignoreFailure ? 'Yes' : 'No'}
-            </Text>
-          </Stack>
-        );
-      case 'delete_files':
-        return (
-          <Stack gap='xs'>
-            <Text size='sm'>
-              Root: <ScheduleDynamicParameterRenderer value={action.root} />
-            </Text>
-            <Text size='xs' c='dimmed'>
-              Files: {action.files.join(', ')}
-            </Text>
-          </Stack>
-        );
-      default:
-        return (
-          <Text size='sm' c='dimmed'>
-            Action details not available
-          </Text>
-        );
-    }
-  };
-
-  return (
-    <Timeline.Item
-      bullet={
-        isActive ? (
-          <AnimatedHourglass />
-        ) : (
-          <FontAwesomeIcon icon={scheduleStepIconMapping[step.action.type]} size='sm' />
-        )
-      }
-      title={
-        <Group gap='sm'>
-          <Text fw={600}>
-            Step {step.order}: {step.action.type.replace(/_/g, ' ').toUpperCase()}{' '}
-          </Text>
-          {isActive && <Badge ml='md'>Running</Badge>}
-          {step.error && (
-            <Tooltip label={step.error}>
-              <ThemeIcon size='sm' color='red'>
-                <FontAwesomeIcon icon={faExclamationTriangle} size='xs' />
-              </ThemeIcon>
-            </Tooltip>
-          )}
-        </Group>
-      }
-    >
-      <Card p='sm' mt='xs'>
-        {renderActionDetails()}
-      </Card>
-    </Timeline.Item>
-  );
-}
 
 export default function ScheduleView() {
   const params = useParams<'id'>();
