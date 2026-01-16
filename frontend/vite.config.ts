@@ -69,6 +69,9 @@ export default defineConfig({
           ) {
             return 'shared';
           }
+          if (id.includes('monaco-editor')) {
+            return 'monaco-editor';
+          }
         },
       },
     },

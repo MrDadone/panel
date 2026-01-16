@@ -8,6 +8,7 @@ import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import { registerHoconLanguage, registerTomlLanguage } from '@/lib/monaco.ts';
 import NotFound from '@/pages/NotFound.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -144,6 +145,9 @@ export default function FileEditor() {
                     saveFile();
                   }
                 });
+
+                registerTomlLanguage(monaco);
+                registerHoconLanguage(monaco);
               }}
             />
           </div>
