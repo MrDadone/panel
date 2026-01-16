@@ -10,9 +10,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { NavLink } from 'react-router';
-import getServerResourceUsage from '@/api/server/getServerResourceUsage.ts';
 import Card from '@/elements/Card.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import Divider from '@/elements/Divider.tsx';
@@ -48,17 +47,11 @@ export default function ServerItem({
   onGroupRemove?: () => void;
 }) {
   const { t } = useTranslations();
-  const { serverGroups } = useUserStore();
+  const { serverGroups, getServerResourceUsage } = useUserStore();
   const { serverListShowOthers } = useGlobalStore();
 
   const [openModal, setOpenModal] = useState<'add-group' | null>(null);
-  const [stats, setStats] = useState<ResourceUsage | null>(null);
-
-  useEffect(() => {
-    if (!server.suspended && !server.status) {
-      getServerResourceUsage(server.uuid).then(setStats);
-    }
-  }, [server]);
+  const stats = getServerResourceUsage(server.uuid);
 
   const diskLimit = server.limits.disk !== 0 ? bytesToString(mbToBytes(server.limits.disk)) : t('common.unlimited', {});
   const memoryLimit =
@@ -177,7 +170,7 @@ export default function ServerItem({
                 <FontAwesomeIcon size='1x' icon={faTriangleExclamation} color='yellow' />
                 <p className='ml-2 text-sm'>{t('common.server.state.InstallFailed', {})}</p>
               </div>
-            ) : stats === null ? (
+            ) : !stats ? (
               <div className='col-span-3 flex flex-row items-center justify-center'>
                 <Spinner size={16} />
               </div>

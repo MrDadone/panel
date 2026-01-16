@@ -42,8 +42,7 @@ const COMPACT_RENDERERS: Record<ScheduleAction['type'], (action: any) => React.R
   ),
   create_directory: (a) => (
     <span>
-      Create <ScheduleDynamicParameterRenderer value={a.name} /> in{' '}
-      <ScheduleDynamicParameterRenderer value={a.root} />
+      Create <ScheduleDynamicParameterRenderer value={a.name} /> in <ScheduleDynamicParameterRenderer value={a.root} />
     </span>
   ),
   write_file: (a) => (

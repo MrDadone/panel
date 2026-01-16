@@ -73,10 +73,7 @@ function CronTriggerForm({ trigger, onUpdate }: TriggerFormProps) {
         />
       </Popover.Target>
       <Popover.Dropdown>
-        <CrontabEditor
-          value={trigger.schedule}
-          setValue={(value) => onUpdate({ type: 'cron', schedule: value })}
-        />
+        <CrontabEditor value={trigger.schedule} setValue={(value) => onUpdate({ type: 'cron', schedule: value })} />
       </Popover.Dropdown>
     </Popover>
   );

@@ -1,20 +1,28 @@
+import QuickLRU from 'quick-lru';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import getServerResourceUsage from '@/api/server/getServerResourceUsage.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface ServerSlice {
   servers: ResponseMeta<Server>;
+  serverResourceUsage: QuickLRU<string, ResourceUsage>;
+  serverResourceUsagePending: Set<string>;
   serverGroups: UserServerGroup[];
 
   setServers: (servers: ResponseMeta<Server>) => void;
+  addServerResourceUsage: (uuid: string, usage: ResourceUsage) => void;
+  getServerResourceUsage: (uuid: string) => ResourceUsage | undefined;
   setServerGroups: (serverGroups: UserServerGroup[]) => void;
   addServerGroup: (serverGroup: UserServerGroup) => void;
   removeServerGroup: (serverGroup: UserServerGroup) => void;
   updateServerGroup: (uuid: string, data: { name?: string; serverOrder?: string[] }) => void;
 }
 
-export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = (set): ServerSlice => ({
+export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = (set, get): ServerSlice => ({
   servers: getEmptyPaginationSet<Server>(),
+  serverResourceUsage: new QuickLRU<string, ResourceUsage>({ maxSize: 100, maxAge: 1000 * 30 }),
+  serverResourceUsagePending: new Set<string>(),
   serverGroups: [],
 
   setServers: (value) => set((state) => ({ ...state, servers: value })),
@@ -31,4 +39,35 @@ export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = 
     set((state) => ({
       serverGroups: state.serverGroups.map((g) => (g.uuid === uuid ? { ...g, ...data } : g)),
     })),
+
+  addServerResourceUsage: (uuid, usage) =>
+    set((state) => {
+      state.serverResourceUsage.set(uuid, usage);
+      return { ...state, serverResourceUsage: state.serverResourceUsage };
+    }),
+  getServerResourceUsage: (uuid) => {
+    const usage = get().serverResourceUsage.get(uuid);
+    if (!usage && !get().serverResourceUsagePending.has(uuid)) {
+      set((state) => {
+        state.serverResourceUsagePending.add(uuid);
+        return { ...state, serverResourceUsagePending: state.serverResourceUsagePending };
+      });
+
+      getServerResourceUsage(uuid)
+        .then((usage) => {
+          set((state) => {
+            state.serverResourceUsage.set(uuid, usage);
+            return { ...state, serverResourceUsage: state.serverResourceUsage };
+          });
+        })
+        .finally(() => {
+          set((state) => {
+            state.serverResourceUsagePending.delete(uuid);
+            return { ...state, serverResourceUsagePending: state.serverResourceUsagePending };
+          });
+        });
+    }
+
+    return usage;
+  },
 });

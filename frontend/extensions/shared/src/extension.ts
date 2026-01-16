@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react';
-import type { AdminRouteDefinition, GlobalRouteDefinition, RouteDefinition, ServerRouteDefinition } from './index.ts';
+import type {
+  AdminRouteDefinition,
+  ConsoleFeatureDefinition,
+  GlobalRouteDefinition,
+  RouteDefinition,
+  ServerRouteDefinition,
+} from './index.ts';
 
 class ExtensionSkip {
   protected __skip = 0xdeadbeeeeef;
@@ -9,6 +15,7 @@ export class ExtensionContext {
   public readonly extensions: Extension[];
   public readonly routes: ExtensionRoutesBuilder;
   public readonly permissionIcons: ExtensionPermissionIconsBuilder;
+  public readonly consoleFeatures: ConsoleFeatureDefinition[] = [];
 
   constructor(extensions: Extension[]) {
     this.extensions = extensions;
@@ -24,6 +31,7 @@ export class ExtensionContext {
 
       this.routes.mergeFrom(extension.routes);
       this.permissionIcons.mergeFrom(extension.permissionIcons);
+      this.consoleFeatures.push(...extension.consoleFeatures);
     }
   }
 
@@ -135,6 +143,7 @@ export class Extension {
   public packageName: string = '';
   public routes: ExtensionRoutesBuilder = new ExtensionRoutesBuilder();
   public permissionIcons: ExtensionPermissionIconsBuilder = new ExtensionPermissionIconsBuilder();
+  public consoleFeatures: ConsoleFeatureDefinition[] = [];
 
   // Your extension entrypoint, this runs when the page is loaded
   public initialize(ctx: ExtensionContext): void {

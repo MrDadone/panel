@@ -28,13 +28,17 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
   const uniqueIps = useMemo(() => {
     const ips = new Set<string>();
     nodeAllocations.data.forEach((alloc) => ips.add(alloc.ip));
-    return Array.from(ips).sort().map((ip) => ({ label: ip, value: ip }));
+    return Array.from(ips)
+      .sort()
+      .map((ip) => ({ label: ip, value: ip }));
   }, [nodeAllocations.data]);
 
   const uniquePorts = useMemo(() => {
     const ports = new Set<string>();
     nodeAllocations.data.forEach((alloc) => ports.add(alloc.port.toString()));
-    return Array.from(ports).sort((a, b) => Number(a) - Number(b)).map((port) => ({ label: port, value: port }));
+    return Array.from(ports)
+      .sort((a, b) => Number(a) - Number(b))
+      .map((port) => ({ label: port, value: port }));
   }, [nodeAllocations.data]);
 
   const buildSearch = useCallback((generalSearch: string, ip: string, port: string) => {
@@ -145,11 +149,7 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
             w={100}
           />
           <Tooltip label='Select All'>
-            <ActionIcon
-              variant='subtle'
-              onClick={handleSelectAll}
-              color='gray'
-            >
+            <ActionIcon variant='subtle' onClick={handleSelectAll} color='gray'>
               <FontAwesomeIcon icon={faCheckDouble} />
             </ActionIcon>
           </Tooltip>
@@ -163,7 +163,12 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
               <FontAwesomeIcon icon={faX} />
             </ActionIcon>
           </Tooltip>
-          <Button onClick={() => setOpenModal('create')} color='blue' size='sm' leftSection={<FontAwesomeIcon icon={faPlus} />}>
+          <Button
+            onClick={() => setOpenModal('create')}
+            color='blue'
+            size='sm'
+            leftSection={<FontAwesomeIcon icon={faPlus} />}
+          >
             Create
           </Button>
         </Group>

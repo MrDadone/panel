@@ -4,10 +4,12 @@ import { transformKeysToCamelCase } from '@/lib/transformers.ts';
 import useWebsocketEvent, { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
+import { useUserStore } from '@/stores/user.ts';
 
 export default function WebsocketListener() {
   const [searchParams, _] = useSearchParams();
   const { addToast } = useToast();
+  const { addServerResourceUsage } = useUserStore();
   const {
     server,
     socketConnected,
@@ -45,7 +47,9 @@ export default function WebsocketListener() {
       return;
     }
 
-    setStats(transformKeysToCamelCase(wsStats) as ResourceUsage);
+    const resourceUsage = transformKeysToCamelCase(wsStats) as ResourceUsage;
+    setStats(resourceUsage);
+    addServerResourceUsage(server.uuid, resourceUsage);
   });
 
   useWebsocketEvent(SocketEvent.IMAGE_PULL_PROGRESS, (id, data) => {

@@ -1,6 +1,6 @@
-import { ActionIcon, Group, Stack, Title, Tooltip } from '@mantine/core';
 import { faCopy } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ActionIcon, Group, Stack, Title, Tooltip } from '@mantine/core';
 import hljs from 'highlight.js/lib/core';
 import yaml from 'highlight.js/lib/languages/yaml';
 import Card from '@/elements/Card.tsx';
