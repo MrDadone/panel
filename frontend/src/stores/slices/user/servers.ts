@@ -57,14 +57,23 @@ export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = 
         .then((usage) => {
           set((state) => {
             state.serverResourceUsage.set(uuid, usage);
-            return { ...state, serverResourceUsage: state.serverResourceUsage };
+            state.serverResourceUsagePending.delete(uuid);
+            return {
+              ...state,
+              serverResourceUsage: state.serverResourceUsage,
+              serverResourceUsagePending: state.serverResourceUsagePending,
+            };
           });
         })
-        .finally(() => {
-          set((state) => {
-            state.serverResourceUsagePending.delete(uuid);
-            return { ...state, serverResourceUsagePending: state.serverResourceUsagePending };
-          });
+        .catch((err) => {
+          console.error(`Failed to fetch resource usage for server ${uuid}:`, err);
+
+          setTimeout(() => {
+            set((state) => {
+              state.serverResourceUsagePending.delete(uuid);
+              return { ...state, serverResourceUsagePending: new Set(state.serverResourceUsagePending) };
+            });
+          }, 30000);
         });
     }
 

@@ -8,7 +8,7 @@ export default function FeatureProvider() {
     <>
       {server.egg.features.includes('eula') && <EulaModalFeature />}{' '}
       {window.extensionContext.consoleFeatures
-        .filter((feature) => !feature.filter || feature.filter?.(server.egg.features))
+        .filter((feature) => !feature.filter || feature.filter(server.egg.features))
         .map((feature, i) => (
           <feature.component key={`feature-${i}`} />
         ))}
