@@ -19,7 +19,7 @@ const getStatusColor = (powerState?: ServerPowerState, status?: ServerStatus | n
     case 'stopping':
       return 'bg-red-500';
     default:
-      return 'bg-zinc-500';
+      return 'bg-red-500';
   }
 };
 
@@ -39,10 +39,12 @@ export default function ServerSwitcher({ className }: { className?: string }) {
     const server = otherServers.find((s) => s.uuid === option.value);
     if (!server) return option.label;
 
+    const stats = getServerResourceUsage(server.uuid);
+
     return (
       <div className='flex items-center gap-2'>
         <span
-          className={`w-2 h-2 rounded-full shrink-0 ${getStatusColor(getServerResourceUsage(server.uuid)?.state, server.status, server.suspended)}`}
+          className={`w-2 h-2 rounded-full shrink-0 ${getStatusColor(stats?.state, server.status, server.suspended)}`}
         />
         <span className='truncate'>{server.name}</span>
       </div>
