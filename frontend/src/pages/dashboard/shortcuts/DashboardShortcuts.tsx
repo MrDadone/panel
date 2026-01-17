@@ -1,5 +1,5 @@
 import { faApple, faWindows } from '@fortawesome/free-brands-svg-icons';
-import { faFolder, faKeyboard, faTerminal, faTable } from '@fortawesome/free-solid-svg-icons';
+import { faFolder, faKeyboard, faServer, faTerminal, faTable } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
@@ -92,6 +92,10 @@ export default function DashboardShortcuts() {
     { keys: ['\u2193'], description: t('pages.account.shortcuts.console.nextCommand', {}) },
   ];
 
+  const serverListShortcuts: ShortcutItemProps[] = [
+    { keys: ['S', 'Click'], description: t('pages.account.shortcuts.serverList.selectServer', {}) },
+  ];
+
   return (
     <AccountContentContainer title={t('pages.account.shortcuts.title', {})}>
       <Group justify='space-between' mb='md'>
@@ -127,6 +131,11 @@ export default function DashboardShortcuts() {
           title={t('pages.account.shortcuts.console.title', {})}
           icon={faTerminal}
           shortcuts={consoleShortcuts}
+        />
+        <ShortcutSection
+          title={t('pages.account.shortcuts.serverList.title', {})}
+          icon={faServer}
+          shortcuts={serverListShortcuts}
         />
       </SimpleGrid>
     </AccountContentContainer>

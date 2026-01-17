@@ -1,6 +1,8 @@
 import {
   faAdd,
   faBan,
+  faCheckCircle,
+  faCircle,
   faHardDrive,
   faInfoCircle,
   faMemory,
@@ -41,10 +43,20 @@ export default function ServerItem({
   server,
   showGroupAddButton = false,
   onGroupRemove,
+  isSelected = false,
+  onSelectionChange,
+  onClick,
+  showSelection = true,
+  sKeyPressed = false,
 }: {
   server: Server;
   showGroupAddButton?: boolean;
   onGroupRemove?: () => void;
+  isSelected?: boolean;
+  onSelectionChange?: (selected: boolean) => void;
+  onClick?: (event: React.MouseEvent) => void;
+  showSelection?: boolean;
+  sKeyPressed?: boolean;
 }) {
   const { t } = useTranslations();
   const { serverGroups, getServerResourceUsage } = useUserStore();
@@ -62,18 +74,25 @@ export default function ServerItem({
     <>
       <ServerAddGroupModal server={server} opened={openModal === 'add-group'} onClose={() => setOpenModal(null)} />
 
-      <NavLink to={`/server/${server.uuidShort}`}>
-        <Card
-          className='duration-200 h-full flex flex-col justify-between rounded-sm!'
-          leftStripeClassName={statusToColor(stats?.state)}
-          hoverable
-        >
-          <div className='flex items-start gap-2 justify-between'>
-            <span
-              className='text-xl font-medium truncate flex my-auto gap-2 flex-row whitespace-break-spaces'
-              title={server.name}
-            >
-              {server.name}
+      <div>
+          <div onClick={onClick}>
+            <NavLink to={`/server/${server.uuidShort}`} onClick={(e) => {
+              // Prevent navigation when S key is held
+              if (sKeyPressed) {
+                e.preventDefault();
+              }
+            }}>
+          <Card
+            className='duration-200 h-full flex flex-col justify-between rounded-sm!'
+            leftStripeClassName={statusToColor(stats?.state)}
+            hoverable
+          >
+            <div className='flex items-start gap-2 justify-between'>
+              <span
+                className='text-xl font-medium truncate flex my-auto gap-2 flex-row whitespace-break-spaces'
+                title={server.name}
+              >
+                {server.name}
               {!serverListShowOthers && serverGroups.every((g) => !g.serverOrder.includes(server.uuid)) && (
                 <Tooltip className='ml-2' label={t('pages.account.home.tooltip.noGroup', {})}>
                   <FontAwesomeIcon size='sm' icon={faInfoCircle} />
@@ -106,6 +125,25 @@ export default function ServerItem({
                 <Card p='xs' className='leading-[100%] text-nowrap'>
                   {t('common.server.noAllocation', {})}
                 </Card>
+              )}
+              {showSelection && (
+                <Tooltip
+                  label={isSelected ? t('pages.account.home.bulkActions.deselect', {}) : t('pages.account.home.bulkActions.select', {})}
+                  className='ml-2'
+                >
+                  <ActionIcon
+                    size='input-sm'
+                    variant={isSelected ? 'filled' : 'light'}
+                    color={isSelected ? 'green' : 'gray'}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onSelectionChange?.(!isSelected);
+                    }}
+                  >
+                    <FontAwesomeIcon icon={isSelected ? faCheckCircle : faCircle} />
+                  </ActionIcon>
+                </Tooltip>
               )}
               {showGroupAddButton && (
                 <Tooltip
@@ -208,6 +246,8 @@ export default function ServerItem({
           </div>
         </Card>
       </NavLink>
+        </div>
+      </div>
     </>
   );
 }

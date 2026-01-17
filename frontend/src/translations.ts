@@ -291,6 +291,18 @@ const baseTranslations = defineTranslations({
               },
             },
           },
+          bulkActions: {
+            selectionMode: 'Selection Mode',
+            selectAll: 'Select All',
+            deselectAll: 'Deselect All',
+            select: 'Select server',
+            deselect: 'Deselect server',
+            noServersSelected: 'Please select at least one server.',
+            success: 'Successfully {action} {count} server(s).',
+            partial: 'Successfully {action} {successful} server(s). {failed} server(s) failed.',
+            error: 'An error occurred while performing the action.',
+            groupActions: 'Group Actions',
+          },
           noServers: 'No Servers could be found, time to add one?',
         },
         admin: {
@@ -462,6 +474,10 @@ const baseTranslations = defineTranslations({
             title: 'Server Console',
             previousCommand: 'Previous command in history',
             nextCommand: 'Next command in history',
+          },
+          serverList: {
+            title: 'Server List',
+            selectServer: 'Hold S and click to select/deselect server',
           },
         },
         sshKeys: {

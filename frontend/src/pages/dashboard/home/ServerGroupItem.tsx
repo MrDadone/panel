@@ -1,12 +1,13 @@
 import { rectSortingStrategy } from '@dnd-kit/sortable';
-import { faChevronDown, faChevronRight, faGripVertical, faPen, faPlus, faSearch, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faChevronRight, faEllipsisVertical, faGripVertical, faPen, faPlus, faPowerOff, faSearch, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon, Badge, Collapse } from '@mantine/core';
+import { ActionIcon, Badge, Collapse, Menu } from '@mantine/core';
 import { ComponentProps, memo, useState } from 'react';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import deleteServerGroup from '@/api/me/servers/groups/deleteServerGroup.ts';
 import getServerGroupServers from '@/api/me/servers/groups/getServerGroupServers.ts';
 import updateServerGroup from '@/api/me/servers/groups/updateServerGroup.ts';
+import sendPowerAction from '@/api/server/sendPowerAction.ts';
 import Card from '@/elements/Card.tsx';
 import Divider from '@/elements/Divider.tsx';
 import { DndContainer, DndItem, SortableItem } from '@/elements/DragAndDrop.tsx';
@@ -53,6 +54,7 @@ export default function ServerGroupItem({
   const [showSearch, setShowSearch] = useState(false);
   const [servers, setServers] = useState(getEmptyPaginationSet<Server>());
   const [openModal, setOpenModal] = useState<'edit' | 'delete' | 'add-server' | null>(null);
+  const [groupActionLoading, setGroupActionLoading] = useState<ServerPowerAction | null>(null);
 
   const { loading, search, setSearch, setPage, refetch } = useSearchablePaginatedTable({
     fetcher: (page, search) => getServerGroupServers(serverGroup.uuid, page, search),
@@ -69,6 +71,41 @@ export default function ServerGroupItem({
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
       });
+  };
+
+  const handleGroupPowerAction = async (action: ServerPowerAction) => {
+    if (serverGroup.serverOrder.length === 0) {
+      addToast(t('pages.account.home.bulkActions.noServersSelected', {}), 'error');
+      return;
+    }
+    setGroupActionLoading(action);
+    const results = await Promise.allSettled(
+      serverGroup.serverOrder.map((uuid) => sendPowerAction(uuid, action)),
+    );
+
+    const successful = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+
+    if (failed === 0) {
+      addToast(
+        t('pages.account.home.bulkActions.success', {
+          count: successful,
+          action: t(`pages.server.console.power.${action}`, {}),
+        }),
+        'success',
+      );
+    } else {
+      addToast(
+        t('pages.account.home.bulkActions.partial', {
+          successful,
+          failed,
+          action: t(`pages.server.console.power.${action}`, {}),
+        }),
+        'warning',
+      );
+    }
+
+    setGroupActionLoading(null);
   };
 
   const dndServers: DndServer[] = servers.data.map((s) => ({
@@ -136,6 +173,46 @@ export default function ServerGroupItem({
 
           {/* Actions */}
           <div className='flex items-center gap-1'>
+            <Menu shadow='md' width={200} position='bottom-end'>
+              <Menu.Target>
+                <ActionIcon
+                  variant='subtle'
+                  color='gray'
+                  size='sm'
+                  disabled={groupActionLoading !== null}
+                  loading={groupActionLoading !== null}
+                >
+                  <FontAwesomeIcon icon={faEllipsisVertical} className='w-3.5 h-3.5' />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Label>{t('pages.account.home.bulkActions.groupActions', {})}</Menu.Label>
+                <Menu.Item
+                  leftSection={<FontAwesomeIcon icon={faPowerOff} />}
+                  color='green'
+                  onClick={() => handleGroupPowerAction('start')}
+                  disabled={groupActionLoading !== null}
+                >
+                  {t('pages.server.console.power.start', {})}
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<FontAwesomeIcon icon={faPowerOff} />}
+                  color='gray'
+                  onClick={() => handleGroupPowerAction('restart')}
+                  disabled={groupActionLoading !== null}
+                >
+                  {t('pages.server.console.power.restart', {})}
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<FontAwesomeIcon icon={faPowerOff} />}
+                  color='red'
+                  onClick={() => handleGroupPowerAction('stop')}
+                  disabled={groupActionLoading !== null}
+                >
+                  {t('pages.server.console.power.stop', {})}
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
             <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('add-server')}>
               <FontAwesomeIcon icon={faPlus} className='w-3.5 h-3.5' />
             </ActionIcon>
@@ -208,7 +285,7 @@ export default function ServerGroupItem({
                 renderOverlay={(activeServer) =>
                   activeServer ? (
                     <div style={{ cursor: 'grabbing' }}>
-                      <MemoizedServerItem server={activeServer} onGroupRemove={() => null} />
+                      <MemoizedServerItem server={activeServer} onGroupRemove={() => null} showSelection={false} />
                     </div>
                   ) : null
                 }
@@ -219,6 +296,7 @@ export default function ServerGroupItem({
                       <SortableItem key={server.id} id={server.id}>
                         <MemoizedServerItem
                           server={server}
+                          showSelection={false}
                           onGroupRemove={() => {
                             const serverOrder = serverGroup.serverOrder.filter(
                               (_, orderI) => (servers.page - 1) * servers.perPage + i !== orderI,

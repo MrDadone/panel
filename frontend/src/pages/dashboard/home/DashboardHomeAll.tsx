@@ -1,8 +1,11 @@
 import { Group } from '@mantine/core';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getServerGroups from '@/api/me/servers/groups/getServerGroups.ts';
 import getServers from '@/api/server/getServers.ts';
+import sendPowerAction from '@/api/server/sendPowerAction.ts';
+import ActionBar from '@/elements/ActionBar.tsx';
+import Button from '@/elements/Button.tsx';
 import Divider from '@/elements/Divider.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -24,6 +27,10 @@ export default function DashboardHomeAll() {
   const { addToast } = useToast();
   const { user } = useAuth();
 
+  const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set());
+  const [sKeyPressed, setSKeyPressed] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState<ServerPowerAction | null>(null);
+
   useEffect(() => {
     getServerGroups()
       .then((response) => {
@@ -34,11 +41,97 @@ export default function DashboardHomeAll() {
       });
   }, [addToast, setServerGroups]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only track 'S' key if not typing in an input field
+      if (e.key === 's' || e.key === 'S') {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+          setSKeyPressed(true);
+        }
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 's' || e.key === 'S') {
+        setSKeyPressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getServers(page, search, serverListShowOthers),
     setStoreData: setServers,
     deps: [serverListShowOthers],
   });
+
+  const handleServerSelectionChange = (serverUuid: string, selected: boolean) => {
+    setSelectedServers((prev) => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(serverUuid);
+      } else {
+        newSet.delete(serverUuid);
+      }
+      return newSet;
+    });
+  };
+
+  const handleServerClick = (serverUuid: string, event: React.MouseEvent) => {
+    if (sKeyPressed) {
+      // S key + click: toggle selection
+      event.preventDefault();
+      event.stopPropagation();
+      handleServerSelectionChange(serverUuid, !selectedServers.has(serverUuid));
+    }
+  };
+
+  const handleBulkPowerAction = async (action: ServerPowerAction) => {
+    if (selectedServers.size === 0) {
+      addToast(t('pages.account.home.bulkActions.noServersSelected', {}), 'error');
+      return;
+    }
+
+    setBulkActionLoading(action);
+
+    const serverUuids = Array.from(selectedServers);
+    const results = await Promise.allSettled(
+      serverUuids.map((uuid) => sendPowerAction(uuid, action)),
+    );
+
+    const successful = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+
+    if (failed === 0) {
+      addToast(
+        t('pages.account.home.bulkActions.success', {
+          count: successful,
+          action: t(`pages.server.console.power.${action}`, {}),
+        }),
+        'success',
+      );
+    } else {
+      addToast(
+        t('pages.account.home.bulkActions.partial', {
+          successful,
+          failed,
+          action: t(`pages.server.console.power.${action}`, {}),
+        }),
+        'warning',
+      );
+    }
+
+    setBulkActionLoading(null);
+    setSelectedServers(new Set());
+  };
 
   return (
     <>
@@ -74,10 +167,48 @@ export default function DashboardHomeAll() {
       ) : (
         <div className='gap-4 grid md:grid-cols-2'>
           {servers.data.map((server) => (
-            <ServerItem key={server.uuid} server={server} showGroupAddButton={!serverListShowOthers} />
+            <ServerItem
+              key={server.uuid}
+              server={server}
+              showGroupAddButton={!serverListShowOthers}
+              isSelected={selectedServers.has(server.uuid)}
+              onSelectionChange={(selected) => handleServerSelectionChange(server.uuid, selected)}
+              onClick={(e) => handleServerClick(server.uuid, e)}
+              sKeyPressed={sKeyPressed}
+            />
           ))}
         </div>
       )}
+
+      <ActionBar opened={selectedServers.size > 0}>
+        <Button
+          color='green'
+          onClick={() => handleBulkPowerAction('start')}
+          loading={bulkActionLoading === 'start'}
+          disabled={bulkActionLoading !== null && bulkActionLoading !== 'start'}
+        >
+          {t('pages.server.console.power.start', {})} ({selectedServers.size})
+        </Button>
+        <Button
+          color='gray'
+          onClick={() => handleBulkPowerAction('restart')}
+          loading={bulkActionLoading === 'restart'}
+          disabled={bulkActionLoading !== null && bulkActionLoading !== 'restart'}
+        >
+          {t('pages.server.console.power.restart', {})} ({selectedServers.size})
+        </Button>
+        <Button
+          color='red'
+          onClick={() => handleBulkPowerAction('stop')}
+          loading={bulkActionLoading === 'stop'}
+          disabled={bulkActionLoading !== null && bulkActionLoading !== 'stop'}
+        >
+          {t('pages.server.console.power.stop', {})} ({selectedServers.size})
+        </Button>
+        <Button variant='default' onClick={() => setSelectedServers(new Set())}>
+          {t('common.button.cancel', {})}
+        </Button>
+      </ActionBar>
 
       {servers.total > servers.perPage && (
         <>
