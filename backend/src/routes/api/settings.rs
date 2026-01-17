@@ -32,6 +32,7 @@ mod get {
     struct Response<'a> {
         version: &'a str,
         oobe_step: Option<&'a str>,
+        app_debug: bool,
 
         #[schema(inline)]
         captcha_provider: shared::settings::PublicCaptchaProvider<'a>,
@@ -50,6 +51,7 @@ mod get {
         ApiResponse::json(Response {
             version: &state.version,
             oobe_step: settings.oobe_step.as_deref(),
+            app_debug: state.env.app_debug,
             captcha_provider: settings.captcha_provider.to_public_provider(),
             app: ResponseApp {
                 url: &settings.app.url,

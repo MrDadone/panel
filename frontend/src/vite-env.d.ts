@@ -1143,6 +1143,7 @@ declare global {
   interface PublicSettings {
     version: string;
     oobeStep: OobeStepKey | null;
+    appDebug: boolean;
     captchaProvider: PublicCaptchaProvider;
     app: {
       url: string;

@@ -2,6 +2,7 @@ import { faChevronDown, faChevronUp, faExclamationTriangle } from '@fortawesome/
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { ReactNode } from 'react';
 import { Component, type ErrorInfo } from 'react';
+import { useGlobalStore } from '@/stores/global.ts';
 
 interface Props {
   children?: ReactNode;
@@ -38,6 +39,7 @@ class ErrorBoundary extends Component<Props, State> {
   override render() {
     if (this.state.hasError) {
       const { error, errorInfo, showDetails } = this.state;
+      const appDebug = useGlobalStore.getState().settings.appDebug ?? false;
 
       return (
         <div className='flex items-center justify-center w-full my-4'>
@@ -50,7 +52,7 @@ class ErrorBoundary extends Component<Props, State> {
                   An error was encountered by the application while rendering this view. Try refreshing the page.
                 </p>
 
-                {error && (
+                {error && appDebug && (
                   <div className='mt-3'>
                     <button
                       onClick={this.toggleDetails}
