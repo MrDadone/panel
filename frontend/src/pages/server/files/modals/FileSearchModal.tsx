@@ -1,6 +1,13 @@
-import { faChevronDown, faChevronRight, faFileAlt, faFolder, faHardDrive, faSearch } from '@fortawesome/free-solid-svg-icons';
+import {
+  faChevronDown,
+  faFileAlt,
+  faFolder,
+  faHardDrive,
+  faSearch,
+  faSliders,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Collapse, Group, Kbd, ModalProps, Stack, Text, UnstyledButton } from '@mantine/core';
+import { Box, Collapse, Flex, Group, Kbd, ModalProps, Stack, Text, UnstyledButton } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -21,37 +28,69 @@ import { useServerStore } from '@/stores/server.ts';
 interface FilterSectionProps {
   icon: typeof faFolder;
   title: string;
-  description: string;
   enabled: boolean;
   onToggle: (enabled: boolean) => void;
   children: React.ReactNode;
 }
 
-function FilterSection({ icon, title, description, enabled, onToggle, children }: FilterSectionProps) {
+function FilterSection({ icon, title, enabled, onToggle, children }: FilterSectionProps) {
   return (
-    <div className='border border-white/10 rounded-lg overflow-hidden'>
+    <Box
+      style={{
+        background: enabled ? 'var(--mantine-color-dark-6)' : 'transparent',
+        border: `1px solid ${enabled ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-dark-5)'}`,
+        borderRadius: 8,
+        overflow: 'hidden',
+        transition: 'all 0.15s ease',
+      }}
+    >
       <UnstyledButton
-        className='w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors'
         onClick={() => onToggle(!enabled)}
+        style={{
+          width: '100%',
+          padding: '10px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}
       >
-        <FontAwesomeIcon icon={icon} className='text-white/40 w-4 flex-shrink-0' />
-        <div className='flex-1 text-left'>
-          <Text size='sm' fw={500} c='white'>
-            {title}
-          </Text>
-          <Text size='xs' c='dimmed'>
-            {description}
-          </Text>
-        </div>
+        <Box
+          style={{
+            width: 28,
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 6,
+            background: enabled ? 'var(--mantine-color-blue-9)' : 'var(--mantine-color-dark-5)',
+            transition: 'background 0.15s ease',
+          }}
+        >
+          <FontAwesomeIcon
+            icon={icon}
+            size='xs'
+            style={{ color: enabled ? 'var(--mantine-color-blue-2)' : 'var(--mantine-color-gray-5)' }}
+          />
+        </Box>
+        <Text size='sm' fw={500} c={enabled ? 'gray.2' : 'gray.5'} style={{ flex: 1, textAlign: 'left' }}>
+          {title}
+        </Text>
         <FontAwesomeIcon
-          icon={enabled ? faChevronDown : faChevronRight}
-          className='text-white/40 w-3 ml-1'
+          icon={faChevronDown}
+          size='xs'
+          style={{
+            color: 'var(--mantine-color-gray-6)',
+            transform: enabled ? 'rotate(0deg)' : 'rotate(-90deg)',
+            transition: 'transform 0.15s ease',
+          }}
         />
       </UnstyledButton>
       <Collapse in={enabled}>
-        <div className='px-4 pb-4 pt-2 border-t border-white/10 bg-white/[0.02]'>{children}</div>
+        <Box px='sm' pb='sm' pt={4}>
+          {children}
+        </Box>
       </Collapse>
-    </div>
+    </Box>
   );
 }
 
@@ -66,6 +105,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
 
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const form = useForm<z.infer<typeof serverFilesSearchSchema>>({
     initialValues: {
@@ -86,30 +126,42 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
     }
   }, [form.values.contentFilter]);
 
-  useEffect(() => {
-    if (query) {
-      form.setFieldValue('pathFilter', { include: [`**${query}**`], exclude: [], caseInsensitive: true });
-    } else if (!form.values.pathFilter?.include?.some((p) => p !== `**${query}**`)) {
-      form.setFieldValue('pathFilter', null);
-    }
-  }, [query]);
-
   // Reset form when modal closes
   // biome-ignore lint/correctness/useExhaustiveDependencies: form.reset is stable
   useEffect(() => {
     if (!opened) {
       setQuery('');
+      setShowAdvanced(false);
       form.reset();
     }
   }, [opened]);
 
+  const activeFiltersCount = [form.values.pathFilter, form.values.contentFilter, form.values.sizeFilter].filter(
+    Boolean,
+  ).length;
+
+  // Auto-show advanced filters if any are active
+  useEffect(() => {
+    if (activeFiltersCount > 0) {
+      setShowAdvanced(true);
+    }
+  }, [activeFiltersCount]);
+
   const doSearch = () => {
     setLoading(true);
 
-    searchFiles(server.uuid, { root: browsingDirectory, ...form.values })
+    // Build the search filters - apply query as pathFilter if no explicit pathFilter is set
+    const searchFilters = {
+      ...form.values,
+      pathFilter:
+        form.values.pathFilter ??
+        (query ? { include: [`**/*${query}*`], exclude: [], caseInsensitive: true } : null),
+    };
+
+    searchFiles(server.uuid, { root: browsingDirectory, ...searchFilters })
       .then((entries) => {
         setBrowsingEntries({ total: entries.length, page: 1, perPage: entries.length, data: entries });
-        onSearchComplete?.({ query, filters: form.values });
+        onSearchComplete?.({ query, filters: searchFilters });
         onClose();
       })
       .catch((msg) => {
@@ -118,46 +170,97 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
       .finally(() => setLoading(false));
   };
 
-  const activeFiltersCount = [form.values.pathFilter, form.values.contentFilter, form.values.sizeFilter].filter(
-    Boolean,
-  ).length;
-
   return (
     <Modal title='Search Files' onClose={onClose} opened={opened} size='lg'>
       <form onSubmit={form.onSubmit(() => doSearch())}>
         <Stack gap='md'>
           {/* Main search input */}
-          <div className='relative'>
-            <TextInput
-              placeholder='Search for files...'
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              leftSection={<FontAwesomeIcon icon={faSearch} className='text-white/40' />}
-              rightSection={
-                <Kbd size='xs' className='opacity-50 mr-2'>
-                  Enter
-                </Kbd>
-              }
-              size='md'
-              autoFocus
-            />
-          </div>
+          <TextInput
+            placeholder='Search for files...'
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            leftSection={<FontAwesomeIcon icon={faSearch} style={{ color: 'var(--mantine-color-gray-5)' }} />}
+            rightSection={
+              <Kbd size='xs' style={{ opacity: 0.5 }}>
+                Enter
+              </Kbd>
+            }
+            size='md'
+            autoFocus
+          />
 
-          {/* Filters section */}
-          <div>
-            <Text size='xs' c='dimmed' mb='xs' fw={500} tt='uppercase'>
-              Filters {activeFiltersCount > 0 && `(${activeFiltersCount} active)`}
-            </Text>
+          {/* Advanced filters toggle */}
+          <UnstyledButton onClick={() => setShowAdvanced(!showAdvanced)}>
+            <Flex
+              align='center'
+              gap='sm'
+              py='xs'
+              px='sm'
+              style={{
+                borderRadius: 6,
+                background: showAdvanced ? 'var(--mantine-color-dark-6)' : 'transparent',
+                border: `1px solid ${showAdvanced ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-dark-5)'}`,
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Box
+                style={{
+                  width: 24,
+                  height: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 5,
+                  background: activeFiltersCount > 0 ? 'var(--mantine-color-blue-9)' : 'var(--mantine-color-dark-5)',
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={faSliders}
+                  size='xs'
+                  style={{ color: activeFiltersCount > 0 ? 'var(--mantine-color-blue-2)' : 'var(--mantine-color-gray-5)' }}
+                />
+              </Box>
+              <Text size='sm' c={showAdvanced ? 'gray.2' : 'gray.5'} fw={500}>
+                Advanced Filters
+              </Text>
+              {activeFiltersCount > 0 && (
+                <Box
+                  style={{
+                    background: 'var(--mantine-color-blue-9)',
+                    borderRadius: 10,
+                    padding: '2px 8px',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: 'var(--mantine-color-blue-2)',
+                  }}
+                >
+                  {activeFiltersCount}
+                </Box>
+              )}
+              <Box style={{ flex: 1 }} />
+              <FontAwesomeIcon
+                icon={faChevronDown}
+                size='xs'
+                style={{
+                  color: 'var(--mantine-color-gray-6)',
+                  transform: showAdvanced ? 'rotate(0deg)' : 'rotate(-90deg)',
+                  transition: 'transform 0.15s ease',
+                }}
+              />
+            </Flex>
+          </UnstyledButton>
+
+          {/* Collapsible filters section */}
+          <Collapse in={showAdvanced}>
             <Stack gap='xs'>
               <FilterSection
                 icon={faFolder}
                 title='Path Patterns'
-                description='Filter by file path using glob patterns'
                 enabled={!!form.values.pathFilter}
                 onToggle={(enabled) =>
                   form.setFieldValue(
                     'pathFilter',
-                    enabled ? { include: query ? [`**${query}**`] : ['**/**'], exclude: [], caseInsensitive: true } : null,
+                    enabled ? { include: [], exclude: [], caseInsensitive: true } : null,
                   )
                 }
               >
@@ -208,7 +311,6 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                 <FilterSection
                   icon={faFileAlt}
                   title='File Content'
-                  description='Search within file contents'
                   enabled={!!form.values.contentFilter}
                   onToggle={(enabled) =>
                     form.setFieldValue(
@@ -259,7 +361,6 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
               <FilterSection
                 icon={faHardDrive}
                 title='File Size'
-                description='Filter by minimum and maximum file size'
                 enabled={!!form.values.sizeFilter}
                 onToggle={(enabled) =>
                   form.setFieldValue('sizeFilter', enabled ? { min: 0, max: 100 * 1024 * 1024 } : null)
@@ -285,7 +386,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                 </Group>
               </FilterSection>
             </Stack>
-          </div>
+          </Collapse>
         </Stack>
 
         <Group mt='lg' justify='flex-end'>
