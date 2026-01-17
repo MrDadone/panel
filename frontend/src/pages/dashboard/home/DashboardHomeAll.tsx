@@ -21,7 +21,7 @@ import DashboardHomeTitle from './DashboardHomeTitle.tsx';
 import ServerItem from './ServerItem.tsx';
 
 export default function DashboardHomeAll() {
-  const { t } = useTranslations();
+  const { t, tItem } = useTranslations();
   const { servers, setServers, setServerGroups } = useUserStore();
   const { serverListShowOthers, setServerListShowOthers } = useGlobalStore();
   const { addToast } = useToast();
@@ -110,20 +110,28 @@ export default function DashboardHomeAll() {
     const successful = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.filter((r) => r.status === 'rejected').length;
 
+    const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
+      start: 'started',
+      stop: 'stopped',
+      restart: 'restarted',
+      kill: 'killed',
+    };
+    const actionPastTense = actionPastTenseMap[action];
+
     if (failed === 0) {
       addToast(
         t('pages.account.home.bulkActions.success', {
-          count: successful,
-          action: t(`pages.server.console.power.${action}`, {}),
+          item: tItem('server', successful),
+          action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
         }),
         'success',
       );
     } else {
       addToast(
         t('pages.account.home.bulkActions.partial', {
-          successful,
-          failed,
-          action: t(`pages.server.console.power.${action}`, {}),
+          successfulItem: tItem('server', successful),
+          failedItem: tItem('server', failed),
+          action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
         }),
         'warning',
       );

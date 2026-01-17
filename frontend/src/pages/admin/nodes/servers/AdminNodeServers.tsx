@@ -14,7 +14,7 @@ import ServerRow from '@/pages/admin/servers/ServerRow.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 
 export default function AdminNodeServers({ node }: { node: Node }) {
-  const { t } = useTranslations();
+  const { t, tItem } = useTranslations();
   const { addToast } = useToast();
   const [nodeServers, setNodeServers] = useState<ResponseMeta<AdminServer>>(getEmptyPaginationSet());
   const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set());
@@ -88,20 +88,28 @@ export default function AdminNodeServers({ node }: { node: Node }) {
     const successful = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.filter((r) => r.status === 'rejected').length;
 
+    const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
+      start: 'started',
+      stop: 'stopped',
+      restart: 'restarted',
+      kill: 'killed',
+    };
+    const actionPastTense = actionPastTenseMap[action];
+
     if (failed === 0) {
       addToast(
         t('pages.account.home.bulkActions.success', {
-          count: successful,
-          action: t(`pages.server.console.power.${action}`, {}),
+          item: tItem('server', successful),
+          action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
         }),
         'success',
       );
     } else {
       addToast(
         t('pages.account.home.bulkActions.partial', {
-          successful,
-          failed,
-          action: t(`pages.server.console.power.${action}`, {}),
+          successfulItem: tItem('server', successful),
+          failedItem: tItem('server', failed),
+          action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
         }),
         'warning',
       );
@@ -136,20 +144,28 @@ export default function AdminNodeServers({ node }: { node: Node }) {
       const successful = results.filter((r) => r.status === 'fulfilled').length;
       const failed = results.filter((r) => r.status === 'rejected').length;
 
+      const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
+        start: 'started',
+        stop: 'stopped',
+        restart: 'restarted',
+        kill: 'killed',
+      };
+      const actionPastTense = actionPastTenseMap[action];
+
       if (failed === 0) {
         addToast(
           t('pages.account.home.bulkActions.success', {
-            count: successful,
-            action: t(`pages.server.console.power.${action}`, {}),
+            item: tItem('server', successful),
+            action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
           }),
           'success',
         );
       } else {
         addToast(
           t('pages.account.home.bulkActions.partial', {
-            successful,
-            failed,
-            action: t(`pages.server.console.power.${action}`, {}),
+            successfulItem: tItem('server', successful),
+            failedItem: tItem('server', failed),
+            action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
           }),
           'warning',
         );

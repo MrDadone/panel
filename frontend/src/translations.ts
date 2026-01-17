@@ -6,6 +6,7 @@ const baseTranslations = defineTranslations({
   items: {
     user: defineEnglishItem('User', 'Users'),
     sshKey: defineEnglishItem('SSH Key', 'SSH Keys'),
+    server: defineEnglishItem('Server', 'Servers'),
   },
   translations: {
     common: {
@@ -89,6 +90,12 @@ const baseTranslations = defineTranslations({
           always: 'Always',
           unlessStopped: 'Unless Stopped',
           never: 'Never',
+        },
+        bulkActionServerAction: {
+          started: 'Started',
+          stopped: 'Stopped',
+          restarted: 'Restarted',
+          killed: 'Killed',
         },
       },
       unlimited: 'Unlimited',
@@ -301,8 +308,8 @@ const baseTranslations = defineTranslations({
             select: 'Select server',
             deselect: 'Deselect server',
             noServersSelected: 'Please select at least one server.',
-            success: 'Successfully {action} {count} server(s).',
-            partial: 'Successfully {action} {successful} server(s). {failed} server(s) failed.',
+            success: 'Successfully {action} {item}.',
+            partial: 'Successfully {action} {successfulItem}. {failedItem} failed.',
             error: 'An error occurred while performing the action.',
             groupActions: 'Group Actions',
           },
