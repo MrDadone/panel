@@ -52,6 +52,7 @@ const baseTranslations = defineTranslations({
           event: 'Event',
           ip: 'IP',
           when: 'When',
+          command: 'Command',
         },
       },
       server: {
@@ -602,6 +603,19 @@ const baseTranslations = defineTranslations({
           },
           socketConnected: 'Connected ({ping}ms ping)',
           socketDisconnected: 'Disconnected',
+          button: {
+            commandHistory: 'Command History',
+          },
+          modal: {
+            commandHistory: {
+              title: 'Command History',
+              detailTitle: 'Command Details',
+              searchPlaceholder: 'Search commands...',
+              noCommands: 'No commands found.',
+              copied: 'Command copied to clipboard.',
+              copyButton: 'Copy Command',
+            },
+          },
         },
         files: {
           title: 'Files',

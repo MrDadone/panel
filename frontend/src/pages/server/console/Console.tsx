@@ -1,4 +1,4 @@
-import { faArrowDown, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faArrowDown, faClockRotateLeft, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon } from '@mantine/core';
 import { AnsiUp } from 'ansi_up';
@@ -14,6 +14,7 @@ import { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import FeatureProvider from './features/FeatureProvider.tsx';
+import CommandHistoryModal from './modals/CommandHistoryModal.tsx';
 
 const ansiUp = new AnsiUp();
 const MAX_LINES = 1000;
@@ -79,6 +80,7 @@ export default function Terminal() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [websocketPing, setWebsocketPing] = useState(0);
   const [consoleFontSize, setConsoleFontSize] = useState(14);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -331,6 +333,14 @@ export default function Terminal() {
     [history, historyIndex, socketInstance],
   );
 
+  const handleSelectCommand = useCallback((command: string) => {
+    if (inputRef.current) {
+      inputRef.current.value = command;
+      inputRef.current.focus();
+    }
+    setHistoryModalOpen(false);
+  }, []);
+
   const MemoizedLines = useMemo(
     () =>
       lines.map((line) => (
@@ -362,26 +372,37 @@ export default function Terminal() {
               ? t('pages.server.console.socketConnected', { ping: websocketPing })
               : t('pages.server.console.socketDisconnected', {})}
           </div>
-          <div className='flex flex-row items-center'>
+          <div className='flex flex-row items-center gap-4'>
             <ActionIcon
-              className='mr-2'
               size='xs'
               variant='subtle'
               color='gray'
-              onClick={() => setConsoleFontSize((size) => Math.max(10, size - 1))}
+              onClick={() => setHistoryModalOpen(true)}
+              title={t('pages.server.console.button.commandHistory', {})}
             >
-              <FontAwesomeIcon icon={faMinus} />
+              <FontAwesomeIcon icon={faClockRotateLeft} />
             </ActionIcon>
-            {consoleFontSize}px
-            <ActionIcon
-              className='ml-2'
-              size='xs'
-              variant='subtle'
-              color='gray'
-              onClick={() => setConsoleFontSize((size) => Math.min(24, size + 1))}
-            >
-              <FontAwesomeIcon icon={faPlus} />
-            </ActionIcon>
+            <div className='flex flex-row items-center'>
+              <ActionIcon
+                className='mr-2'
+                size='xs'
+                variant='subtle'
+                color='gray'
+                onClick={() => setConsoleFontSize((size) => Math.max(10, size - 1))}
+              >
+                <FontAwesomeIcon icon={faMinus} />
+              </ActionIcon>
+              {consoleFontSize}px
+              <ActionIcon
+                className='ml-2'
+                size='xs'
+                variant='subtle'
+                color='gray'
+                onClick={() => setConsoleFontSize((size) => Math.min(24, size + 1))}
+              >
+                <FontAwesomeIcon icon={faPlus} />
+              </ActionIcon>
+            </div>
           </div>
         </div>
 
@@ -436,6 +457,12 @@ export default function Terminal() {
           />
         </div>
       </Card>
+
+      <CommandHistoryModal
+        opened={historyModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
+        onSelectCommand={handleSelectCommand}
+      />
     </>
   );
 }
