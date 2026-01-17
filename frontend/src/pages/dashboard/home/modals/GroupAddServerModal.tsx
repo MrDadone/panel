@@ -95,8 +95,8 @@ export default function GroupAddServerModal({ serverGroup, opened, onClose, onSe
       ) : (
         <Stack>
           <Select
-            label={t('pages.account.home.tabs.groupedServers.page.modal.addServerToGroup.form.server', {})}
-            placeholder={t('pages.account.home.tabs.groupedServers.page.modal.addServerToGroup.form.server', {})}
+            label={t('common.form.server', {})}
+            placeholder={t('common.form.server', {})}
             value={selectedServer?.uuid || ''}
             className='w-full'
             searchable

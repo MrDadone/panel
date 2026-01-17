@@ -35,6 +35,7 @@ const baseTranslations = defineTranslations({
         password: 'Password',
         host: 'Host',
         username: 'Username',
+        server: 'Server',
         truncateDirectory: 'Do you want to empty the filesystem of this server before restoring the backup?',
       },
       table: {
@@ -267,9 +268,6 @@ const baseTranslations = defineTranslations({
                   },
                   addServerToGroup: {
                     title: 'Add Server to {group}',
-                    form: {
-                      server: 'Server',
-                    },
                     noServers: 'All servers are already in this group.',
                     toast: {
                       added: 'Server added to group.',
