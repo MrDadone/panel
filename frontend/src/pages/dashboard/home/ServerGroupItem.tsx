@@ -1,7 +1,7 @@
 import { rectSortingStrategy } from '@dnd-kit/sortable';
-import { faChevronDown, faChevronUp, faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faChevronRight, faGripVertical, faPen, faPlus, faSearch, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon } from '@mantine/core';
+import { ActionIcon, Badge, Collapse } from '@mantine/core';
 import { ComponentProps, memo, useState } from 'react';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import deleteServerGroup from '@/api/me/servers/groups/deleteServerGroup.ts';
@@ -18,6 +18,7 @@ import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTabl
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
+import GroupAddServerModal from './modals/GroupAddServerModal.tsx';
 import ServerGroupEditModal from './modals/ServerGroupEditModal.tsx';
 import ServerItem from './ServerItem.tsx';
 
@@ -49,10 +50,11 @@ export default function ServerGroupItem({
   const { addToast } = useToast();
 
   const [isExpanded, setIsExpanded] = useState(true);
+  const [showSearch, setShowSearch] = useState(false);
   const [servers, setServers] = useState(getEmptyPaginationSet<Server>());
-  const [openModal, setOpenModal] = useState<'edit' | 'delete' | null>(null);
+  const [openModal, setOpenModal] = useState<'edit' | 'delete' | 'add-server' | null>(null);
 
-  const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
+  const { loading, search, setSearch, setPage, refetch } = useSearchablePaginatedTable({
     fetcher: (page, search) => getServerGroupServers(serverGroup.uuid, page, search),
     setStoreData: setServers,
     modifyParams: false,
@@ -74,8 +76,16 @@ export default function ServerGroupItem({
     id: `${serverGroup.uuid}-${s.uuid}`,
   }));
 
+  const serverCount = serverGroup.serverOrder.length;
+
   return (
     <>
+      <GroupAddServerModal
+        serverGroup={serverGroup}
+        opened={openModal === 'add-server'}
+        onClose={() => setOpenModal(null)}
+        onServerAdded={refetch}
+      />
       <ServerGroupEditModal
         serverGroup={serverGroup}
         opened={openModal === 'edit'}
@@ -93,51 +103,82 @@ export default function ServerGroupItem({
         }).md()}
       </ConfirmationModal>
 
-      <Card key={serverGroup.uuid} p={8}>
-        <div className='grid grid-cols-2 gap-4 '>
-          <Card
-            p={6}
-            radius='sm'
-            className='flex-1 flex flex-row! justify-between! items-center!'
+      <Card key={serverGroup.uuid} p={0} className='overflow-hidden'>
+        {/* Header */}
+        <div className='flex items-center gap-3 px-3 py-2.5 bg-[var(--mantine-color-dark-7)]'>
+          {/* Drag Handle */}
+          <div
             {...dragHandleProps}
+            className='flex items-center text-gray-500 hover:text-gray-300 transition-colors'
             style={{
               ...dragHandleProps.style,
               touchAction: 'none',
+              cursor: 'grab',
             }}
           >
-            <span className='text-sm font-mono text-white'>{serverGroup.name}</span>
-            <ActionIcon variant='subtle' onClick={() => setOpenModal('edit')} className='-mr-0.5 -my-2'>
-              <FontAwesomeIcon icon={faPen} />
-            </ActionIcon>
-          </Card>
+            <FontAwesomeIcon icon={faGripVertical} className='w-3.5 h-3.5' />
+          </div>
 
-          <div className='flex flex-row items-center gap-2'>
-            <TextInput
-              placeholder={t('common.input.search', {})}
-              className='h-full w-full'
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+          {/* Expand/Collapse + Group Name */}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className='flex items-center gap-2.5 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity'
+          >
+            <FontAwesomeIcon
+              icon={isExpanded ? faChevronDown : faChevronRight}
+              className='w-3 h-3 text-gray-400 flex-shrink-0'
             />
+            <span className='font-medium text-white truncate'>{serverGroup.name}</span>
+            <Badge size='sm' variant='light' color='gray' className='flex-shrink-0'>
+              {serverCount} {serverCount === 1 ? 'server' : 'servers'}
+            </Badge>
+          </button>
 
-            <ActionIcon color='red' variant='subtle' onClick={() => setOpenModal('delete')}>
-              <FontAwesomeIcon icon={faTrash} />
+          {/* Actions */}
+          <div className='flex items-center gap-1'>
+            <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('add-server')}>
+              <FontAwesomeIcon icon={faPlus} className='w-3.5 h-3.5' />
             </ActionIcon>
-            <ActionIcon variant='subtle' onClick={() => setIsExpanded(!isExpanded)}>
-              {isExpanded ? (
-                <FontAwesomeIcon icon={faChevronUp} className='w-4 h-4 text-gray-200' />
-              ) : (
-                <FontAwesomeIcon icon={faChevronDown} className='w-4 h-4 text-gray-200' />
-              )}
+            <ActionIcon
+              variant='subtle'
+              color='gray'
+              size='sm'
+              onClick={() => {
+                setShowSearch(!showSearch);
+                if (showSearch) setSearch('');
+              }}
+            >
+              <FontAwesomeIcon icon={faSearch} className='w-3.5 h-3.5' />
+            </ActionIcon>
+            <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('edit')}>
+              <FontAwesomeIcon icon={faPen} className='w-3.5 h-3.5' />
+            </ActionIcon>
+            <ActionIcon variant='subtle' color='red' size='sm' onClick={() => setOpenModal('delete')}>
+              <FontAwesomeIcon icon={faTrash} className='w-3.5 h-3.5' />
             </ActionIcon>
           </div>
         </div>
 
-        {isExpanded && (
-          <>
+        {/* Search Bar */}
+        <Collapse in={showSearch}>
+          <div className='px-3 py-2 border-b border-[var(--mantine-color-dark-4)]'>
+            <TextInput
+              placeholder={t('common.input.search', {})}
+              size='xs'
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              leftSection={<FontAwesomeIcon icon={faSearch} className='w-3 h-3 text-gray-500' />}
+            />
+          </div>
+        </Collapse>
+
+        {/* Content */}
+        <Collapse in={isExpanded}>
+          <div className='p-3'>
             {loading ? (
               <Spinner.Centered />
             ) : servers.total === 0 ? (
-              <p className='text-gray-400 mt-4'>{t('pages.account.home.noServers', {})}</p>
+              <p className='text-gray-500 text-sm text-center py-4'>{t('pages.account.home.noServers', {})}</p>
             ) : (
               <DndContainer
                 items={dndServers}
@@ -173,7 +214,7 @@ export default function ServerGroupItem({
                 }
               >
                 {(items) => (
-                  <div className='gap-4 grid sm:grid-cols-2 mt-4'>
+                  <div className='gap-3 grid sm:grid-cols-2'>
                     {items.map((server, i) => (
                       <SortableItem key={server.id} id={server.id}>
                         <MemoizedServerItem
@@ -205,8 +246,8 @@ export default function ServerGroupItem({
                 <Pagination data={servers} onPageSelect={setPage} />
               </>
             )}
-          </>
-        )}
+          </div>
+        </Collapse>
       </Card>
     </>
   );

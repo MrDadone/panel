@@ -259,6 +259,16 @@ const baseTranslations = defineTranslations({
                       deleted: 'Server group deleted.',
                     },
                   },
+                  addServerToGroup: {
+                    title: 'Add Server to {group}',
+                    form: {
+                      server: 'Server',
+                    },
+                    noServers: 'All servers are already in this group.',
+                    toast: {
+                      added: 'Server added to group.',
+                    },
+                  },
                 },
                 noGroups: 'No Groups could be found, time to create one?',
               },

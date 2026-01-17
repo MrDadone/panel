@@ -71,7 +71,7 @@ export default function DashboardHome() {
           }}
           renderOverlay={(activeItem) =>
             activeItem ? (
-              <div style={{ cursor: 'grabbing' }}>
+              <div style={{ cursor: 'grabbing', opacity: 0.95 }} className='shadow-xl rounded-lg'>
                 <MemoizedServerGroupItem
                   serverGroup={activeItem}
                   dragHandleProps={{
@@ -83,7 +83,7 @@ export default function DashboardHome() {
           }
         >
           {(items) => (
-            <div className='flex flex-col gap-4'>
+            <div className='flex flex-col gap-3'>
               {items.map((serverGroup) => (
                 <SortableItem
                   key={serverGroup.id}
