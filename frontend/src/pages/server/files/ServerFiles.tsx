@@ -1,11 +1,16 @@
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { Group, Title } from '@mantine/core';
+import { Alert, Group, Title } from '@mantine/core';
+import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
+import type { z } from 'zod';
+import { serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { MouseEvent as ReactMouseEvent, type Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getBackup from '@/api/server/backups/getBackup.ts';
 import cancelOperation from '@/api/server/files/cancelOperation.ts';
 import loadDirectory from '@/api/server/files/loadDirectory.ts';
+import { bytesToString } from '@/lib/size.ts';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
@@ -24,6 +29,7 @@ import FileUploadOverlay from './FileUploadOverlay.tsx';
 import { useFileDragAndDrop } from './hooks/useFileDragAndDrop.ts';
 import { useFileMoveHandler } from './hooks/useFileMoveDropzone.ts';
 import DirectoryNameModal from './modals/DirectoryNameModal.tsx';
+import FileSearchModal from './modals/FileSearchModal.tsx';
 import PullFileModal from './modals/PullFileModal.tsx';
 import SftpDetailsModal from './modals/SftpDetailsModal.tsx';
 
@@ -48,10 +54,12 @@ export default function ServerFiles() {
     removeFileOperation,
   } = useServerStore();
 
-  const [openModal, setOpenModal] = useState<'sftpDetails' | 'nameDirectory' | 'pullFile' | null>(null);
+  const [openModal, setOpenModal] = useState<'sftpDetails' | 'nameDirectory' | 'pullFile' | 'search' | null>(null);
   const [childOpenModal, setChildOpenModal] = useState(false);
   const [loading, setLoading] = useState(browsingEntries.data.length === 0);
   const [page, setPage] = useState(1);
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [searchInfo, setSearchInfo] = useState<{ query?: string; filters: z.infer<typeof serverFilesSearchSchema> } | null>(null);
   const [selectedFilesPrevious, setSelectedFilesPrevious] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -59,6 +67,8 @@ export default function ServerFiles() {
   // Define loadDirectoryData early so it can be used by hooks
   const loadDirectoryData = useCallback(() => {
     setLoading(true);
+    setIsSearchMode(false);
+    setSearchInfo(null);
 
     loadDirectory(server.uuid, browsingDirectory!, page)
       .then((data) => {
@@ -93,11 +103,16 @@ export default function ServerFiles() {
   const [activeDragCount, setActiveDragCount] = useState(0);
   const [isDKeyHeld, setIsDKeyHeld] = useState(false);
 
-  // Track "D" key state for drag-to-move functionality
+  // Track "D" key state for drag-to-move functionality and Cmd/Ctrl+K for search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'd' || e.key === 'D') {
         setIsDKeyHeld(true);
+      }
+      // Cmd/Ctrl+K to open search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setOpenModal('search');
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -205,6 +220,14 @@ export default function ServerFiles() {
         <SftpDetailsModal opened={openModal === 'sftpDetails'} onClose={() => setOpenModal(null)} />
         <DirectoryNameModal opened={openModal === 'nameDirectory'} onClose={() => setOpenModal(null)} />
         <PullFileModal opened={openModal === 'pullFile'} onClose={() => setOpenModal(null)} />
+        <FileSearchModal
+          opened={openModal === 'search'}
+          onClose={() => setOpenModal(null)}
+          onSearchComplete={(info) => {
+            setIsSearchMode(true);
+            setSearchInfo(info);
+          }}
+        />
 
         <FileActionBar />
 
@@ -242,8 +265,64 @@ export default function ServerFiles() {
             <FileUploadOverlay visible={isDragging && !browsingBackup} />
 
             <div className='bg-[#282828] border border-[#424242] rounded-lg mb-2 p-4'>
-              <FileBreadcrumbs path={decodeURIComponent(browsingDirectory)} browsingBackup={browsingBackup} />
+              <FileBreadcrumbs path={decodeURIComponent(browsingDirectory)} browsingBackup={browsingBackup} onSearchClick={() => setOpenModal('search')} />
             </div>
+            {isSearchMode && searchInfo && (
+              <Alert
+                icon={<FontAwesomeIcon icon={faSearch} />}
+                color='blue'
+                title='Search Results'
+                onClose={() => loadDirectoryData()}
+                withCloseButton
+                mb='md'
+              >
+                <div className='flex flex-col gap-1 text-sm'>
+                  {searchInfo.query && (
+                    <div>
+                      <span className='font-medium text-white/80'>Query:</span>{' '}
+                      <span className='text-white/60'>&quot;{searchInfo.query}&quot;</span>
+                    </div>
+                  )}
+                  {searchInfo.filters.pathFilter && (
+                    <div>
+                      <span className='font-medium text-white/80'>Path:</span>{' '}
+                      {searchInfo.filters.pathFilter.include.length > 0 && (
+                        <span className='text-white/60'>
+                          Include: {searchInfo.filters.pathFilter.include.join(', ')}
+                        </span>
+                      )}
+                      {searchInfo.filters.pathFilter.exclude.length > 0 && (
+                        <span className='text-white/60 ml-2'>
+                          Exclude: {searchInfo.filters.pathFilter.exclude.join(', ')}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {searchInfo.filters.contentFilter && (
+                    <div>
+                      <span className='font-medium text-white/80'>Content:</span>{' '}
+                      <span className='text-white/60'>
+                        {searchInfo.filters.contentFilter.query || '(empty)'}
+                      </span>
+                    </div>
+                  )}
+                  {searchInfo.filters.sizeFilter && (
+                    <div>
+                      <span className='font-medium text-white/80'>Size:</span>{' '}
+                      <span className='text-white/60'>
+                        {searchInfo.filters.sizeFilter.min > 0 && (
+                          <span>Min: {bytesToString(searchInfo.filters.sizeFilter.min)}</span>
+                        )}
+                        {searchInfo.filters.sizeFilter.min > 0 && searchInfo.filters.sizeFilter.max > 0 && ', '}
+                        {searchInfo.filters.sizeFilter.max > 0 && (
+                          <span>Max: {bytesToString(searchInfo.filters.sizeFilter.max)}</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </Alert>
+            )}
             <DndContext
               sensors={sensors}
               onDragStart={(event) => {

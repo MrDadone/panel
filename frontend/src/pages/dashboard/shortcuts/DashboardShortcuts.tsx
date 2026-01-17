@@ -71,6 +71,7 @@ export default function DashboardShortcuts() {
   const modKey = isMac ? 'Cmd' : 'Ctrl';
 
   const fileManagerShortcuts: ShortcutItemProps[] = [
+    { keys: [modKey, 'K'], description: t('pages.account.shortcuts.fileManager.search', {}) },
     { keys: [modKey, 'A'], description: t('pages.account.shortcuts.fileManager.selectAll', {}) },
     { keys: [modKey, 'Esc'], description: t('pages.account.shortcuts.fileManager.deselectAll', {}) },
     { keys: [modKey, 'X'], description: t('pages.account.shortcuts.fileManager.cutFiles', {}) },

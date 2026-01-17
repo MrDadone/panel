@@ -449,6 +449,7 @@ const baseTranslations = defineTranslations({
             pasteFiles: 'Paste files',
             deleteFiles: 'Delete selected files',
             dragToMove: 'Drag files or folder to move into folder',
+            search: 'Search files',
           },
           table: {
             title: 'Table Navigation',
