@@ -20,7 +20,9 @@ mod post {
     }
 
     #[derive(ToSchema, Serialize)]
-    struct Response {}
+    struct Response {
+        affected: u64,
+    }
 
     #[utoipa::path(post, path = "/", responses(
         (status = OK, body = inline(Response)),
@@ -41,7 +43,8 @@ mod post {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("nodes.power")?;
 
-        node.api_client(&state.database)
+        let response_data = node
+            .api_client(&state.database)
             .post_servers_power(&wings_api::servers_power::post::RequestBody {
                 servers: data.servers.iter().cloned().collect(),
                 action: data.action,
@@ -60,7 +63,10 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::json(Response {
+            affected: response_data.affected,
+        })
+        .ok()
     }
 }
 
