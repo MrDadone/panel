@@ -1,5 +1,6 @@
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { Group, Title } from '@mantine/core';
-import { MouseEvent as ReactMouseEvent, type Ref, useEffect, useRef, useState } from 'react';
+import { MouseEvent as ReactMouseEvent, type Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getBackup from '@/api/server/backups/getBackup.ts';
@@ -15,11 +16,13 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import FileActionBar from './FileActionBar.tsx';
 import FileBreadcrumbs from './FileBreadcrumbs.tsx';
+import FileDragOverlay from './FileDragOverlay.tsx';
 import FileOperationsProgress from './FileOperationsProgress.tsx';
 import FileRow from './FileRow.tsx';
 import FileToolbar from './FileToolbar.tsx';
 import FileUploadOverlay from './FileUploadOverlay.tsx';
 import { useFileDragAndDrop } from './hooks/useFileDragAndDrop.ts';
+import { useFileMoveHandler } from './hooks/useFileMoveDropzone.ts';
 import DirectoryNameModal from './modals/DirectoryNameModal.tsx';
 import PullFileModal from './modals/PullFileModal.tsx';
 import SftpDetailsModal from './modals/SftpDetailsModal.tsx';
@@ -53,31 +56,8 @@ export default function ServerFiles() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    uploadingFiles,
-    uploadFiles,
-    cancelFileUpload,
-    cancelFolderUpload,
-    aggregatedUploadProgress,
-    handleFileSelect,
-    handleFolderSelect,
-  } = useFileUpload(server.uuid, browsingDirectory!, () => loadDirectoryData());
-
-  const { isDragging } = useFileDragAndDrop({
-    onDrop: uploadFiles,
-    enabled: !browsingBackup,
-  });
-
-  useEffect(() => {
-    setBrowsingDirectory(searchParams.get('directory') || '/');
-    setPage(Number(searchParams.get('page')) || 1);
-  }, [searchParams, setBrowsingDirectory]);
-
-  const onPageSelect = (page: number) => {
-    setSearchParams({ directory: browsingDirectory!, page: page.toString() });
-  };
-
-  const loadDirectoryData = () => {
+  // Define loadDirectoryData early so it can be used by hooks
+  const loadDirectoryData = useCallback(() => {
     setLoading(true);
 
     loadDirectory(server.uuid, browsingDirectory!, page)
@@ -90,6 +70,64 @@ export default function ServerFiles() {
         addToast(httpErrorToHuman(msg), 'error');
       })
       .finally(() => setLoading(false));
+  }, [server.uuid, browsingDirectory, page, setBrowsingWritableDirectory, setBrowsingFastDirectory, setBrowsingEntries, addToast]);
+
+  const {
+    uploadingFiles,
+    uploadFiles,
+    cancelFileUpload,
+    cancelFolderUpload,
+    aggregatedUploadProgress,
+    handleFileSelect,
+    handleFolderSelect,
+  } = useFileUpload(server.uuid, browsingDirectory!, loadDirectoryData);
+
+  const { isDragging } = useFileDragAndDrop({
+    onDrop: uploadFiles,
+    enabled: !browsingBackup,
+  });
+
+  // Drag-and-drop for moving files into folders (requires holding "D" key)
+  const { handleDragEnd } = useFileMoveHandler(loadDirectoryData);
+  const [activeDragFile, setActiveDragFile] = useState<DirectoryEntry | null>(null);
+  const [activeDragCount, setActiveDragCount] = useState(0);
+  const [isDKeyHeld, setIsDKeyHeld] = useState(false);
+
+  // Track "D" key state for drag-to-move functionality
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'd' || e.key === 'D') {
+        setIsDKeyHeld(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'd' || e.key === 'D') {
+        setIsDKeyHeld(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  );
+
+  useEffect(() => {
+    setBrowsingDirectory(searchParams.get('directory') || '/');
+    setPage(Number(searchParams.get('page')) || 1);
+  }, [searchParams, setBrowsingDirectory]);
+
+  const onPageSelect = (page: number) => {
+    setSearchParams({ directory: browsingDirectory!, page: page.toString() });
   };
 
   const doCancelOperation = (uuid: string) => {
@@ -117,7 +155,7 @@ export default function ServerFiles() {
     if (!browsingDirectory) return;
 
     loadDirectoryData();
-  }, [browsingDirectory, page]);
+  }, [browsingDirectory, page, loadDirectoryData]);
 
   useEffect(() => {
     setSelectedFiles([]);
@@ -206,34 +244,60 @@ export default function ServerFiles() {
             <div className='bg-[#282828] border border-[#424242] rounded-lg mb-2 p-4'>
               <FileBreadcrumbs path={decodeURIComponent(browsingDirectory)} browsingBackup={browsingBackup} />
             </div>
-            <SelectionArea
-              onSelectedStart={onSelectedStart}
-              onSelected={onSelected}
-              className='h-full'
-              disabled={movingFileNames.size > 0 || !!openModal || childOpenModal}
+            <DndContext
+              sensors={sensors}
+              onDragStart={(event) => {
+                const data = event.active.data.current;
+                if (data?.type === 'file') {
+                  setActiveDragFile(data.file);
+                  setActiveDragCount(data.files?.length || 1);
+                }
+              }}
+              onDragEnd={(event) => {
+                handleDragEnd(event);
+                setActiveDragFile(null);
+                setActiveDragCount(0);
+              }}
+              onDragCancel={() => {
+                setActiveDragFile(null);
+                setActiveDragCount(0);
+              }}
             >
-              <ContextMenuProvider>
-                <Table
-                  columns={['', 'Name', 'Size', 'Modified', '']}
-                  pagination={browsingEntries}
-                  onPageSelect={onPageSelect}
-                  allowSelect={false}
-                >
-                  {browsingEntries.data.map((file) => (
-                    <SelectionArea.Selectable key={file.name} item={file}>
-                      {(innerRef: Ref<HTMLElement>) => (
-                        <FileRow
-                          key={file.name}
-                          file={file}
-                          ref={innerRef as Ref<HTMLTableRowElement>}
-                          setChildOpenModal={setChildOpenModal}
-                        />
-                      )}
-                    </SelectionArea.Selectable>
-                  ))}
-                </Table>
-              </ContextMenuProvider>
-            </SelectionArea>
+              <SelectionArea
+                onSelectedStart={onSelectedStart}
+                onSelected={onSelected}
+                className='h-full'
+                disabled={movingFileNames.size > 0 || !!openModal || childOpenModal || !!activeDragFile || isDKeyHeld}
+              >
+                <ContextMenuProvider>
+                  <div style={isDKeyHeld && browsingWritableDirectory ? { cursor: 'grab' } : undefined}>
+                    <Table
+                      columns={['', 'Name', 'Size', 'Modified', '']}
+                      pagination={browsingEntries}
+                      onPageSelect={onPageSelect}
+                      allowSelect={false}
+                    >
+                      {browsingEntries.data.map((file) => (
+                        <SelectionArea.Selectable key={file.name} item={file}>
+                          {(innerRef: Ref<HTMLElement>) => (
+                            <FileRow
+                              key={file.name}
+                              file={file}
+                              ref={innerRef as Ref<HTMLTableRowElement>}
+                              setChildOpenModal={setChildOpenModal}
+                              dndEnabled={browsingWritableDirectory && !browsingBackup && movingFileNames.size === 0 && isDKeyHeld}
+                            />
+                          )}
+                        </SelectionArea.Selectable>
+                      ))}
+                    </Table>
+                  </div>
+                </ContextMenuProvider>
+              </SelectionArea>
+              <DragOverlay>
+                {activeDragFile && <FileDragOverlay file={activeDragFile} count={activeDragCount} />}
+              </DragOverlay>
+            </DndContext>
           </>
         )}
       </div>

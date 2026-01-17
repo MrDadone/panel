@@ -436,6 +436,33 @@ const baseTranslations = defineTranslations({
             },
           },
         },
+        shortcuts: {
+          title: 'Keyboard Shortcuts',
+          description: 'Use these keyboard shortcuts to navigate and interact with the panel more efficiently.',
+          detectedMac: 'macOS detected',
+          detectedWindows: 'Windows/Linux detected',
+          fileManager: {
+            title: 'File Manager',
+            selectAll: 'Select all files',
+            deselectAll: 'Deselect all files',
+            cutFiles: 'Cut selected files',
+            pasteFiles: 'Paste files',
+            deleteFiles: 'Delete selected files',
+            dragToMove: 'Drag files or folder to move into folder',
+          },
+          table: {
+            title: 'Table Navigation',
+            previousPage: 'Previous page',
+            nextPage: 'Next page',
+            firstPage: 'First page',
+            lastPage: 'Last page',
+          },
+          console: {
+            title: 'Server Console',
+            previousCommand: 'Previous command in history',
+            nextCommand: 'Next command in history',
+          },
+        },
         sshKeys: {
           title: 'SSH Keys',
           button: {

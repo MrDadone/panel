@@ -41,10 +41,11 @@ import FileRenameModal from './modals/FileRenameModal.tsx';
 interface FileRowProps {
   file: DirectoryEntry;
   setChildOpenModal: (open: boolean) => void;
+  dndEnabled?: boolean;
 }
 
 const FileRow = memo(
-  forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({ file, setChildOpenModal }, ref) {
+  forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({ file, setChildOpenModal, dndEnabled = false }, ref) {
     const { addToast } = useToast();
     const { addWindow } = useWindows();
     const { settings } = useGlobalStore();
@@ -202,6 +203,7 @@ const FileRow = memo(
             <FileTableRow
               file={file}
               ref={ref}
+              dndEnabled={dndEnabled}
               onContextMenu={(e) => {
                 e.preventDefault();
                 openMenu(e.clientX, e.clientY);
