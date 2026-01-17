@@ -24,6 +24,7 @@ const baseTranslations = defineTranslations({
         cancel: 'Cancel',
         continue: 'Continue',
         skip: 'Skip',
+        logout: 'Logout',
       },
       input: {
         search: 'Search...',

@@ -1,9 +1,8 @@
-import { faArrowRightFromBracket, faBars, faUserCog, IconDefinition } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRightFromBracket, faBars, faEllipsisVertical, faGraduationCap, faUserCog, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon } from '@mantine/core';
+import { ActionIcon, Menu } from '@mantine/core';
 import { MouseEvent as ReactMouseEvent, ReactNode, startTransition, useEffect, useState } from 'react';
 import { MemoryRouter, NavLink, useNavigate } from 'react-router';
-import Badge from '@/elements/Badge.tsx';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import CloseButton from '@/elements/CloseButton.tsx';
@@ -107,6 +106,7 @@ function Divider() {
 function Footer() {
   const { t } = useTranslations();
   const { user, doLogout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <>
@@ -115,34 +115,51 @@ function Footer() {
       </div>
 
       <div className='p-2 flex flex-row justify-between items-center min-h-fit'>
-        <div className='flex items-center'>
-          <img src={user!.avatar ?? '/icon.svg'} alt={user!.username} className='h-10 w-10 rounded-full select-none' />
-          <div className='flex flex-col ml-3'>
-            <span className='font-sans font-normal text-sm text-neutral-50 whitespace-nowrap leading-tight lg:w-25 overflow-hidden text-ellipsis'>
-              {user!.username}
-            </span>
-            {isAdmin(user) && (
-              <NavLink to='/admin' className='cursor-pointer!'>
-                <Badge size='xs' className='cursor-pointer!'>
-                  {t('pages.account.admin.title', {})}
-                </Badge>
-              </NavLink>
-            )}
-          </div>
-        </div>
+        <NavLink to='/account' className='flex items-center flex-1 min-w-0' onClick={(e) => {
+          e.preventDefault();
+          navigate('/account');
+        }}>
+          <img src={user!.avatar ?? '/icon.svg'} alt={user!.username} className='h-10 w-10 rounded-full select-none flex-shrink-0' />
+          <span className='font-sans font-normal text-sm text-neutral-50 whitespace-nowrap leading-tight ml-3 overflow-hidden text-ellipsis'>
+            {user!.username}
+          </span>
+        </NavLink>
 
-        <div className='flex flex-row items-center space-x-2'>
-          <NavLink to='/account' end>
-            {({ isActive }) => (
-              <ActionIcon variant='subtle' disabled={isActive}>
-                <FontAwesomeIcon icon={faUserCog} />
-              </ActionIcon>
+        <Menu shadow='md' width={200} position='top-end'>
+          <Menu.Target>
+            <ActionIcon variant='subtle' className='flex-shrink-0'>
+              <FontAwesomeIcon icon={faEllipsisVertical} />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Item
+              leftSection={<FontAwesomeIcon icon={faUserCog} />}
+              onClick={() => navigate('/account')}
+            >
+              {t('pages.account.account.title', {})}
+            </Menu.Item>
+            {isAdmin(user) && (
+              <>
+                <Menu.Divider />
+                <Menu.Item
+                  leftSection={<FontAwesomeIcon icon={faGraduationCap} />}
+                  onClick={() => navigate('/admin')}
+                >
+                  {t('pages.account.admin.title', {})}
+                </Menu.Item>
+              </>
             )}
-          </NavLink>
-          <ActionIcon color='red' variant='subtle' onClick={doLogout}>
-            <FontAwesomeIcon icon={faArrowRightFromBracket} />
-          </ActionIcon>
-        </div>
+            <Menu.Divider />
+            <Menu.Item
+              leftSection={<FontAwesomeIcon icon={faArrowRightFromBracket} />}
+              color='red'
+              onClick={doLogout}
+            >
+              {t('common.button.logout', {}) || 'Logout'}
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       </div>
     </>
   );

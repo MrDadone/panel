@@ -24,9 +24,9 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
       {isNormal && (
         <Sidebar>
           <NavLink to='/' className='w-full'>
-            <div className='h-28 w-full flex flex-row items-center justify-between mt-1 select-none cursor-pointer'>
-              <img src='/icon.svg' className='h-full py-4' alt='Calagopus Icon' />
-              <h1 className='grow font-logo text-xl'>{settings.app.name}</h1>
+            <div className='h-16 w-full flex flex-row items-center justify-between mt-1 select-none cursor-pointer'>
+              <img src='/icon.svg' className='h-8 w-8' alt='Calagopus Icon' />
+              <h1 className='grow font-logo text-base ml-2'>{settings.app.name}</h1>
             </div>
           </NavLink>
 
