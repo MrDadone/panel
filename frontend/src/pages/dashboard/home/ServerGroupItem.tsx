@@ -51,7 +51,6 @@ export default function ServerGroupItem({
   const { addToast } = useToast();
 
   const [isExpanded, setIsExpanded] = useState(true);
-  const [showSearch, setShowSearch] = useState(false);
   const [servers, setServers] = useState(getEmptyPaginationSet<Server>());
   const [openModal, setOpenModal] = useState<'edit' | 'delete' | 'add-server' | null>(null);
   const [groupActionLoading, setGroupActionLoading] = useState<ServerPowerAction | null>(null);
@@ -173,6 +172,14 @@ export default function ServerGroupItem({
 
           {/* Actions */}
           <div className='flex items-center gap-1'>
+            <TextInput
+              placeholder={t('common.input.search', {})}
+              size='xs'
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              leftSection={<FontAwesomeIcon icon={faSearch} className='w-3 h-3 text-gray-500' />}
+              className='w-32'
+            />
             <Menu shadow='md' width={200} position='bottom-end'>
               <Menu.Target>
                 <ActionIcon
@@ -216,17 +223,6 @@ export default function ServerGroupItem({
             <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('add-server')}>
               <FontAwesomeIcon icon={faPlus} className='w-3.5 h-3.5' />
             </ActionIcon>
-            <ActionIcon
-              variant='subtle'
-              color='gray'
-              size='sm'
-              onClick={() => {
-                setShowSearch(!showSearch);
-                if (showSearch) setSearch('');
-              }}
-            >
-              <FontAwesomeIcon icon={faSearch} className='w-3.5 h-3.5' />
-            </ActionIcon>
             <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('edit')}>
               <FontAwesomeIcon icon={faPen} className='w-3.5 h-3.5' />
             </ActionIcon>
@@ -235,19 +231,6 @@ export default function ServerGroupItem({
             </ActionIcon>
           </div>
         </div>
-
-        {/* Search Bar */}
-        <Collapse in={showSearch}>
-          <div className='px-3 py-2 border-b border-[var(--mantine-color-dark-4)]'>
-            <TextInput
-              placeholder={t('common.input.search', {})}
-              size='xs'
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              leftSection={<FontAwesomeIcon icon={faSearch} className='w-3 h-3 text-gray-500' />}
-            />
-          </div>
-        </Collapse>
 
         {/* Content */}
         <Collapse in={isExpanded}>

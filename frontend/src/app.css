@@ -23,6 +23,42 @@
   --font-logo: "Odor Mean Chey", "Helvetica", "Arial", "sans-serif";
 
   --color-neutral-850: oklch(25.4% 0 0);
+
+  /* Server status colors - for status indicators (circles, cards, etc.) */
+  --color-server-status-running: #22c55e;  /* Green - server is running */
+  --color-server-status-offline: #ef4444;  /* Red - server is offline */
+  --color-server-status-starting: #eab308; /* Yellow - server is starting */
+  --color-server-status-stopping: #eab308; /* Yellow - server is stopping */
+  
+  /* Server action button colors - for start/stop buttons */
+  --color-server-action-stop: #ef4444;     /* Red - stop button when running */
+  --color-server-action-start: #22c55e;    /* Green - start button when offline */
+  --color-server-action-restart: #6b7280;  /* Gray - restart button */
+}
+
+/* Custom utility classes for server status colors */
+@layer utilities {
+  .bg-server-status-running {
+    background-color: var(--color-server-status-running);
+  }
+  .bg-server-status-offline {
+    background-color: var(--color-server-status-offline);
+  }
+  .bg-server-status-starting {
+    background-color: var(--color-server-status-starting);
+  }
+  .bg-server-status-stopping {
+    background-color: var(--color-server-status-stopping);
+  }
+  .bg-server-action-stop {
+    background-color: var(--color-server-action-stop);
+  }
+  .bg-server-action-start {
+    background-color: var(--color-server-action-start);
+  }
+  .bg-server-action-restart {
+    background-color: var(--color-server-action-restart);
+  }
 }
 
 body {

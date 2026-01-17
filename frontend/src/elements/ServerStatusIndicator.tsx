@@ -1,4 +1,4 @@
-import { faPause, faPlay, faRefresh, faServer } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faRefresh, faServer, faStop } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group } from '@mantine/core';
 import { Radio } from 'lucide-react';
@@ -6,19 +6,20 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { ServerCan } from '@/elements/Can.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
-const getServerStatusText = (state: ServerPowerState): string => {
+const getServerStatusText = (state: ServerPowerState, t: ReturnType<typeof useTranslations>['t']): string => {
   switch (state) {
     case 'running':
-      return 'ONLINE';
+      return t('common.enum.serverState.running', {});
     case 'starting':
-      return 'STARTING';
+      return t('common.enum.serverState.starting', {});
     case 'stopping':
-      return 'STOPPING';
+      return t('common.enum.serverState.stopping', {});
     default:
-      return 'OFFLINE';
+      return t('common.enum.serverState.offline', {});
   }
 };
 
@@ -53,10 +54,26 @@ export default function ServerStatusIndicator() {
     return null;
   }
 
+  const isOffline = state === 'offline';
+  const isStarting = state === 'starting';
   const isRunning = state === 'running';
-  const canStart = state === 'offline';
-  const canStop = state === 'running' || state === 'starting';
-
+  const isStopping = state === 'stopping';
+  
+  // Determine button action and label
+  const buttonAction = isOffline 
+    ? 'start' 
+    : killable 
+      ? 'kill' 
+      : 'stop';
+  const buttonLabel = isOffline 
+    ? 'pages.server.console.power.start' 
+    : killable 
+      ? 'pages.server.console.power.kill' 
+      : 'pages.server.console.power.stop';
+  const buttonColor = isOffline 
+    ? 'var(--color-server-action-start)' 
+    : 'var(--color-server-action-stop)';
+  const buttonIcon = isOffline ? faPlay : faStop;
 
   return (
     <div className='flex flex-col gap-2 mt-2'>
@@ -64,49 +81,51 @@ export default function ServerStatusIndicator() {
         {/* Power Controls */}
         <Group gap='xs'>
           <ServerCan action={['control.start', 'control.stop']} matchAny>
-            <ActionIcon
-              size='lg'
-              radius='md'
-              style={{
-                backgroundColor: isRunning ? '#ef4444' : '#22c55e',
-              }}
-              className={isRunning ? 'hover:bg-red-600' : 'hover:bg-green-600'}
-              variant='filled'
-              disabled={!canStart && !canStop}
-              loading={state === 'starting' || state === 'stopping'}
-              onClick={() => onPowerAction(isRunning ? 'stop' : 'start')}
-            >
-              <FontAwesomeIcon 
-                icon={isRunning ? faPause : faPlay} 
-                className='text-white' 
-                size='sm' 
-              />
-            </ActionIcon>
+            <Tooltip label={t(buttonLabel, {})}>
+              <ActionIcon
+                size='lg'
+                radius='md'
+                style={{
+                  backgroundColor: buttonColor,
+                }}
+                className='hover:opacity-90'
+                variant='filled'
+                onClick={() => onPowerAction(buttonAction)}
+              >
+                <FontAwesomeIcon 
+                  icon={buttonIcon} 
+                  className='text-white' 
+                  size='sm' 
+                />
+              </ActionIcon>
+            </Tooltip>
           </ServerCan>
           <ServerCan action='control.restart'>
-            <ActionIcon
-              size='lg'
-              radius='md'
-              style={{
-                backgroundColor: '#eab308',
-              }}
-              className='hover:bg-yellow-600'
-              variant='filled'
-              disabled={state === 'offline'}
-              onClick={() => onPowerAction('restart')}
-            >
-              <FontAwesomeIcon icon={faRefresh} className='text-white' size='sm' />
-            </ActionIcon>
+            <Tooltip label={t('pages.server.console.power.restart', {})}>
+              <ActionIcon
+                size='lg'
+                radius='md'
+                style={{
+                  backgroundColor: 'var(--color-server-action-restart)',
+                }}
+                className='hover:opacity-90'
+                variant='filled'
+                disabled={state === 'offline'}
+                onClick={() => onPowerAction('restart')}
+              >
+                <FontAwesomeIcon icon={faRefresh} className='text-white' size='sm' />
+              </ActionIcon>
+            </Tooltip>
           </ServerCan>
         </Group>
 
         {/* Status Indicators */}
-        <div className='flex flex-col gap-1.5 justify-center'>
+        <div className='flex flex-col gap-1.5 justify-center items-end'>
           {/* Server Status */}
           <div className='flex items-center gap-1.5 text-xs'>
             <FontAwesomeIcon icon={faServer} className='w-3 h-3 text-white flex-shrink-0' style={{ minWidth: '12px' }} />
             <span className='font-medium text-white leading-none'>
-              {getServerStatusText(state)}
+              {getServerStatusText(state, t)}
             </span>
           </div>
 
@@ -114,7 +133,7 @@ export default function ServerStatusIndicator() {
           <div className='flex items-center gap-1.5 text-xs'>
             <Radio className='w-3 h-3 text-white flex-shrink-0' style={{ minWidth: '12px' }} />
             <span className='font-medium text-white leading-none'>
-              {socketConnected ? 'CONNECTED' : 'OFFLINE'}
+              {socketConnected ? t('common.enum.connectionStatus.connected', {}) : t('common.enum.connectionStatus.offline', {})}
             </span>
           </div>
         </div>

@@ -34,7 +34,7 @@ function FilterSection({ icon, title, description, enabled, onToggle, children }
         className='w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors'
         onClick={() => onToggle(!enabled)}
       >
-        <FontAwesomeIcon icon={icon} className='text-white/40 w-4' />
+        <FontAwesomeIcon icon={icon} className='text-white/40 w-4 flex-shrink-0' />
         <div className='flex-1 text-left'>
           <Text size='sm' fw={500} c='white'>
             {title}
@@ -95,12 +95,12 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
   }, [query]);
 
   // Reset form when modal closes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: form.reset is stable
   useEffect(() => {
     if (!opened) {
       setQuery('');
       form.reset();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened]);
 
   const doSearch = () => {
@@ -134,7 +134,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
               onChange={(e) => setQuery(e.target.value)}
               leftSection={<FontAwesomeIcon icon={faSearch} className='text-white/40' />}
               rightSection={
-                <Kbd size='xs' className='opacity-50'>
+                <Kbd size='xs' className='opacity-50 mr-2'>
                   Enter
                 </Kbd>
               }

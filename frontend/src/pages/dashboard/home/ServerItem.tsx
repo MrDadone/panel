@@ -30,13 +30,13 @@ import ServerAddGroupModal from './modals/ServerAddGroupModal.tsx';
 const statusToColor = (status: ServerPowerState | undefined) => {
   switch (status) {
     case 'running':
-      return 'bg-green-500';
+      return 'bg-server-status-running';
     case 'starting':
-      return 'bg-yellow-500';
+      return 'bg-server-status-starting';
     case 'stopping':
-      return 'bg-red-500';
+      return 'bg-server-status-stopping';
     default:
-      return 'bg-red-500';
+      return 'bg-server-status-offline';
   }
 };
 

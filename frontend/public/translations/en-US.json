@@ -89,6 +89,10 @@
             "starting": "Starting",
             "stopping": "Stopping"
           },
+          "connectionStatus": {
+            "connected": "Connected",
+            "offline": "Offline"
+          },
           "serverAutoStartBehavior": {
             "always": "Always",
             "unlessStopped": "Unless Stopped",
@@ -585,6 +589,17 @@
                   "title": "Forcibly Stop Process",
                   "content": "Forcibly stopping a server can lead to data corruption."
                 }
+              }
+            },
+            "modal": {
+              "commandHistory": {
+                "title": "Command History",
+                "detailTitle": "Command Details",
+                "searchPlaceholder": "Search commands...",
+                "copyButton": "Copy",
+                "sendButton": "Send Command",
+                "copied": "Command copied to clipboard.",
+                "commandSent": "Command sent successfully."
               }
             },
             "stats": {

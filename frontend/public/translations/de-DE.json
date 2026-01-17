@@ -89,6 +89,10 @@
             "starting": "Starte",
             "stopping": "Stoppe"
           },
+          "connectionStatus": {
+            "connected": "Verbunden",
+            "offline": "Offline"
+          },
           "serverAutoStartBehavior": {
             "always": "Immer",
             "unlessStopped": "Außer wenn gestoppt",

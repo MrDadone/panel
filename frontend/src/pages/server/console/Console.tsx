@@ -10,11 +10,12 @@ import Card from '@/elements/Card.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import Progress from '@/elements/Progress.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
 import { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import FeatureProvider from './features/FeatureProvider.tsx';
-import CommandHistoryModal from './modals/CommandHistoryModal.tsx';
+import CommandHistoryDrawer from './drawers/CommandHistoryDrawer.tsx';
 
 const ansiUp = new AnsiUp();
 const MAX_LINES = 1000;
@@ -373,15 +374,16 @@ export default function Terminal() {
               : t('pages.server.console.socketDisconnected', {})}
           </div>
           <div className='flex flex-row items-center gap-4'>
-            <ActionIcon
-              size='xs'
-              variant='subtle'
-              color='gray'
-              onClick={() => setHistoryModalOpen(true)}
-              title={t('pages.server.console.button.commandHistory', {})}
-            >
-              <FontAwesomeIcon icon={faClockRotateLeft} />
-            </ActionIcon>
+            <Tooltip label={t('pages.server.console.button.commandHistory', {})}>
+              <ActionIcon
+                size='xs'
+                variant='subtle'
+                color='gray'
+                onClick={() => setHistoryModalOpen(true)}
+              >
+                <FontAwesomeIcon icon={faClockRotateLeft} />
+              </ActionIcon>
+            </Tooltip>
             <div className='flex flex-row items-center'>
               <ActionIcon
                 className='mr-2'
@@ -458,7 +460,7 @@ export default function Terminal() {
         </div>
       </Card>
 
-      <CommandHistoryModal
+      <CommandHistoryDrawer
         opened={historyModalOpen}
         onClose={() => setHistoryModalOpen(false)}
         onSelectCommand={handleSelectCommand}

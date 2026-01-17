@@ -271,56 +271,52 @@ export default function ServerFiles() {
               <Alert
                 icon={<FontAwesomeIcon icon={faSearch} />}
                 color='blue'
-                title='Search Results'
+                title={`Search Results (${browsingEntries.total} files found)`}
                 onClose={() => loadDirectoryData()}
                 withCloseButton
                 mb='md'
               >
-                <div className='flex flex-col gap-1 text-sm'>
-                  {searchInfo.query && (
-                    <div>
-                      <span className='font-medium text-white/80'>Query:</span>{' '}
-                      <span className='text-white/60'>&quot;{searchInfo.query}&quot;</span>
-                    </div>
-                  )}
-                  {searchInfo.filters.pathFilter && (
-                    <div>
-                      <span className='font-medium text-white/80'>Path:</span>{' '}
-                      {searchInfo.filters.pathFilter.include.length > 0 && (
+                {(searchInfo.query || searchInfo.filters.contentFilter || searchInfo.filters.sizeFilter ||
+                  (searchInfo.filters.pathFilter?.exclude && searchInfo.filters.pathFilter.exclude.length > 0)) && (
+                  <div className='flex flex-col gap-1 text-sm'>
+                    {searchInfo.query && (
+                      <div>
+                        <span className='font-medium text-white/80'>Query:</span>{' '}
+                        <span className='text-white/60'>&quot;{searchInfo.query}&quot;</span>
+                      </div>
+                    )}
+                    {searchInfo.filters.pathFilter?.exclude && searchInfo.filters.pathFilter.exclude.length > 0 && (
+                      <div>
+                        <span className='font-medium text-white/80'>Excluded:</span>{' '}
                         <span className='text-white/60'>
-                          Include: {searchInfo.filters.pathFilter.include.join(', ')}
+                          {searchInfo.filters.pathFilter.exclude.join(', ')}
                         </span>
-                      )}
-                      {searchInfo.filters.pathFilter.exclude.length > 0 && (
-                        <span className='text-white/60 ml-2'>
-                          Exclude: {searchInfo.filters.pathFilter.exclude.join(', ')}
+                      </div>
+                    )}
+                    {searchInfo.filters.contentFilter && (
+                      <div>
+                        <span className='font-medium text-white/80'>Content:</span>{' '}
+                        <span className='text-white/60'>
+                          {searchInfo.filters.contentFilter.query || '(empty)'}
                         </span>
-                      )}
-                    </div>
-                  )}
-                  {searchInfo.filters.contentFilter && (
-                    <div>
-                      <span className='font-medium text-white/80'>Content:</span>{' '}
-                      <span className='text-white/60'>
-                        {searchInfo.filters.contentFilter.query || '(empty)'}
-                      </span>
-                    </div>
-                  )}
-                  {searchInfo.filters.sizeFilter && (
-                    <div>
-                      <span className='font-medium text-white/80'>Size:</span>{' '}
-                      <span className='text-white/60'>
-                        {searchInfo.filters.sizeFilter.min > 0 && (
-                          <span>Min: {bytesToString(searchInfo.filters.sizeFilter.min)}</span>
-                        )}
-                        {searchInfo.filters.sizeFilter.min > 0 && searchInfo.filters.sizeFilter.max > 0 && ', '}
-                        {searchInfo.filters.sizeFilter.max > 0 && (
-                          <span>Max: {bytesToString(searchInfo.filters.sizeFilter.max)}</span>
-                        )}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                      </div>
+                    )}
+                    {searchInfo.filters.sizeFilter && (
+                      <div>
+                        <span className='font-medium text-white/80'>Size:</span>{' '}
+                        <span className='text-white/60'>
+                          {searchInfo.filters.sizeFilter.min > 0 && (
+                            <span>Min: {bytesToString(searchInfo.filters.sizeFilter.min)}</span>
+                          )}
+                          {searchInfo.filters.sizeFilter.min > 0 && searchInfo.filters.sizeFilter.max > 0 && ', '}
+                          {searchInfo.filters.sizeFilter.max > 0 && (
+                            <span>Max: {bytesToString(searchInfo.filters.sizeFilter.max)}</span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </Alert>
             )}
             <DndContext

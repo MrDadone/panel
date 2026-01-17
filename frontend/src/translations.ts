@@ -80,6 +80,10 @@ const baseTranslations = defineTranslations({
           starting: 'Starting',
           stopping: 'Stopping',
         },
+        connectionStatus: {
+          connected: 'Connected',
+          offline: 'Offline',
+        },
         serverAutoStartBehavior: {
           always: 'Always',
           unlessStopped: 'Unless Stopped',
@@ -659,6 +663,8 @@ const baseTranslations = defineTranslations({
               noCommands: 'No commands found.',
               copied: 'Command copied to clipboard.',
               copyButton: 'Copy Command',
+              sendButton: 'Send Command',
+              commandSent: 'Command sent successfully.',
             },
           },
         },
