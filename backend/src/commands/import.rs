@@ -723,8 +723,16 @@ impl shared::extensions::commands::CliCommand<ImportArgs> for ImportCommand {
                                 serde_json::from_str(config_stop.as_deref().unwrap_or(""))
                                     .unwrap_or_else(|_| {
                                         shared::models::nest_egg::NestEggConfigStop {
-                                            r#type: "".into(),
-                                            value: config_stop,
+                                            r#type: if config_stop.as_deref() == Some("^C") || config_stop.as_deref() == Some("^^C") {
+                                                "signal".into()
+                                            } else {
+                                                "command".into()
+                                            },
+                                            value: match config_stop.as_deref() {
+                                                Some("^C") => Some("SIGINT".into()),
+                                                Some("^^C") => Some("SIGKILL".into()),
+                                                _ => config_stop.map(|s| s.into()),
+                                            },
                                         }
                                     });
                             let config_allocations =
