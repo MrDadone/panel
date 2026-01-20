@@ -690,7 +690,7 @@ impl shared::extensions::commands::CliCommand<ImportArgs> for ImportCommand {
                             let config_script = shared::models::nest_egg::NestEggConfigScript {
                                 container: row.try_get("script_container")?,
                                 entrypoint: row.try_get("script_entry")?,
-                                content: row.try_get("script_install")?,
+                                content: row.try_get("script_install").unwrap_or_default(),
                             };
                             let startup: &str = row.try_get("startup")?;
                             let force_outgoing_ip: bool = row.try_get("force_outgoing_ip")?;
