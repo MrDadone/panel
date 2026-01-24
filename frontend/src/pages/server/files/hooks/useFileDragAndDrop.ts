@@ -92,7 +92,7 @@ export function useFileDragAndDrop({ onDrop, enabled = true }: UseFileDragAndDro
       e.stopPropagation();
 
       dragCounterRef.current++;
-      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0 && e.dataTransfer.items[0].kind === 'file') {
         setIsDragging(true);
       }
     };

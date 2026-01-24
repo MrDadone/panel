@@ -79,7 +79,7 @@ export default function FileActionBar() {
       server.uuid,
       browsingDirectory!,
       selectedFiles.map((f) => f.name),
-      false,
+      selectedFiles.length === 1 ? selectedFiles[0].directory : false,
       'zip',
     )
       .then(({ url }) => {

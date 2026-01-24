@@ -4,7 +4,7 @@ members = ["backend", "rule-validator", "wings-api", "shared", "backend-extensio
 default-members = ["backend"]
 package.rust-version = "1.93.0"
 package.license = "MIT"
-package.version = "0.18.0"
+package.version = "0.18.1"
 package.edition = "2024"
 
 [workspace.dependencies]

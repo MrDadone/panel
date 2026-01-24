@@ -1,6 +1,30 @@
 import classNames from 'classnames';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
+export function copyToClipboard(text: string) {
+  if (window.isSecureContext) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'absolute';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    return new Promise<void>((resolve, reject) => {
+      document.execCommand('copy') ? resolve() : reject();
+      textArea.remove();
+    }).catch(() => {
+      const successful = window.prompt('Copy to clipboard: Ctrl+C or Command+C, Enter', text);
+      if (successful === null) {
+        return Promise.reject();
+      }
+    });
+  }
+
+  return navigator.clipboard.writeText(text);
+}
+
 export default function CopyOnClick({
   enabled = true,
   content,
@@ -17,18 +41,13 @@ export default function CopyOnClick({
   const handleCopy = (e: React.MouseEvent) => {
     e.preventDefault();
 
-    if (!window.isSecureContext) {
-      addToast('Copying is only available in secure contexts (HTTPS).', 'error');
-      return;
-    }
-
-    navigator.clipboard
-      .writeText(content)
+    copyToClipboard(content)
       .then(() => {
         addToast('Copied to clipboard');
       })
       .catch((err) => {
-        console.log(err);
+        console.error(err);
+        addToast('Failed to copy to clipboard.', 'error');
       });
   };
 
