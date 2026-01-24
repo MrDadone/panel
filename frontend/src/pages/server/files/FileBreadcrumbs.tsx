@@ -69,9 +69,7 @@ export default function FileBreadcrumbs({
       <Breadcrumbs separatorMargin='xs'>
         <Checkbox
           disabled={movingFileNames.size > 0}
-          checked={
-            !inFileEditor && selectedFileNames.size > 0 && selectedFileNames.size >= browsingEntries.data.length
-          }
+          checked={!inFileEditor && selectedFileNames.size > 0 && selectedFileNames.size >= browsingEntries.data.length}
           indeterminate={selectedFileNames.size > 0 && selectedFileNames.size < browsingEntries.data.length}
           className='mr-2'
           classNames={{ input: 'cursor-pointer!' }}
@@ -93,11 +91,7 @@ export default function FileBreadcrumbs({
         </Button>
       </NavLink>
       <span hidden={!!browsingBackup || inFileEditor}>
-        <Button
-          variant='light'
-          leftSection={<FontAwesomeIcon icon={faSearch} />}
-          onClick={onSearchClick}
-        >
+        <Button variant='light' leftSection={<FontAwesomeIcon icon={faSearch} />} onClick={onSearchClick}>
           Search
         </Button>
       </span>

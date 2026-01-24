@@ -1,4 +1,4 @@
-import { Anchor, Group, Text } from '@mantine/core';
+import { Group, Text } from '@mantine/core';
 import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getFileContent from '@/api/server/files/getFileContent.ts';
@@ -8,8 +8,10 @@ import Modal from '@/elements/modals/Modal.tsx';
 import useWebsocketEvent, { SocketEvent } from '@/plugins/useWebsocketEvent.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 export default function EulaModal() {
+  const { t } = useTranslations();
   const { addToast } = useToast();
   const { server, state, socketInstance } = useServerStore();
 
@@ -36,7 +38,7 @@ export default function EulaModal() {
       const updatedContent = content.replace(/eula\s*=\s*false/gi, 'eula=true');
       await saveFileContent(server.uuid, '/eula.txt', updatedContent);
 
-      addToast('EULA accepted successfully.', 'success');
+      addToast(t('pages.server.console.feature.eula.toast.accepted', {}), 'success');
       setOpened(false);
 
       socketInstance?.send('set state', 'restart');
@@ -48,24 +50,19 @@ export default function EulaModal() {
   };
 
   return (
-    <Modal title='Minecraft EULA Agreement' opened={opened} onClose={() => setOpened(false)}>
+    <Modal title={t('pages.server.console.feature.eula.title', {})} opened={opened} onClose={() => setOpened(false)}>
       <Text size='sm' mb='md'>
-        The Minecraft server requires you to accept the{' '}
-        <Anchor href='https://minecraft.net/eula' target='_blank' rel='noopener noreferrer'>
-          Minecraft End User License Agreement
-        </Anchor>{' '}
-        before it can start.
+        {t('pages.server.console.feature.eula.content', {}).md()}
       </Text>
       <Text size='sm' mb='md'>
-        By clicking &quot;Accept EULA&quot;, you agree to the terms of the Minecraft EULA and the{' '}
-        <strong>eula.txt</strong> file will be updated to <strong>eula=true</strong>.
+        {t('pages.server.console.feature.eula.contentDetails', {}).md()}
       </Text>
       <Group mt='md'>
         <Button color='green' loading={loading} onClick={acceptEula}>
-          Accept EULA
+          {t('pages.server.console.feature.eula.button.accept', {})}
         </Button>
         <Button variant='default' onClick={() => setOpened(false)}>
-          Cancel
+          {t('common.button.cancel', {})}
         </Button>
       </Group>
     </Modal>

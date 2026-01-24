@@ -106,7 +106,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
 
           <Sidebar.Divider />
 
-          {[...serverRoutes, ...window.extensionContext.routes.serverRoutes]
+          {[...serverRoutes, ...window.extensionContext.extensionRegistry.routes.serverRoutes]
             .filter((route) => !!route.name && (!route.filter || route.filter()))
             .map((route) =>
               route.permission ? (
@@ -146,6 +146,9 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
             <>
               <WebsocketHandler />
               <WebsocketListener />
+              {window.extensionContext.extensionRegistry.pages.server.prependedComponents.map((Component, i) => (
+                <Component key={`server-prepended-component-${i}`} />
+              ))}
               {server.status === 'restoring_backup' ? (
                 <Notification className='mb-4' loading>
                   {t('pages.server.console.notification.restoringBackup', {})}
@@ -168,7 +171,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
 
               <Suspense fallback={<Spinner.Centered />}>
                 <Routes>
-                  {[...serverRoutes, ...window.extensionContext.routes.serverRoutes]
+                  {[...serverRoutes, ...window.extensionContext.extensionRegistry.routes.serverRoutes]
                     .filter((route) => !route.filter || route.filter())
                     .map(({ path, element: Element, permission }) => (
                       <Route key={path} element={<ServerPermissionGuard permission={permission ?? []} />}>
@@ -178,6 +181,10 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
                   <Route path='*' element={<NotFound />} />
                 </Routes>
               </Suspense>
+
+              {window.extensionContext.extensionRegistry.pages.server.appendedComponents.map((Component, i) => (
+                <Component key={`server-appended-component-${i}`} />
+              ))}
             </>
           ) : (
             <NotFound />

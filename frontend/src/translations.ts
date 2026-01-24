@@ -625,6 +625,19 @@ const baseTranslations = defineTranslations({
             extracting: 'Extracting',
             layer: 'Layer',
           },
+          feature: {
+            eula: {
+              title: 'Minecraft EULA Agreement',
+              content: 'The Minecraft server requires you to accept the [Minecraft End User License Agreement](https://minecraft.net/eula) before it can start.',
+              contentDetails: 'By clicking "Accept EULA", you agree to the terms of the Minecraft EULA and the **eula.txt** file will be updated to **eula=true**.',
+              toast: {
+                accepted: 'EULA accepted successfully.',
+              },
+              button: {
+                accept: 'Accept EULA',
+              },
+            }
+          },
           details: {
             address: 'Address',
             port: 'Port',

@@ -39,7 +39,7 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
 
           <Sidebar.Divider />
 
-          {[...accountRoutes, ...window.extensionContext.routes.accountRoutes]
+          {[...accountRoutes, ...window.extensionContext.extensionRegistry.routes.accountRoutes]
             .filter((route) => !!route.name && (!route.filter || route.filter()))
             .map((route) => (
               <Sidebar.Link
@@ -75,7 +75,7 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
                   <Route path='/grouped' element={<DashboardHomeGrouped />} />
                 </>
               )}
-              {[...accountRoutes, ...window.extensionContext.routes.accountRoutes]
+              {[...accountRoutes, ...window.extensionContext.extensionRegistry.routes.accountRoutes]
                 .filter((route) => !route.filter || route.filter())
                 .map(({ path, element: Element }) => (
                   <Route key={path} path={`/account/${path}`.replace('//', '/')} element={<Element />} />

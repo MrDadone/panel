@@ -35,7 +35,11 @@ export default function ServerConsole() {
   }, [statsRef.current]);
 
   return (
-    <ServerContentContainer title={t('pages.server.console.title', {})} hideTitleComponent>
+    <ServerContentContainer
+      title={t('pages.server.console.title', {})}
+      hideTitleComponent
+      registry={window.extensionContext.extensionRegistry.pages.server.console.container}
+    >
       <Group justify='space-between' mb='md'>
         <div className='flex flex-col'>
           <Title order={1} c='white'>

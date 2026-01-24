@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router';
-import Checkbox from '@/elements/input/Checkbox.tsx';
 import Code from '@/elements/Code.tsx';
+import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
@@ -21,10 +21,7 @@ export default function ServerRow({
   sKeyPressed?: boolean;
 }) {
   return (
-    <TableRow
-      bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}
-      onClick={onClick}
-    >
+    <TableRow bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined} onClick={onClick}>
       <TableData className='pl-4 relative cursor-pointer w-10 text-center'>
         {showSelection ? (
           <Checkbox

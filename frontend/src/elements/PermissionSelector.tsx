@@ -2,14 +2,13 @@ import { faChevronDown, faChevronUp, faX } from '@fortawesome/free-solid-svg-ico
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Checkbox, Group, Input, Stack, Title } from '@mantine/core';
 import { useCallback, useMemo, useState } from 'react';
-import { ExtensionPermissionIconsBuilder } from 'shared';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import { permissionCategoryIconMapping } from '@/lib/enums.ts';
 
 const permissionIconMap: Record<
   keyof ApiPermissions,
-  keyof Pick<ExtensionPermissionIconsBuilder, 'userPermissionIcons' | 'adminPermissionIcons' | 'serverPermissionIcons'>
+  'userPermissionIcons' | 'adminPermissionIcons' | 'serverPermissionIcons'
 > = {
   userPermissions: 'userPermissionIcons',
   adminPermissions: 'adminPermissionIcons',
@@ -32,7 +31,7 @@ export default function PermissionSelector({
   setSelectedPermissions: (selected: string[]) => void;
 }) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
-  const permissionIcons = window.extensionContext.permissionIcons;
+  const permissionIcons = window.extensionContext.extensionRegistry.permissionIcons;
 
   const allPermissionKeys = useMemo(() => {
     return Object.entries(permissions).flatMap(([category, { permissions: perms }]) =>

@@ -1,5 +1,6 @@
 [package]
 name = "panel-rs"
+rust-version = { workspace = true }
 license = { workspace = true }
 version = { workspace = true }
 edition = { workspace = true }
@@ -56,7 +57,7 @@ which = "8.0.0"
 semver = { workspace = true }
 compact_str = { workspace = true }
 
-[target.'cfg(target_os = "linux")'.dependencies]
+[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
 tikv-jemallocator = "0.6.0"
 
 [build-dependencies]

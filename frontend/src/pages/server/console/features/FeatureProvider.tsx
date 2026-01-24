@@ -6,11 +6,11 @@ export default function FeatureProvider() {
 
   return server ? (
     <>
-      {server.egg.features.includes('eula') && <EulaModalFeature />}{' '}
-      {window.extensionContext.consoleFeatures
+      {server.egg.features.includes('eula') && <EulaModalFeature />}
+      {window.extensionContext.extensionRegistry.pages.server.console.features
         .filter((feature) => !feature.filter || feature.filter(server.egg.features))
-        .map((feature, i) => (
-          <feature.component key={`feature-${i}`} />
+        .map(({ component: Component }, i) => (
+          <Component key={`feature-${i}`} />
         ))}
     </>
   ) : null;

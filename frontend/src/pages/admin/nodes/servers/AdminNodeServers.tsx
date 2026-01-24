@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
 import { Group } from '@mantine/core';
+import { useEffect, useState } from 'react';
 import getNodeServers from '@/api/admin/nodes/servers/getNodeServers.ts';
-import sendPowerAction from '@/api/server/sendPowerAction.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import sendPowerAction from '@/api/server/sendPowerAction.ts';
 import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
-import { useTranslations } from '@/providers/TranslationProvider.tsx';
-import { useToast } from '@/providers/ToastProvider.tsx';
 import ServerRow from '@/pages/admin/servers/ServerRow.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
+import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 export default function AdminNodeServers({ node }: { node: Node }) {
   const { t, tItem } = useTranslations();
@@ -81,9 +81,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
     setBulkActionLoading(action);
 
     const serverUuids = Array.from(selectedServers);
-    const results = await Promise.allSettled(
-      serverUuids.map((uuid) => sendPowerAction(uuid, action)),
-    );
+    const results = await Promise.allSettled(serverUuids.map((uuid) => sendPowerAction(uuid, action)));
 
     const successful = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.filter((r) => r.status === 'rejected').length;
@@ -130,16 +128,14 @@ export default function AdminNodeServers({ node }: { node: Node }) {
     // Fetch all servers across all pages
     const allServerUuids: string[] = [];
     const totalPages = Math.ceil(nodeServers.total / (nodeServers.perPage || 26));
-    
+
     try {
       for (let page = 1; page <= totalPages; page++) {
         const response = await getNodeServers(node.uuid, page, search || undefined);
         allServerUuids.push(...response.data.map((s) => s.uuid));
       }
 
-      const results = await Promise.allSettled(
-        allServerUuids.map((uuid) => sendPowerAction(uuid, action)),
-      );
+      const results = await Promise.allSettled(allServerUuids.map((uuid) => sendPowerAction(uuid, action)));
 
       const successful = results.filter((r) => r.status === 'fulfilled').length;
       const failed = results.filter((r) => r.status === 'rejected').length;
@@ -192,7 +188,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
               color='green'
               onClick={() => handleAllPowerAction('start')}
               loading={allActionLoading === 'start'}
-              disabled={allActionLoading !== null && allActionLoading !== 'start' || nodeServers.total === 0}
+              disabled={(allActionLoading !== null && allActionLoading !== 'start') || nodeServers.total === 0}
             >
               {t('pages.server.console.power.start', {})} All ({nodeServers.total})
             </Button>
@@ -200,7 +196,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
               color='gray'
               onClick={() => handleAllPowerAction('restart')}
               loading={allActionLoading === 'restart'}
-              disabled={allActionLoading !== null && allActionLoading !== 'restart' || nodeServers.total === 0}
+              disabled={(allActionLoading !== null && allActionLoading !== 'restart') || nodeServers.total === 0}
             >
               {t('pages.server.console.power.restart', {})} All ({nodeServers.total})
             </Button>
@@ -208,7 +204,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
               color='red'
               onClick={() => handleAllPowerAction('stop')}
               loading={allActionLoading === 'stop'}
-              disabled={allActionLoading !== null && allActionLoading !== 'stop' || nodeServers.total === 0}
+              disabled={(allActionLoading !== null && allActionLoading !== 'stop') || nodeServers.total === 0}
             >
               {t('pages.server.console.power.stop', {})} All ({nodeServers.total})
             </Button>

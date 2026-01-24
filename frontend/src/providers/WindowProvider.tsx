@@ -16,6 +16,7 @@ interface WindowType {
 
 interface WindowContextType {
   addWindow: (icon: IconDefinition | undefined, title: string | undefined, component: ReactNode) => number;
+  updateWindow: (id: number, title: string | undefined) => void;
   closeWindow: (id: number) => void;
 }
 
@@ -42,6 +43,10 @@ export const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
     [maxZIndex],
   );
 
+  const updateWindow = useCallback((id: number, title: string | undefined) => {
+    setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, title } : w)));
+  }, []);
+
   const bringToFront = useCallback(
     (id: number) => {
       setWindows((prev) => {
@@ -65,9 +70,10 @@ export const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const contextValue = useMemo(
     () => ({
       addWindow,
+      updateWindow,
       closeWindow,
     }),
-    [addWindow, closeWindow],
+    [addWindow, updateWindow, closeWindow],
   );
 
   return (

@@ -4,6 +4,7 @@ import TextInput from '@/elements/input/TextInput.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import ContentContainer from './ContentContainer.tsx';
+import { ContainerRegistry } from 'shared';
 
 interface Props {
   title: string;
@@ -12,6 +13,7 @@ interface Props {
   search?: string;
   setSearch?: Dispatch<SetStateAction<string>>;
   contentRight?: ReactNode;
+  registry?: ContainerRegistry;
   children: ReactNode;
 }
 
@@ -22,6 +24,7 @@ export default function ServerContentContainer({
   search,
   setSearch,
   contentRight,
+  registry,
   children,
 }: Props) {
   const { t } = useTranslations();
@@ -29,6 +32,10 @@ export default function ServerContentContainer({
 
   return (
     <ContentContainer title={`${title} | ${server.name}`}>
+      {registry?.prependedComponents.map((Component, index) => (
+        <Component key={`prepended-${index}`} />
+      ))}
+
       {hideTitleComponent ? null : setSearch ? (
         <Group justify='space-between' mb='md'>
           <div>
@@ -65,7 +72,15 @@ export default function ServerContentContainer({
           {subtitle ? <p className='text-xs text-gray-300!'>{subtitle}</p> : null}
         </div>
       )}
+      {registry?.prependedContentComponents.map((Component, index) => (
+        <Component key={`prepended-content-${index}`} />
+      ))}
+
       {children}
+
+      {registry?.appendedContentComponents.map((Component, index) => (
+        <Component key={`appended-content-${index}`} />
+      ))}
     </ContentContainer>
   );
 }

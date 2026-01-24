@@ -103,9 +103,7 @@ export default function DashboardHomeAll() {
     setBulkActionLoading(action);
 
     const serverUuids = Array.from(selectedServers);
-    const results = await Promise.allSettled(
-      serverUuids.map((uuid) => sendPowerAction(uuid, action)),
-    );
+    const results = await Promise.allSettled(serverUuids.map((uuid) => sendPowerAction(uuid, action)));
 
     const successful = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.filter((r) => r.status === 'rejected').length;

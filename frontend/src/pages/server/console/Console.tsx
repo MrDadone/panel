@@ -14,8 +14,8 @@ import Tooltip from '@/elements/Tooltip.tsx';
 import { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
-import FeatureProvider from './features/FeatureProvider.tsx';
 import CommandHistoryDrawer from './drawers/CommandHistoryDrawer.tsx';
+import FeatureProvider from './features/FeatureProvider.tsx';
 
 const ansiUp = new AnsiUp();
 const MAX_LINES = 1000;
@@ -372,15 +372,20 @@ export default function Terminal() {
             {socketConnected && socketInstance
               ? t('pages.server.console.socketConnected', { ping: websocketPing })
               : t('pages.server.console.socketDisconnected', {})}
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderLeftComponents.map(
+              (Component, idx) => (
+                <Component key={idx} />
+              ),
+            )}
           </div>
           <div className='flex flex-row items-center gap-4'>
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderRightComponents.map(
+              (Component, idx) => (
+                <Component key={idx} />
+              ),
+            )}
             <Tooltip label={t('pages.server.console.button.commandHistory', {})}>
-              <ActionIcon
-                size='xs'
-                variant='subtle'
-                color='gray'
-                onClick={() => setHistoryModalOpen(true)}
-              >
+              <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setHistoryModalOpen(true)}>
                 <FontAwesomeIcon icon={faClockRotateLeft} />
               </ActionIcon>
             </Tooltip>
@@ -446,7 +451,7 @@ export default function Terminal() {
           </div>
         )}
 
-        <div className='w-full mt-4'>
+        <div className='w-full mt-4 flex flex-row'>
           <TextInput
             ref={inputRef}
             placeholder={t('pages.server.console.input.placeholder', {})}
@@ -457,6 +462,11 @@ export default function Terminal() {
             autoCapitalize='none'
             className='w-full'
           />
+          {window.extensionContext.extensionRegistry.pages.server.console.terminalInputRowComponents.map(
+            (Component, idx) => (
+              <Component key={idx} />
+            ),
+          )}
         </div>
       </Card>
 

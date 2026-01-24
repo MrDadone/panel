@@ -1,11 +1,6 @@
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import type { FC } from 'react';
 
-export interface ConsoleFeatureDefinition {
-  filter?: (f: string[]) => boolean;
-  component: FC;
-}
-
 export interface GlobalRouteDefinition {
   path: string;
   filter?: () => boolean;
@@ -27,4 +22,6 @@ export interface ServerRouteDefinition extends RouteDefinition {
 }
 
 export * from './extension.ts';
+export * from './registries/index.ts';
 export * from './translation.ts';
+export * from './utils.ts';

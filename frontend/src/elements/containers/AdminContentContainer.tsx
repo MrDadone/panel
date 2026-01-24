@@ -4,6 +4,7 @@ import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import TextInput from '../input/TextInput.tsx';
 import ContentContainer from './ContentContainer.tsx';
+import { ContainerRegistry } from 'shared';
 
 interface Props {
   title: string;
@@ -12,6 +13,7 @@ interface Props {
   search?: string;
   setSearch?: Dispatch<SetStateAction<string>>;
   contentRight?: ReactNode;
+  registry?: ContainerRegistry;
   children: ReactNode;
 }
 
@@ -22,6 +24,7 @@ export default function AdminContentContainer({
   search,
   setSearch,
   contentRight,
+  registry,
   children,
 }: Props) {
   const { t } = useTranslations();
@@ -29,6 +32,10 @@ export default function AdminContentContainer({
 
   return (
     <ContentContainer title={`${title} | ${settings.app.name}`}>
+      {registry?.prependedComponents.map((Component, index) => (
+        <Component key={`prepended-${index}`} />
+      ))}
+
       {hideTitleComponent ? null : setSearch ? (
         <Group justify='space-between' mb='md'>
           <Title order={titleOrder} c='white'>
@@ -56,7 +63,15 @@ export default function AdminContentContainer({
           {title}
         </Title>
       )}
+      {registry?.prependedContentComponents.map((Component, index) => (
+        <Component key={`prepended-content-${index}`} />
+      ))}
+
       {children}
+
+      {registry?.appendedContentComponents.map((Component, index) => (
+        <Component key={`appended-content-${index}`} />
+      ))}
     </ContentContainer>
   );
 }

@@ -1,4 +1,12 @@
-import { faArrowRightFromBracket, faBars, faEllipsisVertical, faGraduationCap, faUserCog, IconDefinition } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowRightFromBracket,
+  faBars,
+  faEllipsisVertical,
+  faGraduationCap,
+  faUserCog,
+  faWindowRestore,
+  IconDefinition,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Menu } from '@mantine/core';
 import { MouseEvent as ReactMouseEvent, ReactNode, startTransition, useEffect, useState } from 'react';
@@ -13,6 +21,7 @@ import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useWindows } from '@/providers/WindowProvider.tsx';
 import RouterRoutes from '@/RouterRoutes.tsx';
+import { useCurrentWindow } from '@/providers/CurrentWindowProvider';
 
 type SidebarProps = {
   children: ReactNode;
@@ -74,7 +83,7 @@ function Link({ to, end, icon, name, title = name }: LinkProps) {
   const doOpenWindow = (e: ReactMouseEvent) => {
     e.preventDefault();
     addWindow(
-      icon,
+      faWindowRestore,
       title,
       <MemoryRouter initialEntries={[to]}>
         <RouterRoutes isNormal={false} />
@@ -82,8 +91,18 @@ function Link({ to, end, icon, name, title = name }: LinkProps) {
     );
   };
 
+  const onContextMenu = (e: ReactMouseEvent) => {
+    // Probably reverse this in the future and open a context menu instead.
+    if (e.shiftKey) {
+      return;
+    }
+    e.preventDefault();
+
+    doOpenWindow(e);
+  };
+
   return (
-    <NavLink to={to} end={end} onClick={doNavigate} onContextMenu={doOpenWindow} className='w-full'>
+    <NavLink to={to} end={end} onClick={doNavigate} onContextMenu={onContextMenu} className='w-full'>
       {({ isActive }) => (
         <Button
           color={isActive ? 'blue' : 'gray'}
@@ -115,11 +134,19 @@ function Footer() {
       </div>
 
       <div className='p-2 flex flex-row justify-between items-center min-h-fit'>
-        <NavLink to='/account' className='flex items-center flex-1 min-w-0' onClick={(e) => {
-          e.preventDefault();
-          navigate('/account');
-        }}>
-          <img src={user!.avatar ?? '/icon.svg'} alt={user!.username} className='h-10 w-10 rounded-full select-none flex-shrink-0' />
+        <NavLink
+          to='/account'
+          className='flex items-center flex-1 min-w-0'
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/account');
+          }}
+        >
+          <img
+            src={user!.avatar ?? '/icon.svg'}
+            alt={user!.username}
+            className='h-10 w-10 rounded-full select-none flex-shrink-0'
+          />
           <span className='font-sans font-normal text-sm text-neutral-50 whitespace-nowrap leading-tight ml-3 overflow-hidden text-ellipsis'>
             {user!.username}
           </span>
@@ -133,29 +160,19 @@ function Footer() {
           </Menu.Target>
 
           <Menu.Dropdown>
-            <Menu.Item
-              leftSection={<FontAwesomeIcon icon={faUserCog} />}
-              onClick={() => navigate('/account')}
-            >
+            <Menu.Item leftSection={<FontAwesomeIcon icon={faUserCog} />} onClick={() => navigate('/account')}>
               {t('pages.account.account.title', {})}
             </Menu.Item>
             {isAdmin(user) && (
               <>
                 <Menu.Divider />
-                <Menu.Item
-                  leftSection={<FontAwesomeIcon icon={faGraduationCap} />}
-                  onClick={() => navigate('/admin')}
-                >
+                <Menu.Item leftSection={<FontAwesomeIcon icon={faGraduationCap} />} onClick={() => navigate('/admin')}>
                   {t('pages.account.admin.title', {})}
                 </Menu.Item>
               </>
             )}
             <Menu.Divider />
-            <Menu.Item
-              leftSection={<FontAwesomeIcon icon={faArrowRightFromBracket} />}
-              color='red'
-              onClick={doLogout}
-            >
+            <Menu.Item leftSection={<FontAwesomeIcon icon={faArrowRightFromBracket} />} color='red' onClick={doLogout}>
               {t('common.button.logout', {}) || 'Logout'}
             </Menu.Item>
           </Menu.Dropdown>

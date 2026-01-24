@@ -107,7 +107,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
   };
 
   return (
-    <AdminContentContainer title={`${contextNode ? 'Update' : 'Create'} Node`} contentRight={2}>
+    <AdminContentContainer title={`${contextNode ? 'Update' : 'Create'} Node`} titleOrder={2}>
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}

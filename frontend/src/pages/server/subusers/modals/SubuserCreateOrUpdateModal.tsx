@@ -70,6 +70,7 @@ export default function SubuserCreateOrUpdateModal({ subuser, onCreate, onUpdate
         <Stack>
           {subuser ? (
             <TextInput
+              withAsterisk
               label={t('common.form.username', {})}
               placeholder={t('common.form.username', {})}
               value={subuser.user.username}
@@ -77,6 +78,7 @@ export default function SubuserCreateOrUpdateModal({ subuser, onCreate, onUpdate
             />
           ) : (
             <TextInput
+              withAsterisk
               label={t('pages.server.subusers.modal.createSubuser.form.email', {})}
               placeholder={t('pages.server.subusers.modal.createSubuser.form.emailPlaceholder', {})}
               {...form.getInputProps('email')}

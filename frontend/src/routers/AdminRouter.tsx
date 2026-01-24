@@ -31,7 +31,7 @@ export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
 
           <Sidebar.Divider />
 
-          {[...adminRoutes, ...window.extensionContext.routes.adminRoutes]
+          {[...adminRoutes, ...window.extensionContext.extensionRegistry.routes.adminRoutes]
             .filter((route) => !!route.name && (!route.filter || route.filter()))
             .map((route) =>
               route.permission ? (
@@ -68,7 +68,7 @@ export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
         <Container isNormal={isNormal}>
           <Suspense fallback={<Spinner.Centered />}>
             <Routes>
-              {[...adminRoutes, ...window.extensionContext.routes.adminRoutes]
+              {[...adminRoutes, ...window.extensionContext.extensionRegistry.routes.adminRoutes]
                 .filter((route) => !route.filter || route.filter())
                 .map(({ path, element: Element, permission }) => (
                   <Route key={path} element={<AdminPermissionGuard permission={permission ?? []} />}>

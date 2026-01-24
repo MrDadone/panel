@@ -76,12 +76,15 @@ export default function ServerItem({
 
       <div>
         <div onClick={onClick}>
-          <NavLink to={`/server/${server.uuidShort}`} onClick={(e) => {
-            // Prevent navigation when S key is held
-            if (sKeyPressed) {
-              e.preventDefault();
-            }
-          }}>
+          <NavLink
+            to={`/server/${server.uuidShort}`}
+            onClick={(e) => {
+              // Prevent navigation when S key is held
+              if (sKeyPressed) {
+                e.preventDefault();
+              }
+            }}
+          >
             <Card
               className='duration-200 h-full flex flex-col justify-between rounded-sm!'
               leftStripeClassName={statusToColor(stats?.state)}
@@ -128,7 +131,11 @@ export default function ServerItem({
                   )}
                   {showSelection && (
                     <Tooltip
-                      label={isSelected ? t('pages.account.home.bulkActions.deselect', {}) : t('pages.account.home.bulkActions.select', {})}
+                      label={
+                        isSelected
+                          ? t('pages.account.home.bulkActions.deselect', {})
+                          : t('pages.account.home.bulkActions.select', {})
+                      }
                       className='ml-2'
                     >
                       <ActionIcon

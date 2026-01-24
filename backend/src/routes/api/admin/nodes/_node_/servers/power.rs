@@ -46,7 +46,7 @@ mod post {
         let response_data = node
             .api_client(&state.database)
             .post_servers_power(&wings_api::servers_power::post::RequestBody {
-                servers: data.servers.iter().cloned().collect(),
+                servers: data.servers.iter().copied().collect(),
                 action: data.action,
                 wait_seconds: None,
             })

@@ -112,6 +112,9 @@ export default function ServerStats() {
       >
         <Line {...network.props} />
       </ChartBlock>
+      {window.extensionContext.extensionRegistry.pages.server.console.statBlocks.map((StatBlock, i) => (
+        <StatBlock key={`console-stat-block-${i}`} />
+      ))}
     </div>
   );
 }

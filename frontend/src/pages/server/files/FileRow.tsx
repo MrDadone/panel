@@ -54,6 +54,7 @@ const FileRow = memo(
       browsingDirectory,
       browsingBackup,
       browsingWritableDirectory,
+      browsingFastDirectory,
       movingFileNames,
       setMovingFiles,
       isFileSelected,
@@ -112,7 +113,7 @@ const FileRow = memo(
                   file.name,
                   <MemoryRouter
                     initialEntries={[
-                      file.directory || isViewableArchive(file)
+                      file.directory || (isViewableArchive(file) && browsingFastDirectory)
                         ? `/server/${server.uuidShort}/files?${createSearchParams({
                             directory: `${browsingDirectory}/${file.name}`.replace('//', '/'),
                           })}`

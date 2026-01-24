@@ -58,10 +58,7 @@ class ErrorBoundary extends Component<Props, State> {
                       onClick={this.toggleDetails}
                       className='flex items-center text-xs text-neutral-400 hover:text-neutral-200 transition-colors mb-2'
                     >
-                      <FontAwesomeIcon
-                        icon={showDetails ? faChevronUp : faChevronDown}
-                        className='h-3 w-auto mr-1'
-                      />
+                      <FontAwesomeIcon icon={showDetails ? faChevronUp : faChevronDown} className='h-3 w-auto mr-1' />
                       {showDetails ? 'Hide' : 'Show'} error details
                     </button>
 

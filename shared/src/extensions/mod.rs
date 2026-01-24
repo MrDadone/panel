@@ -241,7 +241,7 @@ pub trait Extension: Send + Sync {
 
     /// Your extension settings deserializer, this is used to deserialize your extension settings from the database
     /// Whatever value you return in the `deserialize_boxed` method must match the trait `ExtensionSettings`, which requires
-    /// `SettingsSerializeExt` to be implemented for it.
+    /// `SettingsSerializeExt` to be implemented for it. If you have no clue what this means. copy code from the docs.
     async fn settings_deserializer(&self, state: State) -> settings::ExtensionSettingsDeserializer {
         Arc::new(settings::EmptySettings)
     }

@@ -1,21 +1,21 @@
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { Alert, Group, Title } from '@mantine/core';
 import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
-import type { z } from 'zod';
-import { serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Alert, Group, Title } from '@mantine/core';
 import { MouseEvent as ReactMouseEvent, type Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
+import type { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getBackup from '@/api/server/backups/getBackup.ts';
 import cancelOperation from '@/api/server/files/cancelOperation.ts';
 import loadDirectory from '@/api/server/files/loadDirectory.ts';
-import { bytesToString } from '@/lib/size.ts';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Table from '@/elements/Table.tsx';
+import { serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
+import { bytesToString } from '@/lib/size.ts';
 import { useFileUpload } from '@/plugins/useFileUpload.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -59,7 +59,10 @@ export default function ServerFiles() {
   const [loading, setLoading] = useState(browsingEntries.data.length === 0);
   const [page, setPage] = useState(1);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [searchInfo, setSearchInfo] = useState<{ query?: string; filters: z.infer<typeof serverFilesSearchSchema> } | null>(null);
+  const [searchInfo, setSearchInfo] = useState<{
+    query?: string;
+    filters: z.infer<typeof serverFilesSearchSchema>;
+  } | null>(null);
   const [selectedFilesPrevious, setSelectedFilesPrevious] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -80,7 +83,15 @@ export default function ServerFiles() {
         addToast(httpErrorToHuman(msg), 'error');
       })
       .finally(() => setLoading(false));
-  }, [server.uuid, browsingDirectory, page, setBrowsingWritableDirectory, setBrowsingFastDirectory, setBrowsingEntries, addToast]);
+  }, [
+    server.uuid,
+    browsingDirectory,
+    page,
+    setBrowsingWritableDirectory,
+    setBrowsingFastDirectory,
+    setBrowsingEntries,
+    addToast,
+  ]);
 
   const {
     uploadingFiles,
@@ -265,7 +276,11 @@ export default function ServerFiles() {
             <FileUploadOverlay visible={isDragging && !browsingBackup} />
 
             <div className='bg-[#282828] border border-[#424242] rounded-lg mb-2 p-4'>
-              <FileBreadcrumbs path={decodeURIComponent(browsingDirectory)} browsingBackup={browsingBackup} onSearchClick={() => setOpenModal('search')} />
+              <FileBreadcrumbs
+                path={decodeURIComponent(browsingDirectory)}
+                browsingBackup={browsingBackup}
+                onSearchClick={() => setOpenModal('search')}
+              />
             </div>
             {isSearchMode && searchInfo && (
               <Alert
@@ -276,7 +291,9 @@ export default function ServerFiles() {
                 withCloseButton
                 mb='md'
               >
-                {(searchInfo.query || searchInfo.filters.contentFilter || searchInfo.filters.sizeFilter ||
+                {(searchInfo.query ||
+                  searchInfo.filters.contentFilter ||
+                  searchInfo.filters.sizeFilter ||
                   (searchInfo.filters.pathFilter?.exclude && searchInfo.filters.pathFilter.exclude.length > 0)) && (
                   <div className='flex flex-col gap-1 text-sm'>
                     {searchInfo.query && (
@@ -288,17 +305,13 @@ export default function ServerFiles() {
                     {searchInfo.filters.pathFilter?.exclude && searchInfo.filters.pathFilter.exclude.length > 0 && (
                       <div>
                         <span className='font-medium text-white/80'>Excluded:</span>{' '}
-                        <span className='text-white/60'>
-                          {searchInfo.filters.pathFilter.exclude.join(', ')}
-                        </span>
+                        <span className='text-white/60'>{searchInfo.filters.pathFilter.exclude.join(', ')}</span>
                       </div>
                     )}
                     {searchInfo.filters.contentFilter && (
                       <div>
                         <span className='font-medium text-white/80'>Content:</span>{' '}
-                        <span className='text-white/60'>
-                          {searchInfo.filters.contentFilter.query || '(empty)'}
-                        </span>
+                        <span className='text-white/60'>{searchInfo.filters.contentFilter.query || '(empty)'}</span>
                       </div>
                     )}
                     {searchInfo.filters.sizeFilter && (
@@ -360,7 +373,9 @@ export default function ServerFiles() {
                               file={file}
                               ref={innerRef as Ref<HTMLTableRowElement>}
                               setChildOpenModal={setChildOpenModal}
-                              dndEnabled={browsingWritableDirectory && !browsingBackup && movingFileNames.size === 0 && isDKeyHeld}
+                              dndEnabled={
+                                browsingWritableDirectory && !browsingBackup && movingFileNames.size === 0 && isDKeyHeld
+                              }
                             />
                           )}
                         </SelectionArea.Selectable>

@@ -1,8 +1,11 @@
 import { ReactNode, useEffect } from 'react';
+import { useRelativePageStore } from '@/stores/relativePage.ts';
 
 export default function ContentContainer({ title, children }: { title: string; children: ReactNode }) {
+  const { setTitle } = useRelativePageStore();
+
   useEffect(() => {
-    document.title = title;
+    setTitle(title);
   }, [title]);
 
   return children;

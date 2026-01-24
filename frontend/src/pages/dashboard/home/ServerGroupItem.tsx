@@ -1,5 +1,15 @@
 import { rectSortingStrategy } from '@dnd-kit/sortable';
-import { faChevronDown, faChevronRight, faEllipsisVertical, faGripVertical, faPen, faPlus, faPowerOff, faSearch, faTrash } from '@fortawesome/free-solid-svg-icons';
+import {
+  faChevronDown,
+  faChevronRight,
+  faEllipsisVertical,
+  faGripVertical,
+  faPen,
+  faPlus,
+  faPowerOff,
+  faSearch,
+  faTrash,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Badge, Collapse, Menu } from '@mantine/core';
 import { ComponentProps, memo, useState } from 'react';
@@ -78,9 +88,7 @@ export default function ServerGroupItem({
       return;
     }
     setGroupActionLoading(action);
-    const results = await Promise.allSettled(
-      serverGroup.serverOrder.map((uuid) => sendPowerAction(uuid, action)),
-    );
+    const results = await Promise.allSettled(serverGroup.serverOrder.map((uuid) => sendPowerAction(uuid, action)));
 
     const successful = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.filter((r) => r.status === 'rejected').length;

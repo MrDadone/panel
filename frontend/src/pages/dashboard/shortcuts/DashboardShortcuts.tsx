@@ -6,8 +6,8 @@ import {
   faArrowUp,
   faFolder,
   faServer,
-  faTerminal,
   faTable,
+  faTerminal,
   IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -74,11 +74,7 @@ function ShortcutItem({ keys, description }: ShortcutItemProps) {
                 +
               </Text>
             )}
-            {typeof key === 'string' ? (
-              <Key>{key}</Key>
-            ) : (
-              <Key icon={key.icon}>{null}</Key>
-            )}
+            {typeof key === 'string' ? <Key>{key}</Key> : <Key icon={key.icon}>{null}</Key>}
           </Flex>
         ))}
       </Flex>
@@ -180,14 +176,9 @@ export default function DashboardShortcuts() {
             border: '1px solid var(--mantine-color-dark-5)',
           }}
         >
-          <FontAwesomeIcon
-            icon={isMac ? faApple : faWindows}
-            style={{ color: 'var(--mantine-color-gray-5)' }}
-          />
+          <FontAwesomeIcon icon={isMac ? faApple : faWindows} style={{ color: 'var(--mantine-color-gray-5)' }} />
           <Text size='sm' c='gray.5'>
-            {isMac
-              ? t('pages.account.shortcuts.detectedMac', {})
-              : t('pages.account.shortcuts.detectedWindows', {})}
+            {isMac ? t('pages.account.shortcuts.detectedMac', {}) : t('pages.account.shortcuts.detectedWindows', {})}
           </Text>
         </Flex>
       </Flex>

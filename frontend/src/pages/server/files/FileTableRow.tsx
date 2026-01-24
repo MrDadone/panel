@@ -24,7 +24,7 @@ export const FileTableRow = memo(
     const navigate = useNavigate();
     const [_, setSearchParams] = useSearchParams();
     const server = useServerStore((state) => state.server);
-    const { browsingDirectory, movingFileNames, movingFilesDirectory, isFileSelected, selectedFileNames } =
+    const { browsingDirectory, browsingFastDirectory, movingFileNames, movingFilesDirectory, isFileSelected, selectedFileNames } =
       useServerStore();
     const { settings } = useGlobalStore();
     const canOpenFile = useServerCan('files.read-content');
@@ -66,8 +66,7 @@ export const FileTableRow = memo(
 
     // Check if this is a valid drop target
     const activeData = active?.data.current;
-    const isValidDropTarget =
-      file.directory && activeData?.type === 'file' && !activeData.files?.includes(file.name);
+    const isValidDropTarget = file.directory && activeData?.type === 'file' && !activeData.files?.includes(file.name);
 
     // Combine refs
     const combinedRef = useCallback(
@@ -90,9 +89,9 @@ export const FileTableRow = memo(
         if (
           (isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) ||
           file.directory ||
-          isViewableArchive(file)
+          (isViewableArchive(file) && browsingFastDirectory)
         ) {
-          if (file.directory || isViewableArchive(file)) {
+          if (file.directory || (isViewableArchive(file) && browsingFastDirectory)) {
             setSearchParams({
               directory: `${browsingDirectory}/${file.name}`.replace('//', '/'),
             });
@@ -142,7 +141,7 @@ export const FileTableRow = memo(
           canOpenFile &&
           ((isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) ||
             file.directory ||
-            isViewableArchive(file))
+            (isViewableArchive(file) && browsingFastDirectory))
             ? 'cursor-pointer select-none'
             : 'select-none'
         }

@@ -58,21 +58,15 @@ export default function ServerStatusIndicator() {
   const isStarting = state === 'starting';
   const isRunning = state === 'running';
   const isStopping = state === 'stopping';
-  
+
   // Determine button action and label
-  const buttonAction = isOffline 
-    ? 'start' 
-    : killable 
-      ? 'kill' 
-      : 'stop';
-  const buttonLabel = isOffline 
-    ? 'pages.server.console.power.start' 
-    : killable 
-      ? 'pages.server.console.power.kill' 
+  const buttonAction = isOffline ? 'start' : killable ? 'kill' : 'stop';
+  const buttonLabel = isOffline
+    ? 'pages.server.console.power.start'
+    : killable
+      ? 'pages.server.console.power.kill'
       : 'pages.server.console.power.stop';
-  const buttonColor = isOffline 
-    ? 'var(--color-server-action-start)' 
-    : 'var(--color-server-action-stop)';
+  const buttonColor = isOffline ? 'var(--color-server-action-start)' : 'var(--color-server-action-stop)';
   const buttonIcon = isOffline ? faPlay : faStop;
 
   return (
@@ -92,11 +86,7 @@ export default function ServerStatusIndicator() {
                 variant='filled'
                 onClick={() => onPowerAction(buttonAction)}
               >
-                <FontAwesomeIcon 
-                  icon={buttonIcon} 
-                  className='text-white' 
-                  size='sm' 
-                />
+                <FontAwesomeIcon icon={buttonIcon} className='text-white' size='sm' />
               </ActionIcon>
             </Tooltip>
           </ServerCan>
@@ -123,17 +113,21 @@ export default function ServerStatusIndicator() {
         <div className='flex flex-col gap-1.5 justify-center items-end'>
           {/* Server Status */}
           <div className='flex items-center gap-1.5 text-xs'>
-            <FontAwesomeIcon icon={faServer} className='w-3 h-3 text-white flex-shrink-0' style={{ minWidth: '12px' }} />
-            <span className='font-medium text-white leading-none'>
-              {getServerStatusText(state, t)}
-            </span>
+            <FontAwesomeIcon
+              icon={faServer}
+              className='w-3 h-3 text-white flex-shrink-0'
+              style={{ minWidth: '12px' }}
+            />
+            <span className='font-medium text-white leading-none'>{getServerStatusText(state, t)}</span>
           </div>
 
           {/* WebSocket Connection Status */}
           <div className='flex items-center gap-1.5 text-xs'>
             <Radio className='w-3 h-3 text-white flex-shrink-0' style={{ minWidth: '12px' }} />
             <span className='font-medium text-white leading-none'>
-              {socketConnected ? t('common.enum.connectionStatus.connected', {}) : t('common.enum.connectionStatus.offline', {})}
+              {socketConnected
+                ? t('common.enum.connectionStatus.connected', {})
+                : t('common.enum.connectionStatus.offline', {})}
             </span>
           </div>
         </div>

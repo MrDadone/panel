@@ -635,9 +635,17 @@ impl SettingsDeserializeExt for AppSettingsDeserializer {
             telemetry_cron_schedule: deserializer
                 .take_raw_setting("telemetry_cron_schedule")
                 .and_then(|s| cron::Schedule::from_str(&s).ok()),
-            oobe_step: deserializer
-                .take_raw_setting("oobe_step")
-                .and_then(|s| s.into_optional()),
+            oobe_step: match deserializer.take_raw_setting("oobe_step") {
+                Some(step) if step.is_empty() => None,
+                Some(step) => Some(step),
+                None => {
+                    if crate::models::user::User::count(&deserializer.database).await > 0 {
+                        None
+                    } else {
+                        Some("register".into())
+                    }
+                }
+            },
             storage_driver: match deserializer.take_raw_setting("storage_driver").as_deref() {
                 Some("s3") => StorageDriver::S3 {
                     public_url: deserializer
