@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export function copyToClipboard(text: string) {
-  if (window.isSecureContext) {
+  if (!window.isSecureContext) {
     const textArea = document.createElement('textarea');
     textArea.value = text;
     textArea.style.position = 'absolute';
