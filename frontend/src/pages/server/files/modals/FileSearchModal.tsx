@@ -126,8 +126,6 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
     }
   }, [form.values.contentFilter]);
 
-  // Reset form when modal closes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: form.reset is stable
   useEffect(() => {
     if (!opened) {
       setQuery('');
@@ -154,8 +152,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
     const searchFilters = {
       ...form.values,
       pathFilter:
-        form.values.pathFilter ??
-        (query ? { include: [`**/*${query}*`], exclude: [], caseInsensitive: true } : null),
+        form.values.pathFilter ?? (query ? { include: [`**/*${query}*`], exclude: [], caseInsensitive: true } : null),
     };
 
     searchFiles(server.uuid, { root: browsingDirectory, ...searchFilters })
@@ -217,7 +214,9 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                 <FontAwesomeIcon
                   icon={faSliders}
                   size='xs'
-                  style={{ color: activeFiltersCount > 0 ? 'var(--mantine-color-blue-2)' : 'var(--mantine-color-gray-5)' }}
+                  style={{
+                    color: activeFiltersCount > 0 ? 'var(--mantine-color-blue-2)' : 'var(--mantine-color-gray-5)',
+                  }}
                 />
               </Box>
               <Text size='sm' c={showAdvanced ? 'gray.2' : 'gray.5'} fw={500}>
@@ -258,10 +257,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                 title='Path Patterns'
                 enabled={!!form.values.pathFilter}
                 onToggle={(enabled) =>
-                  form.setFieldValue(
-                    'pathFilter',
-                    enabled ? { include: [], exclude: [], caseInsensitive: true } : null,
-                  )
+                  form.setFieldValue('pathFilter', enabled ? { include: [], exclude: [], caseInsensitive: true } : null)
                 }
               >
                 <Stack gap='sm'>
@@ -338,7 +334,6 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                         label='Max file size'
                         mode='b'
                         min={0}
-                        size='sm'
                         value={form.values.contentFilter?.maxSearchSize ?? 0}
                         onChange={(value) => form.setFieldValue('contentFilter.maxSearchSize', value)}
                       />
@@ -371,7 +366,6 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                     label='Minimum'
                     mode='b'
                     min={0}
-                    size='sm'
                     value={form.values.sizeFilter?.min ?? 0}
                     onChange={(value) => form.setFieldValue('sizeFilter.min', value)}
                   />
@@ -379,7 +373,6 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                     label='Maximum'
                     mode='b'
                     min={0}
-                    size='sm'
                     value={form.values.sizeFilter?.max ?? 0}
                     onChange={(value) => form.setFieldValue('sizeFilter.max', value)}
                   />

@@ -7,8 +7,8 @@ import Button from '@/elements/Button.tsx';
 import Modal from '@/elements/modals/Modal.tsx';
 import useWebsocketEvent, { SocketEvent } from '@/plugins/useWebsocketEvent.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
-import { useServerStore } from '@/stores/server.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
+import { useServerStore } from '@/stores/server.ts';
 
 export default function EulaModal() {
   const { t } = useTranslations();

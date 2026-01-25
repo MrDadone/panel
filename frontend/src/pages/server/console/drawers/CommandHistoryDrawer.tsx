@@ -1,6 +1,6 @@
 import { faArrowLeft, faClipboard, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { DrawerProps, Divider, Group, ScrollArea, Stack, Title } from '@mantine/core';
+import { Divider, DrawerProps, Group, ScrollArea, Stack, Title } from '@mantine/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getServerActivity from '@/api/server/getServerActivity.ts';
@@ -184,9 +184,7 @@ export default function CommandHistoryDrawer({ opened, onClose, onSelectCommand 
           ) : (
             <ScrollArea className='flex-1' offsetScrollbars>
               {loading && activities.data.length === 0 ? (
-                <div className='flex items-center justify-center py-12 text-gray-400'>
-                  Loading commands...
-                </div>
+                <div className='flex items-center justify-center py-12 text-gray-400'>Loading commands...</div>
               ) : activities.data.length === 0 ? (
                 <div className='flex items-center justify-center py-12 text-gray-400'>
                   {t('pages.server.console.modal.commandHistory.noCommands', {})}
@@ -220,9 +218,7 @@ export default function CommandHistoryDrawer({ opened, onClose, onSelectCommand 
                             }}
                           />
                           <div className='flex-1 min-w-0'>
-                            <Code className='block mb-1.5 text-xs break-words'>
-                              {data.command}
-                            </Code>
+                            <Code className='block mb-1.5 text-xs break-words'>{data.command}</Code>
                             <div className='flex items-center gap-2 text-xs text-gray-400'>
                               <span>{activity.user?.username ?? t('common.system', {})}</span>
                               <span>•</span>

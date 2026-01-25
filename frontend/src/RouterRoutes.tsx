@@ -9,17 +9,17 @@ import '@mantine/core/styles.css';
 import { lazy } from 'react';
 import OobeGuard from '@/routers/guards/OobeGuard.tsx';
 import NotFound from './pages/NotFound.tsx';
+import { useCurrentWindow } from './providers/CurrentWindowProvider.tsx';
 import TranslationProvider from './providers/TranslationProvider.tsx';
+import { useWindows } from './providers/WindowProvider.tsx';
 import globalRoutes from './routers/routes/globalRoutes.ts';
 import { AdminStoreContextProvider, createAdminStore } from './stores/admin.tsx';
-import { createServerStore, ServerStoreContextProvider } from './stores/server.ts';
 import {
   createRelativePageStore,
   RelativePageStoreContextProvider,
   useRelativePageStore,
 } from './stores/relativePage.ts';
-import { useWindows } from './providers/WindowProvider.tsx';
-import { useCurrentWindow } from './providers/CurrentWindowProvider.tsx';
+import { createServerStore, ServerStoreContextProvider } from './stores/server.ts';
 
 const OobeRouter = lazy(() => import('./routers/OobeRouter.tsx'));
 const AuthenticationRouter = lazy(() => import('./routers/AuthenticationRouter.tsx'));

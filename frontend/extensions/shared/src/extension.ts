@@ -1,5 +1,5 @@
-import { ExtensionRegistry } from 'shared';
 import { FC } from 'react';
+import { ExtensionRegistry } from 'shared';
 
 class ExtensionSkip {
   protected static readonly __skip = 0xdeadbeeeeef;

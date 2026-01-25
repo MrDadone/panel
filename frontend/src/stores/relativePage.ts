@@ -1,6 +1,6 @@
 import { create, StoreApi } from 'zustand';
 import { createContext } from 'zustand-utils';
-import { DocumentSlice, createDocumentSlice } from '@/stores/slices/relativePage/document.ts';
+import { createDocumentSlice, DocumentSlice } from '@/stores/slices/relativePage/document.ts';
 
 export interface RelativePageStore extends DocumentSlice {
   reset: () => void;

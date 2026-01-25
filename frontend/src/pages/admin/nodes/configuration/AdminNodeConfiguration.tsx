@@ -1,15 +1,15 @@
 import { faCopy } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group, Stack, Title, Tooltip } from '@mantine/core';
+import jsYaml from 'js-yaml';
+import { useState } from 'react';
 import Card from '@/elements/Card.tsx';
+import Code from '@/elements/Code.tsx';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import HljsCode from '@/elements/HljsCode.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import jsYaml from 'js-yaml';
-import { useState } from 'react';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
-import Code from '@/elements/Code.tsx';
 
 export default function AdminNodeConfiguration({ node }: { node: Node }) {
   const { addToast } = useToast();

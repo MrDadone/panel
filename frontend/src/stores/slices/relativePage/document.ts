@@ -7,9 +7,7 @@ export interface DocumentSlice {
   setTitle: (title: string) => void;
 }
 
-export const createDocumentSlice: StateCreator<RelativePageStore, [], [], DocumentSlice> = (
-  set,
-): DocumentSlice => ({
+export const createDocumentSlice: StateCreator<RelativePageStore, [], [], DocumentSlice> = (set): DocumentSlice => ({
   title: 'Calagopus',
 
   setTitle: (value) => set((state) => ({ ...state, title: value })),

@@ -10,8 +10,8 @@ export class PageRegistry implements Registry {
 
   public server: ServerRegistry = new ServerRegistry();
 
-	public enterServer(callback: (registry: ServerRegistry) => unknown): this {
-		callback(this.server);
-		return this;
-	}
+  public enterServer(callback: (registry: ServerRegistry) => unknown): this {
+    callback(this.server);
+    return this;
+  }
 }

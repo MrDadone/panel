@@ -24,8 +24,14 @@ export const FileTableRow = memo(
     const navigate = useNavigate();
     const [_, setSearchParams] = useSearchParams();
     const server = useServerStore((state) => state.server);
-    const { browsingDirectory, browsingFastDirectory, movingFileNames, movingFilesDirectory, isFileSelected, selectedFileNames } =
-      useServerStore();
+    const {
+      browsingDirectory,
+      browsingFastDirectory,
+      movingFileNames,
+      movingFilesDirectory,
+      isFileSelected,
+      selectedFileNames,
+    } = useServerStore();
     const { settings } = useGlobalStore();
     const canOpenFile = useServerCan('files.read-content');
 

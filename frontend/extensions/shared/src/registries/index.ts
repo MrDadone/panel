@@ -15,23 +15,23 @@ export class ExtensionRegistry implements Registry {
   }
 
   public pages: PageRegistry = new PageRegistry();
-	public routes: RouteRegistry = new RouteRegistry();
+  public routes: RouteRegistry = new RouteRegistry();
   public permissionIcons: PermissionIconRegistry = new PermissionIconRegistry();
 
-	public enterPages(callback: (registry: PageRegistry) => unknown): this {
-		callback(this.pages);
-		return this;
-	}
+  public enterPages(callback: (registry: PageRegistry) => unknown): this {
+    callback(this.pages);
+    return this;
+  }
 
-	public enterRoutes(callback: (registry: RouteRegistry) => unknown): this {
-		callback(this.routes);
-		return this;
-	}
+  public enterRoutes(callback: (registry: RouteRegistry) => unknown): this {
+    callback(this.routes);
+    return this;
+  }
 
-	public enterPermissionIcons(callback: (registry: PermissionIconRegistry) => unknown): this {
-		callback(this.permissionIcons);
-		return this;
-	}
+  public enterPermissionIcons(callback: (registry: PermissionIconRegistry) => unknown): this {
+    callback(this.permissionIcons);
+    return this;
+  }
 }
 
 export * from './pages/container.ts';

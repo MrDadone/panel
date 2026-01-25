@@ -1,5 +1,5 @@
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Alert, Group, Title } from '@mantine/core';
 import { MouseEvent as ReactMouseEvent, type Ref, useCallback, useEffect, useRef, useState } from 'react';

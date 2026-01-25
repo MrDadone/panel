@@ -83,10 +83,6 @@ export default function ServerGroupItem({
   };
 
   const handleGroupPowerAction = async (action: ServerPowerAction) => {
-    if (serverGroup.serverOrder.length === 0) {
-      addToast(t('pages.account.home.bulkActions.noServersSelected', {}), 'error');
-      return;
-    }
     setGroupActionLoading(action);
     const results = await Promise.allSettled(serverGroup.serverOrder.map((uuid) => sendPowerAction(uuid, action)));
 
@@ -156,9 +152,7 @@ export default function ServerGroupItem({
       </ConfirmationModal>
 
       <Card key={serverGroup.uuid} p={0} className='overflow-hidden'>
-        {/* Header */}
-        <div className='flex items-center gap-3 px-3 py-2.5 bg-[var(--mantine-color-dark-7)]'>
-          {/* Drag Handle */}
+        <div className='flex items-center gap-3 px-3 py-2.5 bg-[--mantine-color-dark-7]'>
           <div
             {...dragHandleProps}
             className='flex items-center text-gray-500 hover:text-gray-300 transition-colors'
@@ -171,22 +165,20 @@ export default function ServerGroupItem({
             <FontAwesomeIcon icon={faGripVertical} className='w-3.5 h-3.5' />
           </div>
 
-          {/* Expand/Collapse + Group Name */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className='flex items-center gap-2.5 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity'
           >
             <FontAwesomeIcon
               icon={isExpanded ? faChevronDown : faChevronRight}
-              className='w-3 h-3 text-gray-400 flex-shrink-0'
+              className='w-3 h-3 text-gray-400 shrink-0'
             />
             <span className='font-medium text-white truncate'>{serverGroup.name}</span>
-            <Badge size='sm' variant='light' color='gray' className='flex-shrink-0'>
+            <Badge size='sm' variant='light' color='gray' className='shrink-0'>
               {serverCount} {serverCount === 1 ? 'server' : 'servers'}
             </Badge>
           </button>
 
-          {/* Actions */}
           <div className='flex items-center gap-1'>
             <TextInput
               placeholder={t('common.input.search', {})}
@@ -214,7 +206,7 @@ export default function ServerGroupItem({
                   leftSection={<FontAwesomeIcon icon={faPowerOff} />}
                   color='green'
                   onClick={() => handleGroupPowerAction('start')}
-                  disabled={groupActionLoading !== null}
+                  disabled={groupActionLoading !== null || serverGroup.serverOrder.length === 0}
                 >
                   {t('pages.server.console.power.start', {})}
                 </Menu.Item>
@@ -222,7 +214,7 @@ export default function ServerGroupItem({
                   leftSection={<FontAwesomeIcon icon={faPowerOff} />}
                   color='gray'
                   onClick={() => handleGroupPowerAction('restart')}
-                  disabled={groupActionLoading !== null}
+                  disabled={groupActionLoading !== null || serverGroup.serverOrder.length === 0}
                 >
                   {t('pages.server.console.power.restart', {})}
                 </Menu.Item>
@@ -230,7 +222,7 @@ export default function ServerGroupItem({
                   leftSection={<FontAwesomeIcon icon={faPowerOff} />}
                   color='red'
                   onClick={() => handleGroupPowerAction('stop')}
-                  disabled={groupActionLoading !== null}
+                  disabled={groupActionLoading !== null || serverGroup.serverOrder.length === 0}
                 >
                   {t('pages.server.console.power.stop', {})}
                 </Menu.Item>
@@ -248,7 +240,6 @@ export default function ServerGroupItem({
           </div>
         </div>
 
-        {/* Content */}
         <Collapse in={isExpanded}>
           <div className='p-3'>
             {loading ? (
@@ -277,7 +268,7 @@ export default function ServerGroupItem({
                       setServers({ ...servers, data: servers.data });
                     });
                   },
-                  onError: (error, originalItems) => {
+                  onError: (error) => {
                     console.error('Drag error:', error);
                   },
                 }}
