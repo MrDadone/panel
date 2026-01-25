@@ -10,6 +10,7 @@ import HljsCode from '@/elements/HljsCode.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { copyToClipboard } from '@/elements/CopyOnClick.tsx';
 
 export default function AdminNodeConfiguration({ node }: { node: Node }) {
   const { addToast } = useToast();
@@ -49,13 +50,7 @@ export default function AdminNodeConfiguration({ node }: { node: Node }) {
   };
 
   const handleCopyCommand = () => {
-    if (!window.isSecureContext) {
-      addToast('Copying is only available in secure contexts (HTTPS).', 'error');
-      return;
-    }
-
-    navigator.clipboard
-      .writeText(getCommand())
+    copyToClipboard(getCommand())
       .then(() => {
         addToast('Copied to clipboard', 'success');
       })

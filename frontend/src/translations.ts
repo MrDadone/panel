@@ -37,7 +37,7 @@ const baseTranslations = defineTranslations({
         host: 'Host',
         username: 'Username',
         server: 'Server',
-        truncateDirectory: 'Do you want to empty the filesystem of this server before restoring the backup?',
+        truncateDirectory: 'Do you want to empty the filesystem of this server before performing this action?',
       },
       table: {
         pagination: {
