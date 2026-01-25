@@ -152,7 +152,7 @@ export default function ServerGroupItem({
       </ConfirmationModal>
 
       <Card key={serverGroup.uuid} p={0} className='overflow-hidden'>
-        <div className='flex items-center gap-3 px-3 py-2.5 bg-[--mantine-color-dark-7]'>
+        <div className='flex items-center gap-3 px-3 py-2.5 bg-(--mantine-color-dark-7)'>
           <div
             {...dragHandleProps}
             className='flex items-center text-gray-500 hover:text-gray-300 transition-colors'
@@ -175,7 +175,7 @@ export default function ServerGroupItem({
             />
             <span className='font-medium text-white truncate'>{serverGroup.name}</span>
             <Badge size='sm' variant='light' color='gray' className='shrink-0'>
-              {serverCount} {serverCount === 1 ? 'server' : 'servers'}
+              {tItem('server', serverCount)}
             </Badge>
           </button>
 

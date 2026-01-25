@@ -21,7 +21,6 @@ interface KeyProps {
 }
 
 function Key({ children, icon }: KeyProps) {
-  // Fixed width of 42px for all keys to ensure alignment
   return (
     <Box
       style={{
@@ -50,9 +49,10 @@ function Key({ children, icon }: KeyProps) {
 interface ShortcutItemProps {
   keys: (string | { icon: IconDefinition })[];
   description: string;
+  hideBorder?: boolean;
 }
 
-function ShortcutItem({ keys, description }: ShortcutItemProps) {
+function ShortcutItem({ keys, description, hideBorder }: ShortcutItemProps) {
   return (
     <Flex
       align='center'
@@ -60,7 +60,7 @@ function ShortcutItem({ keys, description }: ShortcutItemProps) {
       py='sm'
       px='xs'
       style={{
-        borderBottom: '1px solid var(--mantine-color-dark-5)',
+        borderBottom: hideBorder ? 'none' : '1px solid var(--mantine-color-dark-5)',
       }}
     >
       <Text size='sm' c='gray.4'>
@@ -120,7 +120,7 @@ function ShortcutSection({ title, icon, shortcuts }: ShortcutSectionProps) {
       </Box>
       <Stack gap={0} px='sm'>
         {shortcuts.map((shortcut, index) => (
-          <ShortcutItem key={index} {...shortcut} />
+          <ShortcutItem key={index} {...shortcut} hideBorder={index === shortcuts.length - 1} />
         ))}
       </Stack>
     </Card>

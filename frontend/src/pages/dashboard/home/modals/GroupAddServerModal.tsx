@@ -1,12 +1,12 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { Group, ModalProps } from '@mantine/core';
+import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updateServerGroup from '@/api/me/servers/groups/updateServerGroup.ts';
 import getServers from '@/api/server/getServers.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Modal from '@/elements/modals/Modal.tsx';
-import Spinner from '@/elements/Spinner.tsx';
+import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -21,41 +21,14 @@ export default function GroupAddServerModal({ serverGroup, opened, onClose, onSe
   const { addToast } = useToast();
   const { updateServerGroup: updateStateServerGroup } = useUserStore();
 
-  const [servers, setServers] = useState<Server[]>([]);
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
   const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
 
-  useEffect(() => {
-    if (opened) {
-      setFetching(true);
-      setSelectedServer(null);
+  const servers = useSearchableResource<Server>({
+    fetcher: (search) => getServers(1, search),
+  });
 
-      // Fetch all servers (we'll load all pages to get complete list)
-      const fetchAllServers = async () => {
-        const allServers: Server[] = [];
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore) {
-          const response = await getServers(page);
-          allServers.push(...response.data);
-          hasMore = response.page < response.lastPage;
-          page++;
-        }
-
-        setServers(allServers);
-        setFetching(false);
-      };
-
-      fetchAllServers().catch((err) => {
-        addToast(httpErrorToHuman(err), 'error');
-        setFetching(false);
-      });
-    }
-  }, [opened, addToast]);
-
-  const availableServers = servers.filter((s) => !serverGroup.serverOrder.includes(s.uuid));
+  const otherServers = servers.items.filter((s) => !serverGroup.serverOrder.includes(s.uuid));
 
   const doAdd = () => {
     if (!selectedServer) {
@@ -86,37 +59,28 @@ export default function GroupAddServerModal({ serverGroup, opened, onClose, onSe
       onClose={onClose}
       opened={opened}
     >
-      {fetching ? (
-        <Spinner.Centered />
-      ) : availableServers.length === 0 ? (
-        <p className='text-gray-400 text-sm'>
-          {t('pages.account.home.tabs.groupedServers.page.modal.addServerToGroup.noServers', {})}
-        </p>
-      ) : (
-        <Stack>
-          <Select
-            label={t('common.form.server', {})}
-            placeholder={t('common.form.server', {})}
-            value={selectedServer?.uuid || ''}
-            className='w-full'
-            searchable
-            onChange={(value) => setSelectedServer(availableServers.find((s) => s.uuid === value) ?? null)}
-            data={availableServers.map((s) => ({
-              label: s.name,
-              value: s.uuid,
-            }))}
-          />
+      <Select
+        label={t('common.form.server', {})}
+        placeholder={t('common.form.server', {})}
+        data={otherServers.map((server) => ({
+          label: server.name,
+          value: server.uuid,
+        }))}
+        onChange={(value) => setSelectedServer(otherServers.find((s) => s.uuid === value)!)}
+        value={selectedServer?.uuid || ''}
+        searchable
+        searchValue={servers.search}
+        onSearchChange={servers.setSearch}
+      />
 
-          <Group>
-            <Button onClick={doAdd} loading={loading} disabled={!selectedServer}>
-              {t('common.button.add', {})}
-            </Button>
-            <Button variant='default' onClick={onClose}>
-              {t('common.button.close', {})}
-            </Button>
-          </Group>
-        </Stack>
-      )}
+      <Group mt='md'>
+        <Button onClick={doAdd} loading={loading} disabled={!selectedServer}>
+          {t('common.button.add', {})}
+        </Button>
+        <Button variant='default' onClick={onClose}>
+          {t('common.button.close', {})}
+        </Button>
+      </Group>
     </Modal>
   );
 }

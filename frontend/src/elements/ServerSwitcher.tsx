@@ -71,7 +71,6 @@ export default function ServerSwitcher({ className }: { className?: string }) {
       searchable
       searchValue={servers.search}
       onSearchChange={servers.setSearch}
-      nothingFoundMessage='No other servers'
       renderOption={renderOption}
       leftSection={
         currentServer?.uuid && (

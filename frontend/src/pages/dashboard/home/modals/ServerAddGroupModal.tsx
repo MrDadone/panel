@@ -52,7 +52,6 @@ export default function ServerAddGroupModal({ server, opened, onClose }: Props) 
         label={t('pages.account.home.tabs.allServers.page.modal.addToServerGroup.form.serverGroup', {})}
         placeholder={t('pages.account.home.tabs.allServers.page.modal.addToServerGroup.form.serverGroup', {})}
         value={selectedServerGroup?.uuid || ''}
-        className='w-full'
         searchable
         onChange={(value) => setSelectedServerGroup(serverGroups.find((g) => g.uuid === value) ?? null)}
         data={serverGroups

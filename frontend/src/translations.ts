@@ -5,8 +5,8 @@ const extensionTranslations = import.meta.glob?.('../extensions/*/src/translatio
 const baseTranslations = defineTranslations({
   items: {
     user: defineEnglishItem('User', 'Users'),
-    sshKey: defineEnglishItem('SSH Key', 'SSH Keys'),
     server: defineEnglishItem('Server', 'Servers'),
+    sshKey: defineEnglishItem('SSH Key', 'SSH Keys'),
   },
   translations: {
     common: {
