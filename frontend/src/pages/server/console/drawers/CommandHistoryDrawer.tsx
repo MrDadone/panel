@@ -9,6 +9,7 @@ import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
 import { handleCopyToClipboard } from '@/elements/CopyOnClick.tsx';
 import Drawer from '@/elements/Drawer.tsx';
+import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -88,7 +89,7 @@ export default function CommandHistoryDrawer({ opened, onClose, ...props }: Draw
                   onClick={() => setSelectedCommand(null)}
                   leftSection={<FontAwesomeIcon icon={faArrowLeft} />}
                 >
-                  Back
+                  {t('common.button.back', {})}
                 </Button>
               </div>
 
@@ -145,7 +146,7 @@ export default function CommandHistoryDrawer({ opened, onClose, ...props }: Draw
               )}
 
               {loading && activities.data.length === 0 ? (
-                <div className='flex items-center justify-center py-12 text-gray-400'>Loading commands...</div>
+                <Spinner.Centered />
               ) : activities.data.length === 0 ? (
                 <div className='flex items-center justify-center py-12 text-gray-400'>
                   {t('pages.server.console.drawer.commandHistory.noCommands', {})}
@@ -161,6 +162,7 @@ export default function CommandHistoryDrawer({ opened, onClose, ...props }: Draw
                         key={`${activity.created}-${index}`}
                         onClick={() => handleRowClick(activity)}
                         className='p-3 rounded-md border cursor-pointer transition-all border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
+                        hoverable
                       >
                         <div className='flex items-start gap-3'>
                           <img
