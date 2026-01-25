@@ -51,7 +51,7 @@ export default function SessionRow({ session }: { session: UserSession }) {
             disabled: session.isUsing,
             onClick: () => setOpenModal('delete'),
             color: 'red',
-            canAccess: session.isUsing,
+            canAccess: !session.isUsing,
           },
         ]}
       >

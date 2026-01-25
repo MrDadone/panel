@@ -26,7 +26,7 @@ export default function Container({ children, isNormal }: LayoutProps) {
         <span className='flex flex-row justify-end gap-2'>
           <Tooltip label={settings.version}>
             <a
-              href='https://github.com/calagopus/panel'
+              href='https://calagopus.com'
               target='_blank'
               rel='noopener noreferrer'
               className='underline'

@@ -1,19 +1,15 @@
 import { faCopy } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group, Stack, Title, Tooltip } from '@mantine/core';
-import hljs from 'highlight.js/lib/core';
-import yaml from 'highlight.js/lib/languages/yaml';
 import Card from '@/elements/Card.tsx';
-import Code from '@/elements/Code.tsx';
+import HljsCode from '@/elements/HljsCode.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import 'highlight.js/styles/a11y-dark.min.css';
 import jsYaml from 'js-yaml';
 import { useState } from 'react';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
-
-hljs.registerLanguage('yaml', yaml);
+import Code from '@/elements/Code.tsx';
 
 export default function AdminNodeConfiguration({ node }: { node: Node }) {
   const { addToast } = useToast();
@@ -73,12 +69,12 @@ export default function AdminNodeConfiguration({ node }: { node: Node }) {
     <AdminContentContainer title='Node Configuration' titleOrder={2}>
       <div className='grid md:grid-cols-4 grid-cols-1 grid-rows-2 gap-4'>
         <div className='flex flex-col md:col-span-3'>
-          <Code
-            block
-            dangerouslySetInnerHTML={{
-              __html: hljs.highlight(jsYaml.dump(getNodeConfiguration()), { language: 'yaml' }).value,
-            }}
-          />
+          <HljsCode
+            languageName='yaml'
+            language={() => import('highlight.js/lib/languages/yaml').then((mod) => mod.default)}
+          >
+            {jsYaml.dump(getNodeConfiguration())}
+          </HljsCode>
 
           <div className='mt-2'>
             <p>

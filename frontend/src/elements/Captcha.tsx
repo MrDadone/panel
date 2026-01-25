@@ -63,7 +63,7 @@ const Captcha = forwardRef((_, ref) => {
         script.id = 'recaptcha-v3-script';
         script.src = `https://www.google.com/recaptcha/api.js?render=${captchaProvider.siteKey}`;
         script.async = true;
-        document.body.appendChild(script as unknown as Node);
+        document.body.appendChild(script);
       }
     }
   }, [captchaProvider]);

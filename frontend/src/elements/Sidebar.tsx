@@ -21,7 +21,6 @@ import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useWindows } from '@/providers/WindowProvider.tsx';
 import RouterRoutes from '@/RouterRoutes.tsx';
-import { useCurrentWindow } from '@/providers/CurrentWindowProvider';
 
 type SidebarProps = {
   children: ReactNode;
@@ -145,7 +144,7 @@ function Footer() {
           <img
             src={user!.avatar ?? '/icon.svg'}
             alt={user!.username}
-            className='h-10 w-10 rounded-full select-none flex-shrink-0'
+            className='h-10 w-10 rounded-full select-none shrink-0'
           />
           <span className='font-sans font-normal text-sm text-neutral-50 whitespace-nowrap leading-tight ml-3 overflow-hidden text-ellipsis'>
             {user!.username}
@@ -154,7 +153,7 @@ function Footer() {
 
         <Menu shadow='md' width={200} position='top-end'>
           <Menu.Target>
-            <ActionIcon variant='subtle' className='flex-shrink-0'>
+            <ActionIcon variant='subtle' className='shrink-0'>
               <FontAwesomeIcon icon={faEllipsisVertical} />
             </ActionIcon>
           </Menu.Target>
