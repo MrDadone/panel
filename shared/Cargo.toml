@@ -58,4 +58,4 @@ git2 = "0.20.2"
 tempfile = { workspace = true }
 compact_str = { workspace = true }
 nestify = { workspace = true }
-sysinfo = "0.37.2"
+sysinfo = "0.38.0"

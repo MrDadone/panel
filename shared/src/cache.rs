@@ -21,8 +21,8 @@ pub struct Cache {
     pub client: Client,
 
     use_internal_cache: bool,
-    mutex_map: RwLock<HashMap<String, Arc<Mutex<()>>>>,
-    memory_cache: Arc<RwLock<HashMap<String, CacheEntry>>>,
+    mutex_map: RwLock<HashMap<compact_str::CompactString, Arc<Mutex<()>>>>,
+    memory_cache: Arc<RwLock<HashMap<compact_str::CompactString, CacheEntry>>>,
 }
 
 impl Cache {
@@ -180,7 +180,7 @@ impl Cache {
         {
             if self.use_internal_cache {
                 self.memory_cache.write().await.insert(
-                    key.to_string(),
+                    key.into(),
                     CacheEntry {
                         value: value.into(),
                         expires_at: now + Duration::from_secs(ttl),
@@ -192,13 +192,18 @@ impl Cache {
             return Ok(val);
         }
 
-        let mutex = if let Some(mutex) = self.mutex_map.read().await.get(key).cloned() {
-            mutex
+        let mutex = {
+            let reader = self.mutex_map.read().await;
+            reader.get(key).cloned()
+        };
+
+        let mutex = if let Some(m) = mutex {
+            m
         } else {
-            self.mutex_map
-                .write()
-                .await
-                .entry(key.to_string())
+            let mut writer = self.mutex_map.write().await;
+
+            writer
+                .entry(key.into())
                 .or_insert_with(|| Arc::new(Mutex::new(())))
                 .clone()
         };
@@ -234,7 +239,7 @@ impl Cache {
         {
             if self.use_internal_cache {
                 self.memory_cache.write().await.insert(
-                    key.to_string(),
+                    key.into(),
                     CacheEntry {
                         value: value.into(),
                         expires_at: now + Duration::from_secs(ttl),
@@ -267,7 +272,7 @@ impl Cache {
 
         if self.use_internal_cache && ttl < 60 {
             self.memory_cache.write().await.insert(
-                key.to_string(),
+                key.into(),
                 CacheEntry {
                     value: serialized,
                     expires_at: now + Duration::from_secs(ttl),
