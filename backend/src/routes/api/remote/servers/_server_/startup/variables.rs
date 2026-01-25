@@ -17,6 +17,8 @@ mod put {
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        schedule_uuid: Option<uuid::Uuid>,
+
         #[validate(length(min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
         env_variable: String,
@@ -112,6 +114,7 @@ mod put {
             &state.database,
             server.uuid,
             None,
+            data.schedule_uuid,
             "server:startup.variables",
             None,
             serde_json::json!({

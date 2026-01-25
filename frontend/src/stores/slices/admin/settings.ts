@@ -37,6 +37,13 @@ export const createSettingsSlice: StateCreator<AdminStore, [], [], SettingsSlice
     rpId: '',
     rpOrigin: '',
   },
+  activity: {
+    adminLogRetentionDays: 180,
+    userLogRetentionDays: 90,
+    serverLogRetentionDays: 90,
+    serverLogAdminActivity: true,
+    serverLogScheduleActivity: true,
+  },
 
   setSettings: (value) =>
     set((state) => {
@@ -46,6 +53,7 @@ export const createSettingsSlice: StateCreator<AdminStore, [], [], SettingsSlice
       state.app = value.app;
       state.server = value.server;
       state.webauthn = value.webauthn;
+      state.activity = value.activity;
       return state;
     }),
 });

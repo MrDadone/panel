@@ -88,14 +88,12 @@ impl PermissionManager {
     }
 
     pub fn has_admin_permission(&self, permission: &str) -> Result<(), ApiResponse> {
-        if self.user_admin {
-            return Ok(());
-        }
-
-        let has_role_permission = if let Some(permissions) = &self.role_admin_permissions {
+        let has_role_permission = if !self.user_admin
+            && let Some(permissions) = &self.role_admin_permissions
+        {
             permissions.iter().any(|p| p == permission)
         } else {
-            false
+            self.user_admin
         };
 
         if !has_role_permission {
@@ -118,11 +116,10 @@ impl PermissionManager {
     }
 
     pub fn has_server_permission(&self, permission: &str) -> Result<(), ApiResponse> {
-        if self.user_admin {
-            return Ok(());
-        }
-
-        if self.server_subuser_permissions.is_none() && self.role_server_permissions.is_none() {
+        if !self.user_admin
+            && self.server_subuser_permissions.is_none()
+            && self.role_server_permissions.is_none()
+        {
             if let Some(api_key_permissions) = &self.api_key_server_permissions
                 && api_key_permissions.iter().all(|p| p != permission)
             {
@@ -135,10 +132,12 @@ impl PermissionManager {
             return Ok(());
         }
 
-        let has_role_permission = if let Some(permissions) = &self.role_server_permissions {
+        let has_role_permission = if !self.user_admin
+            && let Some(permissions) = &self.role_server_permissions
+        {
             permissions.iter().any(|p| p == permission)
         } else {
-            false
+            self.user_admin
         };
 
         let has_subuser_permission = if let Some(permissions) = &self.server_subuser_permissions {

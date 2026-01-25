@@ -49,7 +49,7 @@ export default function BackupConfigurationCreateOrUpdate({
       region: '',
       endpoint: '',
       pathStyle: true,
-      partSize: 0,
+      partSize: 1024 * 1024 * 1024,
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(adminBackupConfigurationS3Schema),

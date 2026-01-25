@@ -414,6 +414,13 @@
       "when": 1768509371536,
       "tag": "0058_complex_sprite",
       "breakpoints": false
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1769341965517,
+      "tag": "0059_yielding_wrecking_crew",
+      "breakpoints": false
     }
   ]
 }

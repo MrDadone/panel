@@ -731,7 +731,7 @@ impl shared::extensions::commands::CliCommand<ImportArgs> for ImportCommand {
                                             value: match config_stop.as_deref() {
                                                 Some("^C") => Some("SIGINT".into()),
                                                 Some("^^C") => Some("SIGKILL".into()),
-                                                _ => config_stop.map(|s| s.into()),
+                                                _ => config_stop,
                                             },
                                         }
                                     });

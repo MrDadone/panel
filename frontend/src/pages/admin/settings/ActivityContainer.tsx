@@ -1,0 +1,113 @@
+import { Group, Stack, Tooltip } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { zod4Resolver } from 'mantine-form-zod-resolver';
+import { useEffect, useState } from 'react';
+import { z } from 'zod';
+import updateActivitySettings from '@/api/admin/settings/updateActivitySettings.ts';
+import { httpErrorToHuman } from '@/api/axios.ts';
+import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import NumberInput from '@/elements/input/NumberInput.tsx';
+import Switch from '@/elements/input/Switch.tsx';
+import { adminSettingsActivitySchema } from '@/lib/schemas/admin/settings.ts';
+import { useToast } from '@/providers/ToastProvider.tsx';
+import { useAdminStore } from '@/stores/admin.tsx';
+
+export default function ActivityContainer() {
+  const { addToast } = useToast();
+  const { activity } = useAdminStore();
+
+  const [loading, setLoading] = useState(false);
+
+  const form = useForm<z.infer<typeof adminSettingsActivitySchema>>({
+    initialValues: {
+      adminLogRetentionDays: 1,
+      userLogRetentionDays: 1,
+      serverLogRetentionDays: 1,
+      serverLogAdminActivity: false,
+      serverLogScheduleActivity: false,
+    },
+    validateInputOnBlur: true,
+    validate: zod4Resolver(adminSettingsActivitySchema),
+  });
+
+  useEffect(() => {
+    form.setValues({
+      ...activity,
+    });
+  }, [activity]);
+
+  const doUpdate = () => {
+    setLoading(true);
+
+    updateActivitySettings(form.values)
+      .then(() => {
+        addToast('Activity settings updated.', 'success');
+      })
+      .catch((msg) => {
+        addToast(httpErrorToHuman(msg), 'error');
+      })
+      .finally(() => setLoading(false));
+  };
+
+  return (
+    <AdminContentContainer title='Activity Settings' titleOrder={2}>
+      <form onSubmit={form.onSubmit(() => doUpdate())}>
+        <Stack>
+          <Group grow>
+            <NumberInput
+              withAsterisk
+              label='Admin Activity Retention Days'
+              placeholder='Admin Activity Retention Days'
+              {...form.getInputProps('adminLogRetentionDays')}
+            />
+
+            <NumberInput
+              withAsterisk
+              label='User Activity Retention Days'
+              placeholder='User Activity Retention Days'
+              {...form.getInputProps('userLogRetentionDays')}
+            />
+
+            <NumberInput
+              withAsterisk
+              label='Server Activity Retention Days'
+              placeholder='Server Activity Retention Days'
+              {...form.getInputProps('serverLogRetentionDays')}
+            />
+          </Group>
+
+          <Group grow>
+            <Switch
+              label='Log Server Admin Activity'
+              description="Enable or disable logging of admin activity on servers where the admin isn't an owner or subuser."
+              {...form.getInputProps('serverLogAdminActivity', { type: 'checkbox' })}
+            />
+
+            <Switch
+              label='Log Server Schedule Activity'
+              description='Enable or disable logging of activity done by server schedules.'
+              {...form.getInputProps('serverLogScheduleActivity', { type: 'checkbox' })}
+            />
+          </Group>
+        </Stack>
+
+        <Group mt='md'>
+          <AdminCan
+            action='settings.update'
+            renderOnCant={
+              <Tooltip label='You do not have permission to update settings.'>
+                <Button disabled>Save</Button>
+              </Tooltip>
+            }
+          >
+            <Button type='submit' disabled={!form.isValid()} loading={loading}>
+              Save
+            </Button>
+          </AdminCan>
+        </Group>
+      </form>
+    </AdminContentContainer>
+  );
+}

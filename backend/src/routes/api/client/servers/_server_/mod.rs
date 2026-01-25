@@ -94,6 +94,9 @@ pub async fn auth(
         state: Arc::clone(&state),
         server_uuid: server.uuid,
         user_uuid: user.uuid,
+        user_admin: user.admin,
+        user_owner: user.uuid == server.owner.uuid,
+        user_subuser: server.subuser_permissions.is_some(),
         api_key_uuid: match auth.0 {
             crate::routes::api::client::AuthMethod::ApiKey(api_key) => Some(api_key.uuid),
             _ => None,

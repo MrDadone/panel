@@ -417,7 +417,6 @@ async fn main() {
                     let deleted_sessions =
                         shared::models::user_session::UserSession::delete_unused(&state.database)
                             .await?;
-
                     if deleted_sessions > 0 {
                         tracing::info!("deleted {} expired user sessions", deleted_sessions);
                     }
@@ -437,12 +436,67 @@ async fn main() {
                     let deleted_api_keys =
                         shared::models::user_api_key::UserApiKey::delete_expired(&state.database)
                             .await?;
-
                     if deleted_api_keys > 0 {
                         tracing::info!("deleted {} expired user api keys", deleted_api_keys);
                     }
 
                     tokio::time::sleep(std::time::Duration::from_mins(30)).await;
+
+                    Ok(())
+                })
+            }),
+        )
+        .await;
+    background_task_builder
+        .add_task(
+            "delete_old_activity",
+            Box::new(|state| {
+                Box::pin(async move {
+                    let settings = state.settings.get().await?;
+                    let admin_retention_days = settings.activity.admin_log_retention_days;
+                    let user_retention_days = settings.activity.user_log_retention_days;
+                    let server_retention_days = settings.activity.server_log_retention_days;
+                    drop(settings);
+
+                    let deleted_admin_activity =
+                        shared::models::admin_activity::AdminActivity::delete_older_than(
+                            &state.database,
+                            chrono::Utc::now()
+                                - chrono::Duration::days(admin_retention_days as i64),
+                        )
+                        .await?;
+                    if deleted_admin_activity > 0 {
+                        tracing::info!(
+                            "deleted {} old admin activity logs",
+                            deleted_admin_activity
+                        );
+                    }
+
+                    let deleted_user_activity =
+                        shared::models::user_activity::UserActivity::delete_older_than(
+                            &state.database,
+                            chrono::Utc::now() - chrono::Duration::days(user_retention_days as i64),
+                        )
+                        .await?;
+                    if deleted_user_activity > 0 {
+                        tracing::info!("deleted {} old user activity logs", deleted_user_activity);
+                    }
+
+                    let deleted_server_activity =
+                        shared::models::server_activity::ServerActivity::delete_older_than(
+                            &state.database,
+                            chrono::Utc::now()
+                                - chrono::Duration::days(server_retention_days as i64),
+                        )
+                        .await?;
+                    if deleted_server_activity > 0 {
+                        tracing::info!(
+                            "deleted {} old server activity logs",
+                            deleted_server_activity
+                        );
+                    }
+
+                    tokio::time::sleep(std::time::Duration::from_hours(1)).await;
 
                     Ok(())
                 })

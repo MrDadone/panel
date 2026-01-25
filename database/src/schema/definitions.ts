@@ -674,6 +674,10 @@ export const serverActivitiesTable = new DatabaseTable('server_activities')
     'api_key_uuid',
     uuid().references(() => userApiKeysTable.join().uuid, { onDelete: 'set null' }),
   )
+  .addColumn(
+    'schedule_uuid',
+    uuid().references(() => serverSchedulesTable.join().uuid, { onDelete: 'set null' }),
+  )
   .addColumn('event', varchar({ length: 255 }).notNull())
   .addColumn('ip', inet())
   .addColumn('data', jsonb().notNull())

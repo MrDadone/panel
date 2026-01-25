@@ -354,6 +354,7 @@ declare global {
     ip: string | null;
     data: object | null;
     isApi: boolean;
+    isSchedule: boolean;
     created: Date;
   }
 
@@ -1187,6 +1188,14 @@ declare global {
       maxSchedulesStepCount: number;
       allowOverwritingCustomDockerImage: boolean;
       allowEditingStartupCommand: boolean;
+    };
+    activity: {
+      adminLogRetentionDays: number;
+      userLogRetentionDays: number;
+      serverLogRetentionDays: number;
+
+      serverLogAdminActivity: boolean;
+      serverLogScheduleActivity: boolean;
     };
   }
 

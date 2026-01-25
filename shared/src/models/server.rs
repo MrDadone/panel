@@ -17,12 +17,29 @@ pub struct ServerActivityLogger {
     pub state: State,
     pub server_uuid: uuid::Uuid,
     pub user_uuid: uuid::Uuid,
+    pub user_admin: bool,
+    pub user_owner: bool,
+    pub user_subuser: bool,
     pub api_key_uuid: Option<uuid::Uuid>,
     pub ip: std::net::IpAddr,
 }
 
 impl ServerActivityLogger {
     pub async fn log(&self, event: &str, data: serde_json::Value) {
+        let settings = match self.state.settings.get().await {
+            Ok(settings) => settings,
+            Err(_) => return,
+        };
+
+        if !settings.activity.server_log_admin_activity
+            && self.user_admin
+            && !self.user_owner
+            && !self.user_subuser
+        {
+            return;
+        }
+        drop(settings);
+
         if let Err(err) = crate::models::server_activity::ServerActivity::log(
             &self.state.database,
             self.server_uuid,

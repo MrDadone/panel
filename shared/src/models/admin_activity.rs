@@ -170,6 +170,23 @@ impl AdminActivity {
         })
     }
 
+    pub async fn delete_older_than(
+        database: &crate::database::Database,
+        cutoff: chrono::DateTime<chrono::Utc>,
+    ) -> Result<u64, crate::database::DatabaseError> {
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM admin_activities
+            WHERE created < $1
+            "#,
+            cutoff.naive_utc()
+        )
+        .execute(database.write())
+        .await?;
+
+        Ok(result.rows_affected())
+    }
+
     #[inline]
     pub fn into_admin_api_object(
         self,

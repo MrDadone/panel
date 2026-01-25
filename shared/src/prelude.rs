@@ -127,3 +127,15 @@ impl StringExt for compact_str::CompactString {
         if self.is_empty() { None } else { Some(self) }
     }
 }
+
+impl StringExt for &str {
+    #[inline]
+    fn optional(&self) -> Option<&Self> {
+        if self.is_empty() { None } else { Some(self) }
+    }
+
+    #[inline]
+    fn into_optional(self) -> Option<Self> {
+        if self.is_empty() { None } else { Some(self) }
+    }
+}
