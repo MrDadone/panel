@@ -24,6 +24,11 @@ impl std::fmt::Display for RedisMode {
     }
 }
 
+pub struct EnvGuard(
+    pub Option<tracing_appender::non_blocking::WorkerGuard>,
+    pub tracing_appender::non_blocking::WorkerGuard,
+);
+
 #[derive(Clone)]
 pub struct Env {
     pub redis_mode: RedisMode,
@@ -46,13 +51,7 @@ pub struct Env {
 }
 
 impl Env {
-    pub fn parse() -> Result<
-        (
-            Arc<Self>,
-            Option<tracing_appender::non_blocking::WorkerGuard>,
-        ),
-        anyhow::Error,
-    > {
+    pub fn parse() -> Result<(Arc<Self>, EnvGuard), anyhow::Error> {
         dotenv().ok();
 
         let env = Self {
@@ -149,6 +148,8 @@ impl Env {
             std::process::exit(1);
         }
 
+        let (stdout_writer, stdout_guard) = tracing_appender::non_blocking(std::io::stdout());
+
         let (appender, guard) = if let Some(app_log_directory) = &env.app_log_directory {
             if !std::path::Path::new(app_log_directory).exists() {
                 std::fs::create_dir_all(app_log_directory)
@@ -182,7 +183,7 @@ impl Env {
             tracing::subscriber::set_global_default(
                 tracing_subscriber::fmt()
                     .with_timer(tracing_subscriber::fmt::time::ChronoLocal::rfc_3339())
-                    .with_writer(std::io::stdout.and(file_appender))
+                    .with_writer(stdout_writer.and(file_appender))
                     .with_target(false)
                     .with_level(true)
                     .with_file(true)
@@ -198,6 +199,7 @@ impl Env {
             tracing::subscriber::set_global_default(
                 tracing_subscriber::fmt()
                     .with_timer(tracing_subscriber::fmt::time::ChronoLocal::rfc_3339())
+                    .with_writer(stdout_writer)
                     .with_target(false)
                     .with_level(true)
                     .with_file(true)
@@ -211,6 +213,6 @@ impl Env {
             )?;
         }
 
-        Ok((Arc::new(env), guard))
+        Ok((Arc::new(env), EnvGuard(guard, stdout_guard)))
     }
 }
