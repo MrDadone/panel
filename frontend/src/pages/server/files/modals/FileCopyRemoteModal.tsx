@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -100,14 +100,14 @@ export default function FileCopyModal({ files, opened, onClose }: Props) {
           </Code>
         </p>
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button type='submit' loading={loading}>
             Copy
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </form>
     </Modal>
   );

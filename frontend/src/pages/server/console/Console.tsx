@@ -384,31 +384,35 @@ export default function Terminal() {
                 <Component key={idx} />
               ),
             )}
-            <Tooltip label={t('pages.server.console.button.commandHistory', {})}>
+            <Tooltip label={t('pages.server.console.tooltip.commandHistory', {})}>
               <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setHistoryModalOpen(true)}>
                 <FontAwesomeIcon icon={faClockRotateLeft} />
               </ActionIcon>
             </Tooltip>
             <div className='flex flex-row items-center'>
-              <ActionIcon
-                className='mr-2'
-                size='xs'
-                variant='subtle'
-                color='gray'
-                onClick={() => setConsoleFontSize((size) => Math.max(10, size - 1))}
-              >
-                <FontAwesomeIcon icon={faMinus} />
-              </ActionIcon>
+              <Tooltip label={t('pages.server.console.tooltip.decreaseFontSize', {})}>
+                <ActionIcon
+                  className='mr-2'
+                  size='xs'
+                  variant='subtle'
+                  color='gray'
+                  onClick={() => setConsoleFontSize((size) => Math.max(10, size - 1))}
+                >
+                  <FontAwesomeIcon icon={faMinus} />
+                </ActionIcon>
+              </Tooltip>
               {consoleFontSize}px
-              <ActionIcon
-                className='ml-2'
-                size='xs'
-                variant='subtle'
-                color='gray'
-                onClick={() => setConsoleFontSize((size) => Math.min(24, size + 1))}
-              >
-                <FontAwesomeIcon icon={faPlus} />
-              </ActionIcon>
+              <Tooltip label={t('pages.server.console.tooltip.increaseFontSize', {})}>
+                <ActionIcon
+                  className='ml-2'
+                  size='xs'
+                  variant='subtle'
+                  color='gray'
+                  onClick={() => setConsoleFontSize((size) => Math.min(24, size + 1))}
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </ActionIcon>
+              </Tooltip>
             </div>
           </div>
         </div>

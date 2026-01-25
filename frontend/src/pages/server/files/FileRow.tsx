@@ -20,11 +20,10 @@ import downloadFiles from '@/api/server/files/downloadFiles.ts';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
 import { isArchiveType, isEditableFile, isViewableArchive } from '@/lib/files.ts';
 import { bytesToString } from '@/lib/size.ts';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useWindows } from '@/providers/WindowProvider.tsx';
@@ -249,9 +248,7 @@ const FileRow = memo(
               </TableData>
 
               <TableData>
-                <Tooltip label={formatDateTime(file.modified)}>
-                  <span className='flex items-center gap-4 leading-[100%]'>{formatTimestamp(file.modified)}</span>
-                </Tooltip>
+                <FormattedTimestamp timestamp={file.modified} />
               </TableData>
 
               <ContextMenuToggle items={items} openMenu={openMenu} />

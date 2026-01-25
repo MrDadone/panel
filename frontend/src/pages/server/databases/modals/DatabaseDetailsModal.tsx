@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import rotateDatabasePassword from '@/api/server/databases/rotateDatabasePassword.ts';
@@ -70,14 +70,14 @@ export default function DatabaseDetailsModal({ database, opened, onClose }: Prop
           readOnly
         />
 
-        <Group>
+        <Modal.Footer>
           <Button color='red' onClick={onRotatePassword} loading={loading} disabled={database.isLocked}>
             {t('pages.server.databases.button.rotatePassword', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

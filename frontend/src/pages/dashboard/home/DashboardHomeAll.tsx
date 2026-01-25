@@ -87,7 +87,6 @@ export default function DashboardHomeAll() {
 
   const handleServerClick = (serverUuid: string, event: React.MouseEvent) => {
     if (sKeyPressed) {
-      // S key + click: toggle selection
       event.preventDefault();
       event.stopPropagation();
       handleServerSelectionChange(serverUuid, !selectedServers.has(serverUuid));
@@ -95,11 +94,6 @@ export default function DashboardHomeAll() {
   };
 
   const handleBulkPowerAction = async (action: ServerPowerAction) => {
-    if (selectedServers.size === 0) {
-      addToast(t('pages.account.home.bulkActions.noServersSelected', {}), 'error');
-      return;
-    }
-
     setBulkActionLoading(action);
 
     const serverUuids = Array.from(selectedServers);
@@ -119,7 +113,7 @@ export default function DashboardHomeAll() {
     if (failed === 0) {
       addToast(
         t('pages.account.home.bulkActions.success', {
-          item: tItem('server', successful),
+          servers: tItem('server', successful),
           action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
         }),
         'success',
@@ -127,8 +121,8 @@ export default function DashboardHomeAll() {
     } else {
       addToast(
         t('pages.account.home.bulkActions.partial', {
-          successfulItem: tItem('server', successful),
-          failedItem: tItem('server', failed),
+          successfulServers: tItem('server', successful),
+          failedServers: tItem('server', failed),
           action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
         }),
         'warning',

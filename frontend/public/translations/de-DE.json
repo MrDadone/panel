@@ -44,8 +44,7 @@
           "description": "Beschreibung",
           "password": "Passwort",
           "host": "Host",
-          "username": "Benutzername",
-          "truncateDirectory": "Möchtest du das Dateisystem dieses Servers leeren, bevor das Backup wiederhergestellt wird?"
+          "username": "Benutzername"
         },
         "table": {
           "pagination": {

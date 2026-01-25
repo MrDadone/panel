@@ -1,6 +1,6 @@
 import { faSave } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Divider, Group, ModalProps, Stack, Text } from '@mantine/core';
+import { Divider, ModalProps, Stack, Text } from '@mantine/core';
 import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import createScheduleStep from '@/api/server/schedules/steps/createScheduleStep.ts';
@@ -146,14 +146,14 @@ export default function StepCreateOrUpdateModal({
           <Text c='dimmed'>Select an action type to configure</Text>
         )}
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doCreateOrUpdate} leftSection={<FontAwesomeIcon icon={faSave} />} loading={loading}>
             {propStep ? 'Update' : 'Create'}
           </Button>
           <Button variant='default' onClick={onClose}>
             Cancel
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

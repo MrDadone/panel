@@ -1,4 +1,4 @@
-import { Group, ModalProps, Switch } from '@mantine/core';
+import { ModalProps, Switch } from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -48,14 +48,14 @@ export default function BackupRestoreModal({ backup, opened, onClose }: Props) {
         onChange={(e) => setTruncate(e.target.checked)}
       />
 
-      <Group mt='md'>
+      <Modal.Footer>
         <Button color={truncate ? 'red' : undefined} onClick={doRestore} loading={loading}>
           {t('pages.server.backups.button.restore', {})}
         </Button>
         <Button variant='default' onClick={onClose}>
           {t('common.button.close', {})}
         </Button>
-      </Group>
+      </Modal.Footer>
     </Modal>
   );
 }

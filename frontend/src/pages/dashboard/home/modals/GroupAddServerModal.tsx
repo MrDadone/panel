@@ -1,4 +1,4 @@
-import { Group, ModalProps } from '@mantine/core';
+import { ModalProps } from '@mantine/core';
 import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updateServerGroup from '@/api/me/servers/groups/updateServerGroup.ts';
@@ -73,14 +73,14 @@ export default function GroupAddServerModal({ serverGroup, opened, onClose, onSe
         onSearchChange={servers.setSearch}
       />
 
-      <Group mt='md'>
+      <Modal.Footer>
         <Button onClick={doAdd} loading={loading} disabled={!selectedServer}>
           {t('common.button.add', {})}
         </Button>
         <Button variant='default' onClick={onClose}>
           {t('common.button.close', {})}
         </Button>
-      </Group>
+      </Modal.Footer>
     </Modal>
   );
 }

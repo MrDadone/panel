@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import getMounts from '@/api/admin/mounts/getMounts.ts';
 import createEggMount from '@/api/admin/nests/eggs/mounts/createEggMount.ts';
@@ -58,14 +58,14 @@ export default function EggMountAddModal({
           onSearchChange={mounts.setSearch}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doAdd} loading={loading} disabled={!mount}>
             Add
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

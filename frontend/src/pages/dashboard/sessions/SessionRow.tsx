@@ -7,8 +7,7 @@ import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -70,7 +69,7 @@ export default function SessionRow({ session }: { session: UserSession }) {
             <TableData>{session.isUsing ? t('common.yes', {}) : t('common.no', {})}</TableData>
             <TableData>{session.userAgent}</TableData>
             <TableData>
-              <Tooltip label={formatDateTime(session.lastUsed)}>{formatTimestamp(session.lastUsed)}</Tooltip>
+              <FormattedTimestamp timestamp={session.lastUsed} />
             </TableData>
 
             <ContextMenuToggle items={items} openMenu={openMenu} />

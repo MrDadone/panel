@@ -6,7 +6,7 @@ import Button from '../Button.tsx';
 import HljsCode from '../HljsCode.tsx';
 import Modal from '../modals/Modal.tsx';
 
-export default function ActivityInfoButton({ activity }: { activity: ServerActivity | UserActivity }) {
+export default function ActivityInfoButton({ activity }: { activity: AdminActivity | UserActivity | ServerActivity }) {
   const [openModal, setOpenModal] = useState<'view' | null>(null);
 
   return (

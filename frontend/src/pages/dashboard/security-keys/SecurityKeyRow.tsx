@@ -5,8 +5,7 @@ import deleteSecurityKey from '@/api/me/security-keys/deleteSecurityKey.ts';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -74,15 +73,11 @@ export default function SecurityKeyRow({ securityKey }: { securityKey: UserSecur
             <TableData>{securityKey.name}</TableData>
 
             <TableData>
-              {!securityKey.lastUsed ? (
-                t('common.na', {})
-              ) : (
-                <Tooltip label={formatDateTime(securityKey.lastUsed)}>{formatTimestamp(securityKey.lastUsed)}</Tooltip>
-              )}
+              {!securityKey.lastUsed ? t('common.na', {}) : <FormattedTimestamp timestamp={securityKey.lastUsed} />}
             </TableData>
 
             <TableData>
-              <Tooltip label={formatDateTime(securityKey.created)}>{formatTimestamp(securityKey.created)}</Tooltip>
+              <FormattedTimestamp timestamp={securityKey.created} />
             </TableData>
 
             <ContextMenuToggle items={items} openMenu={openMenu} />

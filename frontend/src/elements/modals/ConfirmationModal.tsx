@@ -1,4 +1,4 @@
-import { DefaultMantineColor, Group, ModalProps } from '@mantine/core';
+import { DefaultMantineColor, ModalProps } from '@mantine/core';
 import { MouseEvent as ReactMouseEvent, ReactNode, useState } from 'react';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import Button from '../Button.tsx';
@@ -35,14 +35,14 @@ export default function ConfirmationModal({
   return (
     <Modal {...props}>
       {children}
-      <Group mt='md'>
+      <Modal.Footer>
         <Button color={confirmColor} loading={loading} onClick={onConfirmedAlt}>
           {confirm}
         </Button>
         <Button variant='default' onClick={props.onClose}>
           {t('common.button.cancel', {})}
         </Button>
-      </Group>
+      </Modal.Footer>
     </Modal>
   );
 }

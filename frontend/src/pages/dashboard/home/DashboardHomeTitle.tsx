@@ -16,6 +16,7 @@ export default function DashboardHomeTitle() {
       </Title>
 
       <SubNavigation
+        baseUrl='/'
         items={
           user?.startOnGroupedServers
             ? [

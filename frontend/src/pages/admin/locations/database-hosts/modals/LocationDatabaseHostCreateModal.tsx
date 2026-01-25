@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import getDatabaseHosts from '@/api/admin/database-hosts/getDatabaseHosts.ts';
 import createLocationDatabaseHost from '@/api/admin/locations/database-hosts/createLocationDatabaseHost.ts';
@@ -68,14 +68,14 @@ export default function LocationDatabaseHostCreateModal({
           onSearchChange={databaseHosts.setSearch}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doCreate} loading={loading} disabled={!databaseHost}>
             Create
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

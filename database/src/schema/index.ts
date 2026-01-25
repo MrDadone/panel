@@ -1,7 +1,7 @@
-import * as baseDefinitions from '@/schema/definitions';
-import { DatabaseDefinitions, DatabaseEnum, DatabaseTable } from '@/schema/table';
-import { filesystem } from '@rjweb/utils';
 import path from 'node:path';
+import { filesystem } from '@rjweb/utils';
+import * as baseDefinitions from '@/schema/definitions.ts';
+import { DatabaseDefinitions, DatabaseEnum, DatabaseTable } from '@/schema/table.ts';
 
 const definitions = new DatabaseDefinitions();
 

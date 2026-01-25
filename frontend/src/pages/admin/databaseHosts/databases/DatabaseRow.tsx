@@ -5,10 +5,9 @@ import Code from '@/elements/Code.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
 import { bytesToString } from '@/lib/size.ts';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 
 export default function DatabaseRow({ database }: { database: AdminServerDatabase }) {
   const [size, setSize] = useState(0);
@@ -48,7 +47,7 @@ export default function DatabaseRow({ database }: { database: AdminServerDatabas
         <TableData>{sizeLoading ? <Spinner size={16} /> : bytesToString(size)}</TableData>
 
         <TableData>
-          <Tooltip label={formatDateTime(database.created)}>{formatTimestamp(database.created)}</Tooltip>
+          <FormattedTimestamp timestamp={database.created} />
         </TableData>
       </TableRow>
     </>

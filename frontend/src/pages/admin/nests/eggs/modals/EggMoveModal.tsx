@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import moveEgg from '@/api/admin/nests/eggs/moveEgg.ts';
@@ -58,14 +58,14 @@ export default function EggMoveModal({
           onSearchChange={nests.setSearch}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doMove} loading={loading} disabled={!selectedNest}>
             Move
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

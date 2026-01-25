@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -62,14 +62,14 @@ export default function BackupCreateModal({ opened, onClose }: ModalProps) {
             {...form.getInputProps('ignoredFiles')}
           />
 
-          <Group>
+          <Modal.Footer>
             <Button type='submit' loading={loading} disabled={!form.isValid()}>
               {t('common.button.create', {})}
             </Button>
             <Button variant='default' onClick={onClose}>
               {t('common.button.close', {})}
             </Button>
-          </Group>
+          </Modal.Footer>
         </Stack>
       </form>
     </Modal>

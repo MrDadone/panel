@@ -1,9 +1,8 @@
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 
 export default function DatabaseHostRow({ databaseHost }: { databaseHost: AdminDatabaseHost }) {
   return (
@@ -25,7 +24,7 @@ export default function DatabaseHostRow({ databaseHost }: { databaseHost: AdminD
         </Code>
       </TableData>
       <TableData>
-        <Tooltip label={formatDateTime(databaseHost.created)}>{formatTimestamp(databaseHost.created)}</Tooltip>
+        <FormattedTimestamp timestamp={databaseHost.created} />
       </TableData>
     </TableRow>
   );

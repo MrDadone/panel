@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useEffect, useMemo, useState } from 'react';
 import updateNodeAllocations from '@/api/admin/nodes/allocations/updateNodeAllocations.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -117,14 +117,14 @@ export default function NodeAllocationsUpdateModal({
           onChange={(e) => setIpAlias(e.target.value)}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doUpdate} loading={loading} disabled={!ip}>
             Update
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

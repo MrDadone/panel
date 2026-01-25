@@ -7,8 +7,7 @@ import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
@@ -76,7 +75,7 @@ export default function ServerMountRow({ server, mount }: { server: AdminServer;
               <Code>{mount.mount.target}</Code>
             </TableData>
             <TableData>
-              <Tooltip label={formatDateTime(mount.created)}>{formatTimestamp(mount.created)}</Tooltip>
+              <FormattedTimestamp timestamp={mount.created} />
             </TableData>
 
             <ContextMenuToggle items={items} openMenu={openMenu} />

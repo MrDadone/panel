@@ -1,8 +1,7 @@
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 
 export default function RoleRow({ role }: { role: Role }) {
   return (
@@ -20,7 +19,7 @@ export default function RoleRow({ role }: { role: Role }) {
       <TableData>{role.adminPermissions.length}</TableData>
 
       <TableData>
-        <Tooltip label={formatDateTime(role.created)}>{formatTimestamp(role.created)}</Tooltip>
+        <FormattedTimestamp timestamp={role.created} />
       </TableData>
     </TableRow>
   );

@@ -1,6 +1,6 @@
 import { faPencil, faStar, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Group, Stack } from '@mantine/core';
+import { Stack } from '@mantine/core';
 import { useState } from 'react';
 import deleteServerAllocation from '@/api/admin/servers/allocations/deleteServerAllocation.ts';
 import updateServerAllocation from '@/api/admin/servers/allocations/updateServerAllocation.ts';
@@ -13,8 +13,8 @@ import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Modal from '@/elements/modals/Modal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { formatAllocation } from '@/lib/server.ts';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
@@ -107,14 +107,14 @@ export default function ServerAllocationRow({
             onChange={(e) => setAllocationNote(e.target.value)}
           />
 
-          <Group mt='md'>
+          <Modal.Footer>
             <Button onClick={doEdit} loading={loading}>
               Edit
             </Button>
             <Button variant='default' onClick={() => setOpenModal(null)}>
               Close
             </Button>
-          </Group>
+          </Modal.Footer>
         </Stack>
       </Modal>
 
@@ -171,7 +171,7 @@ export default function ServerAllocationRow({
             </TableData>
             <TableData>{allocation.notes || 'N/A'}</TableData>
             <TableData>
-              <Tooltip label={formatDateTime(allocation.created)}>{formatTimestamp(allocation.created)}</Tooltip>
+              <FormattedTimestamp timestamp={allocation.created} />
             </TableData>
 
             <ContextMenuToggle items={items} openMenu={openMenu} />

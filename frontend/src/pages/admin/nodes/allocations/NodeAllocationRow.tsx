@@ -3,8 +3,7 @@ import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
 interface NodeAllocationRowProps {
@@ -75,7 +74,7 @@ const NodeAllocationRow = memo(
         </TableData>
 
         <TableData>
-          <Tooltip label={formatDateTime(allocation.created)}>{formatTimestamp(allocation.created)}</Tooltip>
+          <FormattedTimestamp timestamp={allocation.created} />
         </TableData>
       </TableRow>
     );

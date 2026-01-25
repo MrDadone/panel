@@ -1,8 +1,7 @@
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 
 export default function MountRow({ mount }: { mount: Mount }) {
   return (
@@ -21,7 +20,7 @@ export default function MountRow({ mount }: { mount: Mount }) {
         <Code>{mount.target}</Code>
       </TableData>
       <TableData>
-        <Tooltip label={formatDateTime(mount.created)}>{formatTimestamp(mount.created)}</Tooltip>
+        <FormattedTimestamp timestamp={mount.created} />
       </TableData>
     </TableRow>
   );

@@ -18,9 +18,9 @@ import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Progress from '@/elements/Progress.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
 import { bytesToString } from '@/lib/size.ts';
-import { formatTimestamp } from '@/lib/time.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -149,7 +149,9 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
 
             <TableData hidden={!backup.completed}>{backup.completed ? backup.files : null}</TableData>
 
-            <TableData>{formatTimestamp(backup.created)}</TableData>
+            <TableData>
+              <FormattedTimestamp timestamp={backup.created} />
+            </TableData>
 
             <TableData>
               {backup.isLocked ? (

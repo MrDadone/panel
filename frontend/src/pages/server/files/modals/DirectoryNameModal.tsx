@@ -1,4 +1,4 @@
-import { Group, ModalProps } from '@mantine/core';
+import { ModalProps } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { join } from 'pathe';
@@ -59,14 +59,14 @@ export default function DirectoryNameModal({ opened, onClose }: ModalProps) {
           </Code>
         </p>
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button type='submit' loading={loading} disabled={!form.isValid()}>
             Create
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </form>
     </Modal>
   );

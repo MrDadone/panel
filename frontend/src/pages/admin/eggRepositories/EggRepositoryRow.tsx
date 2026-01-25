@@ -1,8 +1,7 @@
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 
 export default function EggRepositoryRow({ eggRepository }: { eggRepository: AdminEggRepository }) {
   return (
@@ -25,7 +24,7 @@ export default function EggRepositoryRow({ eggRepository }: { eggRepository: Adm
       </TableData>
 
       <TableData>
-        <Tooltip label={formatDateTime(eggRepository.created)}>{formatTimestamp(eggRepository.created)}</Tooltip>
+        <FormattedTimestamp timestamp={eggRepository.created} />
       </TableData>
     </TableRow>
   );

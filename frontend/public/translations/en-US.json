@@ -9,6 +9,14 @@
         "many": "{count} Users",
         "other": "{count} Users"
       },
+      "server": {
+        "zero": "{count} Servers",
+        "one": "{count} Server",
+        "two": "{count} Servers",
+        "few": "{count} Servers",
+        "many": "{count} Servers",
+        "other": "{count} Servers"
+      },
       "sshKey": {
         "zero": "{count} SSH Keys",
         "one": "{count} SSH Key",
@@ -34,7 +42,10 @@
           "close": "Close",
           "cancel": "Cancel",
           "continue": "Continue",
-          "skip": "Skip"
+          "skip": "Skip",
+          "logout": "Logout",
+          "back": "Back",
+          "next": "Next"
         },
         "input": {
           "search": "Search..."
@@ -45,7 +56,8 @@
           "password": "Password",
           "host": "Host",
           "username": "Username",
-          "truncateDirectory": "Do you want to empty the filesystem of this server before restoring the backup?"
+          "server": "Server",
+          "truncateDirectory": "Do you want to delete all files of this server before performing this action? This cannot be undone."
         },
         "table": {
           "pagination": {
@@ -62,7 +74,8 @@
             "actor": "Actor",
             "event": "Event",
             "ip": "IP",
-            "when": "When"
+            "when": "When",
+            "command": "Command"
           }
         },
         "server": {
@@ -97,13 +110,20 @@
             "always": "Always",
             "unlessStopped": "Unless Stopped",
             "never": "Never"
+          },
+          "bulkActionServerAction": {
+            "started": "Started",
+            "stopped": "Stopped",
+            "restarted": "Restarted",
+            "killed": "Killed"
           }
         },
         "unlimited": "Unlimited",
         "na": "N/A",
         "yes": "Yes",
         "no": "No",
-        "system": "System"
+        "system": "System",
+        "schedule": "Schedule"
       },
       "pages": {
         "oobe": {
@@ -271,6 +291,13 @@
                       "toast": {
                         "deleted": "Server group deleted."
                       }
+                    },
+                    "addServerToGroup": {
+                      "title": "Add Server to {group}",
+                      "noServers": "All servers are already in this group.",
+                      "toast": {
+                        "added": "Server added to group."
+                      }
                     }
                   },
                   "noGroups": "No Groups could be found, time to create one?"
@@ -292,6 +319,16 @@
                   }
                 }
               }
+            },
+            "bulkActions": {
+              "selectionMode": "Selection Mode",
+              "selectAll": "Select All",
+              "deselectAll": "Deselect All",
+              "select": "Select server",
+              "deselect": "Deselect server",
+              "success": "Successfully {action} {servers}.",
+              "partial": "Successfully {action} {successfulServers}. {failedServers} failed.",
+              "groupActions": "Group Actions"
             },
             "noServers": "No Servers could be found, time to add one?"
           },
@@ -433,6 +470,38 @@
               }
             }
           },
+          "shortcuts": {
+            "title": "Keyboard Shortcuts",
+            "description": "Use these keyboard shortcuts to navigate and interact with the panel more efficiently.",
+            "detectedMac": "macOS detected",
+            "detectedWindows": "Windows/Linux detected",
+            "fileManager": {
+              "title": "File Manager",
+              "selectAll": "Select all files",
+              "deselectAll": "Deselect all files",
+              "cutFiles": "Cut selected files",
+              "pasteFiles": "Paste files",
+              "deleteFiles": "Delete selected files",
+              "dragToMove": "Drag files or folder to move into folder",
+              "search": "Search files"
+            },
+            "table": {
+              "title": "Table Navigation",
+              "previousPage": "Previous page",
+              "nextPage": "Next page",
+              "firstPage": "First page",
+              "lastPage": "Last page"
+            },
+            "console": {
+              "title": "Server Console",
+              "previousCommand": "Previous command in history",
+              "nextCommand": "Next command in history"
+            },
+            "serverList": {
+              "title": "Server List",
+              "selectServer": "Hold S and click to select/deselect server"
+            }
+          },
           "sshKeys": {
             "title": "SSH Keys",
             "button": {
@@ -568,6 +637,34 @@
               "extracting": "Extracting",
               "layer": "Layer"
             },
+            "tooltip": {
+              "commandHistory": "Command History",
+              "decreaseFontSize": "Decrease Font Size",
+              "increaseFontSize": "Increase Font Size"
+            },
+            "drawer": {
+              "commandHistory": {
+                "title": "Command History",
+                "detailTitle": "Command Details",
+                "noCommands": "No commands found.",
+                "copyButton": "Copy Command",
+                "sendButton": "Send Command",
+                "commandSent": "Command sent successfully."
+              }
+            },
+            "feature": {
+              "eula": {
+                "title": "Minecraft EULA Agreement",
+                "content": "The Minecraft server requires you to accept the [Minecraft End User License Agreement](https://minecraft.net/eula) before it can start.",
+                "contentDetails": "By clicking \"Accept EULA\", you agree to the terms of the Minecraft EULA and the **eula.txt** file will be updated to **eula=true**.",
+                "toast": {
+                  "accepted": "EULA accepted successfully."
+                },
+                "button": {
+                  "accept": "Accept EULA"
+                }
+              }
+            },
             "details": {
               "address": "Address",
               "port": "Port",
@@ -589,17 +686,6 @@
                   "title": "Forcibly Stop Process",
                   "content": "Forcibly stopping a server can lead to data corruption."
                 }
-              }
-            },
-            "modal": {
-              "commandHistory": {
-                "title": "Command History",
-                "detailTitle": "Command Details",
-                "searchPlaceholder": "Search commands...",
-                "copyButton": "Copy",
-                "sendButton": "Send Command",
-                "copied": "Command copied to clipboard.",
-                "commandSent": "Command sent successfully."
               }
             },
             "stats": {

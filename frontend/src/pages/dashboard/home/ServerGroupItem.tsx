@@ -100,7 +100,7 @@ export default function ServerGroupItem({
     if (failed === 0) {
       addToast(
         t('pages.account.home.bulkActions.success', {
-          item: tItem('server', successful),
+          servers: tItem('server', successful),
           action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
         }),
         'success',
@@ -108,8 +108,8 @@ export default function ServerGroupItem({
     } else {
       addToast(
         t('pages.account.home.bulkActions.partial', {
-          successfulItem: tItem('server', successful),
-          failedItem: tItem('server', failed),
+          successfulServers: tItem('server', successful),
+          failedServers: tItem('server', failed),
           action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
         }),
         'warning',

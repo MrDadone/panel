@@ -2,8 +2,8 @@ import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { bytesToString } from '@/lib/size.ts';
-import { formatTimestamp } from '@/lib/time.ts';
 
 export default function AdminBackupConfigurationBackupRow({ backup }: { backup: AdminServerBackup }) {
   return (
@@ -38,7 +38,9 @@ export default function AdminBackupConfigurationBackupRow({ backup }: { backup: 
 
         <TableData>{backup.completed ? backup.files : null}</TableData>
 
-        <TableData>{formatTimestamp(backup.created)}</TableData>
+        <TableData>
+          <FormattedTimestamp timestamp={backup.created} />
+        </TableData>
       </TableRow>
     </>
   );

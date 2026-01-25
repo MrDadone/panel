@@ -1,6 +1,6 @@
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon, Group, ModalProps, Stack, Title } from '@mantine/core';
+import { ActionIcon, ModalProps, Stack, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import createSchedule from '@/api/server/schedules/createSchedule.ts';
@@ -142,14 +142,14 @@ export default function ScheduleCreateOrUpdateModal({ propSchedule, onScheduleUp
           </Button>
         </div>
 
-        <Group>
+        <Modal.Footer>
           <Button onClick={doCreateOrUpdate} loading={loading} disabled={!name}>
             {propSchedule?.uuid ? 'Update' : 'Create'}
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

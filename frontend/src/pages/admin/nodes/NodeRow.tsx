@@ -7,7 +7,7 @@ import Code from '@/elements/Code.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 
 export default function NodeRow({ node }: { node: Node }) {
   const [version, setVersion] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export default function NodeRow({ node }: { node: Node }) {
       </TableData>
 
       <TableData>
-        <Tooltip label={formatDateTime(node.created)}>{formatTimestamp(node.created)}</Tooltip>
+        <FormattedTimestamp timestamp={node.created} />
       </TableData>
     </TableRow>
   );

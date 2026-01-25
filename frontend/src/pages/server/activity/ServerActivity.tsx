@@ -6,8 +6,7 @@ import ActivityInfoButton from '@/elements/activity/ActivityInfoButton.tsx';
 import Code from '@/elements/Code.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Table, { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -50,7 +49,11 @@ export default function ServerActivity() {
             </TableData>
 
             <TableData>
-              {activity.user ? `${activity.user.username} (${activity.isApi ? 'API' : 'Web'})` : t('common.system', {})}
+              {activity.user
+                ? `${activity.user.username} (${activity.isApi ? 'API' : 'Web'})`
+                : activity.isSchedule
+                  ? t('common.schedule', {})
+                  : t('common.system', {})}
             </TableData>
 
             <TableData>
@@ -60,7 +63,7 @@ export default function ServerActivity() {
             <TableData>{activity.ip && <Code>{activity.ip}</Code>}</TableData>
 
             <TableData>
-              <Tooltip label={formatDateTime(activity.created)}>{formatTimestamp(activity.created)}</Tooltip>
+              <FormattedTimestamp timestamp={activity.created} />
             </TableData>
 
             <TableData>

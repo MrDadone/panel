@@ -1,8 +1,7 @@
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 
 export default function NestRow({ nest }: { nest: AdminNest }) {
   return (
@@ -20,7 +19,7 @@ export default function NestRow({ nest }: { nest: AdminNest }) {
       <TableData>{nest.description}</TableData>
 
       <TableData>
-        <Tooltip label={formatDateTime(nest.created)}>{formatTimestamp(nest.created)}</Tooltip>
+        <FormattedTimestamp timestamp={nest.created} />
       </TableData>
     </TableRow>
   );

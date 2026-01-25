@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import getAvailableNodeAllocations from '@/api/admin/nodes/allocations/getAvailableNodeAllocations.ts';
 import createServerAllocation from '@/api/admin/servers/allocations/createServerAllocation.ts';
@@ -71,14 +71,14 @@ export default function ServerAllocationAddModal({ server, opened, onClose }: Mo
           onSearchChange={availableAllocations.setSearch}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doAdd} loading={loading} disabled={!selectedAllocationUuids.length}>
             Add {selectedAllocationUuids.length}
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

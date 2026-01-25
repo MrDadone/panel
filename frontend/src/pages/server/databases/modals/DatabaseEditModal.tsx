@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -57,14 +57,14 @@ export default function DatabaseEditModal({ database, opened, onClose }: Props) 
             {...form.getInputProps('locked', { type: 'checkbox' })}
           />
 
-          <Group>
+          <Modal.Footer>
             <Button type='submit' loading={loading}>
               {t('common.button.save', {})}
             </Button>
             <Button variant='default' onClick={onClose}>
               {t('common.button.close', {})}
             </Button>
-          </Group>
+          </Modal.Footer>
         </Stack>
       </form>
     </Modal>

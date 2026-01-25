@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack, Switch } from '@mantine/core';
+import { ModalProps, Stack, Switch } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import restoreNodeBackup from '@/api/admin/nodes/backups/restoreNodeBackup.ts';
 import getServers from '@/api/admin/servers/getServers.ts';
@@ -70,14 +70,14 @@ export default function NodeBackupsRestoreModal({ node, backup, opened, onClose 
         />
       </Stack>
 
-      <Group mt='md'>
+      <Modal.Footer>
         <Button color={truncate ? 'red' : undefined} onClick={doRestore} loading={loading}>
           Restore
         </Button>
         <Button variant='default' onClick={onClose}>
           Close
         </Button>
-      </Group>
+      </Modal.Footer>
     </Modal>
   );
 }

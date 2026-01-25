@@ -7,7 +7,7 @@ import {
   faSliders,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Box, Collapse, Flex, Group, Kbd, ModalProps, Stack, Text, UnstyledButton } from '@mantine/core';
+import { Box, Collapse, Flex, Group, ModalProps, Stack, Text, UnstyledButton } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -138,7 +138,6 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
     Boolean,
   ).length;
 
-  // Auto-show advanced filters if any are active
   useEffect(() => {
     if (activeFiltersCount > 0) {
       setShowAdvanced(true);
@@ -148,7 +147,6 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
   const doSearch = () => {
     setLoading(true);
 
-    // Build the search filters - apply query as pathFilter if no explicit pathFilter is set
     const searchFilters = {
       ...form.values,
       pathFilter:
@@ -171,22 +169,15 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
     <Modal title='Search Files' onClose={onClose} opened={opened} size='lg'>
       <form onSubmit={form.onSubmit(() => doSearch())}>
         <Stack gap='md'>
-          {/* Main search input */}
           <TextInput
             placeholder='Search for files...'
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             leftSection={<FontAwesomeIcon icon={faSearch} style={{ color: 'var(--mantine-color-gray-5)' }} />}
-            rightSection={
-              <Kbd size='xs' style={{ opacity: 0.5 }}>
-                Enter
-              </Kbd>
-            }
             size='md'
             autoFocus
           />
 
-          {/* Advanced filters toggle */}
           <UnstyledButton onClick={() => setShowAdvanced(!showAdvanced)}>
             <Flex
               align='center'
@@ -249,7 +240,6 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
             </Flex>
           </UnstyledButton>
 
-          {/* Collapsible filters section */}
           <Collapse in={showAdvanced}>
             <Stack gap='xs'>
               <FilterSection
@@ -382,14 +372,14 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
           </Collapse>
         </Stack>
 
-        <Group mt='lg' justify='flex-end'>
+        <Modal.Footer>
+          <Button type='submit' loading={loading}>
+            Search
+          </Button>
           <Button variant='default' onClick={onClose}>
             Cancel
           </Button>
-          <Button type='submit' loading={loading} leftSection={<FontAwesomeIcon icon={faSearch} />}>
-            Search
-          </Button>
-        </Group>
+        </Modal.Footer>
       </form>
     </Modal>
   );

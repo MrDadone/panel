@@ -25,6 +25,21 @@ export function copyToClipboard(text: string) {
   return navigator.clipboard.writeText(text);
 }
 
+export function handleCopyToClipboard(text: string, addToast?: ReturnType<typeof useToast>['addToast']) {
+  return (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    copyToClipboard(text)
+      .then(() => {
+        addToast?.('Copied to clipboard');
+      })
+      .catch((err) => {
+        console.error(err);
+        addToast?.('Failed to copy to clipboard.', 'error');
+      });
+  };
+}
+
 export default function CopyOnClick({
   enabled = true,
   content,
@@ -38,21 +53,8 @@ export default function CopyOnClick({
 }) {
   const { addToast } = useToast();
 
-  const handleCopy = (e: React.MouseEvent) => {
-    e.preventDefault();
-
-    copyToClipboard(content)
-      .then(() => {
-        addToast('Copied to clipboard');
-      })
-      .catch((err) => {
-        console.error(err);
-        addToast('Failed to copy to clipboard.', 'error');
-      });
-  };
-
   return enabled ? (
-    <button onClick={handleCopy} className={classNames('cursor-pointer', className)}>
+    <button onClick={handleCopyToClipboard(content, addToast)} className={classNames('cursor-pointer', className)}>
       {children}
     </button>
   ) : (

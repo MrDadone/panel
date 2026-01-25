@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import getMounts from '@/api/admin/mounts/getMounts.ts';
 import createNodeMount from '@/api/admin/nodes/mounts/createNodeMount.ts';
@@ -60,14 +60,14 @@ export default function NodeMountAddModal({ node, opened, onClose }: ModalProps 
           onSearchChange={mounts.setSearch}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doAdd} loading={loading} disabled={!selectedMount}>
             Add
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

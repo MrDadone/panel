@@ -1,4 +1,4 @@
-import { Group, ModalProps } from '@mantine/core';
+import { ModalProps } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import classNames from 'classnames';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
@@ -109,14 +109,14 @@ export default function PullFileModal({ opened, onClose }: ModalProps) {
           </Code>
         </p>
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button type='submit' loading={loading} disabled={!form.isValid()}>
             Pull{queryResult?.fileSize ? ` (${bytesToString(queryResult.fileSize)})` : ''}
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </form>
     </Modal>
   );

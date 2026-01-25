@@ -26,6 +26,8 @@ const baseTranslations = defineTranslations({
         continue: 'Continue',
         skip: 'Skip',
         logout: 'Logout',
+        back: 'Back',
+        next: 'Next',
       },
       input: {
         search: 'Search...',
@@ -37,7 +39,8 @@ const baseTranslations = defineTranslations({
         host: 'Host',
         username: 'Username',
         server: 'Server',
-        truncateDirectory: 'Do you want to empty the filesystem of this server before performing this action?',
+        truncateDirectory:
+          'Do you want to delete all files of this server before performing this action? This cannot be undone.',
       },
       table: {
         pagination: {
@@ -103,6 +106,7 @@ const baseTranslations = defineTranslations({
       yes: 'Yes',
       no: 'No',
       system: 'System',
+      schedule: 'Schedule',
     },
     pages: {
       oobe: {
@@ -307,8 +311,8 @@ const baseTranslations = defineTranslations({
             deselectAll: 'Deselect All',
             select: 'Select server',
             deselect: 'Deselect server',
-            success: 'Successfully {action} {item}.',
-            partial: 'Successfully {action} {successfulItem}. {failedItem} failed.',
+            success: 'Successfully {action} {servers}.',
+            partial: 'Successfully {action} {successfulServers}. {failedServers} failed.',
             groupActions: 'Group Actions',
           },
           noServers: 'No Servers could be found, time to add one?',
@@ -623,6 +627,21 @@ const baseTranslations = defineTranslations({
             extracting: 'Extracting',
             layer: 'Layer',
           },
+          tooltip: {
+            commandHistory: 'Command History',
+            decreaseFontSize: 'Decrease Font Size',
+            increaseFontSize: 'Increase Font Size',
+          },
+          drawer: {
+            commandHistory: {
+              title: 'Command History',
+              detailTitle: 'Command Details',
+              noCommands: 'No commands found.',
+              copyButton: 'Copy Command',
+              sendButton: 'Send Command',
+              commandSent: 'Command sent successfully.',
+            },
+          },
           feature: {
             eula: {
               title: 'Minecraft EULA Agreement',
@@ -670,21 +689,6 @@ const baseTranslations = defineTranslations({
           },
           socketConnected: 'Connected ({ping}ms ping)',
           socketDisconnected: 'Disconnected',
-          button: {
-            commandHistory: 'Command History',
-          },
-          modal: {
-            commandHistory: {
-              title: 'Command History',
-              detailTitle: 'Command Details',
-              searchPlaceholder: 'Search commands...',
-              noCommands: 'No commands found.',
-              copied: 'Command copied to clipboard.',
-              copyButton: 'Copy Command',
-              sendButton: 'Send Command',
-              commandSent: 'Command sent successfully.',
-            },
-          },
         },
         files: {
           title: 'Files',

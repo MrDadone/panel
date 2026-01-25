@@ -168,14 +168,14 @@ export default function ApiKeyCreateOrUpdateModal({ contextApiKey, opened, onClo
           />
         )}
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doCreateOrUpdate} loading={loading} disabled={!form.isValid()}>
             {t('common.button.save', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

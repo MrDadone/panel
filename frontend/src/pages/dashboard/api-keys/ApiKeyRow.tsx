@@ -7,8 +7,7 @@ import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import ApiKeyCreateOrUpdateModal from '@/pages/dashboard/api-keys/modals/ApiKeyCreateOrUpdateModal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -75,23 +74,15 @@ export default function ApiKeyRow({ apiKey }: { apiKey: UserApiKey }) {
             </TableData>
 
             <TableData>
-              {!apiKey.lastUsed ? (
-                t('common.na', {})
-              ) : (
-                <Tooltip label={formatDateTime(apiKey.lastUsed)}>{formatTimestamp(apiKey.lastUsed)}</Tooltip>
-              )}
+              {!apiKey.lastUsed ? t('common.na', {}) : <FormattedTimestamp timestamp={apiKey.lastUsed} />}
             </TableData>
 
             <TableData>
-              {!apiKey.expires ? (
-                t('common.na', {})
-              ) : (
-                <Tooltip label={formatDateTime(apiKey.expires)}>{formatTimestamp(apiKey.expires)}</Tooltip>
-              )}
+              {!apiKey.expires ? t('common.na', {}) : <FormattedTimestamp timestamp={apiKey.expires} />}
             </TableData>
 
             <TableData>
-              <Tooltip label={formatDateTime(apiKey.created)}>{formatTimestamp(apiKey.created)}</Tooltip>
+              <FormattedTimestamp timestamp={apiKey.created} />
             </TableData>
 
             <ContextMenuToggle items={items} openMenu={openMenu} />

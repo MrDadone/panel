@@ -7,8 +7,7 @@ import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
@@ -78,17 +77,11 @@ export default function UserOAuthLinkRow({ user, userOAuthLink }: { user: User; 
             </TableData>
 
             <TableData>
-              {!userOAuthLink.lastUsed ? (
-                'N/A'
-              ) : (
-                <Tooltip label={formatDateTime(userOAuthLink.lastUsed)}>
-                  {formatTimestamp(userOAuthLink.lastUsed)}
-                </Tooltip>
-              )}
+              {!userOAuthLink.lastUsed ? 'N/A' : <FormattedTimestamp timestamp={userOAuthLink.lastUsed} />}
             </TableData>
 
             <TableData>
-              <Tooltip label={formatDateTime(userOAuthLink.created)}>{formatTimestamp(userOAuthLink.created)}</Tooltip>
+              <FormattedTimestamp timestamp={userOAuthLink.created} />
             </TableData>
 
             <ContextMenuToggle items={items} openMenu={openMenu} />

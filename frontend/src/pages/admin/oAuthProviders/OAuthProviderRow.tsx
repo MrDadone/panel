@@ -1,8 +1,7 @@
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 
 export default function OAuthProviderRow({ oauthProvider }: { oauthProvider: AdminOAuthProvider }) {
   return (
@@ -22,7 +21,7 @@ export default function OAuthProviderRow({ oauthProvider }: { oauthProvider: Adm
       <TableData>{oauthProvider.linkViewable ? 'Yes' : 'No'}</TableData>
       <TableData>{oauthProvider.userManageable ? 'Yes' : 'No'}</TableData>
       <TableData>
-        <Tooltip label={formatDateTime(oauthProvider.created)}>{formatTimestamp(oauthProvider.created)}</Tooltip>
+        <FormattedTimestamp timestamp={oauthProvider.created} />
       </TableData>
     </TableRow>
   );

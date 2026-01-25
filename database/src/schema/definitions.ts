@@ -1,7 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { bytea, DatabaseEnum, DatabaseTable, UTF8_MAX_SCALAR_SIZE } from '@/schema/table';
 import {
-  PgColumn,
   bigint,
   boolean,
   char,
@@ -9,6 +7,7 @@ import {
   inet,
   integer,
   jsonb,
+  PgColumn,
   primaryKey,
   smallint,
   text,
@@ -17,6 +16,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { bytea, DatabaseEnum, DatabaseTable, UTF8_MAX_SCALAR_SIZE } from '@/schema/table.ts';
 
 export const databaseTypeEnum = new DatabaseEnum('database_type', ['MYSQL', 'POSTGRES']);
 export const serverStatusEnum = new DatabaseEnum('server_status', ['INSTALLING', 'INSTALL_FAILED', 'RESTORING_BACKUP']);

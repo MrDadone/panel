@@ -5,12 +5,12 @@ import jsYaml from 'js-yaml';
 import { useState } from 'react';
 import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
+import { handleCopyToClipboard } from '@/elements/CopyOnClick.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import HljsCode from '@/elements/HljsCode.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
-import { copyToClipboard } from '@/elements/CopyOnClick.tsx';
 
 export default function AdminNodeConfiguration({ node }: { node: Node }) {
   const { addToast } = useToast();
@@ -49,17 +49,6 @@ export default function AdminNodeConfiguration({ node }: { node: Node }) {
     return `wings configure --join-data ${btoa(jsYaml.dump(getNodeConfiguration(), { condenseFlow: true, indent: 1, noArrayIndent: true }))}`;
   };
 
-  const handleCopyCommand = () => {
-    copyToClipboard(getCommand())
-      .then(() => {
-        addToast('Copied to clipboard', 'success');
-      })
-      .catch((err) => {
-        console.error(err);
-        addToast('Failed to copy to clipboard', 'error');
-      });
-  };
-
   return (
     <AdminContentContainer title='Node Configuration' titleOrder={2}>
       <div className='grid md:grid-cols-4 grid-cols-1 grid-rows-2 gap-4'>
@@ -80,7 +69,7 @@ export default function AdminNodeConfiguration({ node }: { node: Node }) {
                 {getCommand()}
               </Code>
               <Tooltip label='Copy command'>
-                <ActionIcon variant='subtle' onClick={handleCopyCommand} size='lg'>
+                <ActionIcon variant='subtle' onClick={handleCopyToClipboard(getCommand(), addToast)} size='lg'>
                   <FontAwesomeIcon icon={faCopy} />
                 </ActionIcon>
               </Tooltip>

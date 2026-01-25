@@ -2,8 +2,7 @@ import { Group } from '@mantine/core';
 import ActivityInfoButton from '@/elements/activity/ActivityInfoButton.tsx';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 
 export default function ActivityRow({ activity }: { activity: AdminActivity }) {
   return (
@@ -29,7 +28,7 @@ export default function ActivityRow({ activity }: { activity: AdminActivity }) {
       <TableData>{activity.ip && <Code>{activity.ip}</Code>}</TableData>
 
       <TableData>
-        <Tooltip label={formatDateTime(activity.created)}>{formatTimestamp(activity.created)}</Tooltip>
+        <FormattedTimestamp timestamp={activity.created} />
       </TableData>
 
       <TableData>

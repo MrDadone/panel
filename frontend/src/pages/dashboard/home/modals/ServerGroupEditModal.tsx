@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -65,14 +65,14 @@ export default function ServerGroupEditModal({ serverGroup, opened, onClose }: P
           {...form.getInputProps('name')}
         />
 
-        <Group>
+        <Modal.Footer>
           <Button onClick={doUpdate} loading={loading} disabled={!form.isValid()}>
             {t('common.button.save', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

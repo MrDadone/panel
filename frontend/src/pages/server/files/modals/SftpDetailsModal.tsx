@@ -1,6 +1,6 @@
 import { faExternalLink } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Group, ModalProps } from '@mantine/core';
+import { ModalProps } from '@mantine/core';
 import Button from '@/elements/Button.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -42,7 +42,7 @@ export default function SftpDetailsModal({ opened, onClose }: ModalProps) {
         />
       </div>
 
-      <Group mt='md'>
+      <Modal.Footer>
         <a href={`sftp://${user!.username}.${server.uuidShort}@${server.sftpHost}:${server.sftpPort}`}>
           <Button onClick={onClose} leftSection={<FontAwesomeIcon icon={faExternalLink} />}>
             Launch
@@ -51,7 +51,7 @@ export default function SftpDetailsModal({ opened, onClose }: ModalProps) {
         <Button variant='default' onClick={onClose}>
           Close
         </Button>
-      </Group>
+      </Modal.Footer>
     </Modal>
   );
 }

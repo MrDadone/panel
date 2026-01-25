@@ -1,4 +1,4 @@
-import { Group, Text } from '@mantine/core';
+import { Text } from '@mantine/core';
 import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getFileContent from '@/api/server/files/getFileContent.ts';
@@ -57,14 +57,14 @@ export default function EulaModal() {
       <Text size='sm' mb='md'>
         {t('pages.server.console.feature.eula.contentDetails', {}).md()}
       </Text>
-      <Group mt='md'>
+      <Modal.Footer>
         <Button color='green' loading={loading} onClick={acceptEula}>
           {t('pages.server.console.feature.eula.button.accept', {})}
         </Button>
         <Button variant='default' onClick={() => setOpened(false)}>
           {t('common.button.cancel', {})}
         </Button>
-      </Group>
+      </Modal.Footer>
     </Modal>
   );
 }
