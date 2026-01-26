@@ -1,4 +1,12 @@
-import { faPlay, faRadio, faRefresh, faServer, faSkull, faStop } from '@fortawesome/free-solid-svg-icons';
+import {
+  faPlay,
+  faRadio,
+  faRefresh,
+  faServer,
+  faSkull,
+  faStop,
+  faTowerBroadcast,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group } from '@mantine/core';
 import { useEffect, useState } from 'react';
@@ -52,8 +60,8 @@ export default function ServerStatusIndicator() {
   const buttonIcon = isOffline ? faPlay : killable ? faSkull : faStop;
 
   return (
-    <div className='flex flex-col gap-2 mt-2'>
-      <div className='flex items-center gap-3'>
+    <div className='flex flex-col gap-2'>
+      <div className='flex justify-start items-center gap-3'>
         <Group gap='xs'>
           <ServerCan action={['control.start', 'control.stop']} matchAny>
             <Tooltip label={t(buttonLabel, {})}>
@@ -84,7 +92,11 @@ export default function ServerStatusIndicator() {
           </div>
 
           <div className='flex items-center gap-1.5 text-xs'>
-            <FontAwesomeIcon icon={faRadio} className='w-3 h-3 text-white shrink-0' style={{ minWidth: '12px' }} />
+            <FontAwesomeIcon
+              icon={faTowerBroadcast}
+              className={`${socketConnected ? 'animate-pulse text-green-500' : 'text-white'} w-3 h-3  shrink-0`}
+              style={{ minWidth: '12px' }}
+            />
             <span className='font-medium text-white leading-none'>
               {socketConnected
                 ? t('common.enum.connectionStatus.connected', {})

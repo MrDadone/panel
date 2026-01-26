@@ -183,18 +183,19 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
               align='center'
               gap='sm'
               py='xs'
-              px='sm'
               style={{
                 borderRadius: 6,
                 background: showAdvanced ? 'var(--mantine-color-dark-6)' : 'transparent',
                 border: `1px solid ${showAdvanced ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-dark-5)'}`,
                 transition: 'all 0.15s ease',
+                paddingLeft: '14px',
+                paddingRight: '14px',
               }}
             >
               <Box
                 style={{
-                  width: 24,
-                  height: 24,
+                  width: 28,
+                  height: 28,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

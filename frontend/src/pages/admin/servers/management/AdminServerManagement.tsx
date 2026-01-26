@@ -27,26 +27,24 @@ export default function AdminServerManagement({ server }: { server: AdminServer 
       <ServerClearStateModal server={server} opened={openModal === 'clear-state'} onClose={() => setOpenModal(null)} />
       <ServerDeleteModal server={server} opened={openModal === 'delete'} onClose={() => setOpenModal(null)} />
 
-      <Grid>
-        <Grid.Col span={3}>
-          <Card>
-            <Stack gap='xs'>
-              <Title order={2}>Transfer</Title>
-              <Text size='sm'>Move this server to another node within this system.</Text>
-              {canTransfer ? (
-                <Button onClick={() => setOpenModal('transfer')} variant='outline' size='xs'>
-                  Transfer
-                </Button>
-              ) : (
-                <Text size='sm'>You do not have permission to transfer this server.</Text>
-              )}
-            </Stack>
-          </Card>
-        </Grid.Col>
-        <Grid.Col span={3}>
-          {server.suspended ? (
-            <Card>
-              <Stack gap='xs'>
+      <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
+        <Card className='h-fit!'>
+          <Stack gap='xs'>
+            <Title order={2}>Transfer</Title>
+            <Text size='sm'>Move this server to another node within this system.</Text>
+            {canTransfer ? (
+              <Button onClick={() => setOpenModal('transfer')} variant='outline' size='xs'>
+                Transfer
+              </Button>
+            ) : (
+              <Text size='sm'>You do not have permission to transfer this server.</Text>
+            )}
+          </Stack>
+        </Card>
+        <Card className='h-fit!'>
+          <Stack gap='xs'>
+            {server.suspended ? (
+              <>
                 <Title order={2}>Unsuspend</Title>
                 <Text size='sm'>
                   This will unsuspend the server, allowing it to start again. The user will be able to access their
@@ -55,11 +53,9 @@ export default function AdminServerManagement({ server }: { server: AdminServer 
                 <Button onClick={() => setOpenModal('unsuspend')} variant='outline' size='xs' color='green'>
                   Unsuspend
                 </Button>
-              </Stack>
-            </Card>
-          ) : (
-            <Card>
-              <Stack gap='xs'>
+              </>
+            ) : (
+              <>
                 <Title order={2}>Suspend</Title>
                 <Text size='sm'>
                   This will suspend the server, stop any running processes, and immediately block the user from being
@@ -68,33 +64,29 @@ export default function AdminServerManagement({ server }: { server: AdminServer 
                 <Button onClick={() => setOpenModal('suspend')} variant='outline' size='xs' color='orange'>
                   Suspend
                 </Button>
-              </Stack>
-            </Card>
-          )}
-        </Grid.Col>
-        <Grid.Col span={3}>
-          <Card>
-            <Stack gap='xs'>
-              <Title order={2}>Clear State</Title>
-              <Text size='sm'>This will clear the server state known by the panel.</Text>
-              <Button onClick={() => setOpenModal('clear-state')} variant='outline' size='xs' color='red'>
-                Clear State
-              </Button>
-            </Stack>
-          </Card>
-        </Grid.Col>
-        <Grid.Col span={3}>
-          <Card>
-            <Stack gap='xs'>
-              <Title order={2}>Delete</Title>
-              <Text size='sm'>This will delete the server and all of its data. This action cannot be undone.</Text>
-              <Button onClick={() => setOpenModal('delete')} variant='outline' size='xs' color='red'>
-                Delete
-              </Button>
-            </Stack>
-          </Card>
-        </Grid.Col>
-      </Grid>
+              </>
+            )}
+          </Stack>
+        </Card>
+        <Card className='h-fit!'>
+          <Stack gap='xs'>
+            <Title order={2}>Clear State</Title>
+            <Text size='sm'>This will clear the server state known by the panel.</Text>
+            <Button onClick={() => setOpenModal('clear-state')} variant='outline' size='xs' color='red'>
+              Clear State
+            </Button>
+          </Stack>
+        </Card>
+        <Card className='h-fit!'>
+          <Stack gap='xs'>
+            <Title order={2}>Delete</Title>
+            <Text size='sm'>This will delete the server and all of its data. This action cannot be undone.</Text>
+            <Button onClick={() => setOpenModal('delete')} variant='outline' size='xs' color='red'>
+              Delete
+            </Button>
+          </Stack>
+        </Card>
+      </div>
     </AdminContentContainer>
   );
 }
