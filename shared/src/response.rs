@@ -37,7 +37,6 @@ impl ApiResponse {
         }
     }
 
-    #[inline]
     pub fn new_serialized(body: impl serde::Serialize) -> Self {
         let accept_header = ACCEPT_HEADER.try_with(|h| h.clone()).ok().flatten();
 

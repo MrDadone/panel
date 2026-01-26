@@ -1,4 +1,5 @@
 use anyhow::Context;
+use axum::{extract::ConnectInfo, http::HeaderMap};
 use colored::Colorize;
 use dotenvy::dotenv;
 use std::sync::Arc;
@@ -45,6 +46,7 @@ pub struct Env {
     pub app_debug: bool,
     pub app_use_decryption_cache: bool,
     pub app_use_internal_cache: bool,
+    pub app_trusted_proxies: Vec<cidr::IpCidr>,
     pub app_log_directory: Option<String>,
     pub app_encryption_key: String,
     pub server_name: Option<String>,
@@ -129,6 +131,12 @@ impl Env {
                 .trim_matches('"')
                 .parse()
                 .context("Invalid APP_USE_INTERNAL_CACHE value")?,
+            app_trusted_proxies: std::env::var("APP_TRUSTED_PROXIES")
+                .unwrap_or("".to_string())
+                .trim_matches('"')
+                .split(',')
+                .filter_map(|s| if s.is_empty() { None } else { s.parse().ok() })
+                .collect(),
             app_log_directory: std::env::var("APP_LOG_DIRECTORY")
                 .ok()
                 .map(|s| s.trim_matches('"').to_string()),
@@ -214,5 +222,31 @@ impl Env {
         }
 
         Ok((Arc::new(env), EnvGuard(guard, stdout_guard)))
+    }
+
+    #[inline]
+    pub fn find_ip(
+        &self,
+        headers: &HeaderMap,
+        connect_info: ConnectInfo<std::net::SocketAddr>,
+    ) -> std::net::IpAddr {
+        for cidr in &self.app_trusted_proxies {
+            if cidr.contains(&connect_info.ip()) {
+                if let Some(forwarded) = headers.get("X-Forwarded-For")
+                    && let Ok(forwarded) = forwarded.to_str()
+                    && let Some(ip) = forwarded.split(',').next()
+                {
+                    return ip.parse().unwrap_or_else(|_| connect_info.ip());
+                }
+
+                if let Some(forwarded) = headers.get("X-Real-IP")
+                    && let Ok(forwarded) = forwarded.to_str()
+                {
+                    return forwarded.parse().unwrap_or_else(|_| connect_info.ip());
+                }
+            }
+        }
+
+        connect_info.ip()
     }
 }

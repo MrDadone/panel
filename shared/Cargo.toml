@@ -42,6 +42,7 @@ dotenvy = { workspace = true }
 colored = { workspace = true }
 uuid = { workspace = true }
 simple_crypt = "0.2.3"
+cidr = { version = "0.3.1", features = ["serde"] }
 validator = { workspace = true }
 indexmap = { workspace = true }
 regex = { workspace = true }

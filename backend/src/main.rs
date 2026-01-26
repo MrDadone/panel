@@ -28,11 +28,12 @@ use utoipa_axum::router::OpenApiRouter;
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 async fn handle_request(
+    state: GetState,
     connect_info: ConnectInfo<SocketAddr>,
     mut req: Request<Body>,
     next: Next,
 ) -> Result<Response<Body>, StatusCode> {
-    let ip = shared::utils::extract_ip(req.headers()).unwrap_or_else(|| connect_info.ip());
+    let ip = state.env.find_ip(req.headers(), connect_info);
 
     req.extensions_mut().insert(ip);
 
@@ -665,7 +666,10 @@ async fn main() {
                 .with_status(StatusCode::NOT_FOUND)
                 .ok()
         })
-        .layer(axum::middleware::from_fn(handle_request))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            handle_request,
+        ))
         .layer(CookieManagerLayer::new())
         .route_layer(axum::middleware::from_fn(handle_postprocessing))
         .route_layer(SentryHttpLayer::new().enable_transaction())
