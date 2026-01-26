@@ -48,7 +48,7 @@ mod get {
             .get_servers_server_schedules_schedule(server.uuid, schedule.uuid)
             .await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             status: schedule_status.status,
         })
         .ok()

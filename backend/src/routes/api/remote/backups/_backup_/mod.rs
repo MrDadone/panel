@@ -214,7 +214,7 @@ mod get {
         .execute(state.database.write())
         .await?;
 
-        ApiResponse::json(Response { parts, part_size }).ok()
+        ApiResponse::new_serialized(Response { parts, part_size }).ok()
     }
 }
 
@@ -450,7 +450,7 @@ mod post {
             );
         }
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

@@ -73,7 +73,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             password: if permissions
                 .has_server_permission("databases.read-password")
                 .is_ok()

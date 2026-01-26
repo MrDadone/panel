@@ -34,7 +34,7 @@ mod post {
         state: GetState,
         node: GetNode,
         server: GetServer,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         let destination_node = match &server.destination_node {
             Some(id) => id,
@@ -112,7 +112,7 @@ mod post {
             tracing::error!("failed to delete server on source node: {:?}", err);
         }
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

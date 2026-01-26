@@ -54,7 +54,7 @@ mod patch {
         activity_logger: GetServerActivityLogger,
         schedule: GetServerSchedule,
         Path((_server, _schedule, schedule_step)): Path<(String, uuid::Uuid, uuid::Uuid)>,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         let mut schedule_step = match ServerScheduleStep::by_schedule_uuid_uuid(
             &state.database,
@@ -122,7 +122,7 @@ mod patch {
             })
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -225,7 +225,7 @@ mod delete {
             })
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

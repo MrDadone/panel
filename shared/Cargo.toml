@@ -27,6 +27,8 @@ serde = { workspace = true }
 serde_json_path = "0.7.2"
 serde_json = { workspace = true }
 serde_yml = { workspace = true }
+rmp-serde = { workspace = true }
+serde-xml-rs = { workspace = true }
 utoipa-axum = { workspace = true }
 base32 = "0.5.1"
 sqlx = { workspace = true }
@@ -51,7 +53,6 @@ constant_time_eq = "0.4.2"
 urlencoding = { workspace = true }
 ignore = { version = "0.4.23", features = ["simd-accel"] }
 futures-util = { workspace = true }
-bincode = { version = "2.0.1", features = ["serde"] }
 cap-std = "4.0.0"
 semver = { workspace = true }
 git2 = "0.20.2"
@@ -59,3 +60,5 @@ tempfile = { workspace = true }
 compact_str = { workspace = true }
 nestify = { workspace = true }
 sysinfo = "0.38.0"
+accept-header = "0.2.3"
+mime = "0.3.17"

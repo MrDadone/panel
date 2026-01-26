@@ -35,6 +35,7 @@ import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 
 const timezones = Object.keys(zones)
   .sort()
@@ -50,6 +51,8 @@ export default function ServerCreate() {
   const canReadNests = useAdminCan('nests.read');
   const canReadEggs = useAdminCan('eggs.read');
   const canReadBackupConfigurations = useAdminCan('backup-configurations.read');
+
+  const [openModal, setOpenModal] = useState<'confirm-no-allocation' | null>(null);
 
   const form = useForm<z.infer<typeof adminServerCreateSchema>>({
     initialValues: {
@@ -166,7 +169,25 @@ export default function ServerCreate() {
 
   return (
     <AdminContentContainer title='Create Server' titleOrder={2}>
-      <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
+      <ConfirmationModal
+        opened={openModal === 'confirm-no-allocation'}
+        onClose={() => setOpenModal(null)}
+        title='No Primary Allocation Assigned'
+        confirm='Create Anyway'
+        onConfirmed={() => doCreateOrUpdate(false)}
+      >
+        You are creating a server without assigning any primary allocation while this egg requires users to assign a
+        primary allocation. Are you sure you want to continue?
+      </ConfirmationModal>
+
+      <form
+        onSubmit={form.onSubmit((values) =>
+          !values.allocationUuid &&
+          eggs.items.find((e) => e.uuid === values.eggUuid)?.configAllocations.userSelfAssign.requirePrimaryAllocation
+            ? setOpenModal('confirm-no-allocation')
+            : doCreateOrUpdate(false),
+        )}
+      >
         <Stack>
           <Group grow align='normal'>
             <Paper withBorder p='md'>

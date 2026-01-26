@@ -33,7 +33,7 @@ mod get {
 
         let server_groups = UserServerGroup::all_by_user_uuid(&state.database, user.uuid).await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             server_groups: server_groups
                 .into_iter()
                 .map(|server_group| server_group.into_api_object())
@@ -82,10 +82,10 @@ mod post {
         permissions: GetPermissionManager,
         user: GetUser,
         activity_logger: GetUserActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -114,7 +114,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             server_group: server_group.into_api_object(),
         })
         .ok()

@@ -18,6 +18,7 @@ pub mod extract;
 pub mod jwt;
 pub mod mail;
 pub mod models;
+pub mod payload;
 pub mod permissions;
 pub mod prelude;
 pub mod response;
@@ -25,6 +26,8 @@ pub mod settings;
 pub mod storage;
 pub mod telemetry;
 pub mod utils;
+
+pub use payload::Payload;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GIT_COMMIT: &str = env!("CARGO_GIT_COMMIT");

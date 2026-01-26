@@ -22,7 +22,7 @@ mod get {
     pub async fn route(state: GetState, permissions: GetPermissionManager) -> ApiResponseResult {
         permissions.has_admin_permission("stats.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             telemetry: shared::telemetry::TelemetryData::collect(&state).await?,
         })
         .ok()

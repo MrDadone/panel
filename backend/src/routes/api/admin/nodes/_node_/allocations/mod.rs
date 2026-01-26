@@ -53,7 +53,7 @@ mod get {
         Query(params): Query<PaginationParamsWithSearch>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -71,7 +71,7 @@ mod get {
 
         let storage_url_retriever = state.storage.retrieve_urls().await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             allocations: allocations
                 .try_async_map(|allocation| {
                     allocation.into_admin_api_object(&state.database, &storage_url_retriever)
@@ -119,7 +119,7 @@ mod delete {
         permissions: GetPermissionManager,
         node: GetNode,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_admin_permission("nodes.allocations")?;
 
@@ -137,7 +137,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response { deleted }).ok()
+        ApiResponse::new_serialized(Response { deleted }).ok()
     }
 }
 
@@ -185,10 +185,10 @@ mod post {
         permissions: GetPermissionManager,
         node: GetNode,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -229,7 +229,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response { created }).ok()
+        ApiResponse::new_serialized(Response { created }).ok()
     }
 }
 
@@ -277,10 +277,10 @@ mod patch {
         permissions: GetPermissionManager,
         node: GetNode,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -328,7 +328,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response { updated }).ok()
+        ApiResponse::new_serialized(Response { updated }).ok()
     }
 }
 

@@ -92,7 +92,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("nodes.backups")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             backup: backup.0.into_api_object(),
         })
         .ok()
@@ -168,7 +168,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

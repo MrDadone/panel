@@ -61,7 +61,7 @@ mod delete {
             .await?
             .user_mountable
         {
-            return ApiResponse::json(ApiError::new_value(&["mount not found"]))
+            return ApiResponse::new_serialized(ApiError::new_value(&["mount not found"]))
                 .with_status(StatusCode::NOT_FOUND)
                 .ok();
         }
@@ -77,7 +77,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

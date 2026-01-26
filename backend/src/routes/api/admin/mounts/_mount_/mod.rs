@@ -73,7 +73,7 @@ mod get {
     pub async fn route(permissions: GetPermissionManager, mount: GetMount) -> ApiResponseResult {
         permissions.has_admin_permission("mounts.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             mount: mount.0.into_admin_api_object(),
         })
         .ok()
@@ -126,7 +126,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -183,12 +183,12 @@ mod patch {
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
         mut mount: GetMount,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_admin_permission("mounts.update")?;
 
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -263,7 +263,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

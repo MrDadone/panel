@@ -47,7 +47,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response { token_id, token }).ok()
+        ApiResponse::new_serialized(Response { token_id, token }).ok()
     }
 }
 

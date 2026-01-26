@@ -40,7 +40,7 @@ mod post {
     ), request_body = inline(Payload))]
     pub async fn route(
         state: GetState,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         let mut parts = data.username.splitn(2, '.');
         let user = match parts.next() {
@@ -101,7 +101,7 @@ mod post {
             }
         };
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             user: user.uuid,
             server: server.uuid,
             permissions: server.wings_permissions(&user),

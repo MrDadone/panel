@@ -38,15 +38,16 @@ mod delete {
     ) -> ApiResponseResult {
         permissions.has_user_permission("ssh-keys.delete")?;
 
-        let ssh_key =
-            match UserSshKey::by_user_uuid_uuid(&state.database, user.uuid, ssh_key).await? {
-                Some(ssh_key) => ssh_key,
-                None => {
-                    return ApiResponse::json(ApiError::new_value(&["ssh key not found"]))
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
-                }
-            };
+        let ssh_key = match UserSshKey::by_user_uuid_uuid(&state.database, user.uuid, ssh_key)
+            .await?
+        {
+            Some(ssh_key) => ssh_key,
+            None => {
+                return ApiResponse::new_serialized(ApiError::new_value(&["ssh key not found"]))
+                    .with_status(StatusCode::NOT_FOUND)
+                    .ok();
+            }
+        };
 
         ssh_key.delete(&state.database, ()).await?;
 
@@ -61,7 +62,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -109,10 +110,10 @@ mod patch {
         user: GetUser,
         activity_logger: GetUserActivityLogger,
         Path(ssh_key): Path<uuid::Uuid>,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -169,7 +170,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

@@ -62,7 +62,7 @@ mod post {
                 .execute(state.database.write())
                 .await?;
 
-                return ApiResponse::json(Response {}).ok();
+                return ApiResponse::new_serialized(Response {}).ok();
             }
             Err(err) => return Err(err.into()),
         };
@@ -71,7 +71,7 @@ mod post {
             .log("server:settings.abort-install", serde_json::json!({}))
             .await;
 
-        ApiResponse::json(Response {})
+        ApiResponse::new_serialized(Response {})
             .with_status(StatusCode::ACCEPTED)
             .ok()
     }

@@ -40,7 +40,6 @@ export default function NestView() {
             name: 'General',
             icon: faCog,
             path: '/',
-            end: true,
             element: <NestCreateOrUpdate contextNest={nest} />,
           },
           {

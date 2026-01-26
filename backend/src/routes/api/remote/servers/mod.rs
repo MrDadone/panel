@@ -48,7 +48,7 @@ mod get {
         Query(params): Query<PaginationParams>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -62,7 +62,7 @@ mod get {
         )
         .await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             data: {
                 let mut api_servers = Vec::new();
                 api_servers.reserve_exact(servers.data.len());

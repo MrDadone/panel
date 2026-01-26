@@ -85,7 +85,7 @@ mod put {
             .log("account:update-avatar", serde_json::json!({}))
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             avatar: state.storage.retrieve_urls().await?.get_url(&avatar_path),
         })
         .ok()
@@ -144,7 +144,7 @@ mod delete {
             .log("user:account.delete-avatar", serde_json::json!({}))
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

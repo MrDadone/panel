@@ -99,7 +99,7 @@ mod get {
         })
         .await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             all_time,
             today,
             week,

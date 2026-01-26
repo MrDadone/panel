@@ -47,7 +47,7 @@ mod get {
                 }
             };
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             oauth_link: oauth_link.into_api_object(&state.database).await?,
         })
         .ok()
@@ -113,7 +113,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

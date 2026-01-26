@@ -68,7 +68,7 @@ mod get {
         Query(params): Query<Params>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -97,14 +97,14 @@ mod get {
         {
             Ok(data) => data,
             Err(wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, err)) => {
-                return ApiResponse::json(ApiError::new_wings_value(err))
+                return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                     .with_status(StatusCode::NOT_FOUND)
                     .ok();
             }
             Err(err) => return Err(err.into()),
         };
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             is_filesystem_writable: entries.filesystem_writable,
             is_filesystem_fast: entries.filesystem_fast,
             entries: Pagination {

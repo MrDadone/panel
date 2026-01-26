@@ -40,7 +40,7 @@ mod post {
         state: GetState,
         permissions: GetPermissionManager,
         server: GetServer,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("files.create")?;
 
@@ -67,14 +67,14 @@ mod post {
         {
             Ok(query_result) => query_result,
             Err(wings_api::client::ApiHttpError::Http(StatusCode::EXPECTATION_FAILED, err)) => {
-                return ApiResponse::json(ApiError::new_wings_value(err))
+                return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                     .with_status(StatusCode::EXPECTATION_FAILED)
                     .ok();
             }
             Err(err) => return Err(err.into()),
         };
 
-        ApiResponse::json(Response { query_result }).ok()
+        ApiResponse::new_serialized(Response { query_result }).ok()
     }
 }
 
