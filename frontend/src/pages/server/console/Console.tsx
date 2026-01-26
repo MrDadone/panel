@@ -334,14 +334,6 @@ export default function Terminal() {
     [history, historyIndex, socketInstance],
   );
 
-  const handleSelectCommand = useCallback((command: string) => {
-    if (inputRef.current) {
-      inputRef.current.value = command;
-      inputRef.current.focus();
-    }
-    setHistoryModalOpen(false);
-  }, []);
-
   const MemoizedLines = useMemo(
     () =>
       lines.map((line) => (
@@ -378,7 +370,7 @@ export default function Terminal() {
               ),
             )}
           </div>
-          <div className='flex flex-row items-center gap-4'>
+          <div className='flex flex-row items-center gap-2'>
             {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderRightComponents.map(
               (Component, idx) => (
                 <Component key={idx} />
@@ -474,11 +466,7 @@ export default function Terminal() {
         </div>
       </Card>
 
-      <CommandHistoryDrawer
-        opened={historyModalOpen}
-        onClose={() => setHistoryModalOpen(false)}
-        onSelectCommand={handleSelectCommand}
-      />
+      <CommandHistoryDrawer opened={historyModalOpen} onClose={() => setHistoryModalOpen(false)} />
     </>
   );
 }

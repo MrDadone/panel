@@ -13,6 +13,7 @@
     "build": "pnpm build:translations && vite build",
     "build:ci": "tsc -b && vite build",
     "build:translations": "tsx build-translations.mts",
+    "translations:diff": "tsx diff-translations.mts",
     "fix": "biome format --write --css-parse-tailwind-directives=true && biome lint --write --css-parse-tailwind-directives=true && biome check --write",
     "fix:unsafe": "biome format --write --css-parse-tailwind-directives=true && biome lint --write --css-parse-tailwind-directives=true && biome check --write --unsafe"
   },

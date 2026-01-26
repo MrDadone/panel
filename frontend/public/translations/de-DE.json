@@ -16,6 +16,14 @@
         "few": "{count} SSH-Schlüssel",
         "many": "{count} SSH-Schlüssel",
         "other": "{count} SSH-Schlüssel"
+      },
+      "server": {
+        "zero": "{count} Server",
+        "one": "{count} Server",
+        "two": "{count} Server",
+        "few": "{count} Server",
+        "many": "{count} Server",
+        "other": "{count} Server"
       }
     },
     "translations": {
@@ -34,7 +42,10 @@
           "close": "Schließen",
           "cancel": "Abbrechen",
           "continue": "Weiter",
-          "skip": "Überspringen"
+          "skip": "Überspringen",
+          "logout": "Abmelden",
+          "back": "Zurück",
+          "next": "Weiter"
         },
         "input": {
           "search": "Suchen..."
@@ -44,7 +55,9 @@
           "description": "Beschreibung",
           "password": "Passwort",
           "host": "Host",
-          "username": "Benutzername"
+          "username": "Benutzername",
+          "server": "Server",
+          "truncateDirectory": "Möchtest du alle Dateien dieses Servers löschen, bevor diese Aktion ausgeführt wird? Dies kann nicht rückgängig gemacht werden."
         },
         "table": {
           "pagination": {
@@ -61,7 +74,8 @@
             "actor": "Akteur",
             "event": "Ereignis",
             "ip": "IP",
-            "when": "Wann"
+            "when": "Wann",
+            "command": "Befehl"
           }
         },
         "server": {
@@ -96,13 +110,20 @@
             "always": "Immer",
             "unlessStopped": "Außer wenn gestoppt",
             "never": "Nie"
+          },
+          "bulkActionServerAction": {
+            "started": "Gestartet",
+            "stopped": "Gestoppt",
+            "restarted": "Neu gestartet",
+            "killed": "Gekillt"
           }
         },
         "unlimited": "Unendlich",
         "na": "N/V",
         "yes": "Ja",
         "no": "Nein",
-        "system": "System"
+        "system": "System",
+        "schedule": "Zeitplan"
       },
       "pages": {
         "oobe": {
@@ -270,6 +291,13 @@
                       "toast": {
                         "deleted": "Server Gruppe gelöscht."
                       }
+                    },
+                    "addServerToGroup": {
+                      "title": "Server zu {group} hinzufügen",
+                      "noServers": "Alle Server sind bereits in dieser Gruppe.",
+                      "toast": {
+                        "added": "Server zur Gruppe hinzugefügt."
+                      }
                     }
                   },
                   "noGroups": "Es konnten keine Gruppen gefunden werden, Zeit eine zu erstellen?"
@@ -292,7 +320,17 @@
                 }
               }
             },
-            "noServers": "Es konnten keine Server gefunden werden, Zeit einen hinzuzufügen?"
+            "noServers": "Es konnten keine Server gefunden werden, Zeit einen hinzuzufügen?",
+            "bulkActions": {
+              "selectionMode": "Auswahlmodus",
+              "selectAll": "Alle auswählen",
+              "deselectAll": "Alle abwählen",
+              "select": "Server auswählen",
+              "deselect": "Server abwählen",
+              "success": "Erfolgreich {servers} {action}.",
+              "partial": "Erfolgreich {successfulServers} {action}. {failedServers} fehlgeschlagen.",
+              "groupActions": "Gruppen-Aktionen"
+            }
           },
           "admin": {
             "title": "Admin"
@@ -539,6 +577,38 @@
           },
           "activity": {
             "title": "Aktivität"
+          },
+          "shortcuts": {
+            "title": "Tastaturkürzel",
+            "description": "Verwende diese Tastaturkürzel, um effizienter durch das Panel zu navigieren und damit zu interagieren.",
+            "detectedMac": "macOS erkannt",
+            "detectedWindows": "Windows/Linux erkannt",
+            "fileManager": {
+              "title": "Dateimanager",
+              "selectAll": "Alle Dateien auswählen",
+              "deselectAll": "Alle Dateien abwählen",
+              "cutFiles": "Ausgewählte Dateien ausschneiden",
+              "pasteFiles": "Dateien einfügen",
+              "deleteFiles": "Ausgewählte Dateien löschen",
+              "dragToMove": "Dateien oder Ordner ziehen, um sie in einen Ordner zu verschieben",
+              "search": "Dateien suchen"
+            },
+            "table": {
+              "title": "Tabellen-Navigation",
+              "previousPage": "Vorherige Seite",
+              "nextPage": "Nächste Seite",
+              "firstPage": "Erste Seite",
+              "lastPage": "Letzte Seite"
+            },
+            "console": {
+              "title": "Server Konsole",
+              "previousCommand": "Vorheriger Befehl im Verlauf",
+              "nextCommand": "Nächster Befehl im Verlauf"
+            },
+            "serverList": {
+              "title": "Server Liste",
+              "selectServer": "Halte S und klicke, um Server auszuwählen/abzuwählen"
+            }
           }
         },
         "admin": {},
@@ -576,7 +646,6 @@
               "diskUsage": "Speichernutzung",
               "networkIn": "Netzwerk (Eingehend)",
               "networkOut": "Netzwerk (Ausgehend)",
-              "offline": "Offline",
               "normalizeCpuLoad": "Normalisiere CPU-Last (skaliert auf max. 100%)"
             },
             "power": {
@@ -599,7 +668,35 @@
               "outbound": "Ausgehend"
             },
             "socketConnected": "Verbunden ({ping}ms ping)",
-            "socketDisconnected": "Getrennt"
+            "socketDisconnected": "Getrennt",
+            "tooltip": {
+              "commandHistory": "Befehlsverlauf",
+              "decreaseFontSize": "Schriftgröße verringern",
+              "increaseFontSize": "Schriftgröße erhöhen"
+            },
+            "drawer": {
+              "commandHistory": {
+                "title": "Befehlsverlauf",
+                "detailTitle": "Befehlsdetails",
+                "noCommands": "Keine Befehle gefunden.",
+                "copyButton": "Befehl kopieren",
+                "sendButton": "Befehl senden",
+                "commandSent": "Befehl erfolgreich gesendet."
+              }
+            },
+            "feature": {
+              "eula": {
+                "title": "Minecraft EULA Vereinbarung",
+                "content": "Der Minecraft-Server erfordert, dass du die [Minecraft End User License Agreement](https://minecraft.net/eula) akzeptierst, bevor er starten kann.",
+                "contentDetails": "Indem du auf \"EULA Akzeptieren\" klickst, stimmst du den Bedingungen der Minecraft EULA zu und die Datei **eula.txt** wird auf **eula=true** aktualisiert.",
+                "toast": {
+                  "accepted": "EULA erfolgreich akzeptiert."
+                },
+                "button": {
+                  "accept": "EULA Akzeptieren"
+                }
+              }
+            }
           },
           "files": {
             "title": "Dateien"
