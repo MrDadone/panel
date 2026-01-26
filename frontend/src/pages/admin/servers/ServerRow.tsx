@@ -20,8 +20,8 @@ const ServerRow = memo(
   ) {
     return (
       <TableRow bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined} onClick={onClick} ref={ref}>
-        <TableData className='pl-4 relative cursor-pointer w-10 text-center'>
-          {showSelection ? (
+        {showSelection && (
+          <TableData className='pl-4 relative cursor-pointer w-10 text-center'>
             <Checkbox
               id={server.uuid}
               checked={isSelected}
@@ -31,10 +31,9 @@ const ServerRow = memo(
               onClick={(e) => e.stopPropagation()}
               classNames={{ input: 'cursor-pointer!' }}
             />
-          ) : (
-            <span className='w-0'></span>
-          )}
-        </TableData>
+          </TableData>
+        )}
+
         <TableData>
           <NavLink to={`/admin/servers/${server.uuid}`} className='text-blue-400 hover:text-blue-200 hover:underline'>
             <Code>{server.uuid}</Code>

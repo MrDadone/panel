@@ -39,13 +39,14 @@ export default function NestView() {
           {
             name: 'General',
             icon: faCog,
-            path: `/`,
+            path: '/',
+            end: true,
             element: <NestCreateOrUpdate contextNest={nest} />,
           },
           {
             name: 'Eggs',
             icon: faEgg,
-            path: `/eggs/*`,
+            path: '/eggs/*',
             element: <AdminEggs contextNest={nest} />,
             permission: 'eggs.read',
           },
