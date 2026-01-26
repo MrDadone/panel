@@ -85,10 +85,10 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
             </div>
           </NavLink>
 
-          <Sidebar.Divider />
-
-          <ServerSwitcher />
-          <ServerStatusIndicator />
+          <div className='flex flex-col gap-2 mt-2 mb-1'>
+            <ServerSwitcher />
+            <ServerStatusIndicator />
+          </div>
 
           <Sidebar.Divider />
 

@@ -25,7 +25,6 @@ const getStatusColor = (powerState?: ServerPowerState, status?: ServerStatus | n
 
 export default function ServerSwitcher({ className }: { className?: string }) {
   const currentServer = useServerStore((state) => state.server);
-  const currentPowerState = useServerStore((state) => state.state);
   const { getServerResourceUsage } = useUserStore();
   const location = useLocation();
 
@@ -72,17 +71,6 @@ export default function ServerSwitcher({ className }: { className?: string }) {
       searchValue={servers.search}
       onSearchChange={servers.setSearch}
       renderOption={renderOption}
-      leftSection={
-        currentServer?.uuid && (
-          <span
-            className={`w-2 h-2 rounded-full ${getStatusColor(
-              currentPowerState,
-              currentServer.status,
-              currentServer.suspended,
-            )}`}
-          />
-        )
-      }
     />
   );
 }
