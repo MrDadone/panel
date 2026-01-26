@@ -91,8 +91,8 @@ export default function ServerItem({
               leftStripeClassName={statusToColor(stats?.state)}
               hoverable
             >
-              <div className='flex items-start gap-2 justify-between'>
-                <div className='flex gap-2'>
+              <div className='flex items-center gap-2 justify-between'>
+                <div className='flex gap-2 items-center'>
                   {showSelection && (
                     <Tooltip
                       label={
@@ -116,12 +116,12 @@ export default function ServerItem({
                     </Tooltip>
                   )}
                   <span
-                    className='text-xl font-medium truncate flex my-auto gap-2 flex-row whitespace-break-spaces'
+                    className='text-xl font-medium truncate flex items-center gap-2 flex-row whitespace-break-spaces'
                     title={server.name}
                   >
                     {server.name}
                     {!serverListShowOthers && serverGroups.every((g) => !g.serverOrder.includes(server.uuid)) && (
-                      <Tooltip className='ml-2' label={t('pages.account.home.tooltip.noGroup', {})}>
+                      <Tooltip label={t('pages.account.home.tooltip.noGroup', {})}>
                         <FontAwesomeIcon size='sm' icon={faInfoCircle} />
                       </Tooltip>
                     )}
