@@ -107,7 +107,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_server_permission("databases.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             database: database
                 .0
                 .into_api_object(&state.database, params.include_password)
@@ -185,7 +185,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -229,7 +229,7 @@ mod patch {
         permissions: GetPermissionManager,
         activity_logger: GetServerActivityLogger,
         mut database: GetServerDatabase,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("databases.update")?;
 
@@ -258,7 +258,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

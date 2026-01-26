@@ -98,7 +98,7 @@ mod get {
 
             let url = client.presign_get(file_path, 15 * 60, None).await?;
 
-            return ApiResponse::json(Response { url }).ok();
+            return ApiResponse::new_serialized(Response { url }).ok();
         }
 
         #[derive(Serialize)]
@@ -136,7 +136,7 @@ mod get {
             params.archive_format
         )));
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             url: url.to_string(),
         })
         .ok()

@@ -32,7 +32,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_server_permission("schedules.read")?;
 
-        ApiResponse::json(schedule.0.into_exported(&state.database).await?).ok()
+        ApiResponse::new_serialized(schedule.0.into_exported(&state.database).await?).ok()
     }
 }
 

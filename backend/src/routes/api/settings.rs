@@ -48,7 +48,7 @@ mod get {
     pub async fn route(state: GetState) -> ApiResponseResult {
         let settings = state.settings.get().await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             version: &state.version,
             oobe_step: settings.oobe_step.as_deref(),
             app_debug: state.env.app_debug,

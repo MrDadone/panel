@@ -48,7 +48,12 @@ async fn handle_request(
         .bright_cyan()
     );
 
-    Ok(next.run(req).await)
+    Ok(shared::response::ACCEPT_HEADER
+        .scope(
+            shared::response::accept_from_headers(req.headers()),
+            async { next.run(req).await },
+        )
+        .await)
 }
 
 async fn handle_postprocessing(req: Request, next: Next) -> Result<Response, StatusCode> {

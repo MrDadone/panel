@@ -35,7 +35,7 @@ mod get {
             })
             .await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             oauth_providers: oauth_providers
                 .into_iter()
                 .map(|oauth_provider| oauth_provider.into_api_object())

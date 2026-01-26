@@ -48,10 +48,10 @@ mod post {
         ip: shared::GetIp,
         headers: axum::http::HeaderMap,
         cookies: Cookies,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -114,7 +114,7 @@ mod post {
                 tracing::warn!(user = %user.uuid, "failed to log user activity: {:?}", err);
             }
 
-            ApiResponse::json(Response::TwoFactorRequired { token }).ok()
+            ApiResponse::new_serialized(Response::TwoFactorRequired { token }).ok()
         } else {
             let key = UserSession::create(
                 &state.database,
@@ -159,7 +159,7 @@ mod post {
                 tracing::warn!(user = %user.uuid, "failed to log user activity: {:?}", err);
             }
 
-            ApiResponse::json(Response::Completed {
+            ApiResponse::new_serialized(Response::Completed {
                 user: Box::new(user.into_api_full_object(&state.storage.retrieve_urls().await?)),
             })
             .ok()

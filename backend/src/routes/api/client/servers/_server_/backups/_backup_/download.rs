@@ -110,7 +110,7 @@ mod get {
                 )
                 .await;
 
-            return ApiResponse::json(Response { url }).ok();
+            return ApiResponse::new_serialized(Response { url }).ok();
         }
 
         #[derive(Serialize)]
@@ -162,7 +162,7 @@ mod get {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             url: url.to_string(),
         })
         .ok()

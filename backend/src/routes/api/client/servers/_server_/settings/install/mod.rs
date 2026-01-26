@@ -41,7 +41,7 @@ mod post {
         permissions: GetPermissionManager,
         server: GetServer,
         activity_logger: GetServerActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("settings.install")?;
 
@@ -103,7 +103,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {})
+        ApiResponse::new_serialized(Response {})
             .with_status(StatusCode::ACCEPTED)
             .ok()
     }

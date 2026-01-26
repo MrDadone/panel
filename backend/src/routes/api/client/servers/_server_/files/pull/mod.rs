@@ -59,7 +59,7 @@ mod post {
         permissions: GetPermissionManager,
         mut server: GetServer,
         activity_logger: GetServerActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("files.create")?;
 
@@ -102,12 +102,12 @@ mod post {
                 Some(data.identifier)
             }
             Err(wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, err)) => {
-                return ApiResponse::json(ApiError::new_wings_value(err))
+                return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                     .with_status(StatusCode::NOT_FOUND)
                     .ok();
             }
             Err(wings_api::client::ApiHttpError::Http(StatusCode::EXPECTATION_FAILED, err)) => {
-                return ApiResponse::json(ApiError::new_wings_value(err))
+                return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                     .with_status(StatusCode::EXPECTATION_FAILED)
                     .ok();
             }
@@ -125,11 +125,11 @@ mod post {
             .await;
 
         if let Some(identifier) = identifier {
-            ApiResponse::json(ResponseAccepted { identifier })
+            ApiResponse::new_serialized(ResponseAccepted { identifier })
                 .with_status(StatusCode::ACCEPTED)
                 .ok()
         } else {
-            ApiResponse::json(Response {}).ok()
+            ApiResponse::new_serialized(Response {}).ok()
         }
     }
 }

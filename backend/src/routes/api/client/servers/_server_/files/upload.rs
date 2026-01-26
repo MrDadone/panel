@@ -76,7 +76,7 @@ mod get {
         url.set_path("/upload/file");
         url.set_query(Some(&format!("token={}", urlencoding::encode(&token))));
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             url: url.to_string(),
         })
         .ok()

@@ -32,10 +32,10 @@ mod post {
         state: GetState,
         ip: shared::GetIp,
         headers: HeaderMap,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -57,7 +57,7 @@ mod post {
 
         let user = match User::by_email(&state.database, &data.email).await? {
             Some(user) => user,
-            None => return ApiResponse::json(Response {}).ok(),
+            None => return ApiResponse::new_serialized(Response {}).ok(),
         };
 
         tokio::spawn(async move {
@@ -123,7 +123,7 @@ mod post {
                 .await;
         });
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

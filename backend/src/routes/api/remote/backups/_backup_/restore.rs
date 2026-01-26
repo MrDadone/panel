@@ -36,7 +36,7 @@ mod post {
         state: GetState,
         node: GetNode,
         backup: GetBackup,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         let server_uuid = match data.server_uuid {
             Some(server_uuid) => server_uuid,
@@ -93,7 +93,7 @@ mod post {
             );
         }
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

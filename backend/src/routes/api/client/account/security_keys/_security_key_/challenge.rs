@@ -36,7 +36,7 @@ mod post {
         user: GetUser,
         activity_logger: GetUserActivityLogger,
         Path(security_key): Path<uuid::Uuid>,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_user_permission("security-keys.create")?;
 
@@ -46,18 +46,22 @@ mod post {
             {
                 Some(security_key) => security_key,
                 None => {
-                    return ApiResponse::json(ApiError::new_value(&["security key not found"]))
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
+                    return ApiResponse::new_serialized(ApiError::new_value(&[
+                        "security key not found",
+                    ]))
+                    .with_status(StatusCode::NOT_FOUND)
+                    .ok();
                 }
             };
 
         let registration = match security_key.registration {
             Some(registration) => registration,
             None => {
-                return ApiResponse::json(ApiError::new_value(&["security key already setup"]))
-                    .with_status(StatusCode::CONFLICT)
-                    .ok();
+                return ApiResponse::new_serialized(ApiError::new_value(&[
+                    "security key already setup",
+                ]))
+                .with_status(StatusCode::CONFLICT)
+                .ok();
             }
         };
 
@@ -100,7 +104,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

@@ -42,7 +42,7 @@ mod get {
 
         let variables = NestEggVariable::all_by_egg_uuid(&state.database, egg.uuid).await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             variables: variables
                 .into_iter()
                 .map(|variable| variable.into_admin_api_object())
@@ -118,10 +118,10 @@ mod post {
         nest: GetNest,
         egg: GetNestEgg,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -180,7 +180,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             variable: egg_variable.into_admin_api_object(),
         })
         .ok()

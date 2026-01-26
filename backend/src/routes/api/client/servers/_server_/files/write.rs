@@ -50,7 +50,7 @@ mod post {
         permissions.has_server_permission("files.create")?;
 
         if server.is_ignored(&params.file, false) {
-            return ApiResponse::json(ApiError::new_value(&["file not found"]))
+            return ApiResponse::new_serialized(ApiError::new_value(&["file not found"]))
                 .with_status(StatusCode::NOT_FOUND)
                 .ok();
         }
@@ -65,12 +65,12 @@ mod post {
         {
             Ok(_) => {}
             Err(wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, err)) => {
-                return ApiResponse::json(ApiError::new_wings_value(err))
+                return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                     .with_status(StatusCode::NOT_FOUND)
                     .ok();
             }
             Err(wings_api::client::ApiHttpError::Http(StatusCode::EXPECTATION_FAILED, err)) => {
-                return ApiResponse::json(ApiError::new_wings_value(err))
+                return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                     .with_status(StatusCode::EXPECTATION_FAILED)
                     .ok();
             }
@@ -86,7 +86,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

@@ -22,7 +22,7 @@ mod get {
         (status = OK, body = inline(Response)),
     ))]
     pub async fn route() -> ApiResponseResult {
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             user_permissions: &get_user_permissions(),
             admin_permissions: &get_admin_permissions(),
             server_permissions: &get_server_permissions(),

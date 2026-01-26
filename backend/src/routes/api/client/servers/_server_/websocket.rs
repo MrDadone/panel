@@ -69,7 +69,7 @@ mod get {
             url.set_scheme("wss").unwrap();
         }
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             token,
             url: url.to_string(),
         })

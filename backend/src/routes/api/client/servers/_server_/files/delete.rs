@@ -45,7 +45,7 @@ mod post {
         permissions: GetPermissionManager,
         mut server: GetServer,
         activity_logger: GetServerActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("files.delete")?;
 
@@ -68,12 +68,12 @@ mod post {
         {
             Ok(data) => data,
             Err(wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, err)) => {
-                return ApiResponse::json(ApiError::new_wings_value(err))
+                return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                     .with_status(StatusCode::NOT_FOUND)
                     .ok();
             }
             Err(wings_api::client::ApiHttpError::Http(StatusCode::EXPECTATION_FAILED, err)) => {
-                return ApiResponse::json(ApiError::new_wings_value(err))
+                return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                     .with_status(StatusCode::EXPECTATION_FAILED)
                     .ok();
             }
@@ -90,7 +90,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             deleted: data.deleted,
         })
         .ok()

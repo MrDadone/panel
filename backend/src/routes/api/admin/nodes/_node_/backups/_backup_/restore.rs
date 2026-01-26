@@ -48,7 +48,7 @@ mod post {
         activity_logger: GetAdminActivityLogger,
         node: GetNode,
         backup: GetServerBackup,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_admin_permission("nodes.backups")?;
 
@@ -121,7 +121,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

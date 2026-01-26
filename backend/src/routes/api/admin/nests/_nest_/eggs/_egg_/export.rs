@@ -31,7 +31,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("eggs.read")?;
 
-        ApiResponse::json(egg.0.into_exported(&state.database).await?).ok()
+        ApiResponse::new_serialized(egg.0.into_exported(&state.database).await?).ok()
     }
 }
 

@@ -53,7 +53,7 @@ mod get {
         Query(params): Query<PaginationParamsWithSearch>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -71,7 +71,7 @@ mod get {
 
         let storage_url_retriever = state.storage.retrieve_urls().await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             subusers: Pagination {
                 total: subusers.total,
                 per_page: subusers.per_page,
@@ -138,10 +138,10 @@ mod post {
         user: GetUser,
         server: GetServer,
         activity_logger: GetServerActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -208,7 +208,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             subuser: ServerSubuser::by_server_uuid_username(
                 &state.database,
                 server.uuid,

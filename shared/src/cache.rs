@@ -158,11 +158,8 @@ impl Cache {
                 && entry.expires_at > now
             {
                 tracing::debug!("found in memory cache");
-                match bincode::serde::decode_from_slice::<T, _>(
-                    &entry.value,
-                    bincode::config::standard(),
-                ) {
-                    Ok((value, _)) => return Ok(value),
+                match rmp_serde::from_slice::<T>(&entry.value) {
+                    Ok(value) => return Ok(value),
                     Err(err) => {
                         tracing::warn!("failed to deserialize from memory cache: {:?}", err);
                     }
@@ -173,10 +170,7 @@ impl Cache {
         tracing::debug!("checking redis cache");
         let cached_value: Option<BulkString> = self.client.get(key).await?;
         if let Some(value) = cached_value
-            && let Ok((val, _)) = bincode::serde::decode_from_slice::<T, _>(
-                value.as_bytes(),
-                bincode::config::standard(),
-            )
+            && let Ok(val) = rmp_serde::from_slice::<T>(value.as_bytes())
         {
             if self.use_internal_cache {
                 self.memory_cache.write().await.insert(
@@ -218,11 +212,8 @@ impl Cache {
             && entry.expires_at > now
         {
             tracing::debug!("found in memory cache after lock");
-            match bincode::serde::decode_from_slice::<T, _>(
-                &entry.value,
-                bincode::config::standard(),
-            ) {
-                Ok((value, _)) => return Ok(value),
+            match rmp_serde::from_slice::<T>(&entry.value) {
+                Ok(value) => return Ok(value),
                 Err(err) => {
                     tracing::warn!("failed to deserialize from memory cache: {:?}", err)
                 }
@@ -232,10 +223,7 @@ impl Cache {
         tracing::debug!("checking redis cache after lock");
         let cached_value: Option<BulkString> = self.client.get(key).await?;
         if let Some(value) = cached_value
-            && let Ok((val, _)) = bincode::serde::decode_from_slice::<T, _>(
-                value.as_bytes(),
-                bincode::config::standard(),
-            )
+            && let Ok(val) = rmp_serde::from_slice::<T>(value.as_bytes())
         {
             if self.use_internal_cache {
                 self.memory_cache.write().await.insert(
@@ -258,7 +246,8 @@ impl Cache {
         };
         tracing::debug!("executed compute");
 
-        let serialized = bincode::serde::encode_to_vec(&result, bincode::config::standard())?;
+        let mut serialized = rmp_serde::to_vec(&result)?;
+        serialized.shrink_to_fit();
 
         self.client
             .set_with_options(

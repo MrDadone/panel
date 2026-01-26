@@ -330,7 +330,7 @@ export default function EggCreateOrUpdate({
                 data={[
                   { label: 'Send Command', value: 'command' },
                   { label: 'Send Signal', value: 'signal' },
-                  { label: 'Docker Shutdown', value: 'docker' },
+                  { label: 'Docker Stop', value: 'docker' },
                 ]}
                 {...form.getInputProps('configStop.type')}
               />
@@ -375,7 +375,7 @@ export default function EggCreateOrUpdate({
 
                 <Switch
                   label='Require Primary Allocation'
-                  description='Whether users must have always have a primary allocation.'
+                  description='Whether users must always have a primary allocation.'
                   {...form.getInputProps('configAllocations.userSelfAssign.requirePrimaryAllocation', {
                     type: 'checkbox',
                   })}

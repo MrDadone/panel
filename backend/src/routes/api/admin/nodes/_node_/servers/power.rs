@@ -39,7 +39,7 @@ mod post {
         permissions: GetPermissionManager,
         node: GetNode,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_admin_permission("nodes.power")?;
 
@@ -63,7 +63,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             affected: response_data.affected,
         })
         .ok()

@@ -46,7 +46,7 @@ mod get {
         )
         .await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             database_hosts: database_hosts
                 .into_iter()
                 .map(|host| host.database_host.into_api_object())

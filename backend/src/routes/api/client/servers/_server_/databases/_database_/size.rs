@@ -52,7 +52,7 @@ mod get {
             }
         };
 
-        ApiResponse::json(Response { size }).ok()
+        ApiResponse::new_serialized(Response { size }).ok()
     }
 }
 

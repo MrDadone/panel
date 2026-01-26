@@ -58,7 +58,7 @@ mod get {
         };
         restic_configuration.decrypt(&state.database).await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             repository: restic_configuration.repository,
             retry_lock_seconds: restic_configuration.retry_lock_seconds,
             environment: restic_configuration.environment,

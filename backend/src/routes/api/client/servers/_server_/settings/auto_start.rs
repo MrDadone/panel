@@ -37,7 +37,7 @@ mod put {
         permissions: GetPermissionManager,
         mut server: GetServer,
         activity_logger: GetServerActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("settings.auto-start")?;
 
@@ -62,7 +62,7 @@ mod put {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
