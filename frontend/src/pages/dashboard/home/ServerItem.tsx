@@ -3,6 +3,7 @@ import {
   faBan,
   faCheckCircle,
   faCircle,
+  faCircleXmark,
   faHardDrive,
   faInfoCircle,
   faMemory,
@@ -91,17 +92,41 @@ export default function ServerItem({
               hoverable
             >
               <div className='flex items-start gap-2 justify-between'>
-                <span
-                  className='text-xl font-medium truncate flex my-auto gap-2 flex-row whitespace-break-spaces'
-                  title={server.name}
-                >
-                  {server.name}
-                  {!serverListShowOthers && serverGroups.every((g) => !g.serverOrder.includes(server.uuid)) && (
-                    <Tooltip className='ml-2' label={t('pages.account.home.tooltip.noGroup', {})}>
-                      <FontAwesomeIcon size='sm' icon={faInfoCircle} />
+                <div className='flex gap-2'>
+                  {showSelection && (
+                    <Tooltip
+                      label={
+                        isSelected
+                          ? t('pages.account.home.bulkActions.deselect', {})
+                          : t('pages.account.home.bulkActions.select', {})
+                      }
+                    >
+                      <ActionIcon
+                        size='input-sm'
+                        variant={isSelected ? '' : 'light'}
+                        color={isSelected ? 'green' : 'gray'}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onSelectionChange?.(!isSelected);
+                        }}
+                      >
+                        <FontAwesomeIcon icon={isSelected ? faCheckCircle : faCircleXmark} />
+                      </ActionIcon>
                     </Tooltip>
                   )}
-                </span>
+                  <span
+                    className='text-xl font-medium truncate flex my-auto gap-2 flex-row whitespace-break-spaces'
+                    title={server.name}
+                  >
+                    {server.name}
+                    {!serverListShowOthers && serverGroups.every((g) => !g.serverOrder.includes(server.uuid)) && (
+                      <Tooltip className='ml-2' label={t('pages.account.home.tooltip.noGroup', {})}>
+                        <FontAwesomeIcon size='sm' icon={faInfoCircle} />
+                      </Tooltip>
+                    )}
+                  </span>
+                </div>
                 <div className='flex flex-row items-center'>
                   {server.allocation ? (
                     server.egg.separatePort ? (
@@ -128,29 +153,6 @@ export default function ServerItem({
                     <Card p='xs' className='leading-[100%] text-nowrap'>
                       {t('common.server.noAllocation', {})}
                     </Card>
-                  )}
-                  {showSelection && (
-                    <Tooltip
-                      label={
-                        isSelected
-                          ? t('pages.account.home.bulkActions.deselect', {})
-                          : t('pages.account.home.bulkActions.select', {})
-                      }
-                      className='ml-2'
-                    >
-                      <ActionIcon
-                        size='input-sm'
-                        variant={isSelected ? 'filled' : 'light'}
-                        color={isSelected ? 'green' : 'gray'}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onSelectionChange?.(!isSelected);
-                        }}
-                      >
-                        <FontAwesomeIcon icon={isSelected ? faCheckCircle : faCircle} />
-                      </ActionIcon>
-                    </Tooltip>
                   )}
                   {showGroupAddButton && (
                     <Tooltip
@@ -192,7 +194,7 @@ export default function ServerItem({
                 </div>
               </div>
 
-              <div className='flex flex-col justify-between gap-2'>
+              <div className='flex flex-col justify-between'>
                 <Divider my='md' />
 
                 {server.suspended ? (
