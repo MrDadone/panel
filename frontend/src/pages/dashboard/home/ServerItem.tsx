@@ -116,7 +116,7 @@ export default function ServerItem({
                     </Tooltip>
                   )}
                   <span
-                    className='text-xl font-medium truncate flex items-center gap-2 flex-row whitespace-break-spaces'
+                    className='text-xl font-medium flex items-center gap-2'
                     title={server.name}
                   >
                     {server.name}
