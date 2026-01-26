@@ -27,6 +27,7 @@ import SizeInput from '@/elements/input/SizeInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import VariableContainer from '@/elements/VariableContainer.tsx';
 import { adminServerCreateSchema } from '@/lib/schemas/admin/servers.ts';
@@ -35,7 +36,6 @@ import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
-import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 
 const timezones = Object.keys(zones)
   .sort()

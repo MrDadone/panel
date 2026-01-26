@@ -115,10 +115,7 @@ export default function ServerItem({
                       </ActionIcon>
                     </Tooltip>
                   )}
-                  <span
-                    className='text-xl font-medium flex items-center gap-2'
-                    title={server.name}
-                  >
+                  <span className='text-xl font-medium flex items-center gap-2' title={server.name}>
                     {server.name}
                     {!serverListShowOthers && serverGroups.every((g) => !g.serverOrder.includes(server.uuid)) && (
                       <Tooltip label={t('pages.account.home.tooltip.noGroup', {})}>
