@@ -1,6 +1,6 @@
 import { faInfo } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon, Group, Stack } from '@mantine/core';
+import { ActionIcon, Stack } from '@mantine/core';
 import { useState } from 'react';
 import Button from '../Button.tsx';
 import HljsCode from '../HljsCode.tsx';
@@ -20,11 +20,11 @@ export default function ActivityInfoButton({ activity }: { activity: AdminActivi
             {JSON.stringify(activity.data, null, 2)}
           </HljsCode>
 
-          <Group>
+          <Modal.Footer>
             <Button variant='default' onClick={() => setOpenModal(null)}>
               Close
             </Button>
-          </Group>
+          </Modal.Footer>
         </Stack>
       </Modal>
 
