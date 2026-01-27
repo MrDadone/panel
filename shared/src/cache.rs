@@ -9,45 +9,62 @@ use rustis::{
     resp::BulkString,
 };
 use serde::{Serialize, de::DeserializeOwned};
-use std::{collections::HashMap, future::Future, sync::Arc, time::Duration};
-use tokio::sync::{Mutex, RwLock};
+use std::{future::Future, sync::Arc, time::Duration, time::Instant};
 
-struct CacheEntry {
-    value: Vec<u8>,
-    expires_at: std::time::Instant,
+#[derive(Clone, Debug)]
+struct InternalEntry {
+    data: Arc<Vec<u8>>,
+    intended_ttl: Duration,
+}
+
+struct DynamicExpiry;
+
+impl moka::Expiry<String, InternalEntry> for DynamicExpiry {
+    fn expire_after_create(
+        &self,
+        _key: &String,
+        value: &InternalEntry,
+        _created_at: Instant,
+    ) -> Option<Duration> {
+        Some(value.intended_ttl)
+    }
 }
 
 pub struct Cache {
     pub client: Client,
-
     use_internal_cache: bool,
-    mutex_map: RwLock<HashMap<compact_str::CompactString, Arc<Mutex<()>>>>,
-    memory_cache: Arc<RwLock<HashMap<compact_str::CompactString, CacheEntry>>>,
+    local: moka::future::Cache<String, InternalEntry>,
 }
 
 impl Cache {
     pub async fn new(env: &crate::env::Env) -> Self {
         let start = std::time::Instant::now();
 
-        let instance = Self {
-            client: match &env.redis_mode {
-                RedisMode::Redis { redis_url } => Client::connect(redis_url.clone()).await.unwrap(),
-                RedisMode::Sentinel {
-                    cluster_name,
-                    redis_sentinels,
-                } => Client::connect(
-                    format!(
-                        "redis-sentinel://{}/{cluster_name}/0",
-                        redis_sentinels.join(",")
-                    )
-                    .as_str(),
+        let client = match &env.redis_mode {
+            RedisMode::Redis { redis_url } => Client::connect(redis_url.clone()).await.unwrap(),
+            RedisMode::Sentinel {
+                cluster_name,
+                redis_sentinels,
+            } => Client::connect(
+                format!(
+                    "redis-sentinel://{}/{cluster_name}/0",
+                    redis_sentinels.join(",")
                 )
-                .await
-                .unwrap(),
-            },
+                .as_str(),
+            )
+            .await
+            .unwrap(),
+        };
+
+        let local_cache = moka::future::Cache::builder()
+            .max_capacity(100000)
+            .expire_after(DynamicExpiry)
+            .build();
+
+        let instance = Self {
+            client,
             use_internal_cache: env.app_use_internal_cache,
-            mutex_map: RwLock::new(HashMap::new()),
-            memory_cache: Arc::new(RwLock::new(HashMap::new())),
+            local: local_cache,
         };
 
         let version = instance
@@ -58,25 +75,14 @@ impl Cache {
         tracing::info!(
             "{} connected {}",
             "cache".bright_yellow(),
-            format!("(redis@{}, {}ms)", version, start.elapsed().as_millis()).bright_black()
+            format!(
+                "(redis@{}, {}ms, moka_enabled={})",
+                version,
+                start.elapsed().as_millis(),
+                env.app_use_internal_cache
+            )
+            .bright_black()
         );
-
-        if instance.use_internal_cache {
-            let memory_cache = instance.memory_cache.clone();
-            tokio::spawn(async move {
-                let mut interval = tokio::time::interval(Duration::from_secs(30));
-
-                loop {
-                    interval.tick().await;
-
-                    let now = std::time::Instant::now();
-                    memory_cache
-                        .write()
-                        .await
-                        .retain(|_, entry| entry.expires_at > now);
-                }
-            });
-        }
 
         instance
     }
@@ -86,9 +92,10 @@ impl Cache {
         let version = version
             .lines()
             .find(|line| line.starts_with("redis_version:"))
-            .unwrap()
+            .unwrap_or("redis_version:unknown")
             .split(':')
-            .collect::<Vec<&str>>()[1]
+            .nth(1)
+            .unwrap_or("unknown")
             .to_string();
 
         Ok(version)
@@ -150,132 +157,74 @@ impl Cache {
         Fut: Future<Output = Result<T, FutErr>>,
         FutErr: Into<anyhow::Error> + Send + Sync + 'static,
     {
-        let now = std::time::Instant::now();
-
-        if self.use_internal_cache && ttl < 60 {
-            tracing::debug!("checking memory cache");
-            if let Some(entry) = self.memory_cache.read().await.get(key)
-                && entry.expires_at > now
-            {
-                tracing::debug!("found in memory cache");
-                match rmp_serde::from_slice::<T>(&entry.value) {
-                    Ok(value) => return Ok(value),
-                    Err(err) => {
-                        tracing::warn!("failed to deserialize from memory cache: {:?}", err);
-                    }
-                }
-            }
-        }
-
-        tracing::debug!("checking redis cache");
-        let cached_value: Option<BulkString> = self.client.get(key).await?;
-        if let Some(value) = cached_value
-            && let Ok(val) = rmp_serde::from_slice::<T>(value.as_bytes())
-        {
-            if self.use_internal_cache {
-                self.memory_cache.write().await.insert(
-                    key.into(),
-                    CacheEntry {
-                        value: value.into(),
-                        expires_at: now + Duration::from_secs(ttl),
-                    },
-                );
-            }
-
-            tracing::debug!("found in redis cache");
-            return Ok(val);
-        }
-
-        let mutex = {
-            let reader = self.mutex_map.read().await;
-            reader.get(key).cloned()
-        };
-
-        let mutex = if let Some(m) = mutex {
-            m
+        let effective_moka_ttl = if self.use_internal_cache {
+            Duration::from_secs(ttl)
         } else {
-            let mut writer = self.mutex_map.write().await;
-
-            writer
-                .entry(key.into())
-                .or_insert_with(|| Arc::new(Mutex::new(())))
-                .clone()
+            Duration::from_millis(50)
         };
 
-        tracing::debug!("locking mutex");
-        let _guard = mutex.lock().await;
-        tracing::debug!("locked mutex");
+        let key_owned = key.to_string();
+        let client = self.client.clone();
 
-        if self.use_internal_cache
-            && ttl < 60
-            && let Some(entry) = self.memory_cache.read().await.get(key)
-            && entry.expires_at > now
-        {
-            tracing::debug!("found in memory cache after lock");
-            match rmp_serde::from_slice::<T>(&entry.value) {
-                Ok(value) => return Ok(value),
-                Err(err) => {
-                    tracing::warn!("failed to deserialize from memory cache: {:?}", err)
+        let entry = self
+            .local
+            .try_get_with(key_owned.clone(), async move {
+                tracing::debug!("checking redis cache");
+                let cached_value: Option<BulkString> = client
+                    .get(&key_owned)
+                    .await
+                    .map_err(|err| {
+                        tracing::error!("redis get error: {:?}", err);
+                        err
+                    })
+                    .ok()
+                    .flatten();
+
+                if let Some(value) = cached_value {
+                    tracing::debug!("found in redis cache");
+                    let data = value.to_vec();
+
+                    return Ok(InternalEntry {
+                        data: Arc::new(data),
+                        intended_ttl: effective_moka_ttl,
+                    });
                 }
+
+                tracing::debug!("executing compute");
+                let result = fn_compute().await.map_err(|e| e.into())?;
+                tracing::debug!("executed compute");
+
+                let serialized = rmp_serde::to_vec(&result)?;
+                let serialized_arc = Arc::new(serialized);
+
+                let _ = client
+                    .set_with_options(
+                        &key_owned,
+                        serialized_arc.as_slice(),
+                        SetCondition::None,
+                        SetExpiration::Ex(ttl),
+                        false,
+                    )
+                    .await;
+
+                Ok::<_, anyhow::Error>(InternalEntry {
+                    data: serialized_arc,
+                    intended_ttl: effective_moka_ttl,
+                })
+            })
+            .await;
+
+        match entry {
+            Ok(internal_entry) => {
+                let val = rmp_serde::from_slice::<T>(&internal_entry.data)?;
+                Ok(val)
             }
+            Err(arc_error) => Err(anyhow::anyhow!("cache computation failed: {:?}", arc_error)),
         }
-
-        tracing::debug!("checking redis cache after lock");
-        let cached_value: Option<BulkString> = self.client.get(key).await?;
-        if let Some(value) = cached_value
-            && let Ok(val) = rmp_serde::from_slice::<T>(value.as_bytes())
-        {
-            if self.use_internal_cache {
-                self.memory_cache.write().await.insert(
-                    key.into(),
-                    CacheEntry {
-                        value: value.into(),
-                        expires_at: now + Duration::from_secs(ttl),
-                    },
-                );
-            }
-
-            tracing::debug!("found in redis cache after lock");
-            return Ok(val);
-        }
-
-        tracing::debug!("executing compute");
-        let result = match fn_compute().await {
-            Ok(result) => result,
-            Err(err) => return Err(err.into()),
-        };
-        tracing::debug!("executed compute");
-
-        let mut serialized = rmp_serde::to_vec(&result)?;
-        serialized.shrink_to_fit();
-
-        self.client
-            .set_with_options(
-                key,
-                serialized.as_slice(),
-                SetCondition::None,
-                SetExpiration::Ex(ttl),
-                false,
-            )
-            .await?;
-
-        if self.use_internal_cache && ttl < 60 {
-            self.memory_cache.write().await.insert(
-                key.into(),
-                CacheEntry {
-                    value: serialized,
-                    expires_at: now + Duration::from_secs(ttl),
-                },
-            );
-        }
-
-        Ok(result)
     }
 
     pub async fn invalidate(&self, key: &str) -> Result<(), anyhow::Error> {
-        if self.use_internal_cache {
-            self.memory_cache.write().await.remove(key);
-        }
+        self.local.invalidate(key).await;
         self.client.del(key).await?;
 
         Ok(())
