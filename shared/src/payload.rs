@@ -1,5 +1,3 @@
-use std::{str::FromStr, sync::LazyLock};
-
 use crate::response::ApiResponse;
 use axum::{
     body::Bytes,
@@ -7,6 +5,7 @@ use axum::{
     response::IntoResponse,
 };
 use serde::de::DeserializeOwned;
+use std::{str::FromStr, sync::LazyLock};
 
 pub struct PayloadRejection(anyhow::Error);
 
