@@ -942,6 +942,8 @@ const baseTranslations = defineTranslations({
           reinstall: {
             title: 'Reinstall Server',
             button: 'Reinstall Server',
+            content:
+              'Reinstalling your server will stop it, and then re-run the installation script that initially set it up. **Some files may be deleted or modified during this process, please back up your data before continuing.**',
             modal: {
               title: 'Reinstall Server',
               button: 'Reinstall',

@@ -11,8 +11,9 @@ import {
   IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Box, Card, Flex, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Box, Flex, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 interface KeyProps {
@@ -90,40 +91,13 @@ interface ShortcutSectionProps {
 
 function ShortcutSection({ title, icon, shortcuts }: ShortcutSectionProps) {
   return (
-    <Card withBorder radius='md' p={0} bg='dark.7'>
-      <Box
-        px='md'
-        py='sm'
-        style={{
-          borderBottom: '1px solid var(--mantine-color-dark-5)',
-          background: 'var(--mantine-color-dark-6)',
-        }}
-      >
-        <Group gap='sm'>
-          <Box
-            style={{
-              width: 28,
-              height: 28,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 6,
-              background: 'var(--mantine-color-dark-5)',
-            }}
-          >
-            <FontAwesomeIcon icon={icon} size='sm' style={{ color: 'var(--mantine-color-gray-5)' }} />
-          </Box>
-          <Title order={5} c='gray.2' fw={600}>
-            {title}
-          </Title>
-        </Group>
-      </Box>
+    <TitleCard title={title} icon={<FontAwesomeIcon icon={icon} size='sm' />}>
       <Stack gap={0} px='sm'>
         {shortcuts.map((shortcut, index) => (
           <ShortcutItem key={index} {...shortcut} hideBorder={index === shortcuts.length - 1} />
         ))}
       </Stack>
-    </Card>
+    </TitleCard>
   );
 }
 

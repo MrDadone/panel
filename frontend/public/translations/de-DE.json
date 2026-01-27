@@ -947,6 +947,7 @@
             "reinstall": {
               "title": "Server neu installieren",
               "button": "Server neu installieren",
+              "content": "Die Neuinstallation deines Servers stoppt ihn und führt dann das Installationsskript erneut aus, das ihn ursprünglich eingerichtet hat. **Während dieses Vorgangs können einige Dateien gelöscht oder geändert werden. Bitte sichere deine Daten, bevor du fortfährst.**",
               "modal": {
                 "title": "Server neu installieren",
                 "button": "Neu installieren",

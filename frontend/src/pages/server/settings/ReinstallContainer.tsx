@@ -1,7 +1,9 @@
-import { Grid, Group, Title } from '@mantine/core';
+import { faCog } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Grid, Group, Stack } from '@mantine/core';
 import { useState } from 'react';
 import Button from '@/elements/Button.tsx';
-import Card from '@/elements/Card.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import SettingsReinstallModal from './modals/SettingsReinstallModal.tsx';
 
@@ -11,19 +13,23 @@ export default function ReinstallContainer() {
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-      <Card h='100%'>
+      <TitleCard
+        title={t('pages.server.settings.reinstall.title', {})}
+        icon={<FontAwesomeIcon icon={faCog} />}
+        className='h-full'
+      >
         <SettingsReinstallModal opened={modalOpen} onClose={() => setModalOpen(false)} />
 
-        <Title order={2} c='white'>
-          {t('pages.server.settings.reinstall.title', {})}
-        </Title>
+        <Stack>
+          {t('pages.server.settings.reinstall.content', {}).md()}
 
-        <Group pt='md' mt='auto'>
-          <Button color='red' onClick={() => setModalOpen(true)}>
-            {t('pages.server.settings.reinstall.button', {})}
-          </Button>
-        </Group>
-      </Card>
+          <Group mt='auto'>
+            <Button color='red' onClick={() => setModalOpen(true)}>
+              {t('pages.server.settings.reinstall.button', {})}
+            </Button>
+          </Group>
+        </Stack>
+      </TitleCard>
     </Grid.Col>
   );
 }

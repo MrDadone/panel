@@ -1,11 +1,12 @@
-import { Group, Title } from '@mantine/core';
+import { faCog } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Badge from '@/elements/Badge.tsx';
-import Card from '@/elements/Card.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 
 interface Props {
@@ -26,90 +27,88 @@ export default function VariableContainer({
   setValue,
 }: Props) {
   return (
-    <Card className='flex flex-col justify-between rounded-md p-4 h-full'>
-      <Title order={2} c='white'>
-        <Group justify='space-between' align='center'>
-          {variable.name}
-          {!variable.isEditable && overrideReadonly ? (
-            <Tooltip label='This field is not editable by a user, but you can override it.'>
-              <Badge color='orange'>Override Read Only</Badge>
-            </Tooltip>
-          ) : !variable.isEditable ? (
-            <Badge>Read Only</Badge>
-          ) : null}
-        </Group>
-      </Title>
-
-      <div className='mt-4'>
-        {variable.rules.includes('boolean') ||
-        (variable.rules.includes('string') &&
-          (variable.rules.includes('in:1,0') ||
-            variable.rules.includes('in:0,1') ||
-            variable.rules.includes('in:true,false') ||
-            variable.rules.includes('in:false,true'))) ? (
-          <Switch
-            name={variable.envVariable}
-            defaultChecked={value === '1' || value === 'true'}
-            onChange={(e) =>
-              setValue(
-                variable.rules.includes('in:1,0') || variable.rules.includes('in:0,1')
-                  ? e.target.checked
-                    ? '1'
-                    : '0'
-                  : e.target.checked
-                    ? 'true'
-                    : 'false',
-              )
-            }
-            disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
-            label={variable.name}
-          />
-        ) : variable.rules.includes('string') && variable.rules.some((rule) => rule.startsWith('in:')) ? (
-          <Select
-            withAsterisk={variable.rules.includes('required')}
-            id={variable.envVariable}
-            data={variable.rules
-              .find((rule) => rule.startsWith('in:'))
-              ?.replace('in:', '')
-              .split(',')
-              .map((option) => ({ value: option, label: option }))}
-            value={value}
-            onChange={(value) => setValue(value ?? '')}
-            disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
-          />
-        ) : variable.rules.includes('integer') ||
-          variable.rules.includes('int') ||
-          variable.rules.includes('numeric') ||
-          variable.rules.includes('num') ? (
-          <NumberInput
-            withAsterisk={variable.rules.includes('required')}
-            id={variable.envVariable}
-            placeholder={variable.defaultValue ?? ''}
-            value={value}
-            onChange={(value) => setValue(String(value))}
-            disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
-          />
-        ) : variable.isSecret ? (
-          <PasswordInput
-            withAsterisk={variable.rules.includes('required')}
-            id={variable.envVariable}
-            placeholder={variable.defaultValue ?? ''}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
-          />
-        ) : (
-          <TextInput
-            withAsterisk={variable.rules.includes('required')}
-            id={variable.envVariable}
-            placeholder={variable.defaultValue ?? ''}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
-          />
-        )}
-        <p className='text-gray-400 text-sm mt-4'>{variable.description?.md()}</p>
+    <TitleCard title={variable.name} icon={<FontAwesomeIcon icon={faCog} />}>
+      <div className='flex flex-row w-full justify-between items-start'>
+        <div className='w-full'>
+          {variable.rules.includes('boolean') ||
+          (variable.rules.includes('string') &&
+            (variable.rules.includes('in:1,0') ||
+              variable.rules.includes('in:0,1') ||
+              variable.rules.includes('in:true,false') ||
+              variable.rules.includes('in:false,true'))) ? (
+            <Switch
+              name={variable.envVariable}
+              defaultChecked={value === '1' || value === 'true'}
+              onChange={(e) =>
+                setValue(
+                  variable.rules.includes('in:1,0') || variable.rules.includes('in:0,1')
+                    ? e.target.checked
+                      ? '1'
+                      : '0'
+                    : e.target.checked
+                      ? 'true'
+                      : 'false',
+                )
+              }
+              disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
+              label={variable.name}
+            />
+          ) : variable.rules.includes('string') && variable.rules.some((rule) => rule.startsWith('in:')) ? (
+            <Select
+              withAsterisk={variable.rules.includes('required')}
+              id={variable.envVariable}
+              data={variable.rules
+                .find((rule) => rule.startsWith('in:'))
+                ?.replace('in:', '')
+                .split(',')
+                .map((option) => ({ value: option, label: option }))}
+              value={value}
+              onChange={(value) => setValue(value ?? '')}
+              disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
+            />
+          ) : variable.rules.includes('integer') ||
+            variable.rules.includes('int') ||
+            variable.rules.includes('numeric') ||
+            variable.rules.includes('num') ? (
+            <NumberInput
+              withAsterisk={variable.rules.includes('required')}
+              id={variable.envVariable}
+              placeholder={variable.defaultValue ?? ''}
+              value={value}
+              onChange={(value) => setValue(String(value))}
+              disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
+            />
+          ) : variable.isSecret ? (
+            <PasswordInput
+              withAsterisk={variable.rules.includes('required')}
+              id={variable.envVariable}
+              placeholder={variable.defaultValue ?? ''}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
+            />
+          ) : (
+            <TextInput
+              withAsterisk={variable.rules.includes('required')}
+              id={variable.envVariable}
+              placeholder={variable.defaultValue ?? ''}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
+            />
+          )}
+          <p className='text-gray-400 text-sm mt-4'>{variable.description?.md()}</p>
+        </div>
+        {!variable.isEditable && overrideReadonly ? (
+          <Tooltip label='This field is not editable by a user, but you can override it.'>
+            <Badge color='orange' className='min-w-fit'>
+              Override Read Only
+            </Badge>
+          </Tooltip>
+        ) : !variable.isEditable ? (
+          <Badge className='min-w-fit'>Read Only</Badge>
+        ) : null}
       </div>
-    </Card>
+    </TitleCard>
   );
 }
