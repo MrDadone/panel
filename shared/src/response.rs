@@ -40,7 +40,7 @@ impl ApiResponse {
     pub fn new_serialized(body: impl serde::Serialize) -> Self {
         let accept_header = ACCEPT_HEADER.try_with(|h| h.clone()).ok().flatten();
 
-        const AVAILABLE_SERIALIZERS: &[mime::Mime] = &[
+        static AVAILABLE_SERIALIZERS: &[mime::Mime] = &[
             mime::APPLICATION_JSON,
             mime::APPLICATION_MSGPACK,
             mime::TEXT_XML,

@@ -1,3 +1,5 @@
+use std::{str::FromStr, sync::LazyLock};
+
 use crate::response::ApiResponse;
 use axum::{
     body::Bytes,
@@ -22,11 +24,14 @@ impl From<anyhow::Error> for PayloadRejection {
     }
 }
 
-const AVAILABLE_DESERIALIZERS: &[mime::Mime] = &[
-    mime::APPLICATION_JSON,
-    mime::APPLICATION_MSGPACK,
-    mime::TEXT_XML,
-];
+static AVAILABLE_DESERIALIZERS: LazyLock<[mime::Mime; 4]> = LazyLock::new(|| {
+    [
+        mime::APPLICATION_JSON,
+        mime::APPLICATION_MSGPACK,
+        mime::TEXT_XML,
+        mime::Mime::from_str("application/yaml").unwrap(),
+    ]
+});
 
 pub struct Payload<T: DeserializeOwned>(pub T);
 
@@ -48,6 +53,11 @@ impl<T: DeserializeOwned> Payload<T> {
             m if m == mime::TEXT_XML.essence_str() => {
                 let value =
                     serde_xml_rs::from_reader(bytes.as_ref()).map_err(anyhow::Error::from)?;
+                Ok(Payload(value))
+            }
+            "application/yaml" => {
+                let string = std::str::from_utf8(bytes).map_err(anyhow::Error::from)?;
+                let value = serde_yml::from_str::<T>(string).map_err(anyhow::Error::from)?;
                 Ok(Payload(value))
             }
             _ => Err(PayloadRejection(anyhow::anyhow!(
