@@ -55,8 +55,7 @@ impl<T: DeserializeOwned> Payload<T> {
                 Ok(Payload(value))
             }
             "application/yaml" => {
-                let string = std::str::from_utf8(bytes).map_err(anyhow::Error::from)?;
-                let value = serde_yml::from_str::<T>(string).map_err(anyhow::Error::from)?;
+                let value = serde_norway::from_slice::<T>(bytes).map_err(anyhow::Error::from)?;
                 Ok(Payload(value))
             }
             _ => Err(PayloadRejection(anyhow::anyhow!(

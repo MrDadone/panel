@@ -184,7 +184,7 @@ impl EggRepository {
                                 Err(_) => continue,
                             }
                         } else {
-                            match serde_yml::from_str(&file_content) {
+                            match serde_norway::from_str(&file_content) {
                                 Ok(egg) => egg,
                                 Err(_) => continue,
                             }
