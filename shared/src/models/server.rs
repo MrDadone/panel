@@ -1,4 +1,5 @@
-use crate::{State, prelude::*, storage::StorageUrlRetriever};
+use crate::{State, prelude::*, response::DisplayError, storage::StorageUrlRetriever};
+use compact_str::ToCompactString;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type};
@@ -1110,6 +1111,74 @@ impl Server {
                 },
             )
             .await?;
+
+        Ok(())
+    }
+
+    /// Triggers a re-installation of the server on the node.
+    /// This will only work if the server is in a state that allows re-installation. (None status)
+    /// If this is not the case, a `DisplayError` will be returned.
+    pub async fn install(
+        &self,
+        database: &crate::database::Database,
+        truncate_directory: bool,
+        installation_script: Option<wings_api::InstallationScript>,
+    ) -> Result<(), anyhow::Error> {
+        let mut transaction = database.write().begin().await?;
+
+        let rows_affected = sqlx::query!(
+            "UPDATE servers
+            SET status = 'INSTALLING'
+            WHERE servers.uuid = $1 AND servers.status IS NULL",
+            self.uuid
+        )
+        .execute(&mut *transaction)
+        .await?
+        .rows_affected();
+
+        if rows_affected == 0 {
+            transaction.rollback().await?;
+
+            return Err(DisplayError::new(
+                "server is already installing or in an invalid state for reinstalling",
+            )
+            .into());
+        }
+
+        match self
+            .node
+            .fetch_cached(database)
+            .await?
+            .api_client(database)
+            .post_servers_server_reinstall(
+                self.uuid,
+                &wings_api::servers_server_reinstall::post::RequestBody {
+                    truncate_directory,
+                    installation_script: Some(
+                        if let Some(installation_script) = installation_script {
+                            installation_script
+                        } else {
+                            wings_api::InstallationScript {
+                                container_image: self.egg.config_script.container.clone(),
+                                entrypoint: self.egg.config_script.entrypoint.clone(),
+                                script: self.egg.config_script.content.to_compact_string(),
+                                environment: Default::default(),
+                            }
+                        },
+                    ),
+                },
+            )
+            .await
+        {
+            Ok(_) => {}
+            Err(err) => {
+                transaction.rollback().await?;
+
+                return Err(err.into());
+            }
+        };
+
+        transaction.commit().await?;
 
         Ok(())
     }

@@ -434,8 +434,7 @@ impl AppSettings {
             .get(ext_identifier)
             .ok_or_else(|| anyhow::anyhow!("failed to find extension settings"))?;
 
-        ext_settings
-            .as_any_ref()
+        (&**ext_settings as &dyn std::any::Any)
             .downcast_ref::<T>()
             .ok_or_else(|| anyhow::anyhow!("failed to downcast extension settings"))
     }
@@ -449,15 +448,14 @@ impl AppSettings {
             .get_mut(ext_identifier)
             .ok_or_else(|| anyhow::anyhow!("failed to find extension settings"))?;
 
-        ext_settings
-            .as_any_mut_ref()
+        (&mut **ext_settings as &mut dyn std::any::Any)
             .downcast_mut::<T>()
             .ok_or_else(|| anyhow::anyhow!("failed to downcast extension settings"))
     }
 
     pub fn find_extension_settings<T: 'static>(&self) -> Result<&T, anyhow::Error> {
         for ext_settings in self.extensions.values() {
-            if let Some(downcasted) = ext_settings.as_any_ref().downcast_ref::<T>() {
+            if let Some(downcasted) = (&**ext_settings as &dyn std::any::Any).downcast_ref::<T>() {
                 return Ok(downcasted);
             }
         }
@@ -467,7 +465,9 @@ impl AppSettings {
 
     pub fn find_mut_extension_settings<T: 'static>(&mut self) -> Result<&mut T, anyhow::Error> {
         for ext_settings in self.extensions.values_mut() {
-            if let Some(downcasted) = ext_settings.as_any_mut_ref().downcast_mut::<T>() {
+            if let Some(downcasted) =
+                (&mut **ext_settings as &mut dyn std::any::Any).downcast_mut::<T>()
+            {
                 return Ok(downcasted);
             }
         }
@@ -976,8 +976,7 @@ impl Settings {
         )
         .await?;
 
-        Ok(*boxed
-            .as_any_boxed()
+        Ok(*(boxed as Box<dyn std::any::Any>)
             .downcast::<AppSettings>()
             .expect("settings has invalid type"))
     }

@@ -157,9 +157,8 @@ impl<'a> SettingsDeserializer<'a> {
         let boxed = deserializer
             .deserialize_boxed(settings_deserializer)
             .await?;
-        let any_boxed = boxed.as_any_boxed();
 
-        match any_boxed.downcast::<T>() {
+        match (boxed as Box<dyn std::any::Any + Send + Sync>).downcast::<T>() {
             Ok(concrete_box) => Ok(*concrete_box),
             Err(_) => Err(anyhow::anyhow!(
                 "Type mismatch: expected {}, but nested prefix {} returned a different type",
@@ -173,15 +172,8 @@ impl<'a> SettingsDeserializer<'a> {
 pub type ExtensionSettings = Box<dyn SettingsSerializeExt + Send + Sync + 'static>;
 pub type ExtensionSettingsDeserializer = Arc<dyn SettingsDeserializeExt + Send + Sync + 'static>;
 
-pub trait AsAny: std::any::Any + Send + Sync {
-    fn as_any_boxed(self: Box<Self>) -> Box<dyn std::any::Any + Send + Sync>;
-
-    fn as_any_ref(&self) -> &dyn std::any::Any;
-    fn as_any_mut_ref(&mut self) -> &mut dyn std::any::Any;
-}
-
 #[async_trait::async_trait]
-pub trait SettingsSerializeExt: AsAny {
+pub trait SettingsSerializeExt: std::any::Any + Send + Sync {
     async fn serialize(
         &self,
         serializer: SettingsSerializer,
@@ -194,20 +186,6 @@ pub trait SettingsDeserializeExt {
         &self,
         deserializer: SettingsDeserializer<'_>,
     ) -> Result<ExtensionSettings, anyhow::Error>;
-}
-
-impl<T: std::any::Any + Send + Sync> AsAny for T {
-    fn as_any_boxed(self: Box<Self>) -> Box<dyn std::any::Any + Send + Sync> {
-        self
-    }
-
-    fn as_any_ref(&self) -> &dyn std::any::Any {
-        self
-    }
-
-    fn as_any_mut_ref(&mut self) -> &mut dyn std::any::Any {
-        self
-    }
 }
 
 #[async_trait::async_trait]
