@@ -35,6 +35,15 @@ impl ExtensionManager {
             crate::permissions::BASE_SERVER_PERMISSIONS.clone(),
         );
 
+        for ext in self.vec.read().await.iter() {
+            let deserializer = ext.settings_deserializer(state.clone()).await;
+            crate::settings::SETTINGS_DESER_EXTENSIONS
+                .write()
+                .unwrap()
+                .insert(ext.package_name, deserializer);
+        }
+        state.settings.invalidate_cache().await;
+
         for ext in self.vec.write().await.iter_mut() {
             ext.initialize(state.clone()).await;
 
@@ -45,12 +54,6 @@ impl ExtensionManager {
             permissions_builder = ext
                 .initialize_permissions(state.clone(), permissions_builder)
                 .await;
-
-            let deserializer = ext.settings_deserializer(state.clone()).await;
-            crate::settings::SETTINGS_DESER_EXTENSIONS
-                .write()
-                .unwrap()
-                .insert(ext.package_name, deserializer);
         }
 
         crate::permissions::USER_PERMISSIONS
