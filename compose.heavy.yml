@@ -1,0 +1,52 @@
+services:
+  web:
+    image: ghcr.io/calagopus/panel:heavy
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - REDIS_URL=redis://cache
+      - DATABASE_URL=postgresql://panel:panel@db/panel
+      - DATABASE_MIGRATE=true
+      - PORT=8000
+      - APP_DEBUG=false
+      - APP_LOG_DIRECTORY=/var/log/calagopus
+      - APP_PRIMARY=true # sets whether this panel instance is responsible for running background tasks (e.g. cleanup)
+      - APP_ENCRYPTION_KEY=CHANGEME2
+      - APP_USE_DECRYPTION_CACHE=true # caches decrypted values in memory and redis to improve performance, can be considered less secure
+      - APP_USE_INTERNAL_CACHE=true # caches short-lived values in app memory and redis instead of just redis, improves performance at the cost of higher memory usage
+    volumes:
+      - ./data:/var/lib/calagopus
+      - ./logs:/var/log/calagopus
+      - ./build/cargo-registry:/usr/local/cargo/registry
+      - ./build/cargo-git:/usr/local/cargo/git
+      - ./build/binaries:/app/binaries
+      - ./build/extensions:/app/extensions
+      - ./build/target:/app/repo/target
+      - ./build/database-node_modules:/app/repo/database/node_modules
+      - ./build/frontend-node_modules:/app/repo/frontend/node_modules
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+      - cache
+
+  db:
+    image: ghcr.io/calagopus/pgautoupgrade:18-alpine
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - POSTGRES_USER=panel
+      - POSTGRES_PASSWORD=panel
+      - POSTGRES_DB=panel
+      - PGDATA=/data
+    volumes:
+      - ./postgres:/data
+
+  cache:
+    image: ghcr.io/calagopus/valkey:latest
+    restart: unless-stopped
+    command: --protected-mode no --save 60 1
+    environment:
+      TZ: Europe/Berlin
+    volumes:
+      - ./cache:/data

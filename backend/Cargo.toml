@@ -59,8 +59,3 @@ compact_str = { workspace = true }
 
 [target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
 tikv-jemallocator = "0.6.0"
-
-[build-dependencies]
-serde = { workspace = true }
-toml = "0.9.7"
-semver = { workspace = true }

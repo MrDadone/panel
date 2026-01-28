@@ -4,3 +4,4 @@ target/
 **/.idea
 exported-extensions/
 postgres/
+.docker/

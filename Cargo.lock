@@ -3998,7 +3998,6 @@ dependencies = [
  "tikv-jemallocator",
  "tokio",
  "tokio-util",
- "toml",
  "totp-rs",
  "tower",
  "tower-cookies",

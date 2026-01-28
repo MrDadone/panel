@@ -1,6 +1,7 @@
 use crate::{env::RedisMode, response::ApiResponse};
 use axum::http::StatusCode;
 use colored::Colorize;
+use compact_str::ToCompactString;
 use rustis::{
     client::Client,
     commands::{
@@ -19,10 +20,10 @@ struct InternalEntry {
 
 struct DynamicExpiry;
 
-impl moka::Expiry<String, InternalEntry> for DynamicExpiry {
+impl moka::Expiry<compact_str::CompactString, InternalEntry> for DynamicExpiry {
     fn expire_after_create(
         &self,
-        _key: &String,
+        _key: &compact_str::CompactString,
         value: &InternalEntry,
         _created_at: Instant,
     ) -> Option<Duration> {
@@ -31,16 +32,16 @@ impl moka::Expiry<String, InternalEntry> for DynamicExpiry {
 }
 
 pub struct Cache {
-    pub client: Client,
+    pub client: Arc<Client>,
     use_internal_cache: bool,
-    local: moka::future::Cache<String, InternalEntry>,
+    local: moka::future::Cache<compact_str::CompactString, InternalEntry>,
 }
 
 impl Cache {
     pub async fn new(env: &crate::env::Env) -> Self {
         let start = std::time::Instant::now();
 
-        let client = match &env.redis_mode {
+        let client = Arc::new(match &env.redis_mode {
             RedisMode::Redis { redis_url } => Client::connect(redis_url.clone()).await.unwrap(),
             RedisMode::Sentinel {
                 cluster_name,
@@ -54,7 +55,7 @@ impl Cache {
             )
             .await
             .unwrap(),
-        };
+        });
 
         let local_cache = moka::future::Cache::builder()
             .max_capacity(100000)
@@ -145,25 +146,24 @@ impl Cache {
     }
 
     #[tracing::instrument(skip(self, fn_compute))]
-    pub async fn cached<T, F, Fut, FutErr>(
-        &self,
-        key: &str,
-        ttl: u64,
-        fn_compute: F,
-    ) -> Result<T, anyhow::Error>
-    where
+    pub async fn cached<
         T: Serialize + DeserializeOwned + Send,
         F: FnOnce() -> Fut,
         Fut: Future<Output = Result<T, FutErr>>,
         FutErr: Into<anyhow::Error> + Send + Sync + 'static,
-    {
+    >(
+        &self,
+        key: &str,
+        ttl: u64,
+        fn_compute: F,
+    ) -> Result<T, anyhow::Error> {
         let effective_moka_ttl = if self.use_internal_cache {
             Duration::from_secs(ttl)
         } else {
             Duration::from_millis(50)
         };
 
-        let key_owned = key.to_string();
+        let key_owned = key.to_compact_string();
         let client = self.client.clone();
 
         let entry = self
@@ -171,7 +171,7 @@ impl Cache {
             .try_get_with(key_owned.clone(), async move {
                 tracing::debug!("checking redis cache");
                 let cached_value: Option<BulkString> = client
-                    .get(&key_owned)
+                    .get(&*key_owned)
                     .await
                     .map_err(|err| {
                         tracing::error!("redis get error: {:?}", err);
@@ -199,7 +199,7 @@ impl Cache {
 
                 let _ = client
                     .set_with_options(
-                        &key_owned,
+                        &*key_owned,
                         serialized_arc.as_slice(),
                         SetCondition::None,
                         SetExpiration::Ex(ttl),

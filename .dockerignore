@@ -1,0 +1,10 @@
+target/
+database/node_modules/
+database/lib/
+frontend/node_modules/
+frontend/dist/
+.env
+logs/
+**/.idea
+exported-extensions/
+postgres/
