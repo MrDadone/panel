@@ -226,6 +226,19 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 },
             ),
             (
+                "extensions",
+                PermissionGroup {
+                    description: "Permissions that control the ability to manage extensions for the panel.",
+                    permissions: IndexMap::from([
+                        ("read", "Allows to view extensions for the panel."),
+                        (
+                            "manage",
+                            "Allows to install, update, and remove extensions for the panel.",
+                        ),
+                    ]),
+                },
+            ),
+            (
                 "users",
                 PermissionGroup {
                     description: "Permissions that control the ability to manage users for the panel.",
@@ -435,16 +448,6 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                         ("update", "Allows to modify mounts."),
                         ("delete", "Allows to delete mounts from the panel."),
                     ]),
-                },
-            ),
-            (
-                "extensions",
-                PermissionGroup {
-                    description: "Permissions that control the ability to manage extensions for the panel.",
-                    permissions: IndexMap::from([(
-                        "read",
-                        "Allows to view extensions for the panel.",
-                    )]),
                 },
             ),
             (

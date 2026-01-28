@@ -93,6 +93,17 @@ declare global {
     created: Date;
   }
 
+  interface AdminBackendExtension {
+    metadataToml: {
+      packageName: string;
+      name: string;
+      panelVersion: string;
+    };
+    description: string;
+    authors: string[];
+    version: string;
+  }
+
   interface AdminUpdateEggRepository {
     name: string;
     description: string | null;

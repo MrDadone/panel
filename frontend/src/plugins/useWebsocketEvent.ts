@@ -31,6 +31,7 @@ export enum SocketEvent {
 }
 
 export enum SocketRequest {
+  CONFIGURE_SOCKET = 'configure socket',
   SEND_LOGS = 'send logs',
   SEND_STATS = 'send stats',
   SET_STATE = 'set state',

@@ -3,8 +3,10 @@ import path from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+import dynamicPublicDirectory from 'vite-multiple-assets';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
+// Minifies all JSON translation files in the dist/translations/ directory after build
 const minifyTranslations = () => {
   return {
     name: 'minify-translations',
@@ -44,7 +46,21 @@ const minifyTranslations = () => {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tsconfigPaths(), tailwindcss(), minifyTranslations()],
+  plugins: [
+    react(),
+    tsconfigPaths(),
+    tailwindcss(),
+    dynamicPublicDirectory(['public/**', 'extensions/*/public/**'], {
+      dst(path) {
+        if (path.baseFile.startsWith('extensions/')) {
+          return path.dstFile.split('/').slice(2).join('/');
+        }
+
+        return path.dstFile;
+      },
+    }),
+    minifyTranslations(),
+  ],
   build: {
     outDir: './dist',
     emptyOutDir: true,
@@ -84,4 +100,5 @@ export default defineConfig({
     },
     allowedHosts: true,
   },
+  publicDir: false,
 });

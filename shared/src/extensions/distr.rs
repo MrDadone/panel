@@ -223,7 +223,7 @@ impl ExtensionDistrFile {
             ));
         }
 
-        if identifier_segment.len() < 5 || identifier_segment.len() > 30 {
+        if identifier_segment.len() < 4 || identifier_segment.len() > 30 {
             return Err(anyhow::anyhow!(
                 "invalid identifier segment `{}` in calagopus extension archive package name.",
                 identifier_segment

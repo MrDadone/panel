@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import getWebsocketToken from '@/api/server/getWebsocketToken.ts';
+import { SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { Websocket } from '@/plugins/Websocket.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -31,7 +32,10 @@ export default function WebsocketHandler() {
   const connect = (uuid: string) => {
     const socket = new Websocket();
 
-    socket.on('auth success', () => setSocketConnectionState(true));
+    socket.on('auth success', () => {
+      setSocketConnectionState(true);
+      socket.send(SocketRequest.CONFIGURE_SOCKET, ['transmission mode', 'binary']);
+    });
     socket.on('SOCKET_CLOSE', (reason: string) => {
       switch (reason) {
         case 'permission revoked':
@@ -79,7 +83,7 @@ export default function WebsocketHandler() {
     getWebsocketToken(uuid)
       .then((data) => {
         // Connect and then set the authentication token.
-        socket.setToken(data.token).connect(data.socket);
+        socket.setToken(data.token).setUseBinary(true).connect(data.socket);
 
         // Once that is done, set the instance.
         setSocketInstance(socket);

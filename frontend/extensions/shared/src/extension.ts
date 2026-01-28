@@ -1,4 +1,3 @@
-import { FC } from 'react';
 import { ExtensionRegistry } from 'shared';
 
 class ExtensionSkip {
@@ -51,7 +50,9 @@ export class ExtensionContext {
 export class Extension {
   public packageName: string = '';
   // This is the component used in the configuration page for this extension (/admin/extensions/<packageName>)
-  public configurationPage: FC | null = null;
+  public cardConfigurationPage: React.FC | null = null;
+  // This is the component added in your extension card in the admin extensions page
+  public cardComponent: React.FC | null = null;
 
   // Your extension entrypoint, this runs when the page is loaded
   public initialize(ctx: ExtensionContext): void {

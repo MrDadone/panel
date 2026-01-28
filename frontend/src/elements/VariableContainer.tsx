@@ -100,13 +100,13 @@ export default function VariableContainer({
           <p className='text-gray-400 text-sm mt-4'>{variable.description?.md()}</p>
         </div>
         {!variable.isEditable && overrideReadonly ? (
-          <Tooltip label='This field is not editable by a user, but you can override it.' className='min-w-fit ml-2'>
+          <Tooltip label='This field is not editable by a user, but you can override it.' className='min-w-fit ml-4'>
             <Badge color='orange' className='min-w-fit'>
               Override Read Only
             </Badge>
           </Tooltip>
         ) : !variable.isEditable ? (
-          <Badge className='min-w-fit ml-2'>Read Only</Badge>
+          <Badge className='min-w-fit ml-4'>Read Only</Badge>
         ) : null}
       </div>
     </TitleCard>

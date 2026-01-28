@@ -175,7 +175,7 @@ impl SettingsDeserializeExt for AppSettingsAppDeserializer {
     async fn deserialize_boxed(
         &self,
         mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error> {
+    ) -> Result<ExtensionSettings, anyhow::Error> {
         Ok(Box::new(AppSettingsApp {
             name: deserializer
                 .take_raw_setting("name")
@@ -231,7 +231,7 @@ impl SettingsDeserializeExt for AppSettingsWebauthnDeserializer {
     async fn deserialize_boxed(
         &self,
         mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error> {
+    ) -> Result<ExtensionSettings, anyhow::Error> {
         Ok(Box::new(AppSettingsWebauthn {
             rp_id: deserializer
                 .take_raw_setting("rp_id")
@@ -297,7 +297,7 @@ impl SettingsDeserializeExt for AppSettingsServerDeserializer {
     async fn deserialize_boxed(
         &self,
         mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error> {
+    ) -> Result<ExtensionSettings, anyhow::Error> {
         Ok(Box::new(AppSettingsServer {
             max_file_manager_view_size: deserializer
                 .take_raw_setting("max_file_manager_view_size")
@@ -374,7 +374,7 @@ impl SettingsDeserializeExt for AppSettingsActivityDeserializer {
     async fn deserialize_boxed(
         &self,
         mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error> {
+    ) -> Result<ExtensionSettings, anyhow::Error> {
         Ok(Box::new(AppSettingsActivity {
             admin_log_retention_days: deserializer
                 .take_raw_setting("admin_log_retention_days")
@@ -672,7 +672,7 @@ impl SettingsDeserializeExt for AppSettingsDeserializer {
     async fn deserialize_boxed(
         &self,
         mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error> {
+    ) -> Result<ExtensionSettings, anyhow::Error> {
         let mut extensions = HashMap::new();
 
         let extension_deserializers = {
@@ -694,15 +694,7 @@ impl SettingsDeserializeExt for AppSettingsDeserializer {
             let ext_settings = ext_deserializer
                 .deserialize_boxed(settings_deserializer)
                 .await?;
-            extensions.insert(
-                ext_identifier,
-                *ext_settings.downcast::<ExtensionSettings>().map_err(|_| {
-                    anyhow::anyhow!(
-                        "failed to downcast extension settings for {}",
-                        ext_identifier
-                    )
-                })?,
-            );
+            extensions.insert(ext_identifier, ext_settings);
         }
 
         Ok(Box::new(AppSettings {
@@ -983,6 +975,7 @@ impl Settings {
         .await?;
 
         Ok(*boxed
+            .as_any_boxed()
             .downcast::<AppSettings>()
             .expect("settings has invalid type"))
     }
