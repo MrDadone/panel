@@ -79,13 +79,14 @@ strip = true
 
 # heavy-release (mainly for extension builds)
 [profile.heavy-release.package."*"]
-opt-level = 3
+opt-level = 2
 codegen-units = 32
 strip = true
 
 [profile.heavy-release]
 inherits = "release"
-opt-level = 2
+opt-level = 1
 lto = false
 codegen-units = 64
+incremental = true
 strip = true

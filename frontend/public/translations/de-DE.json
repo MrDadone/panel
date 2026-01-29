@@ -45,7 +45,10 @@
           "skip": "Überspringen",
           "logout": "Abmelden",
           "back": "Zurück",
-          "next": "Weiter"
+          "next": "Weiter",
+          "install": "Installieren",
+          "selectAll": "Alle auswählen",
+          "deselectAll": "Alle abwählen"
         },
         "input": {
           "search": "Suchen..."
@@ -323,8 +326,6 @@
             "noServers": "Es konnten keine Server gefunden werden, Zeit einen hinzuzufügen?",
             "bulkActions": {
               "selectionMode": "Auswahlmodus",
-              "selectAll": "Alle auswählen",
-              "deselectAll": "Alle abwählen",
               "select": "Server auswählen",
               "deselect": "Server abwählen",
               "success": "Erfolgreich {servers} {action}.",

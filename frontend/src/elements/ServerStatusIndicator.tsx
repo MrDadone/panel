@@ -1,12 +1,4 @@
-import {
-  faPlay,
-  faRadio,
-  faRefresh,
-  faServer,
-  faSkull,
-  faStop,
-  faTowerBroadcast,
-} from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faRefresh, faServer, faSkull, faStop, faTowerBroadcast } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group } from '@mantine/core';
 import { useEffect, useState } from 'react';

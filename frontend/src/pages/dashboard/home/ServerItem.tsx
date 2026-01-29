@@ -2,7 +2,6 @@ import {
   faAdd,
   faBan,
   faCheckCircle,
-  faCircle,
   faCircleXmark,
   faHardDrive,
   faInfoCircle,

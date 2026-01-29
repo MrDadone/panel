@@ -50,6 +50,10 @@ export default function RouterRoutes({ isNormal }: { isNormal: boolean }) {
         <AdminStoreContextProvider createStore={createAdminStore}>
           <ServerStoreContextProvider createStore={createServerStore}>
             <AuthProvider>
+              {window.extensionContext.extensionRegistry.pages.global.prependedComponents.map((Component, index) => (
+                <Component key={`global-prepended-${index}`} />
+              ))}
+
               <Suspense fallback={<Spinner.Centered />}>
                 <Routes>
                   {globalRoutes
@@ -84,6 +88,9 @@ export default function RouterRoutes({ isNormal }: { isNormal: boolean }) {
                 </Routes>
               </Suspense>
 
+              {window.extensionContext.extensionRegistry.pages.global.appendedComponents.map((Component, index) => (
+                <Component key={`global-appended-${index}`} />
+              ))}
               <RelativePageListener />
             </AuthProvider>
           </ServerStoreContextProvider>

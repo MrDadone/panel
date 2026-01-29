@@ -1,6 +1,5 @@
 import { rectSortingStrategy } from '@dnd-kit/sortable';
 import {
-  faChevronDown,
   faChevronRight,
   faEllipsisVertical,
   faGripVertical,

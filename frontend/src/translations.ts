@@ -28,6 +28,9 @@ const baseTranslations = defineTranslations({
         logout: 'Logout',
         back: 'Back',
         next: 'Next',
+        install: 'Install',
+        selectAll: 'Select All',
+        deselectAll: 'Deselect All',
       },
       input: {
         search: 'Search...',
@@ -307,8 +310,6 @@ const baseTranslations = defineTranslations({
           },
           bulkActions: {
             selectionMode: 'Selection Mode',
-            selectAll: 'Select All',
-            deselectAll: 'Deselect All',
             select: 'Select server',
             deselect: 'Deselect server',
             success: 'Successfully {action} {servers}.',

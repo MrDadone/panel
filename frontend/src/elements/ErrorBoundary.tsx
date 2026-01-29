@@ -45,7 +45,7 @@ class ErrorBoundary extends Component<Props, State> {
         <div className='flex items-center justify-center w-full my-4'>
           <div className='bg-neutral-900 rounded p-4 text-red-500 max-w-4xl w-full'>
             <div className='flex items-start'>
-              <FontAwesomeIcon icon={faExclamationTriangle} className='h-5 w-auto mr-3 mt-0.5 flex-shrink-0' />
+              <FontAwesomeIcon icon={faExclamationTriangle} className='h-5 w-auto mr-3 mt-0.5 shrink-0' />
 
               <div className='flex-1 min-w-0'>
                 <p className='text-sm text-neutral-100 mb-2'>
@@ -66,7 +66,7 @@ class ErrorBoundary extends Component<Props, State> {
                       <div className='bg-neutral-800 rounded p-3 mt-2 space-y-3'>
                         <div>
                           <p className='text-xs font-semibold text-red-400 mb-1'>Error Message:</p>
-                          <pre className='text-xs text-neutral-300 whitespace-pre-wrap break-words bg-neutral-950 p-2 rounded'>
+                          <pre className='text-xs text-neutral-300 whitespace-pre-wrap wrap-break-word bg-neutral-950 p-2 rounded'>
                             {error.message || 'No error message available'}
                           </pre>
                         </div>
@@ -74,7 +74,7 @@ class ErrorBoundary extends Component<Props, State> {
                         {error.stack && (
                           <div>
                             <p className='text-xs font-semibold text-red-400 mb-1'>Stack Trace:</p>
-                            <pre className='text-xs text-neutral-300 whitespace-pre-wrap break-words bg-neutral-950 p-2 rounded overflow-x-auto'>
+                            <pre className='text-xs text-neutral-300 whitespace-pre-wrap wrap-break-word bg-neutral-950 p-2 rounded overflow-x-auto'>
                               {error.stack}
                             </pre>
                           </div>
@@ -83,7 +83,7 @@ class ErrorBoundary extends Component<Props, State> {
                         {errorInfo && errorInfo.componentStack && (
                           <div>
                             <p className='text-xs font-semibold text-red-400 mb-1'>Component Stack:</p>
-                            <pre className='text-xs text-neutral-300 whitespace-pre-wrap break-words bg-neutral-950 p-2 rounded overflow-x-auto'>
+                            <pre className='text-xs text-neutral-300 whitespace-pre-wrap wrap-break-word bg-neutral-950 p-2 rounded overflow-x-auto'>
                               {errorInfo.componentStack}
                             </pre>
                           </div>

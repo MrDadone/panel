@@ -45,7 +45,10 @@
           "skip": "Skip",
           "logout": "Logout",
           "back": "Back",
-          "next": "Next"
+          "next": "Next",
+          "install": "Install",
+          "selectAll": "Select All",
+          "deselectAll": "Deselect All"
         },
         "input": {
           "search": "Search..."
@@ -322,8 +325,6 @@
             },
             "bulkActions": {
               "selectionMode": "Selection Mode",
-              "selectAll": "Select All",
-              "deselectAll": "Deselect All",
               "select": "Select server",
               "deselect": "Deselect server",
               "success": "Successfully {action} {servers}.",

@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from 'react';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import { permissionCategoryIconMapping } from '@/lib/enums.ts';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 const permissionIconMap: Record<
   keyof ApiPermissions,
@@ -30,6 +31,8 @@ export default function PermissionSelector({
   selectedPermissions: string[];
   setSelectedPermissions: (selected: string[]) => void;
 }) {
+  const { t } = useTranslations();
+
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const permissionIcons = window.extensionContext.extensionRegistry.permissionIcons;
 
@@ -204,7 +207,7 @@ export default function PermissionSelector({
 
           <div className='mt-4 flex flex-row'>
             <Button disabled={selectedPermissions.length === allPermissionKeys.length} onClick={selectAllPermissions}>
-              Select All
+              {t('common.button.selectAll', {})}
             </Button>
             <Button
               disabled={selectedPermissions.length === 0}
@@ -213,7 +216,7 @@ export default function PermissionSelector({
               onClick={clearAllPermissions}
               className='ml-2'
             >
-              Clear All
+              {t('common.button.deselectAll', {})}
             </Button>
           </div>
         </Card>

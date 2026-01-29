@@ -26,7 +26,7 @@ export default function ServerSettings() {
         <ServerCan action='settings.timezone'>
           <TimezoneContainer />
         </ServerCan>
-        <ServerCan action='settings.reinstall'>
+        <ServerCan action='settings.install'>
           <ReinstallContainer />
         </ServerCan>
       </Grid>

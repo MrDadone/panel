@@ -158,15 +158,17 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
               ) : server.status === 'installing' ? (
                 <Notification className='mb-4' loading>
                   {t('pages.server.console.notification.installing', {})}
-                  <Button
-                    className='ml-2'
-                    leftSection={<FontAwesomeIcon icon={faCancel} />}
-                    variant='subtle'
-                    loading={abortLoading}
-                    onClick={doAbortInstall}
-                  >
-                    {t('common.button.cancel', {})}
-                  </Button>
+                  <ServerCan action='settings.cancel-install'>
+                    <Button
+                      className='ml-2'
+                      leftSection={<FontAwesomeIcon icon={faCancel} />}
+                      variant='subtle'
+                      loading={abortLoading}
+                      onClick={doAbortInstall}
+                    >
+                      {t('common.button.cancel', {})}
+                    </Button>
+                  </ServerCan>
                 </Notification>
               ) : null}
 
