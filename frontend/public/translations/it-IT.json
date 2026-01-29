@@ -44,8 +44,7 @@
           "description": "Descrizione",
           "password": "Password",
           "host": "Host",
-          "username": "Nome utente",
-          "truncateDirectory": "Vuoi svuotare il filesystem di questo server prima di ripristinare il backup?"
+          "username": "Nome utente"
         },
         "table": {
           "pagination": {

@@ -3,10 +3,7 @@
 use crate::{State, permissions::PermissionGroup};
 use indexmap::IndexMap;
 use serde::Serialize;
-use std::{
-    ops::{Deref, DerefMut},
-    sync::Arc,
-};
+use std::{ops::Deref, sync::Arc};
 use utoipa::ToSchema;
 use utoipa_axum::router::OpenApiRouter;
 
@@ -273,7 +270,7 @@ pub trait Extension: Send + Sync {
     }
 }
 
-#[derive(ToSchema, Serialize)]
+#[derive(ToSchema, Serialize, Clone)]
 pub struct ConstructedExtension {
     pub metadata_toml: distr::MetadataToml,
     pub package_name: &'static str,
@@ -284,19 +281,13 @@ pub struct ConstructedExtension {
 
     #[serde(skip)]
     #[schema(ignore)]
-    pub extension: Box<dyn Extension>,
+    pub extension: Arc<dyn Extension>,
 }
 
 impl Deref for ConstructedExtension {
-    type Target = Box<dyn Extension>;
+    type Target = Arc<dyn Extension>;
 
     fn deref(&self) -> &Self::Target {
         &self.extension
-    }
-}
-
-impl DerefMut for ConstructedExtension {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.extension
     }
 }

@@ -45,6 +45,16 @@ impl ExtensionManager {
         state.settings.invalidate_cache().await;
 
         for ext in self.vec.write().await.iter_mut() {
+            let ext = match Arc::get_mut(&mut ext.extension) {
+                Some(ext) => ext,
+                None => {
+                    panic!(
+                        "Failed to get mutable reference to extension {}. This should NEVER happen.",
+                        ext.package_name
+                    );
+                }
+            };
+
             ext.initialize(state.clone()).await;
 
             route_builder = ext.initialize_router(state.clone(), route_builder).await;
@@ -78,6 +88,16 @@ impl ExtensionManager {
         mut builder: CliCommandGroupBuilder,
     ) -> CliCommandGroupBuilder {
         for ext in self.vec.write().await.iter_mut() {
+            let ext = match Arc::get_mut(&mut ext.extension) {
+                Some(ext) => ext,
+                None => {
+                    panic!(
+                        "Failed to get mutable reference to extension {}. This should NEVER happen.",
+                        ext.package_name
+                    );
+                }
+            };
+
             builder = ext.initialize_cli(env, builder).await;
         }
 

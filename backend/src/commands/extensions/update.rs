@@ -112,6 +112,24 @@ impl shared::extensions::commands::CliCommand<UpdateArgs> for UpdateCommand {
                 })
                 .await??;
 
+                if let Err(err) = tokio::task::spawn_blocking(|| {
+                    shared::extensions::distr::resync_extension_list()
+                })
+                .await?
+                {
+                    eprintln!(
+                        "{} {}",
+                        "failed to resync internal extension list:".red(),
+                        err.to_string().red()
+                    );
+                    std::process::exit(1);
+                }
+
+                println!(
+                    "{}",
+                    "successfully resynced internal extension list.".green()
+                );
+
                 println!(
                     "sucessfully updated {}",
                     extension_distr.metadata_toml.name.cyan(),

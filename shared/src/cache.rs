@@ -10,7 +10,14 @@ use rustis::{
     resp::BulkString,
 };
 use serde::{Serialize, de::DeserializeOwned};
-use std::{future::Future, sync::Arc, time::Duration, time::Instant};
+use std::{
+    future::Future,
+    sync::{
+        Arc,
+        atomic::{AtomicU64, Ordering},
+    },
+    time::{Duration, Instant},
+};
 
 #[derive(Clone, Debug)]
 struct InternalEntry {
@@ -35,6 +42,11 @@ pub struct Cache {
     pub client: Arc<Client>,
     use_internal_cache: bool,
     local: moka::future::Cache<compact_str::CompactString, InternalEntry>,
+
+    cache_calls: AtomicU64,
+    cache_latency_ns_total: AtomicU64,
+    cache_latency_ns_max: AtomicU64,
+    cache_misses: AtomicU64,
 }
 
 impl Cache {
@@ -58,7 +70,7 @@ impl Cache {
         });
 
         let local_cache = moka::future::Cache::builder()
-            .max_capacity(100000)
+            .max_capacity(65536)
             .expire_after(DynamicExpiry)
             .build();
 
@@ -66,6 +78,10 @@ impl Cache {
             client,
             use_internal_cache: env.app_use_internal_cache,
             local: local_cache,
+            cache_calls: AtomicU64::new(0),
+            cache_latency_ns_total: AtomicU64::new(0),
+            cache_latency_ns_max: AtomicU64::new(0),
+            cache_misses: AtomicU64::new(0),
         };
 
         let version = instance
@@ -166,6 +182,9 @@ impl Cache {
         let key_owned = key.to_compact_string();
         let client = self.client.clone();
 
+        self.cache_calls.fetch_add(1, Ordering::Relaxed);
+        let start_time = Instant::now();
+
         let entry = self
             .local
             .try_get_with(key_owned.clone(), async move {
@@ -189,6 +208,8 @@ impl Cache {
                         intended_ttl: effective_moka_ttl,
                     });
                 }
+
+                self.cache_misses.fetch_add(1, Ordering::Relaxed);
 
                 tracing::debug!("executing compute");
                 let result = fn_compute().await.map_err(|e| e.into())?;
@@ -214,6 +235,22 @@ impl Cache {
             })
             .await;
 
+        let elapsed_ns = start_time.elapsed().as_nanos() as u64;
+        self.cache_latency_ns_total
+            .fetch_add(elapsed_ns, Ordering::Relaxed);
+
+        let _ = self.cache_latency_ns_max.fetch_update(
+            Ordering::Relaxed,
+            Ordering::Relaxed,
+            |current_max| {
+                if elapsed_ns > current_max {
+                    Some(elapsed_ns)
+                } else {
+                    Some(current_max)
+                }
+            },
+        );
+
         match entry {
             Ok(internal_entry) => {
                 let val = rmp_serde::from_slice::<T>(&internal_entry.data)?;
@@ -228,5 +265,25 @@ impl Cache {
         self.client.del(key).await?;
 
         Ok(())
+    }
+
+    #[inline]
+    pub fn cache_calls(&self) -> u64 {
+        self.cache_calls.load(Ordering::Relaxed)
+    }
+
+    #[inline]
+    pub fn cache_misses(&self) -> u64 {
+        self.cache_misses.load(Ordering::Relaxed)
+    }
+
+    #[inline]
+    pub fn cache_latency_ns_average(&self) -> u64 {
+        let calls = self.cache_calls();
+        if calls == 0 {
+            0
+        } else {
+            self.cache_latency_ns_total.load(Ordering::Relaxed) / calls
+        }
     }
 }

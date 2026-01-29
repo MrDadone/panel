@@ -94,6 +94,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/openapi.json': 'http://localhost:8000',
       '/api': 'http://localhost:8000',
       '/assets': 'http://localhost:8000',
       '/avatars': 'http://localhost:8000',

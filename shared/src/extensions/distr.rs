@@ -9,7 +9,7 @@ use std::{
 use utoipa::ToSchema;
 use zip::write::FileOptions;
 
-#[derive(ToSchema, Deserialize, Serialize)]
+#[derive(ToSchema, Deserialize, Serialize, Clone)]
 pub struct MetadataToml {
     pub package_name: String,
     pub name: String,
@@ -583,7 +583,7 @@ pub fn resync_extension_list() -> Result<(), anyhow::Error> {
             description: {},
             authors: &{},
             version: semver::Version::parse({}).unwrap(),
-            extension: Box::new({}::ExtensionStruct::default()),
+            extension: Arc::new({}::ExtensionStruct::default()),
         }},"#,
             toml::Value::String(metadata.package_name.clone()),
             toml::Value::String(metadata.name),
@@ -610,6 +610,7 @@ pub fn resync_extension_list() -> Result<(), anyhow::Error> {
 #![allow(unused_imports)]
 
 use shared::extensions::{{ConstructedExtension, distr::MetadataToml}};
+use std::sync::Arc;
 
 pub fn list() -> Vec<ConstructedExtension> {{
     vec![{}

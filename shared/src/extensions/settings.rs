@@ -146,7 +146,7 @@ impl<'a> SettingsDeserializer<'a> {
     pub async fn nest<T: 'static>(
         &mut self,
         nested_prefix: &str,
-        deserializer: &impl SettingsDeserializeExt,
+        deserializer: &(dyn SettingsDeserializeExt + Send + Sync),
     ) -> Result<T, anyhow::Error> {
         let settings_deserializer = SettingsDeserializer::new(
             self.database.clone(),

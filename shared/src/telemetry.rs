@@ -4,11 +4,11 @@ use std::collections::{BTreeMap, HashMap};
 use utoipa::ToSchema;
 
 nestify::nest! {
-    #[derive(ToSchema, Serialize, Clone)] pub struct TelemetryData {
+    #[derive(ToSchema, Serialize)] pub struct TelemetryData {
         pub uuid: uuid::Uuid,
 
         #[schema(inline)]
-        pub panel: #[derive(ToSchema, Serialize, Clone)] pub struct TelemetryDataPanel {
+        pub panel: #[derive(ToSchema, Serialize)] pub struct TelemetryDataPanel {
             pub version: compact_str::CompactString,
             pub container_type: crate::AppContainerType,
 
@@ -20,27 +20,29 @@ nestify::nest! {
         },
 
         #[schema(inline)]
-        pub resources: #[derive(ToSchema, Serialize, Clone)] pub struct TelemetryDataResources {
+        pub resources: #[derive(ToSchema, Serialize)] pub struct TelemetryDataResources {
             #[schema(inline)]
-            pub users: #[derive(ToSchema, Serialize, Clone)] pub struct TelemetryDataResourcesUsers {
+            pub users: #[derive(ToSchema, Serialize)] pub struct TelemetryDataResourcesUsers {
                 pub total: u64,
                 pub languages: BTreeMap<compact_str::CompactString, u64>,
             },
 
             #[schema(inline)]
-            pub backups: #[derive(ToSchema, Serialize, Clone)] pub struct TelemetryDataResourcesBackups {
+            pub backups: #[derive(ToSchema, Serialize)] pub struct TelemetryDataResourcesBackups {
                 pub total: u64,
                 pub disks: HashMap<crate::models::server_backup::BackupDisk, u64>,
             },
 
             #[schema(inline)]
-            pub servers: #[derive(ToSchema, Serialize, Clone)] pub struct TelemetryDataResourcesServers {
+            pub servers: #[derive(ToSchema, Serialize)] pub struct TelemetryDataResourcesServers {
                 pub total: u64,
             },
         },
 
+        pub extensions: Vec<crate::extensions::ConstructedExtension>,
+
         #[schema(inline)]
-        pub nodes: Vec<#[derive(ToSchema, Serialize, Clone)] pub struct TelemetryDataNode {
+        pub nodes: Vec<#[derive(ToSchema, Serialize)] pub struct TelemetryDataNode {
             pub version: compact_str::CompactString,
             pub container_type: wings_api::AppContainerType,
 
@@ -157,6 +159,7 @@ impl TelemetryData {
                     total: servers.count.unwrap_or(0) as u64,
                 },
             },
+            extensions: state.extensions.extensions().await.clone(),
             nodes: node_results,
         })
     }

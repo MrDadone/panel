@@ -58,6 +58,7 @@ export function useSearchablePaginatedTable<T>({
     if (search) {
       debouncedSearch(search);
     } else {
+      debouncedSearch.clear();
       fetchData(page, '');
     }
   }, [page, search, debouncedSearch]);

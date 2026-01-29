@@ -44,8 +44,7 @@
           "description": "Descriere",
           "password": "Parolă",
           "host": "Gazdă",
-          "username": "Nume utilizator",
-          "truncateDirectory": "Doriți să goliți sistemul de fișiere al acestui server înainte de a restaura backup-ul?"
+          "username": "Nume utilizator"
         },
         "table": {
           "pagination": {
