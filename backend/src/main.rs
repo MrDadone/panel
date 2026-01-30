@@ -666,7 +666,6 @@ async fn main() {
                             let script_csp = settings.captcha_provider.to_csp_script_src();
                             let frame_csp = settings.captcha_provider.to_csp_frame_src();
                             let style_csp = settings.captcha_provider.to_csp_style_src();
-                            let connect_csp = settings.captcha_provider.to_csp_connect_src();
                             drop(settings);
 
                             Some(format!(
@@ -674,7 +673,7 @@ async fn main() {
                                 script-src 'self' {script_csp}; \
                                 frame-src 'self' {frame_csp}; \
                                 style-src 'self' 'unsafe-inline' {style_csp}; \
-                                connect-src 'self' {connect_csp}; \
+                                connect-src *; \
                                 font-src 'self'; \
                                 img-src *; \
                                 media-src 'self'; \
@@ -735,8 +734,18 @@ async fn main() {
     openapi.info.title = format!("{} API", settings.app.name);
     openapi.info.contact = None;
     openapi.info.license = None;
-    openapi.servers = Some(vec![utoipa::openapi::Server::new(settings.app.url.clone())]);
-    openapi.components.as_mut().unwrap().add_security_scheme(
+    openapi.servers = Some(vec![
+        utoipa::openapi::Server::new("/"),
+        utoipa::openapi::Server::new(settings.app.url.clone()),
+    ]);
+    drop(settings);
+
+    let components = openapi.components.as_mut().unwrap();
+    components.add_security_scheme(
+        "cookie",
+        SecurityScheme::ApiKey(ApiKey::Cookie(ApiKeyValue::new("session"))),
+    );
+    components.add_security_scheme(
         "api_key",
         SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("Authorization"))),
     );
@@ -760,8 +769,6 @@ async fn main() {
             }
         }
     }
-
-    drop(settings);
 
     let openapi = Arc::new(openapi);
     let router = router.route("/openapi.json", get(|| async move { axum::Json(openapi) }));

@@ -119,7 +119,7 @@ impl CaptchaProvider {
     }
 
     pub fn to_csp_script_src(&self) -> &'static str {
-        match &self {
+        match self {
             CaptchaProvider::None => "",
             CaptchaProvider::Turnstile { .. } => "https://challenges.cloudflare.com",
             CaptchaProvider::Recaptcha { .. } => {
@@ -130,7 +130,7 @@ impl CaptchaProvider {
     }
 
     pub fn to_csp_frame_src(&self) -> &'static str {
-        match &self {
+        match self {
             CaptchaProvider::None => "",
             CaptchaProvider::Turnstile { .. } => "https://challenges.cloudflare.com",
             CaptchaProvider::Recaptcha { .. } => {
@@ -141,19 +141,10 @@ impl CaptchaProvider {
     }
 
     pub fn to_csp_style_src(&self) -> &'static str {
-        match &self {
+        match self {
             CaptchaProvider::None => "",
             CaptchaProvider::Turnstile { .. } => "",
             CaptchaProvider::Recaptcha { .. } => "",
-            CaptchaProvider::Hcaptcha { .. } => "https://hcaptcha.com https://*.hcaptcha.com",
-        }
-    }
-
-    pub fn to_csp_connect_src(&self) -> &'static str {
-        match &self {
-            CaptchaProvider::None => "",
-            CaptchaProvider::Turnstile { .. } => "",
-            CaptchaProvider::Recaptcha { .. } => "https://www.google.com/recaptcha/",
             CaptchaProvider::Hcaptcha { .. } => "https://hcaptcha.com https://*.hcaptcha.com",
         }
     }
