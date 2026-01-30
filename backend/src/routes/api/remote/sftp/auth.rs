@@ -104,7 +104,7 @@ mod post {
         ApiResponse::new_serialized(Response {
             user: user.uuid,
             server: server.uuid,
-            permissions: server.wings_permissions(&user),
+            permissions: server.wings_permissions(&*state.settings.get().await?, &user),
             ignored_files: server.subuser_ignored_files.as_deref().unwrap_or(&[]),
         })
         .ok()

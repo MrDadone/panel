@@ -260,7 +260,16 @@ mod patch {
                         &wings_api::servers_server_ws_permissions::post::RequestBody {
                             user_permissions: vec![wings_api::servers_server_ws_permissions::post::RequestBodyUserPermissions {
                                 user: subuser.user.uuid,
-                                permissions: server.wings_subuser_permissions(&subuser).into_iter().map(compact_str::CompactString::from).collect(),
+                                permissions: server.wings_subuser_permissions(
+                                    match &state.settings.get().await {
+                                        Ok(settings) => settings,
+                                        Err(_) => return,
+                                    },
+                                    &subuser
+                                )
+                                    .into_iter()
+                                    .map(compact_str::CompactString::from)
+                                    .collect(),
                                 ignored_files: subuser.ignored_files,
                             }]
                         }

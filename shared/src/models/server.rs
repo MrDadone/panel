@@ -1183,7 +1183,11 @@ impl Server {
         Ok(())
     }
 
-    pub fn wings_permissions(&self, user: &super::user::User) -> Vec<&str> {
+    pub fn wings_permissions(
+        &self,
+        settings: &crate::settings::AppSettings,
+        user: &super::user::User,
+    ) -> Vec<&str> {
         let mut permissions = Vec::new();
         if user.admin {
             permissions.reserve_exact(5);
@@ -1202,11 +1206,21 @@ impl Server {
             permissions.push("websocket.connect");
 
             for permission in subuser_permissions.iter() {
+                if permission == "control.read-console"
+                    && settings.server.allow_viewing_installation_logs
+                {
+                    permissions.push("admin.websocket.install");
+                }
+
                 permissions.push(permission.as_str());
             }
         } else {
             permissions.reserve_exact(2);
             permissions.push("websocket.connect");
+
+            if settings.server.allow_viewing_installation_logs {
+                permissions.push("admin.websocket.install");
+            }
 
             permissions.push("*");
         }
@@ -1216,6 +1230,7 @@ impl Server {
 
     pub fn wings_subuser_permissions<'a>(
         &self,
+        settings: &crate::settings::AppSettings,
         subuser: &'a super::server_subuser::ServerSubuser,
     ) -> Vec<&'a str> {
         let mut permissions = Vec::new();
@@ -1235,6 +1250,12 @@ impl Server {
         permissions.push("websocket.connect");
 
         for permission in subuser.permissions.iter() {
+            if permission == "control.read-console"
+                && settings.server.allow_viewing_installation_logs
+            {
+                permissions.push("admin.websocket.install");
+            }
+
             permissions.push(permission.as_str());
         }
 

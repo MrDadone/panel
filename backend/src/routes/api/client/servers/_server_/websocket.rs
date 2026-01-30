@@ -56,7 +56,7 @@ mod get {
                 },
                 user_uuid: user.uuid,
                 server_uuid: server.uuid,
-                permissions: server.wings_permissions(&user),
+                permissions: server.wings_permissions(&*state.settings.get().await?, &user),
                 use_console_read_permission: true,
             },
         )?;

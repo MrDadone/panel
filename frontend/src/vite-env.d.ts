@@ -1199,6 +1199,7 @@ declare global {
       maxSchedulesStepCount: number;
       allowOverwritingCustomDockerImage: boolean;
       allowEditingStartupCommand: boolean;
+      allowViewingInstallationLogs: boolean;
     };
     activity: {
       adminLogRetentionDays: number;

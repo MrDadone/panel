@@ -252,6 +252,7 @@ pub struct AppSettingsServer {
 
     pub allow_overwriting_custom_docker_image: bool,
     pub allow_editing_startup_command: bool,
+    pub allow_viewing_installation_logs: bool,
 }
 
 #[async_trait::async_trait]
@@ -286,6 +287,10 @@ impl SettingsSerializeExt for AppSettingsServer {
             .write_raw_setting(
                 "allow_editing_startup_command",
                 self.allow_editing_startup_command.to_compact_string(),
+            )
+            .write_raw_setting(
+                "allow_viewing_installation_logs",
+                self.allow_viewing_installation_logs.to_compact_string(),
             ))
     }
 }
@@ -323,6 +328,10 @@ impl SettingsDeserializeExt for AppSettingsServerDeserializer {
                 .take_raw_setting("allow_editing_startup_command")
                 .map(|s| s == "true")
                 .unwrap_or(false),
+            allow_viewing_installation_logs: deserializer
+                .take_raw_setting("allow_viewing_installation_logs")
+                .map(|s| s == "true")
+                .unwrap_or(true),
         }))
     }
 }

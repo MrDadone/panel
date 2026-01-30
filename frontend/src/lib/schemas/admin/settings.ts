@@ -82,6 +82,7 @@ export const adminSettingsServerSchema = z.object({
   maxSchedulesStepCount: z.number().min(0),
   allowOverwritingCustomDockerImage: z.boolean(),
   allowEditingStartupCommand: z.boolean(),
+  allowViewingInstallationLogs: z.boolean(),
 });
 
 export const adminSettingsActivitySchema = z.object({

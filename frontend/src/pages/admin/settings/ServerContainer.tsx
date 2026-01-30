@@ -29,6 +29,7 @@ export default function ServerContainer() {
       maxSchedulesStepCount: 0,
       allowOverwritingCustomDockerImage: false,
       allowEditingStartupCommand: false,
+      allowViewingInstallationLogs: false,
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(adminSettingsServerSchema),
@@ -106,6 +107,12 @@ export default function ServerContainer() {
             />
           </Group>
         </Stack>
+
+        <Switch
+          label='Allow Viewing Installation Logs'
+          description='If enabled, users with console read permissions will also be able to view installation logs via the websocket connection. If disabled, installation logs will only be available for admins.'
+          {...form.getInputProps('allowViewingInstallationLogs', { type: 'checkbox' })}
+        />
 
         <Group mt='md'>
           <AdminCan

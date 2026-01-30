@@ -32,6 +32,7 @@ export const createSettingsSlice: StateCreator<AdminStore, [], [], SettingsSlice
     maxSchedulesStepCount: 100,
     allowOverwritingCustomDockerImage: true,
     allowEditingStartupCommand: false,
+    allowViewingInstallationLogs: true,
   },
   webauthn: {
     rpId: '',

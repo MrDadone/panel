@@ -124,6 +124,10 @@ export default function WebsocketListener() {
     updateServer({ status: null });
   });
 
+  useWebsocketEvent(SocketEvent.INSTALL_STARTED, () => {
+    updateServer({ status: 'installing' });
+  });
+
   useWebsocketEvent(SocketEvent.INSTALL_COMPLETED, (successful) => {
     updateServer({ status: successful === 'true' ? null : 'install_failed' });
   });
