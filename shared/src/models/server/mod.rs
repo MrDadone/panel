@@ -10,6 +10,9 @@ use std::{
 use utoipa::ToSchema;
 use validator::Validate;
 
+mod events;
+pub use events::ServerEvent;
+
 pub type GetServer = crate::extract::ConsumingExtension<Server>;
 pub type GetServerActivityLogger = crate::extract::ConsumingExtension<ServerActivityLogger>;
 
@@ -1155,8 +1158,8 @@ impl Server {
                 &wings_api::servers_server_reinstall::post::RequestBody {
                     truncate_directory,
                     installation_script: Some(
-                        if let Some(installation_script) = installation_script {
-                            installation_script
+                        if let Some(installation_script) = &installation_script {
+                            installation_script.clone()
                         } else {
                             wings_api::InstallationScript {
                                 container_image: self.egg.config_script.container.clone(),
@@ -1179,6 +1182,20 @@ impl Server {
         };
 
         transaction.commit().await?;
+
+        Self::get_event_emitter().emit(events::ServerEvent::InstallStarted {
+            server: Box::new(self.clone()),
+            installation_script: Box::new(if let Some(installation_script) = installation_script {
+                installation_script
+            } else {
+                wings_api::InstallationScript {
+                    container_image: self.egg.config_script.container.clone(),
+                    entrypoint: self.egg.config_script.entrypoint.clone(),
+                    script: self.egg.config_script.content.to_compact_string(),
+                    environment: Default::default(),
+                }
+            }),
+        });
 
         Ok(())
     }

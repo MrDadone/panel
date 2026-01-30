@@ -163,6 +163,33 @@ pub trait BaseModel: Serialize + DeserializeOwned {
     fn map(prefix: Option<&str>, row: &PgRow) -> Result<Self, crate::database::DatabaseError>;
 }
 
+#[async_trait::async_trait]
+pub trait EventEmittingModel: BaseModel {
+    type Event: Send + Sync + 'static;
+
+    fn get_event_emitter() -> &'static crate::events::EventEmitter<Self::Event>;
+
+    async fn register_event_handler<
+        F: Fn(Arc<Self::Event>) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<(), anyhow::Error>> + Send + 'static,
+    >(
+        listener: F,
+    ) -> crate::events::EventHandlerHandle {
+        Self::get_event_emitter()
+            .register_event_handler(listener)
+            .await
+    }
+
+    fn blocking_register_event_handler<
+        F: Fn(Arc<Self::Event>) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<(), anyhow::Error>> + Send + 'static,
+    >(
+        listener: F,
+    ) -> crate::events::EventHandlerHandle {
+        Self::get_event_emitter().blocking_register_event_handler(listener)
+    }
+}
+
 type DeleteListenerResult<'a> =
     Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'a>>;
 type DeleteListener<M> = dyn for<'a> Fn(

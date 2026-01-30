@@ -13,6 +13,7 @@ pub mod captcha;
 pub mod database;
 pub mod deserialize;
 pub mod env;
+pub mod events;
 pub mod extensions;
 pub mod extract;
 pub mod jwt;

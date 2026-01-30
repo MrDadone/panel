@@ -6,7 +6,7 @@ mod post {
     use serde::Serialize;
     use shared::{
         ApiError, GetState,
-        models::server::GetServer,
+        models::{EventEmittingModel, server::GetServer},
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -78,6 +78,14 @@ mod post {
         }
 
         transaction.commit().await?;
+
+        shared::models::server::Server::get_event_emitter().emit(
+            shared::models::server::ServerEvent::TransferCompleted {
+                server: Box::new(server.0),
+                destination_node: Box::new(destination_node),
+                successful: false,
+            },
+        );
 
         ApiResponse::new_serialized(Response {}).ok()
     }

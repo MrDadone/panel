@@ -6,7 +6,7 @@ mod post {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{node::GetNode, server::GetServer},
+        models::{EventEmittingModel, node::GetNode, server::GetServer},
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -110,6 +110,16 @@ mod post {
             .await
         {
             tracing::error!("failed to delete server on source node: {:?}", err);
+        }
+
+        if let Ok(destination_node) = destination_node.fetch_cached(&state.database).await {
+            shared::models::server::Server::get_event_emitter().emit(
+                shared::models::server::ServerEvent::TransferCompleted {
+                    server: Box::new(server.0),
+                    destination_node: Box::new(destination_node),
+                    successful: true,
+                },
+            );
         }
 
         ApiResponse::new_serialized(Response {}).ok()

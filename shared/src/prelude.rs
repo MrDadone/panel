@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
 pub use crate::models::{
-    BaseModel, ByUuid, DeletableModel, DeleteListenerList, Fetchable, ListenerList,
-    ListenerPriority,
+    BaseModel, ByUuid, DeletableModel, DeleteListenerList, EventEmittingModel, Fetchable,
+    ListenerList, ListenerPriority,
 };
 
 pub trait IteratorExtension<R, E>: Iterator<Item = Result<R, E>> {
