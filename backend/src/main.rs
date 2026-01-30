@@ -3,12 +3,13 @@ use axum::{
     ServiceExt,
     body::Body,
     extract::{ConnectInfo, Path, Request},
-    http::StatusCode,
+    http::{HeaderValue, StatusCode},
     middleware::Next,
     response::Response,
     routing::get,
 };
 use colored::Colorize;
+use compact_str::ToCompactString;
 use rand::Rng;
 use sentry_tower::SentryHttpLayer;
 use sha2::Digest;
@@ -85,7 +86,7 @@ async fn handle_postprocessing(req: Request, next: Next) -> Result<Response, Sta
             Ok(text_body) => {
                 parts
                     .headers
-                    .insert("Content-Type", "application/json".parse().unwrap());
+                    .insert("Content-Type", HeaderValue::from_static("application/json"));
 
                 response = Response::from_parts(
                     parts,
@@ -98,7 +99,7 @@ async fn handle_postprocessing(req: Request, next: Next) -> Result<Response, Sta
         }
     }
 
-    let (etag, response) = if let Some(etag) = response.headers().get("ETag") {
+    let (etag, mut response) = if let Some(etag) = response.headers().get("ETag") {
         (etag.to_str().unwrap().to_string(), response)
     } else {
         let (mut parts, body) = response.into_parts();
@@ -119,9 +120,9 @@ async fn handle_postprocessing(req: Request, next: Next) -> Result<Response, Sta
             .body(Body::empty())
             .unwrap();
 
-        for (key, value) in response.headers().iter() {
-            cached_response.headers_mut().insert(key, value.clone());
-        }
+        cached_response
+            .headers_mut()
+            .extend(response.headers_mut().drain());
 
         return Ok(cached_response);
     }
@@ -562,7 +563,7 @@ async fn main() {
                     ApiResponse::new(Body::from_stream(tokio_util::io::ReaderStream::new(
                         tokio_file,
                     )))
-                    .with_header("Content-Length", &size.to_string())
+                    .with_header("Content-Length", size.to_compact_string())
                     .with_header("ETag", file.trim_end_matches(".webp"))
                     .ok()
                 },
@@ -572,9 +573,9 @@ async fn main() {
             if !req.uri().path().starts_with("/api") {
                 let path = &req.uri().path()[1..];
 
-                let entry = match FRONTEND_ASSETS.get_entry(path) {
-                    Some(entry) => entry,
-                    None => FRONTEND_ASSETS.get_entry("index.html").unwrap(),
+                let (is_index, entry) = match FRONTEND_ASSETS.get_entry(path) {
+                    Some(entry) => (false, entry),
+                    None => (true, FRONTEND_ASSETS.get_entry("index.html").unwrap()),
                 };
 
                 if entry.as_file().is_none() && path.starts_with("assets") {
@@ -588,7 +589,6 @@ async fn main() {
                                 .ok();
                         }
                     };
-
                     drop(settings);
 
                     let metadata = match base_filesystem.async_metadata(path).await {
@@ -628,16 +628,16 @@ async fn main() {
                     return ApiResponse::new(Body::from_stream(tokio_util::io::ReaderStream::new(
                         tokio_file,
                     )))
-                    .with_header("Content-Length", &metadata.len().to_string())
+                    .with_header("Content-Length", metadata.len().to_compact_string())
                     .with_optional_header("Last-Modified", modified.as_deref())
                     .ok();
                 }
 
-                let file = match entry {
-                    include_dir::DirEntry::File(file) => file,
+                let (is_index, file) = match entry {
+                    include_dir::DirEntry::File(file) => (is_index, file),
                     include_dir::DirEntry::Dir(dir) => match dir.get_file("index.html") {
-                        Some(index_file) => index_file,
-                        None => FRONTEND_ASSETS.get_file("index.html").unwrap(),
+                        Some(index_file) => (true, index_file),
+                        None => (true, FRONTEND_ASSETS.get_file("index.html").unwrap()),
                     },
                 };
 
@@ -659,6 +659,36 @@ async fn main() {
                             },
                         },
                     )
+                    .with_optional_header(
+                        "Content-Security-Policy",
+                        if is_index {
+                            let settings = state.settings.get().await?;
+                            let script_csp = settings.captcha_provider.to_csp_script_src();
+                            let frame_csp = settings.captcha_provider.to_csp_frame_src();
+                            let style_csp = settings.captcha_provider.to_csp_style_src();
+                            let connect_csp = settings.captcha_provider.to_csp_connect_src();
+                            drop(settings);
+
+                            Some(format!(
+                                "default-src 'self'; \
+                                script-src 'self' {script_csp}; \
+                                frame-src 'self' {frame_csp}; \
+                                style-src 'self' 'unsafe-inline' {style_csp}; \
+                                connect-src 'self' {connect_csp}; \
+                                font-src 'self'; \
+                                img-src *; \
+                                media-src 'self'; \
+                                object-src 'none'; \
+                                base-uri 'self'; \
+                                form-action 'self'; \
+                                frame-ancestors 'self';"
+                            ))
+                        } else {
+                            None
+                        },
+                    )
+                    .with_header("X-Content-Type-Options", "nosniff")
+                    .with_header("X-Frame-Options", "SAMEORIGIN")
                     .ok();
             }
 
@@ -671,7 +701,7 @@ async fn main() {
             handle_request,
         ))
         .layer(CookieManagerLayer::new())
-        .route_layer(axum::middleware::from_fn(handle_postprocessing))
+        .layer(axum::middleware::from_fn(handle_postprocessing))
         .route_layer(SentryHttpLayer::new().enable_transaction())
         .with_state(state.clone());
 

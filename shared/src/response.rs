@@ -124,8 +124,8 @@ impl ApiResponse {
     }
 
     #[inline]
-    pub fn with_header(mut self, key: &'static str, value: &str) -> Self {
-        if let Ok(header_value) = axum::http::HeaderValue::from_str(value) {
+    pub fn with_header(mut self, key: &'static str, value: impl AsRef<str>) -> Self {
+        if let Ok(header_value) = axum::http::HeaderValue::from_str(value.as_ref()) {
             self.headers.insert(key, header_value);
         }
 
@@ -133,13 +133,17 @@ impl ApiResponse {
     }
 
     #[inline]
-    pub fn with_optional_header(mut self, key: &'static str, value: Option<&str>) -> Self {
+    pub fn with_optional_header(
+        mut self,
+        key: &'static str,
+        value: Option<impl AsRef<str>>,
+    ) -> Self {
         let value = match value {
             Some(value) => value,
             None => return self,
         };
 
-        if let Ok(header_value) = axum::http::HeaderValue::from_str(value) {
+        if let Ok(header_value) = axum::http::HeaderValue::from_str(value.as_ref()) {
             self.headers.insert(key, header_value);
         }
 

@@ -226,7 +226,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                 let settings = state.settings.get().await?;
 
                 ApiResponse::new(Body::empty())
-                    .with_header("Location", &format!("{}/account/oauth-links", settings.app.url.trim_end_matches('/')))
+                    .with_header("Location", format!("{}/account/oauth-links", settings.app.url.trim_end_matches('/')))
                     .with_status(StatusCode::TEMPORARY_REDIRECT)
                     .ok()
             } else {
