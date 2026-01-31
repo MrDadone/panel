@@ -1,4 +1,5 @@
-import { faArrowRightLong, faCrow } from '@fortawesome/free-solid-svg-icons';
+import { faGofore } from '@fortawesome/free-brands-svg-icons';
+import { faArchive, faArrowRightLong, faCrow, faStethoscope } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
@@ -10,6 +11,7 @@ import { AdminCan } from '@/elements/Can.tsx';
 import Card from '@/elements/Card.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { bytesToString } from '@/lib/size.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -55,18 +57,12 @@ export default function AdminOverview() {
           </Text>
         }
       >
-        <div>
-          <Title order={2} c='white' mb='md'>
-            System Overview
-          </Title>
-
+        <TitleCard title='System Overview' icon={<FontAwesomeIcon icon={faStethoscope} />}>
           {!systemOverview ? (
             <Spinner.Centered />
           ) : (
             <>
-              <div className='grid grid-cols-2 xl:grid-cols-5 gap-4'>
-                <div className='col-span-2 xl:col-span-1' />
-
+              <div className='grid grid-cols-2 xl:grid-cols-4 gap-4'>
                 <Card className='flex col-span-2'>
                   <Title order={3} c='white'>
                     {systemOverview.cpu.brand}
@@ -82,9 +78,7 @@ export default function AdminOverview() {
                 </Card>
               </div>
 
-              <div className='grid grid-cols-2 xl:grid-cols-5 gap-4 mt-4'>
-                <div className='col-span-2 xl:col-span-1' />
-
+              <div className='grid grid-cols-2 xl:grid-cols-4 gap-4 mt-4'>
                 <Card className='flex'>
                   <Title order={3} c='white'>
                     {systemOverview.kernelVersion}
@@ -111,9 +105,7 @@ export default function AdminOverview() {
                 </Card>
               </div>
 
-              <div className='grid grid-cols-2 xl:grid-cols-5 gap-4 mt-4'>
-                <div className='col-span-2 xl:col-span-1' />
-
+              <div className='grid grid-cols-2 xl:grid-cols-4 gap-4 mt-4'>
                 <Card className='flex'>
                   <Title order={3} c='white'>
                     {systemOverview.cache.totalCalls}
@@ -142,19 +134,13 @@ export default function AdminOverview() {
               </div>
             </>
           )}
-        </div>
+        </TitleCard>
 
-        <div>
-          <Title order={2} c='white' mb='md'>
-            General Statistics
-          </Title>
-
+        <TitleCard title='General Statistics' icon={<FontAwesomeIcon icon={faGofore} />} className='mt-4'>
           {!generalStats ? (
             <Spinner.Centered />
           ) : (
-            <div className='grid grid-cols-2 xl:grid-cols-5 gap-4'>
-              <div className='col-span-2 xl:col-span-1' />
-
+            <div className='grid grid-cols-2 xl:grid-cols-4 gap-4'>
               <Card className='flex'>
                 <Title order={3} c='white'>
                   {generalStats.users}
@@ -181,20 +167,18 @@ export default function AdminOverview() {
               </Card>
             </div>
           )}
-        </div>
+        </TitleCard>
 
-        <div>
-          <Title order={2} c='white' my='md'>
-            Backup Statistics
-          </Title>
-
+        <TitleCard title='Backup Statistics' icon={<FontAwesomeIcon icon={faArchive} />} className='mt-4'>
           {!backupStats ? (
             <Spinner.Centered />
           ) : (
             <div className='grid grid-cols-2 xl:grid-cols-5 gap-4'>
-              <Title order={3} c='white' className='col-span-2 xl:col-span-1'>
-                All Time
-              </Title>
+              <Card className='col-span-2 xl:col-span-1'>
+                <Title order={3} c='white'>
+                  All Time
+                </Title>
+              </Card>
 
               <Card className='flex'>
                 <Title order={3} c='white'>
@@ -221,9 +205,11 @@ export default function AdminOverview() {
                 Deleted backups all time
               </Card>
 
-              <Title order={3} c='white' className='col-span-2 xl:col-span-1'>
-                Today
-              </Title>
+              <Card className='col-span-2 xl:col-span-1'>
+                <Title order={3} c='white'>
+                  Today
+                </Title>
+              </Card>
 
               <Card className='flex'>
                 <Title order={3} c='white'>
@@ -250,9 +236,11 @@ export default function AdminOverview() {
                 Deleted backups today
               </Card>
 
-              <Title order={3} c='white' className='col-span-2 xl:col-span-1'>
-                This Week
-              </Title>
+              <Card className='col-span-2 xl:col-span-1'>
+                <Title order={3} c='white'>
+                  This Week
+                </Title>
+              </Card>
 
               <Card className='flex'>
                 <Title order={3} c='white'>
@@ -279,9 +267,11 @@ export default function AdminOverview() {
                 Deleted backups this week
               </Card>
 
-              <Title order={3} c='white' className='col-span-2 xl:col-span-1'>
-                This Month
-              </Title>
+              <Card className='col-span-2 xl:col-span-1'>
+                <Title order={3} c='white'>
+                  This Month
+                </Title>
+              </Card>
 
               <Card className='flex'>
                 <Title order={3} c='white'>
@@ -309,7 +299,7 @@ export default function AdminOverview() {
               </Card>
             </div>
           )}
-        </div>
+        </TitleCard>
       </AdminCan>
     </AdminContentContainer>
   );
