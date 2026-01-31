@@ -1,9 +1,9 @@
 import { faCog, faEgg } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getEggRepository from '@/api/admin/egg-repositories/getEggRepository.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -30,9 +30,7 @@ export default function EggRepositoryView() {
   return !eggRepository ? (
     <Spinner.Centered />
   ) : (
-    <>
-      <Title order={1}>{eggRepository.name}</Title>
-
+    <AdminContentContainer title={eggRepository.name}>
       <SubNavigation
         baseUrl={`/admin/egg-repositories/${params.eggRepositoryId}`}
         items={[
@@ -50,6 +48,6 @@ export default function EggRepositoryView() {
           },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 }

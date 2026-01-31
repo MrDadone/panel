@@ -7,7 +7,7 @@ import updateStorageSettings from '@/api/admin/settings/updateStorageSettings.ts
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { storageDriverTypeLabelMapping } from '@/lib/enums.ts';
 import {
@@ -54,7 +54,7 @@ export default function StorageContainer() {
   };
 
   return (
-    <AdminContentContainer title='Storage Settings' titleOrder={2}>
+    <AdminSubContentContainer title='Storage Settings' titleOrder={2}>
       <form onSubmit={form.onSubmit(() => doUpdate())}>
         <Select
           label='Driver'
@@ -86,6 +86,6 @@ export default function StorageContainer() {
           </AdminCan>
         </Group>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

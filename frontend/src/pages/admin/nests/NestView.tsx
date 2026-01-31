@@ -1,9 +1,9 @@
 import { faCog, faEgg } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getNest from '@/api/admin/nests/getNest.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -30,9 +30,7 @@ export default function NestView() {
   return !nest ? (
     <Spinner.Centered />
   ) : (
-    <>
-      <Title order={1}>{nest.name}</Title>
-
+    <AdminContentContainer title={nest.name}>
       <SubNavigation
         baseUrl={`/admin/nests/${params.nestId}`}
         items={[
@@ -51,6 +49,6 @@ export default function NestView() {
           },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 }

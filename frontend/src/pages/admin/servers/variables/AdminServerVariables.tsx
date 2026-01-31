@@ -3,7 +3,7 @@ import getServerVariables from '@/api/admin/servers/variables/getServerVariables
 import updateServerVariables from '@/api/admin/servers/variables/updateServerVariables.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import VariableContainer from '@/elements/VariableContainer.tsx';
 import { useKeyboardShortcut } from '@/plugins/useKeyboardShortcuts.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -56,7 +56,7 @@ export default function AdminServerVariables({ server }: { server: AdminServer }
   );
 
   return (
-    <AdminContentContainer
+    <AdminSubContentContainer
       title='Server Variables'
       titleOrder={2}
       contentRight={
@@ -77,6 +77,6 @@ export default function AdminServerVariables({ server }: { server: AdminServer }
           />
         ))}
       </div>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

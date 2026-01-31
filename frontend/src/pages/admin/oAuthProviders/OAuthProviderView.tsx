@@ -1,9 +1,9 @@
 import { faCog, faUsers } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getOAuthProvider from '@/api/admin/oauth-providers/getOAuthProvider.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import AdminOAuthProviderUsers from '@/pages/admin/oAuthProviders/users/AdminOAuthProviderUsers.tsx';
@@ -30,9 +30,7 @@ export default function OAuthProviderView() {
   return !oauthProvider ? (
     <Spinner.Centered />
   ) : (
-    <>
-      <Title order={1}>{oauthProvider.name}</Title>
-
+    <AdminContentContainer title={oauthProvider.name}>
       <SubNavigation
         baseUrl={`/admin/oauth-providers/${params.id}`}
         items={[
@@ -51,6 +49,6 @@ export default function OAuthProviderView() {
           },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 }

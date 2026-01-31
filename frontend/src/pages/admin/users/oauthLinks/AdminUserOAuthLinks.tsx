@@ -4,7 +4,7 @@ import { useState } from 'react';
 import getUserOAuthLinks from '@/api/admin/users/oauthLinks/getUserOAuthLinks.ts';
 import Button from '@/elements/Button.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { adminUserOAuthLinkTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -23,7 +23,7 @@ export default function AdminUserOAuthLinks({ user }: { user: User }) {
   });
 
   return (
-    <AdminContentContainer
+    <AdminSubContentContainer
       title='User OAuth Links'
       titleOrder={2}
       search={search}
@@ -48,6 +48,6 @@ export default function AdminUserOAuthLinks({ user }: { user: User }) {
           ))}
         </Table>
       </ContextMenuProvider>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import getBackupConfigurationServers from '@/api/admin/backup-configurations/servers/getBackupConfigurationServers.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
 import ServerRow from '@/pages/admin/servers/ServerRow.tsx';
@@ -22,7 +22,7 @@ export default function AdminBackupConfigurationServers({
   });
 
   return (
-    <AdminContentContainer title={`Backup Config Servers`} titleOrder={2} search={search} setSearch={setSearch}>
+    <AdminSubContentContainer title={`Backup Config Servers`} titleOrder={2} search={search} setSearch={setSearch}>
       <Table
         columns={serverTableColumns}
         loading={loading}
@@ -33,6 +33,6 @@ export default function AdminBackupConfigurationServers({
           <ServerRow key={server.uuid} server={server} />
         ))}
       </Table>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

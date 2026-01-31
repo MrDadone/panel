@@ -81,7 +81,7 @@ export default function FileEditor() {
   }
 
   return (
-    <ServerContentContainer title={`${fileName ? `Editing ${fileName}` : 'New File'}`}>
+    <ServerContentContainer fullscreen title={`${fileName ? `Editing ${fileName}` : 'New File'}`}>
       {loading ? (
         <div className='w-full h-screen flex items-center justify-center'>
           <Spinner size={75} />
@@ -116,9 +116,8 @@ export default function FileEditor() {
               )}
             </div>
           </div>
-          <div className='rounded-md overflow-hidden'>
+          <div className='flex h-screen '>
             <Editor
-              height='77vh'
               theme='vs-dark'
               defaultValue={content}
               path={fileName}

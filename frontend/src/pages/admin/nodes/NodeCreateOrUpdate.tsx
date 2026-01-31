@@ -14,7 +14,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import Select from '@/elements/input/Select.tsx';
 import SizeInput from '@/elements/input/SizeInput.tsx';
@@ -107,7 +107,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
   };
 
   return (
-    <AdminContentContainer title={`${contextNode ? 'Update' : 'Create'} Node`} titleOrder={2}>
+    <AdminSubContentContainer title={`${contextNode ? 'Update' : 'Create'} Node`} titleOrder={2}>
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -242,6 +242,6 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
           </Group>
         </Stack>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

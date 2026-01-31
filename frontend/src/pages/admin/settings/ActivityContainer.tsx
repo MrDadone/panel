@@ -7,7 +7,7 @@ import updateActivitySettings from '@/api/admin/settings/updateActivitySettings.
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import { adminSettingsActivitySchema } from '@/lib/schemas/admin/settings.ts';
@@ -52,7 +52,7 @@ export default function ActivityContainer() {
   };
 
   return (
-    <AdminContentContainer title='Activity Settings' titleOrder={2}>
+    <AdminSubContentContainer title='Activity Settings' titleOrder={2}>
       <form onSubmit={form.onSubmit(() => doUpdate())}>
         <Stack>
           <Group grow>
@@ -108,6 +108,6 @@ export default function ActivityContainer() {
           </AdminCan>
         </Group>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

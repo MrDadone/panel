@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import getMountServers from '@/api/admin/mounts/servers/getMountServers.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -18,12 +18,12 @@ export default function AdminMountServers({ mount }: { mount: Mount }) {
   });
 
   return (
-    <AdminContentContainer title='Mount Servers' titleOrder={2} search={search} setSearch={setSearch}>
+    <AdminSubContentContainer title='Mount Servers' titleOrder={2} search={search} setSearch={setSearch}>
       <Table columns={serverTableColumns} loading={loading} pagination={mountServers} onPageSelect={setPage}>
         {mountServers.data.map((serverMount) => (
           <ServerRow key={serverMount.server.uuid} server={serverMount.server} />
         ))}
       </Table>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

@@ -7,7 +7,7 @@ import updateEmailSettings from '@/api/admin/settings/updateEmailSettings.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { mailModeTypeLabelMapping } from '@/lib/enums.ts';
 import {
@@ -55,7 +55,7 @@ export default function EmailContainer() {
   };
 
   return (
-    <AdminContentContainer title='Email Settings' titleOrder={2}>
+    <AdminSubContentContainer title='Email Settings' titleOrder={2}>
       <form onSubmit={form.onSubmit(() => doUpdate())}>
         <Select
           label='Provider'
@@ -89,6 +89,6 @@ export default function EmailContainer() {
           </AdminCan>
         </Group>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }
