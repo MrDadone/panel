@@ -1,8 +1,8 @@
 import { ReactNode } from 'react';
 import { ContainerRegistry } from 'shared';
+import { useCurrentWindow } from '@/providers/CurrentWindowProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import ContentContainer from './ContentContainer.tsx';
-import { useCurrentWindow } from '@/providers/CurrentWindowProvider.tsx';
 
 export default function AccountContentContainer({
   title,

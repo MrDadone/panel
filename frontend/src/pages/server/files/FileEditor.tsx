@@ -1,3 +1,4 @@
+import { Title } from '@mantine/core';
 import { Editor, type OnMount } from '@monaco-editor/react';
 import { join } from 'pathe';
 import { useEffect, useRef, useState } from 'react';
@@ -81,13 +82,31 @@ export default function FileEditor() {
   }
 
   return (
-    <ServerContentContainer fullscreen title={`${fileName ? `Editing ${fileName}` : 'New File'}`}>
+    <ServerContentContainer hideTitleComponent fullscreen title={`${fileName ? `Editing ${fileName}` : 'New File'}`}>
+      <div className='flex justify-between items-center lg:p-4 pb-0'>
+        <Title>{fileName ? `Editing ${fileName}` : 'New File'}</Title>
+        <div hidden={!!browsingBackup || !browsingWritableDirectory}>
+          {params.action === 'edit' ? (
+            <ServerCan action='files.update'>
+              <Button loading={saving} onClick={() => saveFile()}>
+                Save
+              </Button>
+            </ServerCan>
+          ) : (
+            <ServerCan action='files.create'>
+              <Button loading={saving} onClick={() => setNameModalOpen(true)}>
+                Create
+              </Button>
+            </ServerCan>
+          )}
+        </div>
+      </div>
       {loading ? (
         <div className='w-full h-screen flex items-center justify-center'>
           <Spinner size={75} />
         </div>
       ) : (
-        <div className='flex flex-col'>
+        <div className='flex flex-col relative'>
           <FileNameModal
             onFileName={(name: string) => saveFile(name)}
             opened={nameModalOpen}
@@ -100,56 +119,44 @@ export default function FileEditor() {
               path={join(decodeURIComponent(browsingDirectory!), fileName)}
               browsingBackup={browsingBackup}
             />
-            <div hidden={!!browsingBackup || !browsingWritableDirectory}>
-              {params.action === 'edit' ? (
-                <ServerCan action='files.update'>
-                  <Button loading={saving} onClick={() => saveFile()}>
-                    Save
-                  </Button>
-                </ServerCan>
-              ) : (
-                <ServerCan action='files.create'>
-                  <Button loading={saving} onClick={() => setNameModalOpen(true)}>
-                    Create
-                  </Button>
-                </ServerCan>
-              )}
-            </div>
           </div>
-          <div className='flex h-full'>
-            <Editor
-            height={'77vh'}
-              theme='vs-dark'
-              defaultValue={content}
-              path={fileName}
-              options={{
-                readOnly: !!browsingBackup || !browsingWritableDirectory,
-                stickyScroll: { enabled: false },
-                minimap: { enabled: false },
-                codeLens: false,
-                scrollBeyondLastLine: false,
-                smoothScrolling: true,
-                // @ts-expect-error this is valid
-                touchScrollEnabled: true,
-              }}
-              onChange={(value) => setContent(value || '')}
-              onMount={(editor, monaco) => {
-                editorRef.current = editor;
-                editor.onDidChangeModelContent(() => {
-                  contentRef.current = editor.getValue();
-                });
-                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-                  if (params.action === 'new') {
-                    setNameModalOpen(true);
-                  } else {
-                    saveFile();
-                  }
-                });
-
-                registerTomlLanguage(monaco);
-                registerHoconLanguage(monaco);
-              }}
-            />
+          <div className='relative'>
+            <div className='flex h-[calc(100vh-185px)] lg:h-[calc(100vh-135px)] max-w-full w-full z-1 absolute'>
+              <Editor
+                height='100%'
+                width='100%'
+                theme='vs-dark'
+                defaultValue={content}
+                path={fileName}
+                options={{
+                  automaticLayout: true,
+                  readOnly: !!browsingBackup || !browsingWritableDirectory,
+                  stickyScroll: { enabled: false },
+                  minimap: { enabled: false },
+                  codeLens: false,
+                  scrollBeyondLastLine: false,
+                  smoothScrolling: true,
+                  // @ts-expect-error this is valid
+                  touchScrollEnabled: true,
+                }}
+                onChange={(value) => setContent(value || '')}
+                onMount={(editor, monaco) => {
+                  editorRef.current = editor;
+                  editor.onDidChangeModelContent(() => {
+                    contentRef.current = editor.getValue();
+                  });
+                  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+                    if (params.action === 'new') {
+                      setNameModalOpen(true);
+                    } else {
+                      saveFile();
+                    }
+                  });
+                  registerTomlLanguage(monaco);
+                  registerHoconLanguage(monaco);
+                }}
+              />
+            </div>
           </div>
         </div>
       )}

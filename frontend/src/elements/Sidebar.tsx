@@ -53,7 +53,7 @@ function Sidebar({ children }: SidebarProps) {
         <div className='h-full flex flex-col overflow-y-auto'>{children}</div>
       </Drawer>
 
-      <Card className='mt-2 top-2 ml-2 sticky! hidden! lg:block! h-[calc(100vh-1rem)] w-64!' p='sm'>
+      <Card className='mt-2 top-2 ml-2 sticky! hidden! lg:block! h-[calc(100vh-1rem)] min-w-64!' p='sm'>
         <div className='h-full flex flex-col overflow-y-auto'>{children}</div>
       </Card>
     </>

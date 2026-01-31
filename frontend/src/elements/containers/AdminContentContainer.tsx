@@ -1,11 +1,11 @@
 import { Group, Title, TitleOrder } from '@mantine/core';
 import { Dispatch, ReactNode, SetStateAction } from 'react';
 import { ContainerRegistry } from 'shared';
+import { useCurrentWindow } from '@/providers/CurrentWindowProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import TextInput from '../input/TextInput.tsx';
 import ContentContainer from './ContentContainer.tsx';
-import { useCurrentWindow } from '@/providers/CurrentWindowProvider.tsx';
 
 interface Props {
   title: string;
