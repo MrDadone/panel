@@ -83,7 +83,7 @@ export default function FileEditor() {
 
   return (
     <ServerContentContainer hideTitleComponent fullscreen title={`${fileName ? `Editing ${fileName}` : 'New File'}`}>
-      <div className='flex justify-between items-center lg:p-4 pb-0'>
+      <div className='flex justify-between items-center lg:p-4 lg:pb-0 ml-5'>
         <Title>{fileName ? `Editing ${fileName}` : 'New File'}</Title>
         <div hidden={!!browsingBackup || !browsingWritableDirectory}>
           {params.action === 'edit' ? (
@@ -121,7 +121,7 @@ export default function FileEditor() {
             />
           </div>
           <div className='relative'>
-            <div className='flex h-[calc(100vh-185px)] lg:h-[calc(100vh-135px)] max-w-full w-full z-1 absolute'>
+            <div className='flex h-[calc(100vh-185px)] lg:h-[calc(100vh-119px)] max-w-full w-full z-1 absolute'>
               <Editor
                 height='100%'
                 width='100%'
