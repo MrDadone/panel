@@ -160,7 +160,7 @@ mod delete {
         }
 
         state.storage.remove(user.avatar.as_deref()).await?;
-        user.delete(&state.database, ()).await?;
+        user.delete(&state, ()).await?;
 
         activity_logger
             .log(

@@ -152,7 +152,7 @@ mod delete {
                 .ok();
         }
 
-        egg.delete(&state.database, ()).await?;
+        egg.delete(&state, ()).await?;
 
         activity_logger
             .log(

@@ -129,7 +129,7 @@ mod delete {
                 .ok();
         }
 
-        nest.delete(&state.database, ()).await?;
+        nest.delete(&state, ()).await?;
 
         activity_logger
             .log(

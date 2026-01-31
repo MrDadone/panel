@@ -49,7 +49,7 @@ mod delete {
                 }
             };
 
-        api_key.delete(&state.database, ()).await?;
+        api_key.delete(&state, ()).await?;
 
         activity_logger
             .log(

@@ -134,7 +134,7 @@ mod delete {
                 .ok();
         }
 
-        node.delete(&state.database, ()).await?;
+        node.delete(&state, ()).await?;
 
         activity_logger
             .log(

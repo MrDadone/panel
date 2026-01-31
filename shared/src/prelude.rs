@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 pub use crate::models::{
     BaseModel, ByUuid, DeletableModel, DeleteListenerList, EventEmittingModel, Fetchable,
-    ListenerList, ListenerPriority,
+    ListenerPriority, ModelHandlerList,
 };
 
 pub trait IteratorExtension<R, E>: Iterator<Item = Result<R, E>> {

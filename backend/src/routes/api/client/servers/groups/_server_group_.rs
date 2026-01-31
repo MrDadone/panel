@@ -234,7 +234,7 @@ mod delete {
                 }
             };
 
-        server_group.delete(&state.database, ()).await?;
+        server_group.delete(&state, ()).await?;
 
         activity_logger
             .log(

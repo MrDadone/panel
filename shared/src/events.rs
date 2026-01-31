@@ -2,7 +2,10 @@ use futures_util::StreamExt;
 use std::{collections::HashMap, pin::Pin, sync::Arc};
 use tokio::sync::RwLock;
 
-type Listener<Event> = dyn Fn(Arc<Event>) -> Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'static>>
+type Listener<Event> = dyn Fn(
+        crate::State,
+        Arc<Event>,
+    ) -> Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'static>>
     + Send
     + Sync;
 
@@ -42,7 +45,7 @@ impl<Event> DisconnectEventHandler for RwLock<HashMap<uuid::Uuid, Box<Listener<E
 
 pub struct EventEmitter<Event: 'static + Send + Sync> {
     listeners: Arc<RwLock<HashMap<uuid::Uuid, Box<Listener<Event>>>>>,
-    event_channel: tokio::sync::mpsc::Sender<Event>,
+    event_channel: tokio::sync::mpsc::Sender<(crate::State, Event)>,
     task: tokio::task::JoinHandle<()>,
 }
 
@@ -57,7 +60,7 @@ impl<Event: 'static + Send + Sync> Default for EventEmitter<Event> {
             task: tokio::spawn(async move {
                 let semaphore = Arc::new(tokio::sync::Semaphore::new(10));
 
-                while let Some(event) = event_channel_receiver.recv().await {
+                while let Some((state, event)) = event_channel_receiver.recv().await {
                     tracing::debug!("emitting event {:?}", std::any::type_name::<Event>());
 
                     let listeners = listeners.clone();
@@ -75,7 +78,7 @@ impl<Event: 'static + Send + Sync> Default for EventEmitter<Event> {
                             .read()
                             .await
                             .values()
-                            .map(|listener| listener(event.clone()))
+                            .map(|listener| listener(state.clone(), event.clone()))
                             .collect::<Vec<_>>();
 
                         let mut result_stream =
@@ -101,15 +104,15 @@ impl<Event: 'static + Send + Sync> Default for EventEmitter<Event> {
 
 impl<Event: 'static + Send + Sync> EventEmitter<Event> {
     pub async fn register_event_handler<
-        F: Fn(Arc<Event>) -> Fut + Send + Sync + 'static,
+        F: Fn(crate::State, Arc<Event>) -> Fut + Send + Sync + 'static,
         Fut: Future<Output = Result<(), anyhow::Error>> + Send + 'static,
     >(
         &self,
         listener: F,
     ) -> EventHandlerHandle {
         let id = uuid::Uuid::new_v4();
-        let listener_box = Box::new(move |event: Arc<Event>| {
-            Box::pin(listener(event))
+        let listener_box = Box::new(move |state: crate::State, event: Arc<Event>| {
+            Box::pin(listener(state, event))
                 as Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'static>>
         }) as Box<Listener<Event>>;
 
@@ -121,16 +124,18 @@ impl<Event: 'static + Send + Sync> EventEmitter<Event> {
         }
     }
 
+    /// # Warning
+    /// This method will block the current thread if the lock is not available
     pub fn blocking_register_event_handler<
-        F: Fn(Arc<Event>) -> Fut + Send + Sync + 'static,
+        F: Fn(crate::State, Arc<Event>) -> Fut + Send + Sync + 'static,
         Fut: Future<Output = Result<(), anyhow::Error>> + Send + 'static,
     >(
         &self,
         listener: F,
     ) -> EventHandlerHandle {
         let id = uuid::Uuid::new_v4();
-        let listener_box = Box::new(move |event: Arc<Event>| {
-            Box::pin(listener(event))
+        let listener_box = Box::new(move |state: crate::State, event: Arc<Event>| {
+            Box::pin(listener(state, event))
                 as Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'static>>
         }) as Box<Listener<Event>>;
 
@@ -142,8 +147,8 @@ impl<Event: 'static + Send + Sync> EventEmitter<Event> {
         }
     }
 
-    pub fn emit(&self, event: Event) {
-        let _ = self.event_channel.try_send(event);
+    pub fn emit(&self, state: crate::State, event: Event) {
+        let _ = self.event_channel.try_send((state, event));
     }
 }
 

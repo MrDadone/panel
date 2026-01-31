@@ -133,7 +133,7 @@ mod delete {
                 .ok();
         }
 
-        location.delete(&state.database, ()).await?;
+        location.delete(&state, ()).await?;
 
         activity_logger
             .log(

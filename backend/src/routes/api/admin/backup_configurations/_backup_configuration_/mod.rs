@@ -135,7 +135,7 @@ mod delete {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("backup-configurations.delete")?;
 
-        backup_configuration.delete(&state.database, ()).await?;
+        backup_configuration.delete(&state, ()).await?;
 
         activity_logger
             .log(

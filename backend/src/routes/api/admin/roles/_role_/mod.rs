@@ -111,7 +111,7 @@ mod delete {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("roles.delete")?;
 
-        role.delete(&state.database, ()).await?;
+        role.delete(&state, ()).await?;
 
         activity_logger
             .log(

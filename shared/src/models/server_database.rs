@@ -532,19 +532,19 @@ pub struct DeleteServerDatabaseOptions {
 impl DeletableModel for ServerDatabase {
     type DeleteOptions = DeleteServerDatabaseOptions;
 
-    fn get_delete_listeners() -> &'static LazyLock<DeleteListenerList<Self>> {
+    fn get_delete_handlers() -> &'static LazyLock<DeleteListenerList<Self>> {
         static DELETE_LISTENERS: LazyLock<DeleteListenerList<ServerDatabase>> =
-            LazyLock::new(|| Arc::new(ListenerList::default()));
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
 
         &DELETE_LISTENERS
     }
 
     async fn delete(
         &self,
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         options: Self::DeleteOptions,
     ) -> Result<(), anyhow::Error> {
-        let mut transaction = database.write().begin().await?;
+        let mut transaction = state.database.write().begin().await?;
 
         if self.name.contains(|c| ['"', '\'', '`'].contains(&c))
             || self.username.contains(|c| ['"', '\'', '`'].contains(&c))
@@ -554,10 +554,10 @@ impl DeletableModel for ServerDatabase {
             ));
         }
 
-        self.run_delete_listeners(&options, database, &mut transaction)
+        self.run_delete_handlers(&options, state, &mut transaction)
             .await?;
 
-        let connection = self.database_host.get_connection(database).await?;
+        let connection = self.database_host.get_connection(&state.database).await?;
         let database_name = self.name.clone();
         let database_username = self.username.trim_end().to_string();
         let database_uuid = self.uuid;

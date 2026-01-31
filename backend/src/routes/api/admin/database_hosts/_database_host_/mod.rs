@@ -126,7 +126,7 @@ mod delete {
                 .ok();
         }
 
-        database_host.delete(&state.database, ()).await?;
+        database_host.delete(&state, ()).await?;
 
         activity_logger
             .log(

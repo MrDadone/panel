@@ -58,7 +58,7 @@ mod delete {
                 }
             };
 
-        egg_variable.delete(&state.database, ()).await?;
+        egg_variable.delete(&state, ()).await?;
 
         activity_logger
             .log(

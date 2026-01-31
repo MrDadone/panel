@@ -108,7 +108,7 @@ mod delete {
                 }
             };
 
-        oauth_link.delete(&state.database, ()).await?;
+        oauth_link.delete(&state, ()).await?;
 
         activity_logger
             .log(

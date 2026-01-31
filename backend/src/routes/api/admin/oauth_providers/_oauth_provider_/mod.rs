@@ -119,7 +119,7 @@ mod delete {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("oauth-providers.delete")?;
 
-        oauth_provider.delete(&state.database, ()).await?;
+        oauth_provider.delete(&state, ()).await?;
 
         activity_logger
             .log(

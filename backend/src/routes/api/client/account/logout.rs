@@ -38,7 +38,7 @@ mod post {
             }
         };
 
-        session.delete(&state.database, ()).await?;
+        session.delete(&state, ()).await?;
 
         let settings = state.settings.get().await?;
 

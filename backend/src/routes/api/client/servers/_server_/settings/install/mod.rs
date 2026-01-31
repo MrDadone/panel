@@ -46,7 +46,7 @@ mod post {
         permissions.has_server_permission("settings.install")?;
 
         server
-            .install(&state.database, data.truncate_directory, None)
+            .install(&state, data.truncate_directory, None)
             .await?;
 
         activity_logger

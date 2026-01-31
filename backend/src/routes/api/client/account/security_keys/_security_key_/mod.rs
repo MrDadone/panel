@@ -54,7 +54,7 @@ mod delete {
                 }
             };
 
-        security_key.delete(&state.database, ()).await?;
+        security_key.delete(&state, ()).await?;
 
         if security_key.registration.is_none() {
             activity_logger

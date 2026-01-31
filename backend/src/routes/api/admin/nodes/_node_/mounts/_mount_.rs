@@ -51,7 +51,7 @@ mod delete {
                 }
             };
 
-        node_mount.delete(&state.database, ()).await?;
+        node_mount.delete(&state, ()).await?;
 
         activity_logger
             .log(

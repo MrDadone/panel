@@ -114,6 +114,7 @@ mod post {
 
         if let Ok(destination_node) = destination_node.fetch_cached(&state.database).await {
             shared::models::server::Server::get_event_emitter().emit(
+                state.0,
                 shared::models::server::ServerEvent::TransferCompleted {
                     server: Box::new(server.0),
                     destination_node: Box::new(destination_node),

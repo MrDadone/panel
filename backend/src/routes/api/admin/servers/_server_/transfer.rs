@@ -180,6 +180,7 @@ mod post {
             .await;
 
         shared::models::server::Server::get_event_emitter().emit(
+            state.0,
             shared::models::server::ServerEvent::TransferStarted {
                 server: Box::new(server.0),
                 destination_node: Box::new(destination_node),

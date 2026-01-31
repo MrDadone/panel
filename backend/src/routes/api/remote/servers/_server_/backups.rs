@@ -56,8 +56,7 @@ mod post {
 
         let backups = ServerBackup::count_by_server_uuid(&state.database, server.uuid).await;
         if backups >= server.backup_limit as i64
-            && let Err(err) =
-                ServerBackup::delete_oldest_by_server_uuid(&state.database, &server).await
+            && let Err(err) = ServerBackup::delete_oldest_by_server_uuid(&state, &server).await
         {
             tracing::error!(server = %server.uuid, "failed to delete old backup: {:?}", err);
 

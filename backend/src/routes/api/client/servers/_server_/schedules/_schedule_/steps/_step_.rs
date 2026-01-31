@@ -192,7 +192,7 @@ mod delete {
 
         permissions.has_server_permission("schedules.update")?;
 
-        schedule_step.delete(&state.database, ()).await?;
+        schedule_step.delete(&state, ()).await?;
 
         activity_logger
             .log(

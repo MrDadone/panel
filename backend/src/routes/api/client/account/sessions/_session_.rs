@@ -48,7 +48,7 @@ mod delete {
                 }
             };
 
-        session.delete(&state.database, ()).await?;
+        session.delete(&state, ()).await?;
 
         activity_logger
             .log(

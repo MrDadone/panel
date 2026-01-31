@@ -49,7 +49,7 @@ mod delete {
             }
         };
 
-        ssh_key.delete(&state.database, ()).await?;
+        ssh_key.delete(&state, ()).await?;
 
         activity_logger
             .log(
