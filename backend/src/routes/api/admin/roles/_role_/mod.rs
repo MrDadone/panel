@@ -111,7 +111,7 @@ mod delete {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("roles.delete")?;
 
-        role.delete(&state.database, ()).await?;
+        role.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -134,7 +134,7 @@ mod patch {
     use shared::{
         ApiError, GetState,
         models::{admin_activity::GetAdminActivityLogger, user::GetPermissionManager},
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use std::sync::Arc;

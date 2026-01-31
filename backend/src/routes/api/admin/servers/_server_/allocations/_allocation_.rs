@@ -54,7 +54,7 @@ mod delete {
                 }
             };
 
-        allocation.delete(&state.database, ()).await?;
+        allocation.delete(&state, ()).await?;
 
         activity_logger
             .log(

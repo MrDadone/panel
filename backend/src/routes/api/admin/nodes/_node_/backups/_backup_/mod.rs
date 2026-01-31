@@ -148,7 +148,7 @@ mod delete {
                 .ok();
         }
 
-        if let Err(err) = backup.delete(&state.database, ()).await {
+        if let Err(err) = backup.delete(&state, ()).await {
             tracing::error!(backup = %backup.uuid, "failed to delete detached backup: {:?}", err);
 
             return ApiResponse::error("failed to delete detached backup")

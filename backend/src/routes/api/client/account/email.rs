@@ -10,7 +10,7 @@ mod put {
             user::{GetPermissionManager, GetUser},
             user_activity::GetUserActivityLogger,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;

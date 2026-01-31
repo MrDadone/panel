@@ -1,4 +1,4 @@
-import { Group, Modal as MantineModal, Stack, Text, useModalsStack } from '@mantine/core';
+import { Modal as MantineModal, Stack, Text, useModalsStack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -117,14 +117,14 @@ export default function TwoFactorSetupButton() {
               {...form.getInputProps('password')}
             />
 
-            <Group>
+            <Modal.Footer>
               <Button onClick={doEnable} loading={loading} disabled={!form.isValid()}>
                 {t('common.button.enable', {})}
               </Button>
               <Button variant='default' onClick={() => stageStack.closeAll()}>
                 {t('common.button.close', {})}
               </Button>
-            </Group>
+            </Modal.Footer>
           </Stack>
         </Modal>
         <Modal
@@ -146,7 +146,8 @@ export default function TwoFactorSetupButton() {
                 ))}
               </Code>
             </CopyOnClick>
-            <Group>
+
+            <Modal.Footer>
               <Button
                 variant='default'
                 onClick={() => {
@@ -156,7 +157,7 @@ export default function TwoFactorSetupButton() {
               >
                 {t('common.button.close', {})}
               </Button>
-            </Group>
+            </Modal.Footer>
           </Stack>
         </Modal>
       </MantineModal.Stack>

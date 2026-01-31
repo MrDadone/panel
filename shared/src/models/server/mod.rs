@@ -10,6 +10,9 @@ use std::{
 use utoipa::ToSchema;
 use validator::Validate;
 
+mod events;
+pub use events::ServerEvent;
+
 pub type GetServer = crate::extract::ConsumingExtension<Server>;
 pub type GetServerActivityLogger = crate::extract::ConsumingExtension<ServerActivityLogger>;
 
@@ -1120,11 +1123,11 @@ impl Server {
     /// If this is not the case, a `DisplayError` will be returned.
     pub async fn install(
         &self,
-        database: &crate::database::Database,
+        state: &crate::State,
         truncate_directory: bool,
         installation_script: Option<wings_api::InstallationScript>,
     ) -> Result<(), anyhow::Error> {
-        let mut transaction = database.write().begin().await?;
+        let mut transaction = state.database.write().begin().await?;
 
         let rows_affected = sqlx::query!(
             "UPDATE servers
@@ -1147,16 +1150,16 @@ impl Server {
 
         match self
             .node
-            .fetch_cached(database)
+            .fetch_cached(&state.database)
             .await?
-            .api_client(database)
+            .api_client(&state.database)
             .post_servers_server_reinstall(
                 self.uuid,
                 &wings_api::servers_server_reinstall::post::RequestBody {
                     truncate_directory,
                     installation_script: Some(
-                        if let Some(installation_script) = installation_script {
-                            installation_script
+                        if let Some(installation_script) = &installation_script {
+                            installation_script.clone()
                         } else {
                             wings_api::InstallationScript {
                                 container_image: self.egg.config_script.container.clone(),
@@ -1179,6 +1182,25 @@ impl Server {
         };
 
         transaction.commit().await?;
+
+        Self::get_event_emitter().emit(
+            state.clone(),
+            events::ServerEvent::InstallStarted {
+                server: Box::new(self.clone()),
+                installation_script: Box::new(
+                    if let Some(installation_script) = installation_script {
+                        installation_script
+                    } else {
+                        wings_api::InstallationScript {
+                            container_image: self.egg.config_script.container.clone(),
+                            entrypoint: self.egg.config_script.entrypoint.clone(),
+                            script: self.egg.config_script.content.to_compact_string(),
+                            environment: Default::default(),
+                        }
+                    },
+                ),
+            },
+        );
 
         Ok(())
     }
@@ -1668,33 +1690,33 @@ pub struct DeleteServerOptions {
 impl DeletableModel for Server {
     type DeleteOptions = DeleteServerOptions;
 
-    fn get_delete_listeners() -> &'static LazyLock<DeleteListenerList<Self>> {
+    fn get_delete_handlers() -> &'static LazyLock<DeleteListenerList<Self>> {
         static DELETE_LISTENERS: LazyLock<DeleteListenerList<Server>> =
-            LazyLock::new(|| Arc::new(ListenerList::default()));
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
 
         &DELETE_LISTENERS
     }
 
     async fn delete(
         &self,
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         options: Self::DeleteOptions,
     ) -> Result<(), anyhow::Error> {
-        let node = self.node.fetch_cached(database).await?;
+        let node = self.node.fetch_cached(&state.database).await?;
         let databases =
-            super::server_database::ServerDatabase::all_by_server_uuid(database, self.uuid).await?;
+            super::server_database::ServerDatabase::all_by_server_uuid(&state.database, self.uuid)
+                .await?;
 
-        let mut transaction = database.write().begin().await?;
-
-        self.run_delete_listeners(&options, database, &mut transaction)
+        let mut transaction = state.database.write().begin().await?;
+        self.run_delete_handlers(&options, state, &mut transaction)
             .await?;
 
-        let database = Arc::clone(database);
+        let state = state.clone();
         let server_uuid = self.uuid;
 
         tokio::spawn(async move {
             for db in databases {
-                match db.delete(&database, super::server_database::DeleteServerDatabaseOptions { force: options.force }).await {
+                match db.delete(&state, super::server_database::DeleteServerDatabaseOptions { force: options.force }).await {
                     Ok(_) => {}
                     Err(err) => {
                         tracing::error!(server = %server_uuid, "failed to delete database: {:?}", err);
@@ -1711,7 +1733,7 @@ impl DeletableModel for Server {
                 .await?;
 
             match node
-                .api_client(&database)
+                .api_client(&state.database)
                 .delete_servers_server(server_uuid)
                 .await
             {

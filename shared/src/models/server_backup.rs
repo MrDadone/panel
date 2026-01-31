@@ -626,7 +626,7 @@ impl ServerBackup {
     }
 
     pub async fn delete_oldest_by_server_uuid(
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         server: &super::server::Server,
     ) -> Result<(), anyhow::Error> {
         let row = sqlx::query(&format!(
@@ -643,13 +643,13 @@ impl ServerBackup {
             Self::columns_sql(None)
         ))
         .bind(server.uuid)
-        .fetch_optional(database.read())
+        .fetch_optional(state.database.read())
         .await?;
 
         if let Some(row) = row {
             let backup = Self::map(None, &row)?;
 
-            backup.delete(database, ()).await
+            backup.delete(state, ()).await
         } else {
             Err(sqlx::Error::RowNotFound.into())
         }
@@ -746,24 +746,24 @@ impl ByUuid for ServerBackup {
 impl DeletableModel for ServerBackup {
     type DeleteOptions = ();
 
-    fn get_delete_listeners() -> &'static LazyLock<DeleteListenerList<Self>> {
+    fn get_delete_handlers() -> &'static LazyLock<DeleteListenerList<Self>> {
         static DELETE_LISTENERS: LazyLock<DeleteListenerList<ServerBackup>> =
-            LazyLock::new(|| Arc::new(ListenerList::default()));
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
 
         &DELETE_LISTENERS
     }
 
     async fn delete(
         &self,
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         options: Self::DeleteOptions,
     ) -> Result<(), anyhow::Error> {
-        let mut transaction = database.write().begin().await?;
+        let mut transaction = state.database.write().begin().await?;
 
-        self.run_delete_listeners(&options, database, &mut transaction)
+        self.run_delete_handlers(&options, state, &mut transaction)
             .await?;
 
-        let node = self.node.fetch_cached(database).await?;
+        let node = self.node.fetch_cached(&state.database).await?;
 
         let backup_configuration = self
             .backup_configuration
@@ -774,10 +774,10 @@ impl DeletableModel for ServerBackup {
                 )
                 .with_status(StatusCode::EXPECTATION_FAILED)
             })?
-            .fetch_cached(database)
+            .fetch_cached(&state.database)
             .await?;
 
-        let database = Arc::clone(database);
+        let database = Arc::clone(&state.database);
         let server_uuid = self.server.as_ref().map(|s| s.uuid);
         let backup_uuid = self.uuid;
         let backup_disk = self.disk;

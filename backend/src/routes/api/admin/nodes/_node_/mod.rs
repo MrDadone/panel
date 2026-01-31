@@ -134,7 +134,7 @@ mod delete {
                 .ok();
         }
 
-        node.delete(&state.database, ()).await?;
+        node.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -161,7 +161,7 @@ mod patch {
             backup_configurations::BackupConfiguration, location::Location, node::GetNode,
             user::GetPermissionManager,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;

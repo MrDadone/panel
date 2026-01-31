@@ -49,7 +49,7 @@ mod delete {
             }
         };
 
-        ssh_key.delete(&state.database, ()).await?;
+        ssh_key.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -76,7 +76,7 @@ mod patch {
             user_activity::GetUserActivityLogger,
             user_ssh_key::UserSshKey,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;

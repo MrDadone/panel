@@ -152,7 +152,7 @@ mod delete {
                 .ok();
         }
 
-        egg.delete(&state.database, ()).await?;
+        egg.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -182,7 +182,7 @@ mod patch {
             ByUuid, admin_activity::GetAdminActivityLogger, egg_repository_egg::EggRepositoryEgg,
             user::GetPermissionManager,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;

@@ -146,7 +146,7 @@ mod delete {
     ) -> ApiResponseResult {
         permissions.has_server_permission("schedules.delete")?;
 
-        schedule.delete(&state.database, ()).await?;
+        schedule.delete(&state, ()).await?;
 
         activity_logger
             .log(

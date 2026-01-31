@@ -136,7 +136,7 @@ mod delete {
 
         if let Err(err) = server
             .delete(
-                &state.database,
+                &state,
                 shared::models::server::DeleteServerOptions { force: data.force },
             )
             .await
@@ -152,7 +152,7 @@ mod delete {
             for backup in backups {
                 let backup_uuid = backup.uuid;
 
-                if let Err(err) = backup.delete(&state.database, ()).await {
+                if let Err(err) = backup.delete(&state, ()).await {
                     tracing::error!(server = %server.uuid, backup = %backup_uuid, "failed to delete backup: {:?}", err);
 
                     if !data.force {

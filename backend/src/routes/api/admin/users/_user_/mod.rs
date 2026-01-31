@@ -159,8 +159,7 @@ mod delete {
                 .ok();
         }
 
-        state.storage.remove(user.avatar.as_deref()).await?;
-        user.delete(&state.database, ()).await?;
+        user.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -189,7 +188,7 @@ mod patch {
         models::{
             ByUuid, admin_activity::GetAdminActivityLogger, role::Role, user::GetPermissionManager,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;

@@ -31,7 +31,10 @@ mod post {
     use serde::{Deserialize, Serialize};
     use shared::{
         GetState,
-        models::server::{GetServer, ServerStatus},
+        models::{
+            EventEmittingModel,
+            server::{GetServer, ServerStatus},
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -73,6 +76,14 @@ mod post {
         )
         .execute(state.database.write())
         .await?;
+
+        shared::models::server::Server::get_event_emitter().emit(
+            state.0,
+            shared::models::server::ServerEvent::InstallCompleted {
+                server: Box::new(server.0),
+                successful: data.successful,
+            },
+        );
 
         ApiResponse::new_serialized(Response {}).ok()
     }
