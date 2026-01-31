@@ -1,12 +1,14 @@
-import { Grid, Group, Stack, Title } from '@mantine/core';
+import { faImage } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Grid, Group, Stack } from '@mantine/core';
 import { useRef, useState } from 'react';
 import AvatarEditor from 'react-avatar-editor';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import removeAvatar from '@/api/me/account/removeAvatar.ts';
 import updateAvatar from '@/api/me/account/updateAvatar.ts';
 import Button from '@/elements/Button.tsx';
-import Card from '@/elements/Card.tsx';
 import FileInput from '@/elements/input/FileInput.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -58,11 +60,12 @@ export default function AvatarContainer({ blurred }: AccountCardProps) {
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>
-      <Card h='100%'>
-        <Title order={2} c='white'>
-          {t('pages.account.account.containers.avatar.title', {})}
-        </Title>
-        <Group className='mt-4'>
+      <TitleCard
+        title={t('pages.account.account.containers.avatar.title', {})}
+        icon={<FontAwesomeIcon icon={faImage} />}
+        className='h-full'
+      >
+        <Group className='h-full'>
           <AvatarEditor
             ref={editor}
             image={file ?? user!.avatar}
@@ -92,7 +95,7 @@ export default function AvatarContainer({ blurred }: AccountCardProps) {
             </Group>
           </Stack>
         </Group>
-      </Card>
+      </TitleCard>
     </Grid.Col>
   );
 }
