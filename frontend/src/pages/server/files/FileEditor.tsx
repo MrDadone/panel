@@ -1,3 +1,4 @@
+import { Title } from '@mantine/core';
 import { type OnMount } from '@monaco-editor/react';
 import { join } from 'pathe';
 import { useEffect, useRef, useState } from 'react';
@@ -82,13 +83,31 @@ export default function FileEditor() {
   }
 
   return (
-    <ServerContentContainer title={`${fileName ? `Editing ${fileName}` : 'New File'}`}>
+    <ServerContentContainer hideTitleComponent fullscreen title={`${fileName ? `Editing ${fileName}` : 'New File'}`}>
+      <div className='flex justify-between items-center lg:p-4 lg:pb-0 ml-5'>
+        <Title>{fileName ? `Editing ${fileName}` : 'New File'}</Title>
+        <div hidden={!!browsingBackup || !browsingWritableDirectory}>
+          {params.action === 'edit' ? (
+            <ServerCan action='files.update'>
+              <Button loading={saving} onClick={() => saveFile()}>
+                Save
+              </Button>
+            </ServerCan>
+          ) : (
+            <ServerCan action='files.create'>
+              <Button loading={saving} onClick={() => setNameModalOpen(true)}>
+                Create
+              </Button>
+            </ServerCan>
+          )}
+        </div>
+      </div>
       {loading ? (
         <div className='w-full h-screen flex items-center justify-center'>
           <Spinner size={75} />
         </div>
       ) : (
-        <div className='flex flex-col'>
+        <div className='flex flex-col relative'>
           <FileNameModal
             onFileName={(name: string) => saveFile(name)}
             opened={nameModalOpen}
@@ -101,21 +120,6 @@ export default function FileEditor() {
               path={join(decodeURIComponent(browsingDirectory!), fileName)}
               browsingBackup={browsingBackup}
             />
-            <div hidden={!!browsingBackup || !browsingWritableDirectory}>
-              {params.action === 'edit' ? (
-                <ServerCan action='files.update'>
-                  <Button loading={saving} onClick={() => saveFile()}>
-                    Save
-                  </Button>
-                </ServerCan>
-              ) : (
-                <ServerCan action='files.create'>
-                  <Button loading={saving} onClick={() => setNameModalOpen(true)}>
-                    Create
-                  </Button>
-                </ServerCan>
-              )}
-            </div>
           </div>
           <div className='rounded-md overflow-hidden'>
             <MonacoEditor

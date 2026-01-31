@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import stripAnsi from 'strip-ansi';
 import { axiosInstance, httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import MonacoEditor from '@/elements/MonacoEditor.tsx';
 import Spinner from '@/elements/Spinner.tsx';
@@ -95,7 +95,7 @@ export default function AdminNodeLogs({ node }: { node: Node }) {
   };
 
   return (
-    <AdminContentContainer title='Node Logs' titleOrder={2}>
+    <AdminSubContentContainer title='Node Logs' titleOrder={2}>
       {!logs.length ? (
         <Spinner.Centered />
       ) : (
@@ -143,6 +143,6 @@ export default function AdminNodeLogs({ node }: { node: Node }) {
           </div>
         </div>
       )}
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

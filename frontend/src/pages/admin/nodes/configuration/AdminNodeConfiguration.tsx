@@ -6,7 +6,7 @@ import { useState } from 'react';
 import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
 import { handleCopyToClipboard } from '@/elements/CopyOnClick.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import HljsCode from '@/elements/HljsCode.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -50,7 +50,7 @@ export default function AdminNodeConfiguration({ node }: { node: Node }) {
   };
 
   return (
-    <AdminContentContainer title='Node Configuration' titleOrder={2}>
+    <AdminSubContentContainer title='Node Configuration' titleOrder={2}>
       <div className='grid md:grid-cols-4 grid-cols-1 grid-rows-2 gap-4'>
         <div className='flex flex-col md:col-span-3'>
           <HljsCode
@@ -100,6 +100,6 @@ export default function AdminNodeConfiguration({ node }: { node: Node }) {
           </Stack>
         </Card>
       </div>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

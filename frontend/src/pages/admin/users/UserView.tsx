@@ -1,9 +1,9 @@
 import { faBriefcase, faCog, faComputer, faFingerprint } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getUser from '@/api/admin/users/getUser.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import AdminUserServers from '@/pages/admin/users/servers/AdminUserServers.tsx';
@@ -32,9 +32,7 @@ export default function UserView() {
   return !user ? (
     <Spinner.Centered />
   ) : (
-    <>
-      <Title order={1}>{user.username}</Title>
-
+    <AdminContentContainer title={user.username}>
       <SubNavigation
         baseUrl={`/admin/users/${params.id}`}
         items={[
@@ -67,6 +65,6 @@ export default function UserView() {
           },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 }

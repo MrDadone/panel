@@ -4,7 +4,7 @@ import { useState } from 'react';
 import getEggMounts from '@/api/admin/nests/eggs/mounts/getEggMounts.ts';
 import Button from '@/elements/Button.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useAdminStore } from '@/stores/admin.tsx';
@@ -28,7 +28,7 @@ export default function AdminEggMounts({
   });
 
   return (
-    <AdminContentContainer
+    <AdminSubContentContainer
       title='Egg Mounts'
       titleOrder={2}
       search={search}
@@ -58,6 +58,6 @@ export default function AdminEggMounts({
           ))}
         </Table>
       </ContextMenuProvider>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

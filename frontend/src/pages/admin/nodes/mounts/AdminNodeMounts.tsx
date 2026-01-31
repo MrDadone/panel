@@ -4,7 +4,7 @@ import { useState } from 'react';
 import getNodeMounts from '@/api/admin/nodes/mounts/getNodeMounts.ts';
 import Button from '@/elements/Button.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { nodeMountTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -23,7 +23,7 @@ export default function AdminNodeMounts({ node }: { node: Node }) {
   });
 
   return (
-    <AdminContentContainer
+    <AdminSubContentContainer
       title='Node Mounts'
       titleOrder={2}
       search={search}
@@ -43,6 +43,6 @@ export default function AdminNodeMounts({ node }: { node: Node }) {
           ))}
         </Table>
       </ContextMenuProvider>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

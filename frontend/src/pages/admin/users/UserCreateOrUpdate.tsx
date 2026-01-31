@@ -12,7 +12,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -89,7 +89,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
   };
 
   return (
-    <AdminContentContainer title={`${contextUser ? 'Update' : 'Create'} User`} titleOrder={2}>
+    <AdminSubContentContainer title={`${contextUser ? 'Update' : 'Create'} User`} titleOrder={2}>
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -196,6 +196,6 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
           )}
         </Group>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

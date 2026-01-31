@@ -1,9 +1,9 @@
 import { faCog, faDatabase, faServer } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getLocation from '@/api/admin/locations/getLocation.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -31,9 +31,7 @@ export default () => {
   return !location ? (
     <Spinner.Centered />
   ) : (
-    <>
-      <Title order={1}>{location.name}</Title>
-
+    <AdminContentContainer title={location.name}>
       <SubNavigation
         baseUrl={`/admin/locations/${params.id}`}
         items={[
@@ -59,6 +57,6 @@ export default () => {
           },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 };

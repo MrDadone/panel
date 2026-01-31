@@ -4,7 +4,7 @@ import { ActionIcon, Group } from '@mantine/core';
 import { MouseEvent as ReactMouseEvent, Ref, useCallback, useEffect, useMemo, useState } from 'react';
 import getNodeAllocations from '@/api/admin/nodes/allocations/getNodeAllocations.ts';
 import Button from '@/elements/Button.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
@@ -121,7 +121,7 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
   };
 
   return (
-    <AdminContentContainer
+    <AdminSubContentContainer
       title='Node Allocations'
       titleOrder={2}
       search={search}
@@ -204,6 +204,6 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
           ))}
         </Table>
       </SelectionArea>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

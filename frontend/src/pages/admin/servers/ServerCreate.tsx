@@ -19,7 +19,7 @@ import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import Alert from '@/elements/Alert.tsx';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import MultiSelect from '@/elements/input/MultiSelect.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import Select from '@/elements/input/Select.tsx';
@@ -168,7 +168,7 @@ export default function ServerCreate() {
   }, [selectedNestUuid, form.values.eggUuid]);
 
   return (
-    <AdminContentContainer title='Create Server' titleOrder={2}>
+    <AdminSubContentContainer title='Create Server' titleOrder={2}>
       <ConfirmationModal
         opened={openModal === 'confirm-no-allocation'}
         onClose={() => setOpenModal(null)}
@@ -557,6 +557,6 @@ export default function ServerCreate() {
           </Group>
         </Stack>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

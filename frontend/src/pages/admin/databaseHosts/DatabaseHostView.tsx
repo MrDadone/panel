@@ -1,9 +1,9 @@
 import { faCog, faDatabase } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getDatabaseHost from '@/api/admin/database-hosts/getDatabaseHost.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import AdminDatabaseHostDatabases from '@/pages/admin/databaseHosts/databases/AdminDatabaseHostDatabases.tsx';
@@ -30,9 +30,7 @@ export default function DatabaseHostView() {
   return !databaseHost ? (
     <Spinner.Centered />
   ) : (
-    <>
-      <Title order={1}>{databaseHost.name}</Title>
-
+    <AdminContentContainer title={databaseHost.name}>
       <SubNavigation
         baseUrl={`/admin/database-hosts/${params.id}`}
         items={[
@@ -50,6 +48,6 @@ export default function DatabaseHostView() {
           },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 }

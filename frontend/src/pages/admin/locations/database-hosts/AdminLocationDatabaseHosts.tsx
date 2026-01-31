@@ -5,7 +5,7 @@ import getLocationDatabaseHosts from '@/api/admin/locations/database-hosts/getLo
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { locationDatabaseHostTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -24,7 +24,7 @@ export default function AdminLocationDatabaseHosts({ location }: { location: Loc
   });
 
   return (
-    <AdminContentContainer
+    <AdminSubContentContainer
       title='Location Database Hosts'
       titleOrder={2}
       search={search}
@@ -61,6 +61,6 @@ export default function AdminLocationDatabaseHosts({ location }: { location: Loc
           ))}
         </Table>
       </ContextMenuProvider>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

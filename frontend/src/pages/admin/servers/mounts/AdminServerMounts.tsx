@@ -4,7 +4,7 @@ import { useState } from 'react';
 import getServerMounts from '@/api/admin/servers/mounts/getServerMounts.ts';
 import Button from '@/elements/Button.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { serverMountTableColumns } from '@/lib/tableColumns.ts';
 import ServerMountAddModal from '@/pages/admin/servers/mounts/modals/ServerMountAddModal.tsx';
@@ -23,7 +23,7 @@ export default function AdminServerMounts({ server }: { server: AdminServer }) {
   });
 
   return (
-    <AdminContentContainer
+    <AdminSubContentContainer
       title='Server Mounts'
       titleOrder={2}
       search={search}
@@ -43,6 +43,6 @@ export default function AdminServerMounts({ server }: { server: AdminServer }) {
           ))}
         </Table>
       </ContextMenuProvider>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

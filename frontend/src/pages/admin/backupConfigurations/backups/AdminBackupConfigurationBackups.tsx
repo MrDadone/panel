@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import getBackupConfigurationBackups from '@/api/admin/backup-configurations/backups/getBackupConfigurationBackups.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import AdminBackupConfigurationBackupRow from './AdminBackupConfigurationBackupRow.tsx';
@@ -21,7 +21,7 @@ export default function AdminBackupConfigurationBackups({
   });
 
   return (
-    <AdminContentContainer title={`Backup Config Backups`} titleOrder={2} search={search} setSearch={setSearch}>
+    <AdminSubContentContainer title={`Backup Config Backups`} titleOrder={2} search={search} setSearch={setSearch}>
       <Table
         columns={['Name', 'Server', 'Checksum', 'Size', 'Files', 'Created At']}
         loading={loading}
@@ -32,6 +32,6 @@ export default function AdminBackupConfigurationBackups({
           <AdminBackupConfigurationBackupRow key={backup.uuid} backup={backup} />
         ))}
       </Table>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

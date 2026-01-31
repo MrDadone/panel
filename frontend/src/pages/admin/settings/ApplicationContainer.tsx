@@ -8,7 +8,7 @@ import getAdminSystemTelemetry from '@/api/admin/system/getAdminSystemTelemetry.
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -73,7 +73,7 @@ export default function ApplicationContainer() {
   };
 
   return (
-    <AdminContentContainer title='Application Settings' titleOrder={2}>
+    <AdminSubContentContainer title='Application Settings' titleOrder={2}>
       <TelemetryPreviewModal
         telemetry={telemetryData}
         opened={telemetryData !== null}
@@ -179,6 +179,6 @@ export default function ApplicationContainer() {
           </AdminCan>
         </Group>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

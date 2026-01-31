@@ -5,6 +5,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import getServerGroups from '@/api/me/servers/groups/getServerGroups.ts';
 import updateServerGroupsOrder from '@/api/me/servers/groups/updateServerGroupsOrder.ts';
 import Button from '@/elements/Button.tsx';
+import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
 import { DndContainer, DndItem, SortableItem } from '@/elements/DragAndDrop.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -46,7 +47,7 @@ export default function DashboardHome() {
   const dndServerGroups: DndServerGroup[] = sortedServerGroups.map((g) => ({ ...g, id: g.uuid }));
 
   return (
-    <>
+    <AccountContentContainer title={t('pages.account.home.title', {})}>
       <ServerGroupCreateModal opened={openModal === 'create'} onClose={() => setOpenModal(null)} />
 
       <DashboardHomeTitle />
@@ -103,6 +104,6 @@ export default function DashboardHome() {
           {t('pages.account.home.tabs.groupedServers.page.button.createGroup', {})}
         </Button>
       </div>
-    </>
+    </AccountContentContainer>
   );
 }
