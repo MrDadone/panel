@@ -87,7 +87,7 @@ impl Cache {
         let version = instance
             .version()
             .await
-            .unwrap_or_else(|_| "unknown".to_string());
+            .unwrap_or_else(|_| "unknown".into());
 
         tracing::info!(
             "{} connected {}",
@@ -104,7 +104,7 @@ impl Cache {
         instance
     }
 
-    pub async fn version(&self) -> Result<String, rustis::Error> {
+    pub async fn version(&self) -> Result<compact_str::CompactString, rustis::Error> {
         let version: String = self.client.info([InfoSection::Server]).await?;
         let version = version
             .lines()
@@ -113,7 +113,7 @@ impl Cache {
             .split(':')
             .nth(1)
             .unwrap_or("unknown")
-            .to_string();
+            .into();
 
         Ok(version)
     }

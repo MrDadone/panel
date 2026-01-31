@@ -3,8 +3,8 @@ import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
-import getAdminTelemetry from '@/api/admin/getAdminTelemetry.ts';
 import updateApplicationSettings from '@/api/admin/settings/updateApplicationSettings.ts';
+import getAdminSystemTelemetry from '@/api/admin/system/getAdminSystemTelemetry.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
@@ -62,7 +62,7 @@ export default function ApplicationContainer() {
   const doPreviewTelemetry = () => {
     setLoading(true);
 
-    getAdminTelemetry()
+    getAdminSystemTelemetry()
       .then((data) => {
         setTelemetryData(data);
       })

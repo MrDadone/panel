@@ -3,7 +3,7 @@ import { axiosInstance } from '@/api/axios.ts';
 export default async (): Promise<object> => {
   return new Promise((resolve, reject) => {
     axiosInstance
-      .get('/api/admin/telemetry')
+      .get('/api/admin/system/telemetry')
       .then(({ data }) => resolve(data.telemetry))
       .catch(reject);
   });

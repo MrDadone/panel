@@ -151,6 +151,11 @@ impl WingsClient {
 for (const [name, schema] of Object.entries(openapi.components?.schemas || {})) {
     if (schema.$ref || name === 'CompactString') continue
 
+    if (name === 'MiB') {
+        output.write('pub type MiB = u64;\n\n')
+        continue
+    }
+
     generateSchemaObject(output, 0, null, name, schema as oas31.SchemaObject)
 }
 

@@ -1,6 +1,7 @@
 use crate::models::EventEmittingModel;
 use std::sync::LazyLock;
 
+#[non_exhaustive]
 pub enum ServerEvent {
     TransferStarted {
         server: Box<super::Server>,

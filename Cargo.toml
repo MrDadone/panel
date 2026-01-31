@@ -56,6 +56,7 @@ semver = { version = "1.0.27", features = ["serde"] }
 tempfile = "3.23.0"
 compact_str = { git = "https://github.com/0x7d8/compact_str.git", version = "0.9.0", features = ["serde", "utoipa", "sqlx", "sqlx-postgres", "sqlx-mysql"] }
 nestify = "0.3.3"
+sysinfo = "0.38.0"
 
 # dev (for development)
 [profile.dev.package."*"]
