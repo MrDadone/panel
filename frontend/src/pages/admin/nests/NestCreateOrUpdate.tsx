@@ -9,7 +9,7 @@ import updateNest from '@/api/admin/nests/updateNest.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
@@ -50,7 +50,7 @@ export default function NestCreateOrUpdate({ contextNest }: { contextNest?: Admi
   }, [contextNest]);
 
   return (
-    <AdminContentContainer title={`${contextNest ? 'Update' : 'Create'} Nest`} titleOrder={2}>
+    <AdminSubContentContainer title={`${contextNest ? 'Update' : 'Create'} Nest`} titleOrder={2}>
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -91,6 +91,6 @@ export default function NestCreateOrUpdate({ contextNest }: { contextNest?: Admi
           )}
         </Group>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

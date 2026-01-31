@@ -16,7 +16,7 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import Alert from '@/elements/Alert.tsx';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import Select from '@/elements/input/Select.tsx';
 import SizeInput from '@/elements/input/SizeInput.tsx';
@@ -140,7 +140,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
   }, [form.values.eggUuid, eggs.items, contextServer]);
 
   return (
-    <AdminContentContainer title='Update Server' titleOrder={2}>
+    <AdminSubContentContainer title='Update Server' titleOrder={2}>
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack>
           {contextServer.suspended && (
@@ -410,6 +410,6 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
           </Group>
         </Stack>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import getNodeBackups from '@/api/admin/nodes/backups/getNodeBackups.ts';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import Table from '@/elements/Table.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -20,7 +20,7 @@ export default function AdminNodeBackups({ node }: { node: Node }) {
   });
 
   return (
-    <AdminContentContainer
+    <AdminSubContentContainer
       title='Node Backups'
       titleOrder={2}
       search={search}
@@ -45,6 +45,6 @@ export default function AdminNodeBackups({ node }: { node: Node }) {
           ))}
         </Table>
       </ContextMenuProvider>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

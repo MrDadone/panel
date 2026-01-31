@@ -1,6 +1,7 @@
 import { Group, Title, TitleOrder } from '@mantine/core';
 import { Dispatch, ReactNode, SetStateAction } from 'react';
 import { ContainerRegistry } from 'shared';
+import { useCurrentWindow } from '@/providers/CurrentWindowProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import TextInput from '../input/TextInput.tsx';
@@ -14,6 +15,7 @@ interface Props {
   setSearch?: Dispatch<SetStateAction<string>>;
   contentRight?: ReactNode;
   registry?: ContainerRegistry;
+  fullscreen?: boolean;
   children: ReactNode;
 }
 
@@ -25,53 +27,57 @@ export default function AdminContentContainer({
   setSearch,
   contentRight,
   registry,
+  fullscreen = false,
   children,
 }: Props) {
   const { t } = useTranslations();
   const { settings } = useGlobalStore();
+  const { id } = useCurrentWindow();
 
   return (
     <ContentContainer title={`${title} | ${settings.app.name}`}>
-      {registry?.prependedComponents.map((Component, index) => (
-        <Component key={`prepended-${index}`} />
-      ))}
+      <div className={`${fullscreen || id ? 'mb-4' : 'px-4 lg:px-12 mb-4 lg:mt-12'}`}>
+        {registry?.prependedComponents.map((Component, index) => (
+          <Component key={`prepended-${index}`} />
+        ))}
 
-      {hideTitleComponent ? null : setSearch ? (
-        <Group justify='space-between' mb='md'>
-          <Title order={titleOrder} c='white'>
-            {title}
-          </Title>
-          <Group>
-            <TextInput
-              placeholder={t('common.input.search', {})}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              w={250}
-            />
-            {contentRight}
+        {hideTitleComponent ? null : setSearch ? (
+          <Group justify='space-between' mb='md'>
+            <Title order={titleOrder} c='white'>
+              {title}
+            </Title>
+            <Group>
+              <TextInput
+                placeholder={t('common.input.search', {})}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                w={250}
+              />
+              {contentRight}
+            </Group>
           </Group>
-        </Group>
-      ) : contentRight ? (
-        <Group justify='space-between' mb='md'>
+        ) : contentRight ? (
+          <Group justify='space-between' mb='md'>
+            <Title order={titleOrder} c='white'>
+              {title}
+            </Title>
+            <Group>{contentRight}</Group>
+          </Group>
+        ) : (
           <Title order={titleOrder} c='white'>
             {title}
           </Title>
-          <Group>{contentRight}</Group>
-        </Group>
-      ) : (
-        <Title order={titleOrder} c='white'>
-          {title}
-        </Title>
-      )}
-      {registry?.prependedContentComponents.map((Component, index) => (
-        <Component key={`prepended-content-${index}`} />
-      ))}
+        )}
+        {registry?.prependedContentComponents.map((Component, index) => (
+          <Component key={`prepended-content-${index}`} />
+        ))}
 
-      {children}
+        {children}
 
-      {registry?.appendedContentComponents.map((Component, index) => (
-        <Component key={`appended-content-${index}`} />
-      ))}
+        {registry?.appendedContentComponents.map((Component, index) => (
+          <Component key={`appended-content-${index}`} />
+        ))}
+      </div>
     </ContentContainer>
   );
 }

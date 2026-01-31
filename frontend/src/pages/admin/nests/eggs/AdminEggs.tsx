@@ -8,7 +8,7 @@ import importEgg from '@/api/admin/nests/eggs/importEgg.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { eggTableColumns } from '@/lib/tableColumns.ts';
 import EggView from '@/pages/admin/nests/eggs/EggView.tsx';
@@ -61,7 +61,7 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
   };
 
   return (
-    <AdminContentContainer
+    <AdminSubContentContainer
       title='Eggs'
       titleOrder={2}
       search={search}
@@ -95,7 +95,7 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
           <EggRow key={egg.uuid} nest={contextNest} egg={egg} />
         ))}
       </Table>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }
 

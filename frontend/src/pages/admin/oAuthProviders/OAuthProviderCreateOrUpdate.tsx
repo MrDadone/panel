@@ -14,7 +14,7 @@ import { AdminCan } from '@/elements/Can.tsx';
 import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
@@ -148,7 +148,7 @@ export default function OAuthProviderCreateOrUpdate({
   };
 
   return (
-    <AdminContentContainer title={`${contextOAuthProvider ? 'Update' : 'Create'} OAuth Provider`} titleOrder={2}>
+    <AdminSubContentContainer title={`${contextOAuthProvider ? 'Update' : 'Create'} OAuth Provider`} titleOrder={2}>
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -321,6 +321,6 @@ export default function OAuthProviderCreateOrUpdate({
           </Group>
         </Stack>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

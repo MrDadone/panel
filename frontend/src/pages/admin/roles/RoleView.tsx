@@ -1,9 +1,9 @@
 import { faCog, faUsers } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getRole from '@/api/admin/roles/getRole.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import RoleCreateOrUpdate from '@/pages/admin/roles/RoleCreateOrUpdate.tsx';
@@ -30,9 +30,7 @@ export default function RoleView() {
   return !role ? (
     <Spinner.Centered />
   ) : (
-    <>
-      <Title order={1}>{role.name}</Title>
-
+    <AdminContentContainer title={role.name}>
       <SubNavigation
         baseUrl={`/admin/roles/${params.id}`}
         items={[
@@ -51,6 +49,6 @@ export default function RoleView() {
           },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 }

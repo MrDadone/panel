@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import getDatabaseHostDatabases from '@/api/admin/database-hosts/getDatabaseHostDatabases.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { databaseHostDatabaseTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -18,7 +18,7 @@ export default function AdminDatabaseHostDatabases({ databaseHost }: { databaseH
   });
 
   return (
-    <AdminContentContainer title={`Database Host Databases`} titleOrder={2} search={search} setSearch={setSearch}>
+    <AdminSubContentContainer title={`Database Host Databases`} titleOrder={2} search={search} setSearch={setSearch}>
       <Table
         columns={databaseHostDatabaseTableColumns}
         loading={loading}
@@ -29,6 +29,6 @@ export default function AdminDatabaseHostDatabases({ databaseHost }: { databaseH
           <DatabaseRow key={database.uuid} database={database} />
         ))}
       </Table>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

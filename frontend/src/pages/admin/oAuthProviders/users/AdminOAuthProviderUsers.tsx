@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import getOAuthProviderUsers from '@/api/admin/oauth-providers/users/getOAuthProviderUsers.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { adminOAuthProviderUsersTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -18,7 +18,7 @@ export default function AdminOAuthProviderUsers({ oauthProvider }: { oauthProvid
   });
 
   return (
-    <AdminContentContainer title='OAuth Provider Users' titleOrder={2} search={search} setSearch={setSearch}>
+    <AdminSubContentContainer title='OAuth Provider Users' titleOrder={2} search={search} setSearch={setSearch}>
       <Table
         columns={adminOAuthProviderUsersTableColumns}
         loading={loading}
@@ -29,6 +29,6 @@ export default function AdminOAuthProviderUsers({ oauthProvider }: { oauthProvid
           <UserOAuthLinkRow key={userOAuthLink.uuid} userOAuthLink={userOAuthLink} />
         ))}
       </Table>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

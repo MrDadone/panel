@@ -5,7 +5,7 @@ import sendNodeServersPowerAction from '@/api/admin/nodes/servers/sendNodeServer
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
@@ -186,7 +186,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
 
   return (
     <>
-      <AdminContentContainer
+      <AdminSubContentContainer
         title='Node Servers'
         titleOrder={2}
         search={search}
@@ -245,7 +245,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
             ))}
           </Table>
         </SelectionArea>
-      </AdminContentContainer>
+      </AdminSubContentContainer>
 
       <ActionBar opened={selectedServers.size > 0}>
         <Button

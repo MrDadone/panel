@@ -10,7 +10,7 @@ import getPermissions from '@/api/getPermissions.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -68,7 +68,7 @@ export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role
   }, []);
 
   return (
-    <AdminContentContainer title={`${contextRole ? 'Update' : 'Create'} Role`} titleOrder={2}>
+    <AdminSubContentContainer title={`${contextRole ? 'Update' : 'Create'} Role`} titleOrder={2}>
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -137,6 +137,6 @@ export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role
           </Group>
         </Stack>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

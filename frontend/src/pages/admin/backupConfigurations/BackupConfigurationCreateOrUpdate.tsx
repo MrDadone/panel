@@ -9,7 +9,7 @@ import updateBackupConfiguration from '@/api/admin/backup-configurations/updateB
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -99,7 +99,10 @@ export default function BackupConfigurationCreateOrUpdate({
   }, [contextBackupConfiguration]);
 
   return (
-    <AdminContentContainer title={`${contextBackupConfiguration ? 'Update' : 'Create'} Backup Config`} titleOrder={2}>
+    <AdminSubContentContainer
+      title={`${contextBackupConfiguration ? 'Update' : 'Create'} Backup Config`}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -176,6 +179,6 @@ export default function BackupConfigurationCreateOrUpdate({
           )}
         </Stack>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

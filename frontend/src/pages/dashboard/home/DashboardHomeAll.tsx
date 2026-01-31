@@ -6,6 +6,7 @@ import getServers from '@/api/server/getServers.ts';
 import sendPowerAction from '@/api/server/sendPowerAction.ts';
 import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
+import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
 import Divider from '@/elements/Divider.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -134,7 +135,7 @@ export default function DashboardHomeAll() {
   };
 
   return (
-    <>
+    <AccountContentContainer title={t('pages.account.home.title', {})}>
       <DashboardHomeTitle />
 
       <Group mb='md' justify='space-between'>
@@ -152,14 +153,12 @@ export default function DashboardHomeAll() {
           />
         )}
       </Group>
-
       {servers.total > servers.perPage && (
         <>
           <Pagination data={servers} onPageSelect={setPage} />
           <Divider my='md' />
         </>
       )}
-
       {loading ? (
         <Spinner.Centered />
       ) : servers.total === 0 ? (
@@ -179,7 +178,6 @@ export default function DashboardHomeAll() {
           ))}
         </div>
       )}
-
       <ActionBar opened={selectedServers.size > 0}>
         <Button
           color='green'
@@ -209,13 +207,12 @@ export default function DashboardHomeAll() {
           {t('common.button.cancel', {})}
         </Button>
       </ActionBar>
-
       {servers.total > servers.perPage && (
         <>
           <Divider my='md' />
           <Pagination data={servers} onPageSelect={setPage} />
         </>
       )}
-    </>
+    </AccountContentContainer>
   );
 }

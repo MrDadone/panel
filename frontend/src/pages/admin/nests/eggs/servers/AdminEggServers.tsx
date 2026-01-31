@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import getEggServers from '@/api/admin/nests/eggs/servers/getEggServers.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
 import ServerRow from '@/pages/admin/servers/ServerRow.tsx';
@@ -22,12 +22,12 @@ export default function AdminEggServers({
   });
 
   return (
-    <AdminContentContainer title='Egg Servers' titleOrder={2} search={search} setSearch={setSearch}>
+    <AdminSubContentContainer title='Egg Servers' titleOrder={2} search={search} setSearch={setSearch}>
       <Table columns={serverTableColumns} loading={loading} pagination={eggServers} onPageSelect={setPage}>
         {eggServers.data.map((server) => (
           <ServerRow key={server.uuid} server={server} />
         ))}
       </Table>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

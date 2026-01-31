@@ -7,10 +7,10 @@ import {
   faToolbox,
   faUserCheck,
 } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
 import { useEffect } from 'react';
 import getSettings from '@/api/admin/settings/getSettings.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
@@ -35,9 +35,7 @@ export default function AdminSettings() {
   }, []);
 
   return (
-    <>
-      <Title order={1}>Settings</Title>
-
+    <AdminContentContainer title='Settings'>
       <SubNavigation
         baseUrl='/admin/settings'
         items={[
@@ -85,6 +83,6 @@ export default function AdminSettings() {
           },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 }

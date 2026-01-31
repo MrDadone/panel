@@ -7,7 +7,7 @@ import updateWebauthnSettings from '@/api/admin/settings/updateWebauthnSettings.
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { isIP } from '@/lib/ip.ts';
 import { adminSettingsWebauthnSchema } from '@/lib/schemas/admin/settings.ts';
@@ -60,7 +60,7 @@ export default function WebauthnContainer() {
   };
 
   return (
-    <AdminContentContainer title='Webauthn Settings' titleOrder={2}>
+    <AdminSubContentContainer title='Webauthn Settings' titleOrder={2}>
       <form onSubmit={form.onSubmit(() => doUpdate())}>
         <Stack>
           <Group grow>
@@ -87,6 +87,6 @@ export default function WebauthnContainer() {
           </Button>
         </Group>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }
