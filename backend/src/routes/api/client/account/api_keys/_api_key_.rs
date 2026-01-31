@@ -76,7 +76,7 @@ mod patch {
             user_activity::GetUserActivityLogger,
             user_api_key::UserApiKey,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use std::sync::Arc;

@@ -82,7 +82,7 @@ mod patch {
             user_activity::GetUserActivityLogger,
             user_security_key::UserSecurityKey,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;

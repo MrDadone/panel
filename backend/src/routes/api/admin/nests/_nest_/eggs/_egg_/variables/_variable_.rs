@@ -88,7 +88,7 @@ mod patch {
             admin_activity::GetAdminActivityLogger, nest_egg_variable::NestEggVariable,
             user::GetPermissionManager,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;

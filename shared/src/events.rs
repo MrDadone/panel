@@ -16,10 +16,14 @@ pub struct EventHandlerHandle {
 }
 
 impl EventHandlerHandle {
+    #[inline]
     pub async fn disconnect(self) {
         self.listeners_ref.disconnect(self.id).await;
     }
 
+    /// # Warning
+    /// This method will block the current thread if the lock is not available
+    #[inline]
     pub fn blocking_disconnect(self) {
         self.listeners_ref.blocking_disconnect(self.id);
     }
@@ -33,13 +37,14 @@ trait DisconnectEventHandler {
 
 #[async_trait::async_trait]
 impl<Event> DisconnectEventHandler for RwLock<HashMap<uuid::Uuid, Box<Listener<Event>>>> {
+    #[inline]
     async fn disconnect(&self, id: uuid::Uuid) {
         self.write().await.remove(&id);
     }
 
+    #[inline]
     fn blocking_disconnect(&self, id: uuid::Uuid) {
-        let mut listeners = self.blocking_write();
-        listeners.remove(&id);
+        self.blocking_write().remove(&id);
     }
 }
 
@@ -52,13 +57,13 @@ pub struct EventEmitter<Event: 'static + Send + Sync> {
 impl<Event: 'static + Send + Sync> Default for EventEmitter<Event> {
     fn default() -> Self {
         let listeners = Arc::new(RwLock::new(HashMap::new()));
-        let (event_channel_sender, mut event_channel_receiver) = tokio::sync::mpsc::channel(100);
+        let (event_channel_sender, mut event_channel_receiver) = tokio::sync::mpsc::channel(64);
 
         Self {
             listeners: listeners.clone(),
             event_channel: event_channel_sender,
             task: tokio::spawn(async move {
-                let semaphore = Arc::new(tokio::sync::Semaphore::new(10));
+                let semaphore = Arc::new(tokio::sync::Semaphore::new(8));
 
                 while let Some((state, event)) = event_channel_receiver.recv().await {
                     tracing::debug!("emitting event {:?}", std::any::type_name::<Event>());
@@ -82,7 +87,7 @@ impl<Event: 'static + Send + Sync> Default for EventEmitter<Event> {
                             .collect::<Vec<_>>();
 
                         let mut result_stream =
-                            futures_util::stream::iter(listeners).buffer_unordered(10);
+                            futures_util::stream::iter(listeners).buffer_unordered(8);
 
                         while let Some(result) = result_stream.next().await {
                             if let Err(err) = result {
@@ -147,12 +152,14 @@ impl<Event: 'static + Send + Sync> EventEmitter<Event> {
         }
     }
 
+    #[inline]
     pub fn emit(&self, state: crate::State, event: Event) {
         let _ = self.event_channel.try_send((state, event));
     }
 }
 
 impl<Event: 'static + Send + Sync> Drop for EventEmitter<Event> {
+    #[inline]
     fn drop(&mut self) {
         self.task.abort();
     }

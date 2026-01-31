@@ -76,7 +76,7 @@ mod patch {
             user_activity::GetUserActivityLogger,
             user_ssh_key::UserSshKey,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;

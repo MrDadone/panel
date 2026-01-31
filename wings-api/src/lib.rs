@@ -1,4 +1,10 @@
-// This file is auto-generated from OpenAPI spec. Do not edit manually.
+//! The Calagopus Panel Wings API library.
+//!
+//! Used for communicating with the Wings daemon. This library contains
+//! auto-generated code from the OpenAPI specification as well as
+//! some utilities for working with the Wings API. In 99% of cases you will
+//! want to use the [crate::client::WingsClient] struct to interact with the API.
+
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;

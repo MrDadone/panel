@@ -1,3 +1,10 @@
+//! Shared library for the Calagopus Panel.
+//!
+//! This library contains code that is shared between the backend and extensions.
+//! It includes models, utilities, and other common functionality to avoid repetition
+//! and ensure consistency across the project. If something for a job exists in here,
+//! it's generally preferred to be used instead of re-implementing it elsewhere.
+
 use include_dir::{Dir, include_dir};
 use serde::{Deserialize, Serialize};
 use std::{

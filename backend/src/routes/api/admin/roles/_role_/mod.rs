@@ -134,7 +134,7 @@ mod patch {
     use shared::{
         ApiError, GetState,
         models::{admin_activity::GetAdminActivityLogger, user::GetPermissionManager},
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use std::sync::Arc;

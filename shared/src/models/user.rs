@@ -812,6 +812,8 @@ impl DeletableModel for User {
         .execute(&mut *transaction)
         .await?;
 
+        state.storage.remove(self.avatar.as_deref()).await?;
+
         transaction.commit().await?;
 
         Ok(())

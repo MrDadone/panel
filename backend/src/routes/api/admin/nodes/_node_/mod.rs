@@ -161,7 +161,7 @@ mod patch {
             backup_configurations::BackupConfiguration, location::Location, node::GetNode,
             user::GetPermissionManager,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;

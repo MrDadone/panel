@@ -4,7 +4,7 @@ use crate::{
         ExtensionSettings, ExtensionSettingsDeserializer, SettingsDeserializeExt,
         SettingsDeserializer, SettingsSerializeExt, SettingsSerializer,
     },
-    prelude::{AsyncOptionExtension, StringExt},
+    prelude::{AsyncOptionExt, StringExt},
 };
 use compact_str::ToCompactString;
 use serde::{Deserialize, Serialize};

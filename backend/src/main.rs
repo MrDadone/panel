@@ -571,7 +571,7 @@ async fn main() {
         )
         .fallback(|state: GetState, req: Request<Body>| async move {
             if !req.uri().path().starts_with("/api") {
-                let path = &req.uri().path()[1..];
+                let path = &req.uri().path()[1.min(req.uri().path().len())..];
 
                 let (is_index, entry) = match FRONTEND_ASSETS.get_entry(path) {
                     Some(entry) => (false, entry),

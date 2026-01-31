@@ -159,7 +159,7 @@ mod patch {
             ByUuid, admin_activity::GetAdminActivityLogger,
             backup_configurations::BackupConfiguration, user::GetPermissionManager,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
