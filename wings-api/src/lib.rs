@@ -145,6 +145,8 @@ nestify::nest! {
     }
 }
 
+pub type MiB = u64;
+
 nestify::nest! {
     #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Mount {
         #[schema(inline)]
@@ -433,6 +435,95 @@ pub enum TransferArchiveFormat {
     TarZstd,
 }
 
+#[derive(Debug, ToSchema, Deserialize, Serialize, Clone, Copy)]
+pub enum WebsocketEvent {
+    #[serde(rename = "auth success")]
+    AuthSuccess,
+    #[serde(rename = "token expiring")]
+    TokenExpiring,
+    #[serde(rename = "token expired")]
+    TokenExpired,
+    #[serde(rename = "auth")]
+    Auth,
+    #[serde(rename = "configure socket")]
+    ConfigureSocket,
+    #[serde(rename = "set state")]
+    SetState,
+    #[serde(rename = "send logs")]
+    SendLogs,
+    #[serde(rename = "send command")]
+    SendCommand,
+    #[serde(rename = "send stats")]
+    SendStats,
+    #[serde(rename = "daemon error")]
+    DaemonError,
+    #[serde(rename = "jwt error")]
+    JwtError,
+    #[serde(rename = "ping")]
+    Ping,
+    #[serde(rename = "pong")]
+    Pong,
+    #[serde(rename = "stats")]
+    Stats,
+    #[serde(rename = "status")]
+    Status,
+    #[serde(rename = "custom event")]
+    CustomEvent,
+    #[serde(rename = "console output")]
+    ConsoleOutput,
+    #[serde(rename = "install output")]
+    InstallOutput,
+    #[serde(rename = "image pull progress")]
+    ImagePullProgress,
+    #[serde(rename = "image pull completed")]
+    ImagePullCompleted,
+    #[serde(rename = "install started")]
+    InstallStarted,
+    #[serde(rename = "install completed")]
+    InstallCompleted,
+    #[serde(rename = "daemon message")]
+    DaemonMessage,
+    #[serde(rename = "backup started")]
+    BackupStarted,
+    #[serde(rename = "backup progress")]
+    BackupProgress,
+    #[serde(rename = "backup completed")]
+    BackupCompleted,
+    #[serde(rename = "backup restore started")]
+    BackupRestoreStarted,
+    #[serde(rename = "backup restore progress")]
+    BackupRestoreProgress,
+    #[serde(rename = "backup restore completed")]
+    BackupRestoreCompleted,
+    #[serde(rename = "transfer logs")]
+    TransferLogs,
+    #[serde(rename = "transfer status")]
+    TransferStatus,
+    #[serde(rename = "schedule started")]
+    ScheduleStarted,
+    #[serde(rename = "schedule step status")]
+    ScheduleStepStatus,
+    #[serde(rename = "schedule step error")]
+    ScheduleStepError,
+    #[serde(rename = "schedule completed")]
+    ScheduleCompleted,
+    #[serde(rename = "operation progress")]
+    OperationProgress,
+    #[serde(rename = "operation error")]
+    OperationError,
+    #[serde(rename = "operation completed")]
+    OperationCompleted,
+}
+
+nestify::nest! {
+    #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct WebsocketMessage {
+        #[schema(inline)]
+        pub event: WebsocketEvent,
+        #[schema(inline)]
+        pub args: Vec<compact_str::CompactString>,
+    }
+}
+
 pub mod backups_backup {
     use super::*;
 
@@ -465,9 +556,9 @@ pub mod deauthorize_user {
         nestify::nest! {
             #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
                 #[schema(inline)]
-                pub user: uuid::Uuid,
-                #[schema(inline)]
                 pub servers: Vec<uuid::Uuid>,
+                #[schema(inline)]
+                pub user: uuid::Uuid,
             }
         }
 
@@ -1474,6 +1565,31 @@ pub mod servers_server_version {
         pub type Response = Response200;
     }
 }
+pub mod servers_server_ws_broadcast {
+    use super::*;
+
+    pub mod post {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
+                #[schema(inline)]
+                pub users: Vec<uuid::Uuid>,
+                #[schema(inline)]
+                pub permissions: Vec<compact_str::CompactString>,
+                #[schema(inline)]
+                pub message: WebsocketMessage,
+            }
+        }
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
+            }
+        }
+
+        pub type Response = Response200;
+    }
+}
 pub mod servers_server_ws_deny {
     use super::*;
 
@@ -1606,7 +1722,7 @@ pub mod system_config {
                     #[schema(inline)]
                     pub file_compression_threads: u64,
                     #[schema(inline)]
-                    pub upload_limit: u64,
+                    pub upload_limit: MiB,
                     #[schema(inline)]
                     pub max_jwt_uses: u64,
                     #[schema(inline)]
@@ -1738,9 +1854,9 @@ pub mod system_config {
                     #[schema(inline)]
                     pub backups: #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200SystemBackups {
                         #[schema(inline)]
-                        pub write_limit: u64,
+                        pub write_limit: MiB,
                         #[schema(inline)]
-                        pub read_limit: u64,
+                        pub read_limit: MiB,
                         #[schema(inline)]
                         pub compression_level: CompressionLevel,
                         #[schema(inline)]
@@ -1810,7 +1926,7 @@ pub mod system_config {
                     #[schema(inline)]
                     pub transfers: #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200SystemTransfers {
                         #[schema(inline)]
-                        pub download_limit: u64,
+                        pub download_limit: MiB,
                     },
 
                 },
@@ -1880,7 +1996,7 @@ pub mod system_config {
                         #[schema(inline)]
                         pub timeout: u64,
                         #[schema(inline)]
-                        pub memory: u64,
+                        pub memory: MiB,
                         #[schema(inline)]
                         pub cpu: u64,
                     },
@@ -2015,6 +2131,8 @@ pub mod system_overview {
                     pub free_bytes: u64,
                     #[schema(inline)]
                     pub used_bytes: u64,
+                    #[schema(inline)]
+                    pub used_bytes_process: u64,
                 },
 
                 #[schema(inline)]
@@ -2169,7 +2287,7 @@ pub mod update {
                         pub key: Option<compact_str::CompactString>,
                     }>,
                     #[schema(inline)]
-                    pub upload_limit: Option<u64>,
+                    pub upload_limit: Option<MiB>,
                 }>,
                 #[schema(inline)]
                 pub system: Option<#[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBodySystem {

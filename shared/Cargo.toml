@@ -60,7 +60,7 @@ git2 = "0.20.2"
 tempfile = { workspace = true }
 compact_str = { workspace = true }
 nestify = { workspace = true }
-sysinfo = "0.38.0"
+sysinfo = { workspace = true }
 accept-header = "0.2.3"
 mime = "0.3.17"
 moka = { version = "0.12.12", features = ["future"] }

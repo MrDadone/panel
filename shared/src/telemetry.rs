@@ -129,8 +129,8 @@ impl TelemetryData {
             panel: TelemetryDataPanel {
                 version: state.version.to_compact_string(),
                 container_type: state.container_type,
-                database_version: state.database.version().await?.into(),
-                cache_version: state.cache.version().await?.into(),
+                database_version: state.database.version().await?,
+                cache_version: state.cache.version().await?,
                 architecture: std::env::consts::ARCH,
                 kernel_version: sysinfo::System::kernel_long_version().into(),
             },

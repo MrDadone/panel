@@ -738,6 +738,21 @@ impl WingsClient {
         .await
     }
 
+    pub async fn post_servers_server_ws_broadcast(
+        &self,
+        server: uuid::Uuid,
+        data: &super::servers_server_ws_broadcast::post::RequestBody,
+    ) -> Result<super::servers_server_ws_broadcast::post::Response, ApiHttpError> {
+        request_impl(
+            self,
+            Method::POST,
+            format!("/api/servers/{server}/ws/broadcast"),
+            Some(data),
+            None,
+        )
+        .await
+    }
+
     pub async fn post_servers_server_ws_deny(
         &self,
         server: uuid::Uuid,

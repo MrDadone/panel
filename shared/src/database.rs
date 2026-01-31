@@ -61,7 +61,7 @@ impl Database {
         let version = instance
             .version()
             .await
-            .unwrap_or_else(|_| "unknown".to_string());
+            .unwrap_or_else(|_| "unknown".into());
 
         tracing::info!(
             "{} connected {}",
@@ -97,12 +97,21 @@ impl Database {
         instance
     }
 
-    pub async fn version(&self) -> Result<String, sqlx::Error> {
-        let version: (String,) = sqlx::query_as("SELECT split_part(version(), ' ', 2)")
+    pub async fn version(&self) -> Result<compact_str::CompactString, sqlx::Error> {
+        let version: (compact_str::CompactString,) =
+            sqlx::query_as("SELECT split_part(version(), ' ', 2)")
+                .fetch_one(self.read())
+                .await?;
+
+        Ok(version.0)
+    }
+
+    pub async fn size(&self) -> Result<u64, sqlx::Error> {
+        let size: (i64,) = sqlx::query_as("SELECT pg_database_size(current_database())")
             .fetch_one(self.read())
             .await?;
 
-        Ok(version.0)
+        Ok(size.0 as u64)
     }
 
     pub async fn migrate(&self) -> Result<(), sqlx::Error> {
