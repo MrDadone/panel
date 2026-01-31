@@ -4,42 +4,17 @@ import {
   faCloudDownload,
   faMemory,
   faMicrochip,
-  IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ReactNode, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
-import Card from '@/elements/Card.tsx';
+import ChartBlock from '@/elements/ChartBlock.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import { useChart, useChartTickLabel } from '@/lib/chart.ts';
 import { hexToRgba } from '@/lib/color.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
-import { useChart, useChartTickLabel } from './chart.ts';
-
-function ChartBlock({
-  icon,
-  title,
-  legend,
-  children,
-}: {
-  icon: IconDefinition;
-  title: string;
-  legend?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <Card className='relative'>
-      <div className='flex items-center justify-between px-4 py-2'>
-        <h3 className='transition-colors duration-100'>
-          <FontAwesomeIcon icon={icon} /> {title}
-        </h3>
-        {legend && <span className='text-sm flex items-center'>{legend}</span>}
-      </div>
-      <div className='z-10 min-h-full'>{children}</div>
-    </Card>
-  );
-}
 
 export default function ServerStats() {
   const { t } = useTranslations();
@@ -90,14 +65,14 @@ export default function ServerStats() {
 
   return (
     <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-      <ChartBlock icon={faMicrochip} title={t('pages.server.console.stats.cpuLoad', {})}>
+      <ChartBlock icon={<FontAwesomeIcon icon={faMicrochip} />} title={t('pages.server.console.stats.cpuLoad', {})}>
         <Line {...cpu.props} />
       </ChartBlock>
-      <ChartBlock icon={faMemory} title={t('pages.server.console.stats.memoryLoad', {})}>
+      <ChartBlock icon={<FontAwesomeIcon icon={faMemory} />} title={t('pages.server.console.stats.memoryLoad', {})}>
         <Line {...memory.props} />
       </ChartBlock>
       <ChartBlock
-        icon={faCloudDownload}
+        icon={<FontAwesomeIcon icon={faCloudDownload} />}
         title={t('pages.server.console.stats.network', {})}
         legend={
           <>

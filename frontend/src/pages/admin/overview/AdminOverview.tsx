@@ -1,5 +1,4 @@
-import { faGofore } from '@fortawesome/free-brands-svg-icons';
-import { faArchive, faArrowRightLong, faCrow, faStethoscope } from '@fortawesome/free-solid-svg-icons';
+import { faArchive, faArrowRightLong, faChartBar, faCrow, faStethoscope } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
@@ -136,7 +135,7 @@ export default function AdminOverview() {
           )}
         </TitleCard>
 
-        <TitleCard title='General Statistics' icon={<FontAwesomeIcon icon={faGofore} />} className='mt-4'>
+        <TitleCard title='General Statistics' icon={<FontAwesomeIcon icon={faChartBar} />} className='mt-4'>
           {!generalStats ? (
             <Spinner.Centered />
           ) : (
