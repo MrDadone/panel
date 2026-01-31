@@ -116,8 +116,9 @@ export default function FileEditor() {
               )}
             </div>
           </div>
-          <div className='flex h-screen '>
+          <div className='flex h-full'>
             <Editor
+            height={'77vh'}
               theme='vs-dark'
               defaultValue={content}
               path={fileName}

@@ -20,7 +20,7 @@ export default function Container({ children, isNormal }: LayoutProps) {
           : 'flex flex-col justify-between h-full overflow-auto p-4'
       }
     >
-      <div ref={bodyRef} className={isNormal ? 'mb-4 lg:mt-12' : 'mb-4'}>
+      <div ref={bodyRef}>
         {children}
       </div>
         <div className='my-2 text-xs transition-all text-gray-400 mr-12'>
