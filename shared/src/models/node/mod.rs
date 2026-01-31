@@ -8,6 +8,9 @@ use std::{
 };
 use utoipa::ToSchema;
 
+mod events;
+pub use events::NodeEvent;
+
 pub type GetNode = crate::extract::ConsumingExtension<Node>;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -372,7 +375,7 @@ impl Node {
 
     pub async fn reset_token(
         &self,
-        database: &crate::database::Database,
+        state: &crate::State,
     ) -> Result<(String, String), anyhow::Error> {
         let token_id = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 16);
         let token = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 64);
@@ -386,9 +389,18 @@ impl Node {
         )
         .bind(self.uuid)
         .bind(&token_id)
-        .bind(database.encrypt(token.clone()).await?)
-        .execute(database.write())
+        .bind(state.database.encrypt(token.clone()).await?)
+        .execute(state.database.write())
         .await?;
+
+        Self::get_event_emitter().emit(
+            state.clone(),
+            NodeEvent::TokenReset {
+                node: Box::new(self.clone()),
+                token_id: token_id.clone(),
+                token: token.clone(),
+            },
+        );
 
         Ok((token_id, token))
     }

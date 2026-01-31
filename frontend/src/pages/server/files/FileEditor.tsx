@@ -1,4 +1,4 @@
-import { Editor, type OnMount } from '@monaco-editor/react';
+import { type OnMount } from '@monaco-editor/react';
 import { join } from 'pathe';
 import { useEffect, useRef, useState } from 'react';
 import { createSearchParams, useNavigate, useParams, useSearchParams } from 'react-router';
@@ -7,6 +7,7 @@ import saveFileContent from '@/api/server/files/saveFileContent.ts';
 import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
+import MonacoEditor from '@/elements/MonacoEditor.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { registerHoconLanguage, registerTomlLanguage } from '@/lib/monaco.ts';
 import NotFound from '@/pages/NotFound.tsx';
@@ -117,7 +118,7 @@ export default function FileEditor() {
             </div>
           </div>
           <div className='rounded-md overflow-hidden'>
-            <Editor
+            <MonacoEditor
               height='77vh'
               theme='vs-dark'
               defaultValue={content}

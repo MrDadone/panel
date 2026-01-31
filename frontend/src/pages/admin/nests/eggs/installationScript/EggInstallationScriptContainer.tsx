@@ -1,6 +1,5 @@
 import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { Editor } from '@monaco-editor/react';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -9,6 +8,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import MonacoEditor from '@/elements/MonacoEditor.tsx';
 import { adminEggScriptSchema } from '@/lib/schemas/admin/eggs.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -80,7 +80,7 @@ export default function EggInstallationScriptContainer({
             </Group>
 
             <div className='rounded-md overflow-hidden'>
-              <Editor
+              <MonacoEditor
                 height='53vh'
                 theme='vs-dark'
                 value={form.values.content || ''}

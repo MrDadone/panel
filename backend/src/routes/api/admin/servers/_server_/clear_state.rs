@@ -6,7 +6,8 @@ mod post {
     use shared::{
         GetState,
         models::{
-            admin_activity::GetAdminActivityLogger, server::GetServer, user::GetPermissionManager,
+            EventEmittingModel, admin_activity::GetAdminActivityLogger, server::GetServer,
+            user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
@@ -99,6 +100,13 @@ mod post {
                 }),
             )
             .await;
+
+        shared::models::server::Server::get_event_emitter().emit(
+            state.0,
+            shared::models::server::ServerEvent::StateReset {
+                server: Box::new(server.0),
+            },
+        );
 
         ApiResponse::new_serialized(Response {}).ok()
     }

@@ -1,10 +1,10 @@
-import { Editor } from '@monaco-editor/react';
 import { useEffect, useState } from 'react';
 import stripAnsi from 'strip-ansi';
 import { axiosInstance, httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
+import MonacoEditor from '@/elements/MonacoEditor.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { bytesToString } from '@/lib/size.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -124,7 +124,7 @@ export default function AdminNodeLogs({ node }: { node: Node }) {
           </div>
 
           <div className='mt-4 rounded-md overflow-hidden'>
-            <Editor
+            <MonacoEditor
               height='65vh'
               theme='vs-dark'
               value={content || ''}

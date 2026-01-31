@@ -37,6 +37,7 @@ impl ApiResponse {
         }
     }
 
+    /// Create a new API response with content negotiation based on the `Accept` header.
     pub fn new_serialized(body: impl serde::Serialize) -> Self {
         let accept_header = ACCEPT_HEADER.try_with(|h| h.clone()).ok().flatten();
 
