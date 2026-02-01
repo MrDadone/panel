@@ -5,7 +5,7 @@ import getServerAllocations from '@/api/admin/servers/allocations/getServerAlloc
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { serverAllocationTableColumns } from '@/lib/tableColumns.ts';
 import ServerAllocationAddModal from '@/pages/admin/servers/allocations/modals/ServerAllocationAddModal.tsx';
@@ -24,7 +24,7 @@ export default function AdminServerAllocations({ server }: { server: AdminServer
   });
 
   return (
-    <AdminContentContainer
+    <AdminSubContentContainer
       title='Server Allocations'
       titleOrder={2}
       search={search}
@@ -53,6 +53,6 @@ export default function AdminServerAllocations({ server }: { server: AdminServer
           ))}
         </Table>
       </ContextMenuProvider>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }
