@@ -32,4 +32,9 @@ pub fn commands(cli: CliCommandGroupBuilder) -> CliCommandGroupBuilder {
         "Manage Extensions for the Panel.",
         extensions::commands,
     )
+    .add_group(
+        "database-migrator",
+        "Manage Database Migrations.",
+        database_migrator::commands::commands,
+    )
 }

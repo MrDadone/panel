@@ -11,7 +11,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
-import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
@@ -21,7 +21,6 @@ import { databaseTypeLabelMapping } from '@/lib/enums.ts';
 import { adminDatabaseHostCreateSchema, adminDatabaseHostUpdateSchema } from '@/lib/schemas/admin/databaseHosts.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer';
 
 export default function DatabaseHostCreateOrUpdate({
   contextDatabaseHost,

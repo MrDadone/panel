@@ -1,16 +1,17 @@
 [workspace]
 resolver = "3"
-members = ["backend", "rule-validator", "wings-api", "shared", "backend-extensions/*"]
+members = ["backend", "database-migrator", "rule-validator", "wings-api", "shared", "backend-extensions/*"]
 default-members = ["backend"]
 package.rust-version = "1.93.0"
 package.license = "MIT"
-package.version = "0.18.1"
+package.version = "0.18.2"
 package.edition = "2024"
 
 [workspace.dependencies]
 wings-api = { path = "wings-api" }
 rule-validator = { path = "rule-validator" }
 shared = { path = "shared" }
+database-migrator = { path = "database-migrator" }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["chrono"] }
 tracing-appender = "0.2.3"

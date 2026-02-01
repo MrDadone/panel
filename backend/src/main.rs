@@ -216,10 +216,63 @@ async fn main() {
 
     if env.database_migrate {
         tracing::info!("running database migrations...");
-        match database.migrate().await {
-            Ok(_) => tracing::info!("database migrations completed successfully"),
+
+        let run = async || -> Result<(), anyhow::Error> {
+            database_migrator::ensure_migrations_table(database.write()).await?;
+
+            tracing::info!("fetching applied migrations...");
+            let applied_migrations =
+                database_migrator::fetch_applied_migrations(database.write()).await?;
+
+            tracing::info!("collecting embedded migrations...");
+            let migrations = database_migrator::collect_embedded_migrations()?;
+
+            tracing::info!("found {} migrations.", migrations.len());
+
+            let mut ran_migrations = 0;
+            for migration in migrations
+                .into_iter()
+                .filter(|m| !applied_migrations.iter().any(|am| am.id == m.snapshot.id))
+            {
+                tracing::info!(
+                    tables = ?migration.snapshot.tables().len(),
+                    enums = ?migration.snapshot.enums().len(),
+                    columns = ?migration.snapshot.columns(None).len(),
+                    indexes = ?migration.snapshot.indexes(None).len(),
+                    foreign_keys = ?migration.snapshot.foreign_keys(None).len(),
+                    primary_keys = ?migration.snapshot.primary_keys(None).len(),
+                    name = %migration.name,
+                    "applying migration"
+                );
+
+                if let Err(err) =
+                    database_migrator::run_migration(database.write(), &migration).await
+                {
+                    eprintln!("{}: {}", "failed to apply migration".red(), err);
+                    std::process::exit(1);
+                }
+
+                tracing::info!(name = %migration.name, "successfully applied migration");
+                tracing::info!("");
+
+                ran_migrations += 1;
+            }
+
+            tracing::info!("applied {} new migrations.", ran_migrations);
+
+            Ok(())
+        };
+
+        match run().await {
+            Ok(()) => {
+                tracing::info!("database migrations complete.");
+            }
             Err(err) => {
-                tracing::error!("failed to run database migrations: {:?}", err);
+                eprintln!(
+                    "{}: {:#?}",
+                    "an error occurred while running database migrations".red(),
+                    err
+                );
                 std::process::exit(1);
             }
         }

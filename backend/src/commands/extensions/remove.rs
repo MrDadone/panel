@@ -232,14 +232,14 @@ impl shared::extensions::commands::CliCommand<RemoveArgs> for RemoveCommand {
                     }
 
                     let status = Command::new(&pnpm_bin)
-                        .arg("kit:generate:extensions")
+                        .arg("kit:generate")
                         .current_dir("database")
                         .status()
                         .await?;
                     if !status.success() {
                         eprintln!(
                             "{} {}",
-                            "pnpm kit:generate:extensions".bright_red(),
+                            "pnpm kit:generate".bright_red(),
                             "did not run successfully, aborting process".red()
                         );
                         std::process::exit(1);

@@ -10,7 +10,7 @@ import getPermissions from '@/api/getPermissions.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
-import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -19,7 +19,6 @@ import PermissionSelector from '@/elements/PermissionSelector.tsx';
 import { adminRoleSchema } from '@/lib/schemas/admin/roles.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useGlobalStore } from '@/stores/global.ts';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer';
 
 export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role }) {
   const { availablePermissions, setAvailablePermissions } = useGlobalStore();

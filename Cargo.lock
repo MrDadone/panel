@@ -1519,6 +1519,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7a1e2f27636f116493b8b860f5546edb47c8d8f8ea73e1d2a20be88e28d1fea"
 
 [[package]]
+name = "database-migrator"
+version = "0.18.2"
+dependencies = [
+ "chrono",
+ "clap",
+ "colored",
+ "futures-util",
+ "include_dir",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "debugid"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1883,7 +1901,7 @@ dependencies = [
 
 [[package]]
 name = "extension-internal-list"
-version = "0.18.1"
+version = "0.18.2"
 dependencies = [
  "semver",
  "shared",
@@ -3958,7 +3976,7 @@ dependencies = [
 
 [[package]]
 name = "panel-rs"
-version = "0.18.1"
+version = "0.18.2"
 dependencies = [
  "anyhow",
  "axum",
@@ -3970,6 +3988,7 @@ dependencies = [
  "colored",
  "compact_str",
  "cron",
+ "database-migrator",
  "dialoguer",
  "dotenvy",
  "extension-internal-list",
@@ -4864,7 +4883,7 @@ dependencies = [
 
 [[package]]
 name = "rule-validator"
-version = "0.18.1"
+version = "0.18.2"
 dependencies = [
  "chrono",
  "compact_str",
@@ -5671,7 +5690,7 @@ dependencies = [
 
 [[package]]
 name = "shared"
-version = "0.18.1"
+version = "0.18.2"
 dependencies = [
  "accept-header",
  "anyhow",
@@ -7774,7 +7793,7 @@ checksum = "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
 
 [[package]]
 name = "wings-api"
-version = "0.18.1"
+version = "0.18.2"
 dependencies = [
  "anyhow",
  "chrono",

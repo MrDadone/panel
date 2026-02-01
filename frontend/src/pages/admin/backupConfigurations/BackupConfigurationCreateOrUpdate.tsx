@@ -9,7 +9,7 @@ import updateBackupConfiguration from '@/api/admin/backup-configurations/updateB
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
-import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -23,7 +23,6 @@ import {
 import BackupRestic from '@/pages/admin/backupConfigurations/forms/BackupRestic.tsx';
 import BackupS3 from '@/pages/admin/backupConfigurations/forms/BackupS3.tsx';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer';
 
 export default function BackupConfigurationCreateOrUpdate({
   contextBackupConfiguration,
@@ -100,10 +99,7 @@ export default function BackupConfigurationCreateOrUpdate({
   }, [contextBackupConfiguration]);
 
   return (
-    <AdminContentContainer
-      title={`${contextBackupConfiguration ? 'Update' : 'Create'} Backup Config`}
-      titleOrder={2}
-    >
+    <AdminContentContainer title={`${contextBackupConfiguration ? 'Update' : 'Create'} Backup Config`} titleOrder={2}>
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}

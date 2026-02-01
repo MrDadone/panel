@@ -114,22 +114,6 @@ impl Database {
         Ok(size.0 as u64)
     }
 
-    pub async fn migrate(&self) -> Result<(), sqlx::Error> {
-        let start = std::time::Instant::now();
-
-        sqlx::migrate!("../database/migrations")
-            .run(&self.write)
-            .await?;
-
-        tracing::info!(
-            "{} migrated {}",
-            "database".bright_cyan(),
-            format!("({}ms)", start.elapsed().as_millis()).bright_black()
-        );
-
-        Ok(())
-    }
-
     #[inline]
     pub fn write(&self) -> &sqlx::PgPool {
         &self.write
