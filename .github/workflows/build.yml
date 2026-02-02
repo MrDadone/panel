@@ -51,6 +51,7 @@ jobs:
       - name: Build frontend
         run: |
           cd frontend
+          export NODE_OPTIONS="--max-old-space-size=4096"
           pnpm build
 
       - name: Upload frontend build
