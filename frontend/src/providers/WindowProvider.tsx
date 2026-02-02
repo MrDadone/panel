@@ -22,7 +22,7 @@ interface WindowContextType {
 
 const WindowContext = createContext<WindowContextType | undefined>(undefined);
 
-let windowId = 0;
+let windowId = 1;
 
 export const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [windows, setWindows] = useState<WindowType[]>([]);
