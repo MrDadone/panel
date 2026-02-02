@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import type { LanguageData } from 'shared';
 import { defineConfig } from 'vite';
 import dynamicPublicDirectory from 'vite-multiple-assets';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -19,6 +20,8 @@ const minifyTranslations = () => {
         let total = 0;
         let minified = 0;
 
+        const languageData: Record<string, Record<string, LanguageData>> = {};
+
         files.forEach((file) => {
           if (file.endsWith('.json')) {
             const filePath = path.join(dir, file);
@@ -26,15 +29,43 @@ const minifyTranslations = () => {
               const content = fs.readFileSync(filePath, 'utf-8');
               total += content.length;
 
-              const minifiedContent = JSON.stringify(JSON.parse(content));
-              minified += minifiedContent.length;
-              fs.writeFileSync(filePath, minifiedContent);
-              count++;
+              const jsonParsed = JSON.parse(content);
+              languageData[file.replace('.json', '')] = { '': jsonParsed };
             } catch (error) {
               console.error(`[minify-translations] Error processing ${file}:`, error);
             }
+          } else {
+            const subDirPath = path.join(dir, file);
+            if (fs.statSync(subDirPath).isDirectory()) {
+              const subFiles = fs.readdirSync(subDirPath);
+              subFiles.forEach((subFile) => {
+                if (subFile.endsWith('.json')) {
+                  const subFilePath = path.join(subDirPath, subFile);
+                  try {
+                    const content = fs.readFileSync(subFilePath, 'utf-8');
+                    total += content.length;
+
+                    const jsonParsed = JSON.parse(content);
+                    if (!languageData[subFile.replace('.json', '')]) {
+                      languageData[subFile.replace('.json', '')] = {};
+                    }
+                    languageData[subFile.replace('.json', '')][file] = jsonParsed;
+                  } catch (error) {
+                    console.error(`[minify-translations] Error processing ${subFile} in ${file}:`, error);
+                  }
+                }
+              });
+            }
           }
         });
+
+        // Now write minified files
+        for (const [language, namespaces] of Object.entries(languageData)) {
+          const minifiedContent = JSON.stringify(namespaces);
+          fs.writeFileSync(path.join(dir, `${language}.json`), minifiedContent);
+          count++;
+          minified += minifiedContent.length;
+        }
 
         console.log(`[minify-translations] Minified ${count} JSON files in dist/translations`);
         console.log(`[minify-translations] Total size before minification: ${total} bytes`);

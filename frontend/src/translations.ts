@@ -1,6 +1,11 @@
 import { DefinedTranslations, defineEnglishItem, defineTranslations } from 'shared';
 
-const extensionTranslations = import.meta.glob?.('../extensions/*/src/translations.ts', { eager: true });
+let extensionTranslations: Record<string, unknown> = {};
+try {
+  extensionTranslations = import.meta.glob('../extensions/*/src/translations.ts', { eager: true });
+} catch {
+  // Ignore
+}
 
 const baseTranslations = defineTranslations({
   items: {

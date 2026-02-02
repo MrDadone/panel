@@ -22,4 +22,11 @@ for await (const path of translationFiles) {
 }
 
 await fs.mkdir('public/translations', { recursive: true });
-await fs.writeFile('public/translations/en-US.json', JSON.stringify(baseTranslations.subTranslations, null, 2));
+
+for (const [namespace, data] of Object.entries(baseTranslations.subTranslations)) {
+  if (namespace === '') {
+    await fs.writeFile('public/translations/en-US.json', JSON.stringify(data, null, 2));
+  } else {
+    await fs.writeFile(`public/translations/en-US/${namespace}.json`, JSON.stringify(data, null, 2));
+  }
+}
