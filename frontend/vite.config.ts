@@ -30,7 +30,10 @@ const minifyTranslations = () => {
               total += content.length;
 
               const jsonParsed = JSON.parse(content);
-              languageData[file.replace('.json', '')] = { '': jsonParsed };
+              if (!languageData[file.replace('.json', '')]) {
+                languageData[file.replace('.json', '')] = {};
+              }
+              languageData[file.replace('.json', '')][''] = jsonParsed;
             } catch (error) {
               console.error(`[minify-translations] Error processing ${file}:`, error);
             }
@@ -46,10 +49,10 @@ const minifyTranslations = () => {
                     total += content.length;
 
                     const jsonParsed = JSON.parse(content);
-                    if (!languageData[subFile.replace('.json', '')]) {
-                      languageData[subFile.replace('.json', '')] = {};
+                    if (!languageData[file]) {
+                      languageData[file] = {};
                     }
-                    languageData[subFile.replace('.json', '')][file] = jsonParsed;
+                    languageData[file][subFile.replace('.json', '')] = jsonParsed;
                   } catch (error) {
                     console.error(`[minify-translations] Error processing ${subFile} in ${file}:`, error);
                   }
