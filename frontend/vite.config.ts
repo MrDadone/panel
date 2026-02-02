@@ -94,10 +94,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/openapi.json': 'http://localhost:8000',
-      '/api': 'http://localhost:8000',
-      '/assets': 'http://localhost:8000',
-      '/avatars': 'http://localhost:8000',
+      '/openapi.json': `http://localhost:${process.env.BACKEND_PORT ?? 8000}`,
+      '/api': `http://localhost:${process.env.BACKEND_PORT ?? 8000}`,
+      '/assets': `http://localhost:${process.env.BACKEND_PORT ?? 8000}`,
+      '/avatars': `http://localhost:${process.env.BACKEND_PORT ?? 8000}`,
     },
     allowedHosts: true,
   },
