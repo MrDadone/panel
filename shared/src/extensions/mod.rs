@@ -12,6 +12,7 @@ pub mod commands;
 pub mod distr;
 pub mod manager;
 pub mod settings;
+pub mod shutdown_handlers;
 
 pub struct ExtensionRouteBuilder {
     state: State,
@@ -224,6 +225,15 @@ pub trait Extension: Send + Sync {
         state: State,
         builder: background_tasks::BackgroundTaskBuilder,
     ) -> background_tasks::BackgroundTaskBuilder {
+        builder
+    }
+
+    /// Your extension shutdown handler entrypoint, this runs as soon as the database is migrated and before the webserver starts
+    async fn initialize_shutdown_handlers(
+        &mut self,
+        state: State,
+        builder: shutdown_handlers::ShutdownHandlerBuilder,
+    ) -> shutdown_handlers::ShutdownHandlerBuilder {
         builder
     }
 

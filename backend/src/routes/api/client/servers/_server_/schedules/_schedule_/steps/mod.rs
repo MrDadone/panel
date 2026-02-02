@@ -172,16 +172,7 @@ mod post {
             .batch_action("sync_server", server.uuid, {
                 let state = state.clone();
 
-                async move {
-                    let uuid = server.uuid;
-
-                    match server.0.sync(&state.database).await {
-                        Ok(_) => {}
-                        Err(err) => {
-                            tracing::warn!(server = %uuid, "failed to post server sync: {:?}", err);
-                        }
-                    }
-                }
+                async move { server.0.sync(&state.database).await }
             })
             .await;
 

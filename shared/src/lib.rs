@@ -90,6 +90,7 @@ pub struct AppState {
 
     pub extensions: Arc<extensions::manager::ExtensionManager>,
     pub background_tasks: Arc<extensions::background_tasks::BackgroundTaskManager>,
+    pub shutdown_handlers: Arc<extensions::shutdown_handlers::ShutdownHandlerManager>,
     pub settings: Arc<settings::Settings>,
     pub jwt: Arc<jwt::Jwt>,
     pub storage: Arc<storage::Storage>,

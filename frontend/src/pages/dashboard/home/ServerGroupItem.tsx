@@ -123,7 +123,7 @@ export default function ServerGroupItem({
     id: `${serverGroup.uuid}-${s.uuid}`,
   }));
 
-  const serverCount = serverGroup.serverOrder.length;
+  const serverCount = servers?.total ?? serverGroup.serverOrder.length;
 
   return (
     <>
@@ -205,7 +205,7 @@ export default function ServerGroupItem({
                   leftSection={<FontAwesomeIcon icon={faPowerOff} />}
                   color='green'
                   onClick={() => handleGroupPowerAction('start')}
-                  disabled={groupActionLoading !== null || serverGroup.serverOrder.length === 0}
+                  disabled={groupActionLoading !== null || serverCount === 0}
                 >
                   {t('pages.server.console.power.start', {})}
                 </Menu.Item>
@@ -213,7 +213,7 @@ export default function ServerGroupItem({
                   leftSection={<FontAwesomeIcon icon={faPowerOff} />}
                   color='gray'
                   onClick={() => handleGroupPowerAction('restart')}
-                  disabled={groupActionLoading !== null || serverGroup.serverOrder.length === 0}
+                  disabled={groupActionLoading !== null || serverCount === 0}
                 >
                   {t('pages.server.console.power.restart', {})}
                 </Menu.Item>
@@ -221,7 +221,7 @@ export default function ServerGroupItem({
                   leftSection={<FontAwesomeIcon icon={faPowerOff} />}
                   color='red'
                   onClick={() => handleGroupPowerAction('stop')}
-                  disabled={groupActionLoading !== null || serverGroup.serverOrder.length === 0}
+                  disabled={groupActionLoading !== null || serverCount === 0}
                 >
                   {t('pages.server.console.power.stop', {})}
                 </Menu.Item>

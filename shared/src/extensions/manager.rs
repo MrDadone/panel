@@ -25,10 +25,13 @@ impl ExtensionManager {
     ) -> (
         ExtensionRouteBuilder,
         super::background_tasks::BackgroundTaskBuilder,
+        super::shutdown_handlers::ShutdownHandlerBuilder,
     ) {
         let mut route_builder = ExtensionRouteBuilder::new(state.clone());
         let mut background_tasks_builder =
             super::background_tasks::BackgroundTaskBuilder::new(state.clone());
+        let mut shutdown_handlers_builder =
+            super::shutdown_handlers::ShutdownHandlerBuilder::new(state.clone());
         let mut permissions_builder = ExtensionPermissionsBuilder::new(
             crate::permissions::BASE_USER_PERMISSIONS.clone(),
             crate::permissions::BASE_ADMIN_PERMISSIONS.clone(),
@@ -61,6 +64,9 @@ impl ExtensionManager {
             background_tasks_builder = ext
                 .initialize_background_tasks(state.clone(), background_tasks_builder)
                 .await;
+            shutdown_handlers_builder = ext
+                .initialize_shutdown_handlers(state.clone(), shutdown_handlers_builder)
+                .await;
             permissions_builder = ext
                 .initialize_permissions(state.clone(), permissions_builder)
                 .await;
@@ -79,7 +85,11 @@ impl ExtensionManager {
             .unwrap()
             .replace(permissions_builder.server_permissions);
 
-        (route_builder, background_tasks_builder)
+        (
+            route_builder,
+            background_tasks_builder,
+            shutdown_handlers_builder,
+        )
     }
 
     pub async fn init_cli(

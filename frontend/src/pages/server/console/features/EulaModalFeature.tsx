@@ -57,6 +57,7 @@ export default function EulaModal() {
       <Text size='sm' mb='md'>
         {t('pages.server.console.feature.eula.contentDetails', {}).md()}
       </Text>
+
       <Modal.Footer>
         <Button color='green' loading={loading} onClick={acceptEula}>
           {t('pages.server.console.feature.eula.button.accept', {})}

@@ -7,7 +7,10 @@ mod put {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{server::GetServerActivityLogger, user::GetPermissionManager},
+        models::{
+            server::{GetServer, GetServerActivityLogger},
+            user::GetPermissionManager,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -29,6 +32,7 @@ mod put {
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
+        server: GetServer,
         activity_logger: GetServerActivityLogger,
         schedule: GetServerSchedule,
         shared::Payload(data): shared::Payload<Payload>,
@@ -59,6 +63,15 @@ mod put {
                     "schedule_step_order": data.schedule_step_order,
                 }),
             )
+            .await;
+
+        state
+            .database
+            .batch_action("sync_server", server.uuid, {
+                let state = state.clone();
+
+                async move { server.0.sync(&state.database).await }
+            })
             .await;
 
         ApiResponse::new_serialized(Response {}).ok()

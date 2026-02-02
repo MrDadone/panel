@@ -1,9 +1,10 @@
 use colored::Colorize;
 use sqlx::postgres::PgPoolOptions;
-use std::{collections::HashMap, fmt::Display, sync::Arc};
+use std::{collections::HashMap, fmt::Display, pin::Pin, sync::Arc};
 use tokio::sync::Mutex;
 
-type EmptyFuture = Box<dyn Future<Output = ()> + Send>;
+type BatchFuture = Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send>>;
+
 pub struct Database {
     pub cache: Arc<crate::cache::Cache>,
 
@@ -12,7 +13,7 @@ pub struct Database {
 
     encryption_key: Arc<str>,
     use_decryption_cache: bool,
-    batch_actions: Arc<Mutex<HashMap<(&'static str, uuid::Uuid), EmptyFuture>>>,
+    batch_actions: Arc<Mutex<HashMap<(&'static str, uuid::Uuid), BatchFuture>>>,
 }
 
 impl Database {
@@ -88,13 +89,41 @@ impl Database {
                             key.0.bright_cyan(),
                             key.1
                         );
-                        Box::into_pin(action).await;
+                        if let Err(err) = action.await {
+                            tracing::error!(
+                                "error executing batch action for {}:{} - {:?}",
+                                key.0.bright_cyan(),
+                                key.1,
+                                err
+                            );
+                            sentry_anyhow::capture_anyhow(&err);
+                        }
                     }
                 }
             }
         });
 
         instance
+    }
+
+    pub async fn flush_batch_actions(&self) {
+        let mut actions = self.batch_actions.lock().await;
+        for (key, action) in actions.drain() {
+            tracing::debug!(
+                "executing batch action for {}:{}",
+                key.0.bright_cyan(),
+                key.1
+            );
+            if let Err(err) = action.await {
+                tracing::error!(
+                    "error executing batch action for {}:{} - {:?}",
+                    key.0.bright_cyan(),
+                    key.1,
+                    err
+                );
+                sentry_anyhow::capture_anyhow(&err);
+            }
+        }
     }
 
     pub async fn version(&self) -> Result<compact_str::CompactString, sqlx::Error> {
@@ -187,14 +216,14 @@ impl Database {
     }
 
     #[inline]
-    pub async fn batch_action<F: Future<Output = ()> + Send + 'static>(
+    pub async fn batch_action<F: Future<Output = Result<(), anyhow::Error>> + Send + 'static>(
         &self,
         key: &'static str,
         uuid: uuid::Uuid,
         action: F,
     ) {
         let mut actions = self.batch_actions.lock().await;
-        actions.insert((key, uuid), Box::new(action));
+        actions.insert((key, uuid), Box::pin(action));
     }
 }
 

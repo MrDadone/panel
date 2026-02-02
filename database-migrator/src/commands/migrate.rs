@@ -125,20 +125,19 @@ impl shared::extensions::commands::CliCommand<MigrateArgs> for MigrateCommand {
                             "marking migration as applied without running due to --unsafe-skip-run"
                         );
                         crate::mark_migration_as_applied(database.write(), &migration).await?;
-                    } else {
-                        if let Err(err) = crate::run_migration(database.write(), &migration).await {
-                            if args.force {
-                                tracing::error!(
-                                    name = %migration.name,
-                                    "failed to apply migration, marking as applied due to --force: {}",
-                                    err
-                                );
-                                crate::mark_migration_as_applied(database.write(), &migration)
-                                    .await?;
-                            } else {
-                                eprintln!("{}: {}", "failed to apply migration".red(), err);
-                                std::process::exit(1);
-                            }
+                    } else if let Err(err) =
+                        crate::run_migration(database.write(), &migration).await
+                    {
+                        if args.force {
+                            tracing::error!(
+                                name = %migration.name,
+                                "failed to apply migration, marking as applied due to --force: {}",
+                                err
+                            );
+                            crate::mark_migration_as_applied(database.write(), &migration).await?;
+                        } else {
+                            eprintln!("{}: {}", "failed to apply migration".red(), err);
+                            std::process::exit(1);
                         }
                     }
 

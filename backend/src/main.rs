@@ -280,6 +280,8 @@ async fn main() {
 
     let background_tasks =
         Arc::new(shared::extensions::background_tasks::BackgroundTaskManager::default());
+    let shutdown_handlers =
+        Arc::new(shared::extensions::shutdown_handlers::ShutdownHandlerManager::default());
     let settings = Arc::new(
         shared::settings::Settings::new(database.clone())
             .await
@@ -312,6 +314,7 @@ async fn main() {
 
         extensions: extensions.clone(),
         background_tasks: background_tasks.clone(),
+        shutdown_handlers: shutdown_handlers.clone(),
         settings: settings.clone(),
         jwt,
         storage,
@@ -322,7 +325,8 @@ async fn main() {
         env,
     });
 
-    let (routes, background_task_builder) = extensions.init(state.clone()).await;
+    let (routes, background_task_builder, shutdown_handler_builder) =
+        extensions.init(state.clone()).await;
     let mut extension_router = OpenApiRouter::new().with_state(state.clone());
 
     if let Some(global) = routes.global {
@@ -393,179 +397,161 @@ async fn main() {
     }
 
     background_task_builder
-        .add_task(
-            "collect_telemetry",
-            Box::new(|state| {
-                Box::pin(async move {
-                    fn generate_randomized_cron_schedule() -> cron::Schedule {
-                        let mut rng = rand::rng();
-                        let seconds: u8 = rng.random_range(0..60);
-                        let minutes: u8 = rng.random_range(0..60);
-                        let hours: u8 = rng.random_range(0..24);
+        .add_task("collect_telemetry", async |state| {
+            fn generate_randomized_cron_schedule() -> cron::Schedule {
+                let mut rng = rand::rng();
+                let seconds: u8 = rng.random_range(0..60);
+                let minutes: u8 = rng.random_range(0..60);
+                let hours: u8 = rng.random_range(0..24);
 
-                        format!("{} {} {} * * *", seconds, minutes, hours)
-                            .parse()
-                            .unwrap()
+                format!("{} {} {} * * *", seconds, minutes, hours)
+                    .parse()
+                    .unwrap()
+            }
+
+            let settings = state.settings.get().await?;
+            if !settings.app.telemetry_enabled {
+                drop(settings);
+                tokio::time::sleep(std::time::Duration::from_mins(60)).await;
+
+                return Ok(());
+            }
+            let cron_schedule = settings
+                .telemetry_cron_schedule
+                .clone()
+                .unwrap_or_else(generate_randomized_cron_schedule);
+            if settings.telemetry_cron_schedule.is_none() {
+                drop(settings);
+                let mut new_settings = state.settings.get_mut().await?;
+                new_settings.telemetry_cron_schedule = Some(cron_schedule.clone());
+                new_settings.save().await?;
+            } else {
+                drop(settings);
+            }
+
+            let schedule_iter = cron_schedule.upcoming(chrono::Utc);
+
+            for target_datetime in schedule_iter {
+                let target_timestamp = target_datetime.timestamp();
+                let now_timestamp = chrono::Utc::now().timestamp();
+                let sleep_duration = target_timestamp - now_timestamp;
+                if sleep_duration <= 0 {
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    continue;
+                }
+
+                tokio::time::sleep(std::time::Duration::from_secs(sleep_duration as u64)).await;
+
+                let telemetry_data = match shared::telemetry::TelemetryData::collect(&state).await {
+                    Ok(data) => data,
+                    Err(err) => {
+                        tracing::error!("failed to collect telemetry data: {:#?}", err);
+                        continue;
                     }
+                };
 
-                    let settings = state.settings.get().await?;
-                    if !settings.app.telemetry_enabled {
-                        drop(settings);
-                        tokio::time::sleep(std::time::Duration::from_mins(60)).await;
+                if let Err(err) = state
+                    .client
+                    .post("https://calagopus.com/api/telemetry")
+                    .json(&telemetry_data)
+                    .send()
+                    .await
+                {
+                    tracing::error!("failed to send telemetry data: {:#?}", err);
+                } else {
+                    tracing::info!("successfully sent telemetry data");
+                }
+            }
 
-                        return Ok(());
-                    }
-                    let cron_schedule = settings
-                        .telemetry_cron_schedule
-                        .clone()
-                        .unwrap_or_else(generate_randomized_cron_schedule);
-                    if settings.telemetry_cron_schedule.is_none() {
-                        drop(settings);
-                        let mut new_settings = state.settings.get_mut().await?;
-                        new_settings.telemetry_cron_schedule = Some(cron_schedule.clone());
-                        new_settings.save().await?;
-                    } else {
-                        drop(settings);
-                    }
-
-                    let schedule_iter = cron_schedule.upcoming(chrono::Utc);
-
-                    for target_datetime in schedule_iter {
-                        let target_timestamp = target_datetime.timestamp();
-                        let now_timestamp = chrono::Utc::now().timestamp();
-                        let sleep_duration = target_timestamp - now_timestamp;
-                        if sleep_duration <= 0 {
-                            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-                            continue;
-                        }
-
-                        tokio::time::sleep(std::time::Duration::from_secs(sleep_duration as u64))
-                            .await;
-
-                        let telemetry_data =
-                            match shared::telemetry::TelemetryData::collect(&state).await {
-                                Ok(data) => data,
-                                Err(err) => {
-                                    tracing::error!("failed to collect telemetry data: {:#?}", err);
-                                    continue;
-                                }
-                            };
-
-                        if let Err(err) = state
-                            .client
-                            .post("https://calagopus.com/api/telemetry")
-                            .json(&telemetry_data)
-                            .send()
-                            .await
-                        {
-                            tracing::error!("failed to send telemetry data: {:#?}", err);
-                        } else {
-                            tracing::info!("successfully sent telemetry data");
-                        }
-                    }
-
-                    Ok(())
-                })
-            }),
-        )
+            Ok(())
+        })
         .await;
     background_task_builder
-        .add_task(
-            "delete_expired_sessions",
-            Box::new(|state| {
-                Box::pin(async move {
-                    let deleted_sessions =
-                        shared::models::user_session::UserSession::delete_unused(&state.database)
-                            .await?;
-                    if deleted_sessions > 0 {
-                        tracing::info!("deleted {} expired user sessions", deleted_sessions);
-                    }
+        .add_task("delete_expired_sessions", async |state| {
+            let deleted_sessions =
+                shared::models::user_session::UserSession::delete_unused(&state.database).await?;
+            if deleted_sessions > 0 {
+                tracing::info!("deleted {} expired user sessions", deleted_sessions);
+            }
 
-                    tokio::time::sleep(std::time::Duration::from_mins(5)).await;
+            tokio::time::sleep(std::time::Duration::from_mins(5)).await;
 
-                    Ok(())
-                })
-            }),
-        )
+            Ok(())
+        })
         .await;
     background_task_builder
-        .add_task(
-            "delete_expired_api_keys",
-            Box::new(|state| {
-                Box::pin(async move {
-                    let deleted_api_keys =
-                        shared::models::user_api_key::UserApiKey::delete_expired(&state.database)
-                            .await?;
-                    if deleted_api_keys > 0 {
-                        tracing::info!("deleted {} expired user api keys", deleted_api_keys);
-                    }
+        .add_task("delete_expired_api_keys", async |state| {
+            let deleted_api_keys =
+                shared::models::user_api_key::UserApiKey::delete_expired(&state.database).await?;
+            if deleted_api_keys > 0 {
+                tracing::info!("deleted {} expired user api keys", deleted_api_keys);
+            }
 
-                    tokio::time::sleep(std::time::Duration::from_mins(30)).await;
+            tokio::time::sleep(std::time::Duration::from_mins(30)).await;
 
-                    Ok(())
-                })
-            }),
-        )
+            Ok(())
+        })
         .await;
     background_task_builder
-        .add_task(
-            "delete_old_activity",
-            Box::new(|state| {
-                Box::pin(async move {
-                    let settings = state.settings.get().await?;
-                    let admin_retention_days = settings.activity.admin_log_retention_days;
-                    let user_retention_days = settings.activity.user_log_retention_days;
-                    let server_retention_days = settings.activity.server_log_retention_days;
-                    drop(settings);
+        .add_task("delete_old_activity", async |state| {
+            let settings = state.settings.get().await?;
+            let admin_retention_days = settings.activity.admin_log_retention_days;
+            let user_retention_days = settings.activity.user_log_retention_days;
+            let server_retention_days = settings.activity.server_log_retention_days;
+            drop(settings);
 
-                    let deleted_admin_activity =
-                        shared::models::admin_activity::AdminActivity::delete_older_than(
-                            &state.database,
-                            chrono::Utc::now()
-                                - chrono::Duration::days(admin_retention_days as i64),
-                        )
-                        .await?;
-                    if deleted_admin_activity > 0 {
-                        tracing::info!(
-                            "deleted {} old admin activity logs",
-                            deleted_admin_activity
-                        );
-                    }
+            let deleted_admin_activity =
+                shared::models::admin_activity::AdminActivity::delete_older_than(
+                    &state.database,
+                    chrono::Utc::now() - chrono::Duration::days(admin_retention_days as i64),
+                )
+                .await?;
+            if deleted_admin_activity > 0 {
+                tracing::info!("deleted {} old admin activity logs", deleted_admin_activity);
+            }
 
-                    let deleted_user_activity =
-                        shared::models::user_activity::UserActivity::delete_older_than(
-                            &state.database,
-                            chrono::Utc::now() - chrono::Duration::days(user_retention_days as i64),
-                        )
-                        .await?;
-                    if deleted_user_activity > 0 {
-                        tracing::info!("deleted {} old user activity logs", deleted_user_activity);
-                    }
+            let deleted_user_activity =
+                shared::models::user_activity::UserActivity::delete_older_than(
+                    &state.database,
+                    chrono::Utc::now() - chrono::Duration::days(user_retention_days as i64),
+                )
+                .await?;
+            if deleted_user_activity > 0 {
+                tracing::info!("deleted {} old user activity logs", deleted_user_activity);
+            }
 
-                    let deleted_server_activity =
-                        shared::models::server_activity::ServerActivity::delete_older_than(
-                            &state.database,
-                            chrono::Utc::now()
-                                - chrono::Duration::days(server_retention_days as i64),
-                        )
-                        .await?;
-                    if deleted_server_activity > 0 {
-                        tracing::info!(
-                            "deleted {} old server activity logs",
-                            deleted_server_activity
-                        );
-                    }
+            let deleted_server_activity =
+                shared::models::server_activity::ServerActivity::delete_older_than(
+                    &state.database,
+                    chrono::Utc::now() - chrono::Duration::days(server_retention_days as i64),
+                )
+                .await?;
+            if deleted_server_activity > 0 {
+                tracing::info!(
+                    "deleted {} old server activity logs",
+                    deleted_server_activity
+                );
+            }
 
-                    tokio::time::sleep(std::time::Duration::from_hours(1)).await;
+            tokio::time::sleep(std::time::Duration::from_hours(1)).await;
 
-                    Ok(())
-                })
-            }),
-        )
+            Ok(())
+        })
         .await;
 
     background_tasks
         .merge_builder(background_task_builder)
+        .await;
+
+    shutdown_handler_builder
+        .add_handler("flush_database_batch_actions", async |state| {
+            state.database.flush_batch_actions().await;
+            Ok(())
+        })
+        .await;
+
+    shutdown_handlers
+        .merge_builder(shutdown_handler_builder)
         .await;
 
     let app = OpenApiRouter::new()
@@ -852,9 +838,11 @@ async fn main() {
         _ = http_server => {},
         _ = tokio::signal::ctrl_c() => {
             tracing::info!("CTRL-C received, shutting down...");
+            shutdown_handlers.handle_shutdown().await;
         },
         _ = sigterm_fut => {
             tracing::info!("SIGTERM received, shutting down...");
+            shutdown_handlers.handle_shutdown().await;
         }
     }
 }

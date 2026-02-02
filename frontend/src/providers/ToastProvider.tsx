@@ -21,7 +21,7 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-let toastId = 0;
+let toastId = 1;
 
 const toastTimeout = 7500;
 
@@ -115,7 +115,7 @@ export const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
               transition={{ duration: 0.3 }}
               className='w-72'
             >
-              <div className='pt-2 px-12'>
+              <div className='pt-2 px-12 min-w-fit'>
                 <Notification color={getToastColor(toast.type)} withCloseButton onClose={() => dismissToast(toast.id)}>
                   {toast.message}
                 </Notification>

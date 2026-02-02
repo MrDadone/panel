@@ -1,10 +1,7 @@
 use crate::State;
 use futures_util::FutureExt;
-use std::{borrow::Cow, collections::HashMap, panic::AssertUnwindSafe, pin::Pin, sync::Arc};
+use std::{borrow::Cow, collections::HashMap, panic::AssertUnwindSafe, sync::Arc};
 use tokio::sync::{OwnedRwLockReadGuard, RwLock};
-
-pub type LoopFunc =
-    dyn Fn(State) -> Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send>> + Send;
 
 pub struct BackgroundTask {
     pub name: &'static str,
@@ -27,7 +24,16 @@ impl BackgroundTaskBuilder {
         }
     }
 
-    pub async fn add_task(&self, name: &'static str, loop_fn: Box<LoopFunc>) {
+    /// Adds a background task that will be executed periodically, depending on your loop function implementation.
+    /// This will only run on primary instances, so be aware of that when implementing your task.
+    pub async fn add_task<
+        F: Fn(State) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<(), anyhow::Error>> + Send + 'static,
+    >(
+        &self,
+        name: &'static str,
+        loop_fn: F,
+    ) {
         if !self.state.env.app_primary {
             return;
         }
