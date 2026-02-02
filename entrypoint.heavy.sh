@@ -40,10 +40,17 @@ if [ ! -d "/app/repo/database/node_modules" ]; then
 	exit 1
 fi
 
+if [ ! -d "/app/repo/database/migrations-temp" ]; then
+	echo "Error: /app/repo/database/migrations-temp directory is missing. Please mount a volume for database migrations."
+	exit 1
+fi
+
 if [ ! -d "/app/repo/frontend/node_modules" ]; then
 	echo "Error: /app/repo/frontend/node_modules directory is missing. Please run 'pnpm install' in the frontend directory first."
 	exit 1
 fi
+
+cp -R /app/repo/database/migrations/* /app/repo/database/migrations-temp/
 
 # calculate the combined sha256 hash of all arguments' contents
 hash_many() {
@@ -91,6 +98,8 @@ execute_build() {
 
 	local EXT_HASH=$(hash_many /app/extensions/*.c7s.zip)
 
+	cp -R /app/repo/database/migrations-temp/* /app/repo/database/migrations/
+
 	echo "Building new binary with current extensions..."
 	# loop over all extension files
 	for ext_file in /app/extensions/*.c7s.zip; do
@@ -104,7 +113,10 @@ execute_build() {
 	# resync internal extension list
 	/usr/bin/panel-rs extensions resync >> "$EXTENSION_LOG" 2>&1
 
+	cp -R /app/repo/database/migrations/* /app/repo/database/migrations-temp/
+
 	# apply changes
+	export NODE_OPTIONS="--max-old-space-size=2048"
 	/usr/bin/panel-rs extensions apply --skip-replace-binary --profile $PROFILE >> "$EXTENSION_LOG" 2>&1
 
 	local EXIT_CODE=$?

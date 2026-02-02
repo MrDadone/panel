@@ -18,7 +18,7 @@ use std::{
         atomic::{AtomicUsize, Ordering},
     },
 };
-use tokio::sync::{Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard, Semaphore, SemaphorePermit};
 use utoipa::ToSchema;
 
 #[derive(ToSchema, Serialize, Deserialize, Clone, Copy)]
@@ -940,7 +940,7 @@ impl Deref for SettingsReadGuard<'_> {
 pub struct SettingsWriteGuard<'a> {
     parent: &'a Settings,
     settings: Option<RwLockWriteGuard<'a, SettingsBuffer>>,
-    _writer_token: MutexGuard<'a, ()>,
+    _writer_token: SemaphorePermit<'a>,
 }
 
 impl<'a> SettingsWriteGuard<'a> {
@@ -970,10 +970,10 @@ impl<'a> SettingsWriteGuard<'a> {
 
         settings_guard.expires = std::time::Instant::now() + std::time::Duration::from_secs(60);
 
-        let current_index = self.parent.cached_index.load(Ordering::Relaxed);
-        self.parent
+        let _ = self
+            .parent
             .cached_index
-            .store((current_index + 1) % 2, Ordering::Release);
+            .fetch_update(Ordering::Release, Ordering::Relaxed, |i| Some((i + 1) % 2));
 
         Ok(())
     }
@@ -1034,7 +1034,7 @@ struct SettingsBuffer {
 pub struct Settings {
     cached: [RwLock<SettingsBuffer>; 2],
     cached_index: AtomicUsize,
-    write_serializing: Mutex<()>,
+    write_serializing: Semaphore,
 
     database: Arc<crate::database::Database>,
 }
@@ -1045,8 +1045,7 @@ impl Settings {
     ) -> Result<AppSettings, anyhow::Error> {
         let rows = sqlx::query!("SELECT * FROM settings")
             .fetch_all(database.read())
-            .await
-            .expect("failed to fetch settings");
+            .await?;
 
         let mut map = HashMap::new();
         for row in rows {
@@ -1065,22 +1064,19 @@ impl Settings {
     }
 
     pub async fn new(database: Arc<crate::database::Database>) -> Result<Self, anyhow::Error> {
-        let s1 = Self::fetch_settings(&database).await?;
-        let s2 = Self::fetch_settings(&database).await?;
-
         Ok(Self {
             cached: [
                 RwLock::new(SettingsBuffer {
-                    settings: s1,
+                    settings: Self::fetch_settings(&database).await?,
                     expires: std::time::Instant::now() + std::time::Duration::from_secs(60),
                 }),
                 RwLock::new(SettingsBuffer {
-                    settings: s2,
+                    settings: Self::fetch_settings(&database).await?,
                     expires: std::time::Instant::now() + std::time::Duration::from_secs(60),
                 }),
             ],
             cached_index: AtomicUsize::new(0),
-            write_serializing: Mutex::new(()),
+            write_serializing: Semaphore::new(1),
             database,
         })
     }
@@ -1096,7 +1092,7 @@ impl Settings {
             }
         }
 
-        let _write_token = self.write_serializing.lock().await;
+        let _write_token = self.write_serializing.acquire().await?;
 
         let index = self.cached_index.load(Ordering::Acquire);
         let current_buffer = &self.cached[index % 2];
@@ -1139,7 +1135,7 @@ impl Settings {
     }
 
     pub async fn get_mut(&self) -> Result<SettingsWriteGuard<'_>, anyhow::Error> {
-        let writer_token = self.write_serializing.lock().await;
+        let writer_token = self.write_serializing.acquire().await?;
 
         let active_index = self.cached_index.load(Ordering::Acquire);
         let inactive_index = (active_index + 1) % 2;
@@ -1157,7 +1153,9 @@ impl Settings {
     }
 
     pub async fn invalidate_cache(&self) {
-        let _lock = self.write_serializing.lock().await;
+        let Ok(_lock) = self.write_serializing.acquire().await else {
+            return;
+        };
         let index = self.cached_index.load(Ordering::Acquire);
         self.cached[index % 2].write().await.expires = std::time::Instant::now();
     }

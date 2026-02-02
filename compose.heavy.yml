@@ -23,6 +23,7 @@ services:
       - ./build/extensions:/app/extensions
       - ./build/target:/app/repo/target
       - ./build/database-node_modules:/app/repo/database/node_modules
+      - ./build/database-migrations:/app/repo/database/migrations-temp
       - ./build/frontend-node_modules:/app/repo/frontend/node_modules
     ports:
       - 8000:8000

@@ -5,11 +5,12 @@ use std::{
     collections::BTreeMap,
     io::{Read, Write},
     path::Path,
+    sync::Arc,
 };
 use utoipa::ToSchema;
 use zip::write::FileOptions;
 
-#[derive(ToSchema, Deserialize, Serialize, Clone)]
+#[derive(Clone, ToSchema, Deserialize, Serialize)]
 pub struct MetadataToml {
     pub package_name: String,
     pub name: String,
@@ -18,42 +19,53 @@ pub struct MetadataToml {
 }
 
 impl MetadataToml {
+    /// Get the package identifier for this extension.
+    /// This is derived from the package name by replacing `.` with `_`.
+    ///
+    /// Example: `com.example.myextension` becomes `com_example_myextension`.
     #[inline]
     pub fn get_package_identifier(&self) -> String {
         Self::convert_package_name_to_identifier(&self.package_name)
     }
 
+    /// Convert a package name to an identifier by replacing `.` with `_`.
+    ///
+    /// Example: `com.example.myextension` becomes `com_example_myextension`.
     #[inline]
     pub fn convert_package_name_to_identifier(package_name: &str) -> String {
         package_name.replace('.', "_")
     }
 
+    /// Convert an identifier to a package name by replacing `_` with `.`.
+    ///
+    /// Example: `com_example_myextension` becomes `com.example.myextension`.
     #[inline]
     pub fn convert_identifier_to_package_name(identifier: &str) -> String {
         identifier.replace('_', ".")
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct CargoPackage {
     pub description: String,
     pub authors: Vec<String>,
     pub version: semver::Version,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct CargoToml {
     pub package: CargoPackage,
     pub dependencies: BTreeMap<String, toml::Value>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct PackageJson {
     pub dependencies: BTreeMap<String, String>,
 }
 
+#[derive(Clone)]
 pub struct ExtensionDistrFile {
-    zip: zip::ZipArchive<std::fs::File>,
+    zip: zip::ZipArchive<Arc<std::fs::File>>,
 
     pub metadata_toml: MetadataToml,
     pub cargo_toml: CargoToml,
@@ -62,7 +74,7 @@ pub struct ExtensionDistrFile {
 
 impl ExtensionDistrFile {
     pub fn parse_from_file(file: std::fs::File) -> Result<Self, anyhow::Error> {
-        let mut zip = zip::ZipArchive::new(file)?;
+        let mut zip = zip::ZipArchive::new(Arc::new(file))?;
 
         let mut metadata_toml = zip.by_name("Metadata.toml")?;
         let mut metadata_toml_bytes = vec![0; metadata_toml.size() as usize];
