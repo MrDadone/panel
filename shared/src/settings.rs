@@ -13,9 +13,12 @@ use std::{
     ops::{Deref, DerefMut},
     path::PathBuf,
     str::FromStr,
-    sync::{Arc, LazyLock},
+    sync::{
+        Arc, LazyLock,
+        atomic::{AtomicUsize, Ordering},
+    },
 };
-use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use tokio::sync::{Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use utoipa::ToSchema;
 
 #[derive(ToSchema, Serialize, Deserialize, Clone, Copy)]
@@ -159,7 +162,7 @@ pub enum PublicCaptchaProvider<'a> {
     Hcaptcha { site_key: &'a str },
 }
 
-#[derive(ToSchema, Serialize, Deserialize)]
+#[derive(Clone, ToSchema, Serialize, Deserialize)]
 pub struct AppSettingsApp {
     pub name: compact_str::CompactString,
     pub url: compact_str::CompactString,
@@ -237,7 +240,7 @@ impl SettingsDeserializeExt for AppSettingsAppDeserializer {
     }
 }
 
-#[derive(ToSchema, Serialize, Deserialize)]
+#[derive(Clone, ToSchema, Serialize, Deserialize)]
 pub struct AppSettingsWebauthn {
     pub rp_id: compact_str::CompactString,
     pub rp_origin: compact_str::CompactString,
@@ -274,7 +277,7 @@ impl SettingsDeserializeExt for AppSettingsWebauthnDeserializer {
     }
 }
 
-#[derive(ToSchema, Serialize, Deserialize)]
+#[derive(Clone, ToSchema, Serialize, Deserialize)]
 pub struct AppSettingsServer {
     pub max_file_manager_view_size: u64,
     pub max_file_manager_content_search_size: u64,
@@ -367,7 +370,7 @@ impl SettingsDeserializeExt for AppSettingsServerDeserializer {
     }
 }
 
-#[derive(ToSchema, Serialize, Deserialize)]
+#[derive(Clone, ToSchema, Serialize, Deserialize)]
 pub struct AppSettingsActivity {
     pub admin_log_retention_days: u16,
     pub user_log_retention_days: u16,
@@ -695,7 +698,7 @@ impl SettingsSerializeExt for AppSettings {
             .nest("activity", &self.activity)
             .await?;
 
-        for (ext_identifier, ext_settings) in &self.extensions {
+        for (ext_identifier, ext_settings) in self.extensions.iter() {
             serializer = serializer.nest(ext_identifier, ext_settings).await?;
         }
 
@@ -922,20 +925,38 @@ impl SettingsDeserializeExt for AppSettingsDeserializer {
     }
 }
 
-pub struct SettingsGuard<'a> {
-    database: Arc<crate::database::Database>,
-    settings: RwLockWriteGuard<'a, AppSettings>,
+pub struct SettingsReadGuard<'a> {
+    settings: RwLockReadGuard<'a, SettingsBuffer>,
 }
 
-impl<'a> SettingsGuard<'a> {
-    pub async fn save(self) -> Result<(), crate::database::DatabaseError> {
+impl Deref for SettingsReadGuard<'_> {
+    type Target = AppSettings;
+
+    fn deref(&self) -> &Self::Target {
+        &self.settings.settings
+    }
+}
+
+pub struct SettingsWriteGuard<'a> {
+    parent: &'a Settings,
+    settings: Option<RwLockWriteGuard<'a, SettingsBuffer>>,
+    _writer_token: MutexGuard<'a, ()>,
+}
+
+impl<'a> SettingsWriteGuard<'a> {
+    pub async fn save(mut self) -> Result<(), crate::database::DatabaseError> {
+        let mut settings_guard = self.settings.take().ok_or_else(|| {
+            crate::database::DatabaseError::Any(anyhow::anyhow!(
+                "settings have already been saved or dropped"
+            ))
+        })?;
+
         let (keys, values) = SettingsSerializeExt::serialize(
-            &*self.settings,
-            SettingsSerializer::new(self.database.clone(), ""),
+            &settings_guard.settings,
+            SettingsSerializer::new(self.parent.database.clone(), ""),
         )
         .await?
         .into_parts();
-        drop(self.settings);
 
         sqlx::query!(
             "INSERT INTO settings (key, value)
@@ -944,14 +965,22 @@ impl<'a> SettingsGuard<'a> {
             &keys as &[compact_str::CompactString],
             &values as &[compact_str::CompactString]
         )
-        .execute(self.database.write())
+        .execute(self.parent.database.write())
         .await?;
+
+        settings_guard.expires = std::time::Instant::now() + std::time::Duration::from_secs(60);
+
+        let current_index = self.parent.cached_index.load(Ordering::Relaxed);
+        self.parent
+            .cached_index
+            .store((current_index + 1) % 2, Ordering::Release);
 
         Ok(())
     }
 
     pub fn censored(&self) -> serde_json::Value {
-        let mut json = serde_json::to_value(&*self.settings).unwrap();
+        let settings = self.settings.as_ref().expect("settings have been dropped");
+        let mut json = serde_json::to_value(&settings.settings).unwrap();
 
         fn censor_values(key: &str, value: &mut serde_json::Value) {
             match value {
@@ -975,29 +1004,43 @@ impl<'a> SettingsGuard<'a> {
     }
 }
 
-impl Deref for SettingsGuard<'_> {
+impl Deref for SettingsWriteGuard<'_> {
     type Target = AppSettings;
 
     fn deref(&self) -> &Self::Target {
-        &self.settings
+        &self
+            .settings
+            .as_ref()
+            .expect("settings have been dropped")
+            .settings
     }
 }
 
-impl DerefMut for SettingsGuard<'_> {
+impl DerefMut for SettingsWriteGuard<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.settings
+        &mut self
+            .settings
+            .as_mut()
+            .expect("settings have been dropped")
+            .settings
     }
+}
+
+struct SettingsBuffer {
+    settings: AppSettings,
+    expires: std::time::Instant,
 }
 
 pub struct Settings {
-    cached: RwLock<AppSettings>,
-    cached_expires: RwLock<std::time::Instant>,
+    cached: [RwLock<SettingsBuffer>; 2],
+    cached_index: AtomicUsize,
+    write_serializing: Mutex<()>,
 
     database: Arc<crate::database::Database>,
 }
 
 impl Settings {
-    async fn fetch_setttings(
+    async fn fetch_settings(
         database: &Arc<crate::database::Database>,
     ) -> Result<AppSettings, anyhow::Error> {
         let rows = sqlx::query!("SELECT * FROM settings")
@@ -1022,31 +1065,66 @@ impl Settings {
     }
 
     pub async fn new(database: Arc<crate::database::Database>) -> Result<Self, anyhow::Error> {
-        let cached = RwLock::new(Self::fetch_setttings(&database).await?);
-        let cached_expires =
-            RwLock::new(std::time::Instant::now() + std::time::Duration::from_secs(60));
+        let s1 = Self::fetch_settings(&database).await?;
+        let s2 = Self::fetch_settings(&database).await?;
 
         Ok(Self {
-            cached,
-            cached_expires,
+            cached: [
+                RwLock::new(SettingsBuffer {
+                    settings: s1,
+                    expires: std::time::Instant::now() + std::time::Duration::from_secs(60),
+                }),
+                RwLock::new(SettingsBuffer {
+                    settings: s2,
+                    expires: std::time::Instant::now() + std::time::Duration::from_secs(60),
+                }),
+            ],
+            cached_index: AtomicUsize::new(0),
+            write_serializing: Mutex::new(()),
             database,
         })
     }
 
-    pub async fn get(&self) -> Result<RwLockReadGuard<'_, AppSettings>, anyhow::Error> {
+    pub async fn get(&self) -> Result<SettingsReadGuard<'_>, anyhow::Error> {
         let now = std::time::Instant::now();
-        let cached_expires = self.cached_expires.read().await;
 
-        if now >= *cached_expires {
-            drop(cached_expires);
-
-            let settings = Self::fetch_setttings(&self.database).await?;
-
-            *self.cached.write().await = settings;
-            *self.cached_expires.write().await = now + std::time::Duration::from_secs(60);
+        let index = self.cached_index.load(Ordering::Acquire);
+        {
+            let guard = self.cached[index % 2].read().await;
+            if now < guard.expires {
+                return Ok(SettingsReadGuard { settings: guard });
+            }
         }
 
-        Ok(self.cached.read().await)
+        let _write_token = self.write_serializing.lock().await;
+
+        let index = self.cached_index.load(Ordering::Acquire);
+        let current_buffer = &self.cached[index % 2];
+
+        if now < current_buffer.read().await.expires {
+            return Ok(SettingsReadGuard {
+                settings: current_buffer.read().await,
+            });
+        }
+
+        let settings = Self::fetch_settings(&self.database).await?;
+        let mut guard = current_buffer.write().await;
+        guard.settings = settings;
+        guard.expires = now + std::time::Duration::from_secs(60);
+
+        drop(guard);
+
+        Ok(SettingsReadGuard {
+            settings: current_buffer.read().await,
+        })
+    }
+
+    pub async fn get_as<F, T: 'static>(&self, f: F) -> Result<T, anyhow::Error>
+    where
+        F: FnOnce(&AppSettings) -> T,
+    {
+        let settings = self.get().await?;
+        Ok(f(&settings))
     }
 
     pub async fn get_webauthn(&self) -> Result<webauthn_rs::Webauthn, anyhow::Error> {
@@ -1060,27 +1138,27 @@ impl Settings {
         .build()?)
     }
 
-    pub async fn get_mut(&self) -> Result<SettingsGuard<'_>, anyhow::Error> {
-        let now = std::time::Instant::now();
+    pub async fn get_mut(&self) -> Result<SettingsWriteGuard<'_>, anyhow::Error> {
+        let writer_token = self.write_serializing.lock().await;
 
-        let is_expired = {
-            let guard = self.cached_expires.read().await;
-            now >= *guard
-        };
+        let active_index = self.cached_index.load(Ordering::Acquire);
+        let inactive_index = (active_index + 1) % 2;
+        let inactive_buffer = &self.cached[inactive_index];
 
-        if is_expired {
-            let settings = Self::fetch_setttings(&self.database).await?;
-            *self.cached.write().await = settings;
-            *self.cached_expires.write().await = now + std::time::Duration::from_secs(60);
-        }
+        let mut guard = inactive_buffer.write().await;
 
-        Ok(SettingsGuard {
-            database: Arc::clone(&self.database),
-            settings: self.cached.write().await,
+        guard.settings = Self::fetch_settings(&self.database).await?;
+
+        Ok(SettingsWriteGuard {
+            parent: self,
+            settings: Some(guard),
+            _writer_token: writer_token,
         })
     }
 
     pub async fn invalidate_cache(&self) {
-        *self.cached_expires.write().await = std::time::Instant::now();
+        let _lock = self.write_serializing.lock().await;
+        let index = self.cached_index.load(Ordering::Acquire);
+        self.cached[index % 2].write().await.expires = std::time::Instant::now();
     }
 }

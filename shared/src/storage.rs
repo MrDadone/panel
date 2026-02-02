@@ -1,5 +1,5 @@
+use crate::settings::SettingsReadGuard;
 use std::{path::Path, sync::Arc};
-use tokio::sync::RwLockReadGuard;
 
 fn get_s3_client(
     access_key: &str,
@@ -26,11 +26,11 @@ fn get_s3_client(
 }
 
 pub struct StorageUrlRetriever<'a> {
-    settings: RwLockReadGuard<'a, super::settings::AppSettings>,
+    settings: SettingsReadGuard<'a>,
 }
 
 impl<'a> StorageUrlRetriever<'a> {
-    pub fn new(settings: RwLockReadGuard<'a, super::settings::AppSettings>) -> Self {
+    pub fn new(settings: SettingsReadGuard<'a>) -> Self {
         Self { settings }
     }
 

@@ -108,8 +108,8 @@ mod patch {
         #[validate(length(min = 2, max = 31))]
         #[schema(min_length = 2, max_length = 31)]
         name: Option<compact_str::CompactString>,
-        #[validate(length(max = 512))]
-        #[schema(max_length = 512)]
+        #[validate(length(max = 100))]
+        #[schema(max_length = 100)]
         server_order: Option<Vec<uuid::Uuid>>,
     }
 

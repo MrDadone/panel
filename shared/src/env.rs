@@ -187,6 +187,7 @@ impl Env {
         } else {
             (None, None)
         };
+
         if let Some(file_appender) = appender {
             tracing::subscriber::set_global_default(
                 tracing_subscriber::fmt()
