@@ -7,10 +7,11 @@ import {
   faToolbox,
   faUserCheck,
 } from '@fortawesome/free-solid-svg-icons';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import getSettings from '@/api/admin/settings/getSettings.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
@@ -26,15 +27,20 @@ export default function AdminSettings() {
   const { addToast } = useToast();
   const { setSettings } = useAdminStore();
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     getSettings()
       .then(setSettings)
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  return (
+  return loading ? (
+    <Spinner.Centered />
+  ) : (
     <AdminContentContainer title='Settings'>
       <SubNavigation
         baseUrl='/admin/settings'
