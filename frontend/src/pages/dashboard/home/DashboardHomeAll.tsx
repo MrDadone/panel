@@ -3,9 +3,6 @@ import { useEffect, useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getServerGroups from '@/api/me/servers/groups/getServerGroups.ts';
 import getServers from '@/api/server/getServers.ts';
-import sendPowerAction from '@/api/server/sendPowerAction.ts';
-import ActionBar from '@/elements/ActionBar.tsx';
-import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
 import Divider from '@/elements/Divider.tsx';
@@ -13,23 +10,28 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
+import { useBulkPowerActions } from '@/plugins/useBulkPowerActions.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
+import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useUserStore } from '@/stores/user.ts';
+import BulkActionBar from './BulkActionBar.tsx';
 import DashboardHomeTitle from './DashboardHomeTitle.tsx';
 import ServerItem from './ServerItem.tsx';
 
 export default function DashboardHomeAll() {
-  const { t, tItem } = useTranslations();
+  const { t } = useTranslations();
   const { servers, setServers, setServerGroups } = useUserStore();
   const { serverListShowOthers, setServerListShowOthers } = useGlobalStore();
   const { addToast } = useToast();
 
   const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set());
   const [sKeyPressed, setSKeyPressed] = useState(false);
-  const [bulkActionLoading, setBulkActionLoading] = useState<ServerPowerAction | null>(null);
+
+  const { handleBulkPowerAction, bulkActionLoading } = useBulkPowerActions();
+  const loadingStats = useServerStats(servers.data);
 
   useEffect(() => {
     getServerGroups()
@@ -93,43 +95,9 @@ export default function DashboardHomeAll() {
     }
   };
 
-  const handleBulkPowerAction = async (action: ServerPowerAction) => {
-    setBulkActionLoading(action);
-
+  const onBulkAction = async (action: ServerPowerAction) => {
     const serverUuids = Array.from(selectedServers);
-    const results = await Promise.allSettled(serverUuids.map((uuid) => sendPowerAction(uuid, action)));
-
-    const successful = results.filter((r) => r.status === 'fulfilled').length;
-    const failed = results.filter((r) => r.status === 'rejected').length;
-
-    const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
-      start: 'started',
-      stop: 'stopped',
-      restart: 'restarted',
-      kill: 'killed',
-    };
-    const actionPastTense = actionPastTenseMap[action];
-
-    if (failed === 0) {
-      addToast(
-        t('pages.account.home.bulkActions.success', {
-          servers: tItem('server', successful),
-          action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
-        }),
-        'success',
-      );
-    } else {
-      addToast(
-        t('pages.account.home.bulkActions.partial', {
-          successfulServers: tItem('server', successful),
-          failedServers: tItem('server', failed),
-          action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
-        }),
-        'warning',
-      );
-    }
-
-    setBulkActionLoading(null);
+    await handleBulkPowerAction(serverUuids, action);
     setSelectedServers(new Set());
   };
 
@@ -158,7 +126,7 @@ export default function DashboardHomeAll() {
           <Divider my='md' />
         </>
       )}
-      {loading ? (
+      {loading || loadingStats ? (
         <Spinner.Centered />
       ) : servers.total === 0 ? (
         <p className='text-gray-400'>{t('pages.account.home.noServers', {})}</p>
@@ -177,35 +145,12 @@ export default function DashboardHomeAll() {
           ))}
         </div>
       )}
-      <ActionBar opened={selectedServers.size > 0}>
-        <Button
-          color='green'
-          onClick={() => handleBulkPowerAction('start')}
-          loading={bulkActionLoading === 'start'}
-          disabled={bulkActionLoading !== null && bulkActionLoading !== 'start'}
-        >
-          {t('pages.server.console.power.start', {})} ({selectedServers.size})
-        </Button>
-        <Button
-          color='gray'
-          onClick={() => handleBulkPowerAction('restart')}
-          loading={bulkActionLoading === 'restart'}
-          disabled={bulkActionLoading !== null && bulkActionLoading !== 'restart'}
-        >
-          {t('pages.server.console.power.restart', {})} ({selectedServers.size})
-        </Button>
-        <Button
-          color='red'
-          onClick={() => handleBulkPowerAction('stop')}
-          loading={bulkActionLoading === 'stop'}
-          disabled={bulkActionLoading !== null && bulkActionLoading !== 'stop'}
-        >
-          {t('pages.server.console.power.stop', {})} ({selectedServers.size})
-        </Button>
-        <Button variant='default' onClick={() => setSelectedServers(new Set())}>
-          {t('common.button.cancel', {})}
-        </Button>
-      </ActionBar>
+      <BulkActionBar
+        selectedCount={selectedServers.size}
+        onClear={() => setSelectedServers(new Set())}
+        onAction={onBulkAction}
+        loading={bulkActionLoading}
+      />
       {servers.total > servers.perPage && (
         <>
           <Divider my='md' />

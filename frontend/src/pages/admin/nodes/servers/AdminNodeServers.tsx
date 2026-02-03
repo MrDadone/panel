@@ -10,6 +10,7 @@ import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
 import ServerRow from '@/pages/admin/servers/ServerRow.tsx';
+import BulkActionBar from '@/pages/dashboard/home/BulkActionBar.tsx';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -247,35 +248,12 @@ export default function AdminNodeServers({ node }: { node: Node }) {
         </SelectionArea>
       </AdminSubContentContainer>
 
-      <ActionBar opened={selectedServers.size > 0}>
-        <Button
-          color='green'
-          onClick={() => handleBulkPowerAction('start')}
-          loading={bulkActionLoading === 'start'}
-          disabled={bulkActionLoading !== null && bulkActionLoading !== 'start'}
-        >
-          {t('pages.server.console.power.start', {})} ({selectedServers.size})
-        </Button>
-        <Button
-          color='gray'
-          onClick={() => handleBulkPowerAction('restart')}
-          loading={bulkActionLoading === 'restart'}
-          disabled={bulkActionLoading !== null && bulkActionLoading !== 'restart'}
-        >
-          {t('pages.server.console.power.restart', {})} ({selectedServers.size})
-        </Button>
-        <Button
-          color='red'
-          onClick={() => handleBulkPowerAction('stop')}
-          loading={bulkActionLoading === 'stop'}
-          disabled={bulkActionLoading !== null && bulkActionLoading !== 'stop'}
-        >
-          {t('pages.server.console.power.stop', {})} ({selectedServers.size})
-        </Button>
-        <Button variant='default' onClick={() => setSelectedServers(new Set())}>
-          {t('common.button.cancel', {})}
-        </Button>
-      </ActionBar>
+      <BulkActionBar
+        selectedCount={selectedServers.size}
+        onClear={() => setSelectedServers(new Set())}
+        onAction={onBulkAction}
+        loading={bulkActionLoading}
+      />
     </>
   );
 }

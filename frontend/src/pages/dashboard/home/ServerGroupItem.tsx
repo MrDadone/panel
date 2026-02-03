@@ -16,7 +16,6 @@ import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import deleteServerGroup from '@/api/me/servers/groups/deleteServerGroup.ts';
 import getServerGroupServers from '@/api/me/servers/groups/getServerGroupServers.ts';
 import updateServerGroup from '@/api/me/servers/groups/updateServerGroup.ts';
-import sendPowerAction from '@/api/server/sendPowerAction.ts';
 import Card from '@/elements/Card.tsx';
 import Divider from '@/elements/Divider.tsx';
 import { DndContainer, DndItem, SortableItem } from '@/elements/DragAndDrop.tsx';
@@ -24,13 +23,15 @@ import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
+import ServerItem from '@/pages/dashboard/home/ServerItem.tsx';
+import { useBulkPowerActions } from '@/plugins/useBulkPowerActions.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
+import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
 import GroupAddServerModal from './modals/GroupAddServerModal.tsx';
 import ServerGroupEditModal from './modals/ServerGroupEditModal.tsx';
-import ServerItem from './ServerItem.tsx';
 
 function insertItems<T>(list: T[], items: T[], startIndex: number): T[] {
   if (startIndex > list.length) {
@@ -62,7 +63,9 @@ export default function ServerGroupItem({
   const [isExpanded, setIsExpanded] = useState(true);
   const [servers, setServers] = useState(getEmptyPaginationSet<Server>());
   const [openModal, setOpenModal] = useState<'edit' | 'delete' | 'add-server' | null>(null);
-  const [groupActionLoading, setGroupActionLoading] = useState<ServerPowerAction | null>(null);
+
+  const { handleBulkPowerAction, bulkActionLoading: groupActionLoading } = useBulkPowerActions();
+  const loadingStats = useServerStats(servers.data);
 
   const { loading, search, setSearch, setPage, refetch } = useSearchablePaginatedTable({
     fetcher: (page, search) => getServerGroupServers(serverGroup.uuid, page, search),
@@ -82,40 +85,7 @@ export default function ServerGroupItem({
   };
 
   const handleGroupPowerAction = async (action: ServerPowerAction) => {
-    setGroupActionLoading(action);
-    const results = await Promise.allSettled(serverGroup.serverOrder.map((uuid) => sendPowerAction(uuid, action)));
-
-    const successful = results.filter((r) => r.status === 'fulfilled').length;
-    const failed = results.filter((r) => r.status === 'rejected').length;
-
-    const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
-      start: 'started',
-      stop: 'stopped',
-      restart: 'restarted',
-      kill: 'killed',
-    };
-    const actionPastTense = actionPastTenseMap[action];
-
-    if (failed === 0) {
-      addToast(
-        t('pages.account.home.bulkActions.success', {
-          servers: tItem('server', successful),
-          action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
-        }),
-        'success',
-      );
-    } else {
-      addToast(
-        t('pages.account.home.bulkActions.partial', {
-          successfulServers: tItem('server', successful),
-          failedServers: tItem('server', failed),
-          action: t(`common.enum.bulkActionServerAction.${actionPastTense}`, {}),
-        }),
-        'warning',
-      );
-    }
-
-    setGroupActionLoading(null);
+    await handleBulkPowerAction(serverGroup.serverOrder, action);
   };
 
   const dndServers: DndServer[] = servers.data.map((s) => ({
@@ -241,7 +211,7 @@ export default function ServerGroupItem({
 
         <Collapse in={isExpanded}>
           <div className='p-3'>
-            {loading ? (
+            {loading || loadingStats ? (
               <Spinner.Centered />
             ) : servers.total === 0 ? (
               <p className='text-gray-500 text-sm text-center py-4'>{t('pages.account.home.noServers', {})}</p>
