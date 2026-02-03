@@ -250,15 +250,16 @@ impl shared::extensions::commands::CliCommand<ApplyArgs> for ApplyCommand {
 
                     #[cfg(not(windows))]
                     {
-                        tokio::fs::rename(&output_location, &current_exe)
-                            .await
-                            .with_context(|| {
-                                format!(
-                                    "unable to automatically move binary, move `{}` to `{}`",
-                                    output_location.display(),
-                                    current_exe.display()
-                                )
-                            })?;
+                        if let Err(err) = tokio::fs::rename(&output_location, &current_exe).await {
+                            eprintln!(
+                                "{} {} {} {}: {}",
+                                "unable to automatically move binary, manually move".red(),
+                                output_location.to_string_lossy().bright_red(),
+                                "to".red(),
+                                current_exe.to_string_lossy().bright_red(),
+                                err
+                            );
+                        }
                     }
                     #[cfg(windows)]
                     {
