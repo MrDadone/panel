@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  deploy:
+  deploy-backend:
     name: Build and Deploy
     runs-on: ubuntu-latest
     permissions:
@@ -14,12 +14,13 @@ jobs:
       deployments: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout sources
+        uses: actions/checkout@v4
 
       - name: Dummy Frontend Files
         run: mkdir -p frontend/dist && echo "Dummy file" > frontend/dist/dummy.txt
 
-      - name: Build Docs
+      - name: Build Crate Docs
         run: cargo doc --no-deps -p shared -p wings-api
 
       - name: Create Redirect
@@ -31,4 +32,56 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy target/doc --project-name=cratedocs-calagopus-com
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-frontend:
+    name: Build and Deploy Frontend Docs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          pnpm install
+
+      - name: Build Frontend Docs
+        run: |
+          cd frontend
+          pnpm build:docs
+
+      - name: Deploy Frontend Docs
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frontend/docs --project-name=typedocs-calagopus-com
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
