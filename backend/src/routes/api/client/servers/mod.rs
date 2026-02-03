@@ -3,6 +3,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub mod _server_;
 mod groups;
+mod resources;
 
 mod get {
     use axum::{extract::Query, http::StatusCode};
@@ -81,7 +82,13 @@ mod get {
 
         permissions.has_user_permission("servers.read")?;
 
-        let servers = if params.other && user.admin {
+        let servers = if params.other
+            && (user.admin
+                || user
+                    .role
+                    .as_ref()
+                    .is_some_and(|r| r.admin_permissions.iter().any(|p| p == "servers.read")))
+        {
             Server::by_not_user_uuid_with_pagination(
                 &state.database,
                 user.uuid,
@@ -114,6 +121,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
     OpenApiRouter::new()
         .routes(routes!(get::route))
         .nest("/groups", groups::router(state))
+        .nest("/resources", resources::router(state))
         .nest("/{server}", _server_::router(state))
         .with_state(state.clone())
 }

@@ -1103,12 +1103,20 @@ impl Settings {
             });
         }
 
+        let start = std::time::Instant::now();
+        tracing::info!("settings cache expired, reloading from database");
+
         let settings = Self::fetch_settings(&self.database).await?;
         let mut guard = current_buffer.write().await;
         guard.settings = settings;
         guard.expires = now + std::time::Duration::from_secs(60);
 
         drop(guard);
+
+        tracing::info!(
+            "reloaded settings from database in {} ms",
+            start.elapsed().as_millis()
+        );
 
         Ok(SettingsReadGuard {
             settings: current_buffer.read().await,

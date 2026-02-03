@@ -2,6 +2,7 @@ use super::State;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod get {
+    use axum::http::StatusCode;
     use serde::Serialize;
     use shared::{
         GetState,
@@ -11,8 +12,8 @@ mod get {
     use utoipa::ToSchema;
 
     #[derive(ToSchema, Serialize)]
-    struct Response {
-        resources: wings_api::ResourceUsage,
+    struct Response<'a> {
+        resources: &'a wings_api::ResourceUsage,
     }
 
     #[utoipa::path(get, path = "/", responses(
@@ -25,25 +26,21 @@ mod get {
         ),
     ))]
     pub async fn route(state: GetState, server: GetServer) -> ApiResponseResult {
-        let resources = state
-            .cache
-            .cached(
-                &format!("server::{}::resources", server.uuid),
-                10,
-                || async {
-                    Ok::<_, anyhow::Error>(
-                        server
-                            .node
-                            .fetch_cached(&state.database)
-                            .await?
-                            .api_client(&state.database)
-                            .get_servers_server(server.uuid)
-                            .await?
-                            .utilization,
-                    )
-                },
-            )
+        let resource_usages = server
+            .node
+            .fetch_cached(&state.database)
+            .await?
+            .fetch_server_resources(&state.database)
             .await?;
+
+        let resources = match resource_usages.get(&server.uuid) {
+            Some(resources) => resources,
+            None => {
+                return ApiResponse::error("no resource usage data found for server")
+                    .with_status(StatusCode::NOT_FOUND)
+                    .ok();
+            }
+        };
 
         ApiResponse::new_serialized(Response { resources }).ok()
     }

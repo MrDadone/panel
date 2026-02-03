@@ -62,20 +62,17 @@ mod post {
     ) -> ApiResponseResult {
         permissions.has_server_permission("files.read")?;
 
-        let destination_server = match Server::by_user_identifier_cached(
-            &state.database,
-            &user,
-            &data.destination_server,
-        )
-        .await?
-        {
-            Some(server) => server,
-            None => {
-                return ApiResponse::error("destination server not found")
-                    .with_status(StatusCode::NOT_FOUND)
-                    .ok();
-            }
-        };
+        let destination_server =
+            match Server::by_user_identifier(&state.database, &user, &data.destination_server)
+                .await?
+            {
+                Some(server) => server,
+                None => {
+                    return ApiResponse::error("destination server not found")
+                        .with_status(StatusCode::NOT_FOUND)
+                        .ok();
+                }
+            };
 
         if server.uuid == destination_server.uuid {
             return ApiResponse::error("cannot remote copy files to the same server")

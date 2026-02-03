@@ -3,7 +3,7 @@ use rand::distr::SampleString;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashMap},
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
@@ -359,7 +359,10 @@ impl Node {
         .unwrap_or(0)
     }
 
-    pub async fn cached_configuration(
+    /// Fetch the current configuration of this node
+    ///
+    /// Cached for 120 seconds.
+    pub async fn fetch_configuration(
         &self,
         database: &crate::database::Database,
     ) -> Result<wings_api::Config, anyhow::Error> {
@@ -369,6 +372,32 @@ impl Node {
                 &format!("node::{}::configuration", self.uuid),
                 120,
                 || async { self.api_client(database).get_system_config().await },
+            )
+            .await
+    }
+
+    /// Fetch the current resource usages of all servers on this node.
+    ///
+    /// Cached for 15 seconds.
+    pub async fn fetch_server_resources(
+        &self,
+        database: &crate::database::Database,
+    ) -> Result<HashMap<uuid::Uuid, wings_api::ResourceUsage>, anyhow::Error> {
+        database
+            .cache
+            .cached(
+                &format!("node::{}::server_resources", self.uuid),
+                15,
+                || async {
+                    let servers = self.api_client(database).get_servers().await?;
+
+                    Ok::<_, anyhow::Error>(
+                        servers
+                            .into_iter()
+                            .map(|server| (server.configuration.uuid, server.utilization))
+                            .collect(),
+                    )
+                },
             )
             .await
     }

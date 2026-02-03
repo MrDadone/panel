@@ -6,6 +6,7 @@ import getServers from '@/api/server/getServers.ts';
 import sendPowerAction from '@/api/server/sendPowerAction.ts';
 import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
 import Divider from '@/elements/Divider.tsx';
 import Switch from '@/elements/input/Switch.tsx';
@@ -13,7 +14,6 @@ import TextInput from '@/elements/input/TextInput.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
-import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
@@ -26,7 +26,6 @@ export default function DashboardHomeAll() {
   const { servers, setServers, setServerGroups } = useUserStore();
   const { serverListShowOthers, setServerListShowOthers } = useGlobalStore();
   const { addToast } = useToast();
-  const { user } = useAuth();
 
   const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set());
   const [sKeyPressed, setSKeyPressed] = useState(false);
@@ -145,13 +144,13 @@ export default function DashboardHomeAll() {
           onChange={(e) => setSearch(e.target.value)}
           w={250}
         />
-        {user!.admin && (
+        <AdminCan action='servers.read'>
           <Switch
             label={t('pages.account.home.tabs.allServers.page.input.showOtherUsersServers', {})}
             checked={serverListShowOthers}
             onChange={(e) => setServerListShowOthers(e.currentTarget.checked)}
           />
-        )}
+        </AdminCan>
       </Group>
       {servers.total > servers.perPage && (
         <>

@@ -17,7 +17,12 @@ use shared::{
     ApiError, FRONTEND_ASSETS, GetState, extensions::commands::CliCommandGroupBuilder,
     response::ApiResponse,
 };
-use std::{net::{IpAddr, SocketAddr}, path::PathBuf, sync::Arc, time::Instant};
+use std::{
+    net::{IpAddr, SocketAddr},
+    path::PathBuf,
+    sync::Arc,
+    time::Instant,
+};
 use tower::Layer;
 use tower_cookies::CookieManagerLayer;
 use tower_http::normalize_path::NormalizePathLayer;

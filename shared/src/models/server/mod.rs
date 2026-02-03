@@ -640,7 +640,10 @@ impl Server {
         row.try_map(|row| Self::map(None, &row))
     }
 
-    pub async fn by_user_identifier_cached(
+    /// Get a server by its identifier, ensuring the user has access to it.
+    ///
+    /// Cached for 5 seconds.
+    pub async fn by_user_identifier(
         database: &crate::database::Database,
         user: &super::user::User,
         identifier: &str,
@@ -669,7 +672,12 @@ impl Server {
                     }
                 );
 
-                let mut row = sqlx::query(&query).bind(user.uuid).bind(user.admin);
+                let mut row = sqlx::query(&query)
+                    .bind(user.uuid)
+                    .bind(
+                        user.admin
+                            || user.role.as_ref().is_some_and(|r| r.admin_permissions.iter().any(|p| p == "servers.read"))
+                    );
                 row = match identifier.len() {
                     8 => row.bind(u32::from_str_radix(identifier, 16)? as i32),
                     36 => row.bind(uuid::Uuid::parse_str(identifier)?),
@@ -823,6 +831,31 @@ impl Server {
                 .map(|row| Self::map(None, &row))
                 .try_collect_vec()?,
         })
+    }
+
+    pub async fn all_uuids_by_node_uuid_user_uuid(
+        database: &crate::database::Database,
+        node_uuid: uuid::Uuid,
+        user_uuid: uuid::Uuid,
+    ) -> Result<Vec<uuid::Uuid>, crate::database::DatabaseError> {
+        let rows = sqlx::query(
+            r#"
+            SELECT DISTINCT ON (servers.uuid, servers.created) servers.uuid
+            FROM servers
+            LEFT JOIN server_subusers ON server_subusers.server_uuid = servers.uuid AND server_subusers.user_uuid = $2
+            WHERE servers.node_uuid = $1 AND (servers.owner_uuid = $2 OR server_subusers.user_uuid = $2)
+            ORDER BY servers.created
+            "#
+        )
+        .bind(node_uuid)
+        .bind(user_uuid)
+        .fetch_all(database.read())
+        .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|row| row.get::<uuid::Uuid, _>("uuid"))
+            .collect())
     }
 
     pub async fn by_not_user_uuid_with_pagination(
