@@ -124,14 +124,18 @@ export class Websocket extends EventEmitter {
 
   send(event: string, payload?: string | string[]) {
     if (this.socket) {
-      this.socket.send(
-        this.useBinary
-          ? encode([event, Array.isArray(payload) ? payload : [payload]])
-          : JSON.stringify({
-              event,
-              args: Array.isArray(payload) ? payload : [payload],
-            }),
-      );
+      try {
+        this.socket.send(
+          this.useBinary
+            ? encode([event, Array.isArray(payload) ? payload : [payload]])
+            : JSON.stringify({
+                event,
+                args: Array.isArray(payload) ? payload : [payload],
+              }),
+        );
+      } catch (err) {
+        console.warn('Failed to send websocket message.', err);
+      }
     }
   }
 }

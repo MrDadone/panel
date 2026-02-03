@@ -3,7 +3,6 @@ import { Ref, useEffect, useState } from 'react';
 import getNodeServers from '@/api/admin/nodes/servers/getNodeServers.ts';
 import sendNodeServersPowerAction from '@/api/admin/nodes/servers/sendNodeServersPowerAction.ts';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
-import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
@@ -84,7 +83,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
     }
   };
 
-  const handleBulkPowerAction = async (action: ServerPowerAction) => {
+  const _handleBulkPowerAction = async (action: ServerPowerAction) => {
     setBulkActionLoading(action);
     sendNodeServersPowerAction(node.uuid, Array.from(selectedServers), action)
       .then((successful) => {
