@@ -3,6 +3,7 @@ import { useLocation } from 'react-router';
 import getServers from '@/api/server/getServers.ts';
 import Select from '@/elements/input/Select.tsx';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
+import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useServerStore } from '@/stores/server.ts';
 import { useUserStore } from '@/stores/user.ts';
 
@@ -31,6 +32,9 @@ export default function ServerSwitcher({ className }: { className?: string }) {
   const servers = useSearchableResource<Server>({
     fetcher: (search) => getServers(1, search),
   });
+  const loadingStats = useServerStats(servers.items);
+
+  if (loadingStats) return <Select className={className} placeholder={currentServer?.name || 'Switch server...'} />;
 
   const otherServers = servers.items.filter((s) => s.uuid !== currentServer?.uuid);
 
