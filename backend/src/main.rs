@@ -17,7 +17,7 @@ use shared::{
     ApiError, FRONTEND_ASSETS, GetState, extensions::commands::CliCommandGroupBuilder,
     response::ApiResponse,
 };
-use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Instant};
+use std::{net::{IpAddr, SocketAddr}, path::PathBuf, sync::Arc, time::Instant};
 use tower::Layer;
 use tower_cookies::CookieManagerLayer;
 use tower_http::normalize_path::NormalizePathLayer;
@@ -744,22 +744,6 @@ async fn main() {
         .route_layer(SentryHttpLayer::new().enable_transaction())
         .with_state(state.clone());
 
-    let listener = tokio::net::TcpListener::bind(format!("{}:{}", &state.env.bind, state.env.port))
-        .await
-        .unwrap();
-
-    tracing::info!(
-        "{} listening on {} {}",
-        "http server".bright_red(),
-        state.env.bind.cyan(),
-        format!(
-            "(app@{}, {}ms)",
-            shared::VERSION,
-            state.start_time.elapsed().as_millis()
-        )
-        .bright_black()
-    );
-
     let settings = match settings.get().await {
         Ok(settings) => settings,
         Err(err) => {
@@ -813,15 +797,69 @@ async fn main() {
     let openapi = Arc::new(openapi);
     let router = router.route("/openapi.json", get(|| async move { axum::Json(openapi) }));
 
-    let http_server = async {
-        axum::serve(
-            listener,
-            ServiceExt::<Request>::into_make_service_with_connect_info::<SocketAddr>(
-                NormalizePathLayer::trim_trailing_slash().layer(router),
-            ),
+    let router = if state.env.bind.parse::<IpAddr>().is_ok() {
+        router
+    } else {
+        #[cfg(unix)]
+        {
+            router.layer(axum::middleware::from_fn(
+                |mut req: Request<Body>, next: Next| async move {
+                    req.extensions_mut()
+                        .insert(ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 0))));
+                    next.run(req).await
+                },
+            ))
+        }
+        #[cfg(not(unix))]
+        {
+            eprintln!("{}", "invalid bind address".red());
+            std::process::exit(1);
+        }
+    };
+
+    tracing::info!(
+        "{} listening on {} {}",
+        "http server".bright_red(),
+        state.env.bind.cyan(),
+        format!(
+            "(app@{}, {}ms)",
+            shared::VERSION,
+            state.start_time.elapsed().as_millis()
         )
-        .await
-        .unwrap();
+        .bright_black()
+    );
+
+    let http_server = async {
+        if state.env.bind.parse::<IpAddr>().is_ok() {
+            let listener =
+                tokio::net::TcpListener::bind(format!("{}:{}", &state.env.bind, state.env.port))
+                    .await
+                    .unwrap();
+            axum::serve(
+                listener,
+                ServiceExt::<Request>::into_make_service_with_connect_info::<SocketAddr>(
+                    NormalizePathLayer::trim_trailing_slash().layer(router),
+                ),
+            )
+            .await
+            .unwrap();
+        } else {
+            #[cfg(unix)]
+            {
+                let _ = tokio::fs::remove_file(&state.env.bind).await;
+                let listener = tokio::net::UnixListener::bind(&state.env.bind).unwrap();
+                axum::serve(
+                    listener,
+                    ServiceExt::<Request>::into_make_service(
+                        NormalizePathLayer::trim_trailing_slash().layer(router),
+                    ),
+                )
+                .await
+                .unwrap();
+            }
+            #[cfg(not(unix))]
+            unreachable!()
+        }
     };
 
     #[cfg(not(unix))]
