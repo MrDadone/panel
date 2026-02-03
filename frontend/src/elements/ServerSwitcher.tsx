@@ -1,5 +1,5 @@
 import { SelectProps } from '@mantine/core';
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import getServers from '@/api/server/getServers.ts';
 import Select from '@/elements/input/Select.tsx';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
@@ -28,6 +28,7 @@ export default function ServerSwitcher({ className }: { className?: string }) {
   const currentServer = useServerStore((state) => state.server);
   const { getServerResourceUsage } = useUserStore();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const servers = useSearchableResource<Server>({
     fetcher: (search) => getServers(1, search),
@@ -57,7 +58,7 @@ export default function ServerSwitcher({ className }: { className?: string }) {
   const handleChange = (value: string | null) => {
     if (value) {
       const currentPath = location.pathname.replace(/^\/server\/[^/]+/, '');
-      window.location.href = `/server/${value}${currentPath}${location.search}${location.hash}`;
+      navigate(`/server/${value}${currentPath}${location.search}${location.hash}`);
     }
   };
 

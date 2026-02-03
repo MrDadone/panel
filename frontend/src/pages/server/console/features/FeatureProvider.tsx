@@ -4,7 +4,7 @@ import EulaModalFeature from './EulaModalFeature.tsx';
 export default function FeatureProvider() {
   const { server } = useServerStore();
 
-  return server ? (
+  return (
     <>
       {server.egg.features.includes('eula') && <EulaModalFeature />}
       {window.extensionContext.extensionRegistry.pages.server.console.features
@@ -13,5 +13,5 @@ export default function FeatureProvider() {
           <Component key={`feature-${i}`} />
         ))}
     </>
-  ) : null;
+  );
 }

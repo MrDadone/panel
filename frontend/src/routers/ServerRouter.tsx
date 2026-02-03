@@ -37,7 +37,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
   const [loading, setLoading] = useState(true);
   const [abortLoading, setAbortLoading] = useState(false);
 
-  const { server, updateServer, backupRestoreProgress } = useServerStore();
+  const { server, updateServer, backupRestoreProgress, setSocketInstance } = useServerStore();
   const resetState = useServerStore((state) => state.reset);
   const setServer = useServerStore((state) => state.setServer);
 
@@ -56,8 +56,12 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
 
   useEffect(() => {
     if (params.id) {
+      setLoading(true);
       getServer(params.id)
-        .then((data) => setServer(data))
+        .then((data) => {
+          setSocketInstance(null);
+          setServer(data);
+        })
         .finally(() => setLoading(false));
     }
   }, [params.id]);
@@ -138,7 +142,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
         <Container isNormal={isNormal}>
           {loading ? (
             <Spinner.Centered />
-          ) : server ? (
+          ) : server.uuid ? (
             <>
               <WebsocketHandler />
               <WebsocketListener />
