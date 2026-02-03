@@ -83,7 +83,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
     }
   };
 
-  const _handleBulkPowerAction = async (action: ServerPowerAction) => {
+  const handleBulkPowerAction = async (action: ServerPowerAction) => {
     setBulkActionLoading(action);
     sendNodeServersPowerAction(node.uuid, Array.from(selectedServers), action)
       .then((successful) => {
@@ -250,7 +250,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
       <BulkActionBar
         selectedCount={selectedServers.size}
         onClear={() => setSelectedServers(new Set())}
-        onAction={onBulkAction}
+        onAction={handleBulkPowerAction}
         loading={bulkActionLoading}
       />
     </>
