@@ -39,10 +39,18 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_user_permission("servers.read")?;
 
-        let server_uuids =
-            Server::all_uuids_by_node_uuid_user_uuid(&state.database, node, user.uuid).await?;
+        let server_uuids = if user.admin
+            || user
+                .role
+                .as_ref()
+                .is_some_and(|r| r.admin_permissions.iter().any(|p| p == "servers.read"))
+        {
+            None
+        } else {
+            Some(Server::all_uuids_by_node_uuid_user_uuid(&state.database, node, user.uuid).await?)
+        };
 
-        if server_uuids.is_empty() {
+        if server_uuids.as_ref().is_some_and(|s| s.is_empty()) {
             return ApiResponse::new_serialized(Response {
                 resources: HashMap::new(),
             })
@@ -59,7 +67,9 @@ mod get {
         };
 
         let mut resources = node.fetch_server_resources(&state.database).await?;
-        resources.retain(|uuid, _| server_uuids.contains(uuid));
+        if let Some(server_uuids) = server_uuids {
+            resources.retain(|uuid, _| server_uuids.contains(uuid));
+        }
 
         ApiResponse::new_serialized(Response { resources }).ok()
     }
