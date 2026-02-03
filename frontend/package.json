@@ -93,9 +93,13 @@
     "vite": "^7.3.1",
     "vite-bundle-analyzer": "^1.3.2",
     "vite-multiple-assets": "^2.2.6",
+    "vite-plugin-static-copy": "^3.2.0",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["@tailwindcss/oxide", "esbuild"]
+    "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
+      "esbuild"
+    ]
   }
 }

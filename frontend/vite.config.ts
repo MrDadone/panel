@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 import type { LanguageData } from 'shared';
 import { defineConfig } from 'vite';
 import dynamicPublicDirectory from 'vite-multiple-assets';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 // Minifies all JSON translation files in the dist/translations/ directory after build
@@ -94,7 +95,18 @@ export default defineConfig({
       },
     }),
     minifyTranslations(),
+    viteStaticCopy({
+      targets: [
+        {
+          src: path.join(new URL('./', import.meta.resolve('monaco-editor/package.json')).pathname, 'min/vs'),
+          dest: 'monaco',
+        },
+      ],
+    }),
   ],
+  optimizeDeps: {
+    exclude: ['monaco-editor'],
+  },
   build: {
     outDir: './dist',
     emptyOutDir: true,
@@ -102,6 +114,7 @@ export default defineConfig({
     target: 'es2020',
     cssCodeSplit: false,
     rollupOptions: {
+      external: ['monaco-editor'],
       output: {
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
@@ -118,9 +131,6 @@ export default defineConfig({
             id.includes('src/lib/')
           ) {
             return 'shared';
-          }
-          if (id.includes('monaco-editor')) {
-            return 'monaco-editor';
           }
         },
       },
