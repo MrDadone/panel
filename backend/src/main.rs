@@ -710,11 +710,11 @@ async fn main() {
 
                             Some(format!(
                                 "default-src 'self'; \
-                                script-src 'self' {script_csp}; \
+                                script-src 'self' blob: {script_csp}; \
                                 frame-src 'self' {frame_csp}; \
                                 style-src 'self' 'unsafe-inline' {style_csp}; \
                                 connect-src *; \
-                                font-src 'self'; \
+                                font-src 'self' data:; \
                                 img-src *; \
                                 media-src 'self'; \
                                 object-src 'none'; \
