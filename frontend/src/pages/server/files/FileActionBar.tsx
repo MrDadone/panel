@@ -58,7 +58,7 @@ export default function FileActionBar() {
     })
       .then(() => {
         addToast(
-          `${actingFileNames.size} File${actingFileNames.size === 1 ? ' has' : 's have'} have started copying.`,
+          `${actingFileNames.size} File${actingFileNames.size === 1 ? ' has' : 's have'} started copying.`,
           'success',
         );
         clearActingFiles();
@@ -86,7 +86,7 @@ export default function FileActionBar() {
           return;
         }
 
-        addToast(`${renamed} File${renamed === 1 ? ' has' : 's have'} been moved.`, 'success');
+        addToast(`${renamed} File${renamed === 1 ? ' has' : 's have'} moved.`, 'success');
         clearActingFiles();
         refreshFiles(Number(searchParams.get('page')) || 1);
       })
