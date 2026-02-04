@@ -49,9 +49,11 @@ const TranslationProvider = ({ children }: { children: ReactNode }) => {
       axiosInstance
         .get(`/translations/${language}.json`)
         .then(({ data }) => {
+          const dataSpace = import.meta.env.DEV ? data : data[''];
+
           const result: LanguageData = {
-            items: data[''].items,
-            translations: data[''].translations,
+            items: dataSpace.items,
+            translations: dataSpace.translations,
           };
 
           for (const key in data) {
@@ -73,7 +75,10 @@ const TranslationProvider = ({ children }: { children: ReactNode }) => {
 
           setLanguageData(result);
         })
-        .catch(() => setLanguage('en-US'));
+        .catch((err) => {
+          setLanguage('en-US');
+          console.error(err);
+        });
     }
 
     loadZod(language);
