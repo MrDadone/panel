@@ -88,6 +88,7 @@ const baseTranslations = defineTranslations({
           bottomRight: 'Bottom Right',
         },
         serverState: {
+          unknown: 'Unknown',
           offline: 'Offline',
           running: 'Running',
           starting: 'Starting',

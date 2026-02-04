@@ -1,11 +1,13 @@
-import { faPlay, faRefresh, faServer, faSkull, faStop, faTowerBroadcast } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faRefresh, faSkull, faStop, faTowerBroadcast } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group } from '@mantine/core';
+import classNames from 'classnames';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { ServerCan } from '@/elements/Can.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import { statusToColor } from '@/pages/dashboard/home/ServerItem.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -79,15 +81,14 @@ export default function ServerStatusIndicator() {
 
         <div className='flex flex-col gap-1.5 justify-center'>
           <div className='flex items-center gap-1.5 text-xs'>
-            <FontAwesomeIcon icon={faServer} className='w-3 h-3 text-white shrink-0' style={{ minWidth: '12px' }} />
+            <span className={classNames('rounded-full size-4 animate-pulse', statusToColor(state))} />
             <span className='font-medium text-white leading-none'>{t(`common.enum.serverState.${state}`, {})}</span>
           </div>
 
           <div className='flex items-center gap-1.5 text-xs'>
             <FontAwesomeIcon
               icon={faTowerBroadcast}
-              className={`${socketConnected ? 'animate-pulse text-green-500' : 'text-white'} w-3 h-3  shrink-0`}
-              style={{ minWidth: '12px' }}
+              className={`${socketConnected ? 'animate-pulse text-green-500' : 'text-white'} w-4`}
             />
             <span className='font-medium text-white leading-none'>
               {socketConnected

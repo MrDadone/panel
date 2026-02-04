@@ -34,7 +34,7 @@ export const oauthProviderTableColumns = [
 
 export const roleTableColumns = ['ID', 'Name', 'Server Permissions', 'Admin Permissions', 'Created'];
 
-export const serverTableColumns = ['ID', 'Name', 'Node', 'Owner', 'Allocation', 'Created'];
+export const serverTableColumns = ['ID', 'Status', 'Name', 'Node', 'Owner', 'Allocation', 'Created'];
 
 export const serverMountTableColumns = ['ID', 'Name', 'Source', 'Target', 'Added', ''];
 

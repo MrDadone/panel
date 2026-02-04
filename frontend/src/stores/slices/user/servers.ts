@@ -1,18 +1,18 @@
 import QuickLRU from 'quick-lru';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
-import getServerResourceUsage from '@/api/server/getServerResourceUsage.ts';
+import getNodeResources from '@/api/me/servers/resources/getNodeResources.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface ServerSlice {
   servers: ResponseMeta<Server>;
   serverResourceUsage: QuickLRU<string, ResourceUsage>;
-  serverResourceUsagePending: Set<string>;
+  serverResourceUsagePendingNodes: Set<string>;
   serverGroups: UserServerGroup[];
 
   setServers: (servers: ResponseMeta<Server>) => void;
   addServerResourceUsage: (uuid: string, usage: ResourceUsage) => void;
-  getServerResourceUsage: (uuid: string) => ResourceUsage | undefined;
+  getServerResourceUsage: (uuid: string, nodeUuid: string) => ResourceUsage | undefined;
   setServerGroups: (serverGroups: UserServerGroup[]) => void;
   addServerGroup: (serverGroup: UserServerGroup) => void;
   removeServerGroup: (serverGroup: UserServerGroup) => void;
@@ -22,7 +22,7 @@ export interface ServerSlice {
 export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = (set, get): ServerSlice => ({
   servers: getEmptyPaginationSet<Server>(),
   serverResourceUsage: new QuickLRU<string, ResourceUsage>({ maxSize: 100, maxAge: 1000 * 30 }),
-  serverResourceUsagePending: new Set<string>(),
+  serverResourceUsagePendingNodes: new Set<string>(),
   serverGroups: [],
 
   setServers: (value) => set((state) => ({ ...state, servers: value })),
@@ -45,23 +45,25 @@ export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = 
       state.serverResourceUsage.set(uuid, usage);
       return { ...state, serverResourceUsage: state.serverResourceUsage };
     }),
-  getServerResourceUsage: (uuid) => {
+  getServerResourceUsage: (uuid, nodeUuid) => {
     const usage = get().serverResourceUsage.get(uuid);
-    if (!usage && !get().serverResourceUsagePending.has(uuid)) {
+    if (!usage && !get().serverResourceUsagePendingNodes.has(nodeUuid)) {
       set((state) => {
-        state.serverResourceUsagePending.add(uuid);
-        return { ...state, serverResourceUsagePending: state.serverResourceUsagePending };
+        state.serverResourceUsagePendingNodes.add(nodeUuid);
+        return { ...state, serverResourceUsagePendingNodes: state.serverResourceUsagePendingNodes };
       });
 
-      getServerResourceUsage(uuid)
-        .then((usage) => {
+      getNodeResources(nodeUuid)
+        .then((usages) => {
           set((state) => {
-            state.serverResourceUsage.set(uuid, usage);
-            state.serverResourceUsagePending.delete(uuid);
+            for (const [serverId, resources] of Object.entries(usages)) {
+              state.serverResourceUsage.set(serverId, resources);
+            }
+            state.serverResourceUsagePendingNodes.delete(nodeUuid);
             return {
               ...state,
               serverResourceUsage: state.serverResourceUsage,
-              serverResourceUsagePending: state.serverResourceUsagePending,
+              serverResourceUsagePendingNodes: state.serverResourceUsagePendingNodes,
             };
           });
         })
@@ -70,8 +72,8 @@ export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = 
 
           setTimeout(() => {
             set((state) => {
-              state.serverResourceUsagePending.delete(uuid);
-              return { ...state, serverResourceUsagePending: new Set(state.serverResourceUsagePending) };
+              state.serverResourceUsagePendingNodes.delete(nodeUuid);
+              return { ...state, serverResourceUsagePendingNodes: new Set(state.serverResourceUsagePendingNodes) };
             });
           }, 30000);
         });

@@ -357,7 +357,7 @@ export default function Terminal() {
           <div className='flex flex-row items-center'>
             <span
               className={classNames(
-                'rounded-full h-3 w-3 animate-pulse mr-2',
+                'rounded-full size-3 animate-pulse mr-2',
                 socketConnected ? 'bg-green-500' : 'bg-red-500',
               )}
             />

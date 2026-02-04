@@ -1,9 +1,13 @@
+import classNames from 'classnames';
 import { forwardRef, memo } from 'react';
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { statusToColor } from '@/pages/dashboard/home/ServerItem.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
+import { useUserStore } from '@/stores/user.ts';
 
 interface ServerRowProps {
   server: AdminServer;
@@ -18,6 +22,11 @@ const ServerRow = memo(
     { server, showSelection = false, isSelected = false, onSelectionChange, onClick },
     ref,
   ) {
+    const { t } = useTranslations();
+    const { getServerResourceUsage } = useUserStore();
+
+    const stats = getServerResourceUsage(server.uuid, server.node.uuid);
+
     return (
       <TableRow bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined} onClick={onClick} ref={ref}>
         {showSelection && (
@@ -38,6 +47,13 @@ const ServerRow = memo(
           <NavLink to={`/admin/servers/${server.uuid}`} className='text-blue-400 hover:text-blue-200 hover:underline'>
             <Code>{server.uuid}</Code>
           </NavLink>
+        </TableData>
+
+        <TableData>
+          <div className='flex flex-row items-center'>
+            <span className={classNames('rounded-full size-3 animate-pulse mr-2', statusToColor(stats?.state))} />
+            {!stats ? t('common.enum.serverState.unknown', {}) : t(`common.enum.serverState.${stats.state}`, {})}
+          </div>
         </TableData>
 
         <TableData>{server.name}</TableData>

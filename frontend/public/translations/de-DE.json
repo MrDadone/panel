@@ -99,6 +99,7 @@
           "bottomRight": "Unten Rechts"
         },
         "serverState": {
+          "unknown": "Unbekannt",
           "offline": "Offline",
           "running": "Läuft",
           "starting": "Starte",

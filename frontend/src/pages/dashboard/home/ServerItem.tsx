@@ -26,7 +26,7 @@ import { useGlobalStore } from '@/stores/global.ts';
 import { useUserStore } from '@/stores/user.ts';
 import ServerAddGroupModal from './modals/ServerAddGroupModal.tsx';
 
-const statusToColor = (status: ServerPowerState | undefined) => {
+export const statusToColor = (status: ServerPowerState | undefined) => {
   switch (status) {
     case 'running':
       return 'bg-green-500';
@@ -34,8 +34,10 @@ const statusToColor = (status: ServerPowerState | undefined) => {
       return 'bg-yellow-500';
     case 'stopping':
       return 'bg-red-500';
-    default:
+    case 'offline':
       return 'bg-red-500';
+    default:
+      return 'bg-gray-500';
   }
 };
 
@@ -63,7 +65,7 @@ export default function ServerItem({
   const { serverListShowOthers } = useGlobalStore();
 
   const [openModal, setOpenModal] = useState<'add-group' | null>(null);
-  const stats = getServerResourceUsage(server.uuid);
+  const stats = getServerResourceUsage(server.uuid, server.nodeUuid);
 
   const diskLimit = server.limits.disk !== 0 ? bytesToString(mbToBytes(server.limits.disk)) : t('common.unlimited', {});
   const memoryLimit =
