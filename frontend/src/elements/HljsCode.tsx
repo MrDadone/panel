@@ -3,6 +3,7 @@ import hljs from 'highlight.js/lib/core';
 import { forwardRef, useCallback, useEffect, useState } from 'react';
 import 'highlight.js/styles/a11y-dark.min.css';
 import { LanguageFn } from 'highlight.js';
+import Spinner from '@/elements/Spinner.tsx';
 
 const registeredLanguages = new Set<string>();
 
@@ -32,7 +33,9 @@ function HljsCode({ children, languageName, language, ...props }: HljsCodeProps,
     }
   }, [languageName, language]);
 
-  return (
+  return !languageLoaded ? (
+    <Spinner.Centered />
+  ) : (
     <MantineCode
       block
       ref={ref}
