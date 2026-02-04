@@ -884,10 +884,20 @@ declare global {
     total: number;
   }
 
+  interface FileOperationCopyMany {
+    type: 'copy_many';
+    path: string;
+    files: { from: string; to: string }[];
+
+    progress: number;
+    total: number;
+  }
+
   interface FileOperationCopyRemote {
     type: 'copy_remote';
     server: string;
     path: string;
+    files: string[];
     destinationServer: string;
     destinationPath: string;
 
@@ -900,6 +910,7 @@ declare global {
     | FileOperationDecompress
     | FileOperationPull
     | FileOperationCopy
+    | FileOperationCopyMany
     | FileOperationCopyRemote;
   type UserToastPosition = 'top_left' | 'top_center' | 'top_right' | 'bottom_left' | 'bottom_center' | 'bottom_right';
 

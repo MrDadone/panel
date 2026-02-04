@@ -49,7 +49,7 @@ export default function ServerFiles() {
     setBrowsingEntries,
     selectedFileNames,
     setSelectedFiles,
-    movingFileNames,
+    actingFileNames,
     fileOperations,
     removeFileOperation,
   } = useServerStore();
@@ -355,7 +355,7 @@ export default function ServerFiles() {
                 onSelectedStart={onSelectedStart}
                 onSelected={onSelected}
                 className='h-full'
-                disabled={movingFileNames.size > 0 || !!openModal || childOpenModal || !!activeDragFile || isDKeyHeld}
+                disabled={actingFileNames.size > 0 || !!openModal || childOpenModal || !!activeDragFile || isDKeyHeld}
               >
                 <ContextMenuProvider>
                   <div style={isDKeyHeld && browsingWritableDirectory ? { cursor: 'grab' } : undefined}>
@@ -374,7 +374,7 @@ export default function ServerFiles() {
                               ref={innerRef as Ref<HTMLTableRowElement>}
                               setChildOpenModal={setChildOpenModal}
                               dndEnabled={
-                                browsingWritableDirectory && !browsingBackup && movingFileNames.size === 0 && isDKeyHeld
+                                browsingWritableDirectory && !browsingBackup && actingFileNames.size === 0 && isDKeyHeld
                               }
                             />
                           )}

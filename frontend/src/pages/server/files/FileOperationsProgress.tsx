@@ -134,18 +134,20 @@ const FileOperationsProgress = memo(function FileOperationsProgress({
               <div className='flex flex-col grow'>
                 <p className='break-all mb-1'>
                   {operation.type === 'compress'
-                    ? `Compressing ${operation.path}`
+                    ? `Compressing ${operation.files.length} files from ${operation.path}`
                     : operation.type === 'decompress'
                       ? `Decompressing ${operation.path}`
                       : operation.type === 'pull'
                         ? `Pulling ${operation.path}`
                         : operation.type === 'copy'
                           ? `Copying ${operation.path} to ${operation.destinationPath}`
-                          : operation.type === 'copy_remote'
-                            ? operation.destinationServer === serverUuid
-                              ? `Receiving files from remote server`
-                              : `Sending files to remote server`
-                            : null}
+                          : operation.type === 'copy_many'
+                            ? `Copying ${operation.files.length} files`
+                            : operation.type === 'copy_remote'
+                              ? operation.destinationServer === serverUuid
+                                ? `Receiving ${operation.files.length} files from remote server`
+                                : `Sending ${operation.files.length} files to remote server`
+                              : null}
                 </p>
                 <Progress value={progress} />
               </div>

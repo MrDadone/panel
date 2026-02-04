@@ -54,9 +54,9 @@ const FileRow = memo(
       browsingBackup,
       browsingWritableDirectory,
       browsingFastDirectory,
-      movingFileNames,
+      actingFileNames,
       selectedFileNames,
-      setMovingFiles,
+      setActingFiles,
       addSelectedFile,
       removeSelectedFile,
     } = useServerStore();
@@ -146,7 +146,7 @@ const FileRow = memo(
               icon: faAnglesUp,
               label: 'Move',
               hidden: !!browsingBackup || !browsingWritableDirectory,
-              onClick: () => setMovingFiles([file]),
+              onClick: () => setActingFiles('move', [file]),
               color: 'gray',
               canAccess: useServerCan('files.update'),
             },
@@ -209,7 +209,7 @@ const FileRow = memo(
                 openMenu(e.clientX, e.clientY);
               }}
               onClick={(e) => {
-                if ((e.ctrlKey || e.metaKey) && movingFileNames.size === 0) {
+                if ((e.ctrlKey || e.metaKey) && actingFileNames.size === 0) {
                   e.stopPropagation();
                   addSelectedFile(file);
                 }
@@ -219,7 +219,7 @@ const FileRow = memo(
                 <td className='pl-4 relative cursor-pointer w-10 text-center py-2'>
                   <Checkbox
                     id={file.name}
-                    disabled={movingFileNames.size > 0}
+                    disabled={actingFileNames.size > 0}
                     checked={selectedFileNames.has(file.name)}
                     classNames={{ input: 'cursor-pointer!' }}
                     onChange={() => {

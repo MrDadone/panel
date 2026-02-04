@@ -4,7 +4,7 @@ import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
 import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
-import copyFileRemote from '@/api/server/files/copyFileRemote.ts';
+import copyFilesRemote from '@/api/server/files/copyFilesRemote.ts';
 import getServers from '@/api/server/getServers.ts';
 import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
@@ -42,7 +42,7 @@ export default function FileCopyModal({ files, opened, onClose }: Props) {
   const doCopy = () => {
     setLoading(true);
 
-    copyFileRemote(server.uuid, {
+    copyFilesRemote(server.uuid, {
       ...form.values,
       root: browsingDirectory!,
       files: files.map((f) => f.name),

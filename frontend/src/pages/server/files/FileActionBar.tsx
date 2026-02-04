@@ -11,6 +11,7 @@ import { join } from 'pathe';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import copyFiles from '@/api/server/files/copyFiles.ts';
 import downloadFiles from '@/api/server/files/downloadFiles.ts';
 import renameFiles from '@/api/server/files/renameFiles.ts';
 import ActionBar from '@/elements/ActionBar.tsx';
@@ -29,14 +30,14 @@ export default function FileActionBar() {
   const {
     server,
     browsingDirectory,
-    browsingBackup,
     browsingWritableDirectory,
     selectedFileNames,
     setSelectedFiles,
-    movingFileNames,
-    movingFilesDirectory,
-    setMovingFiles,
-    clearMovingFiles,
+    actingFileMode,
+    actingFileNames,
+    actingFilesDirectory,
+    setActingFiles,
+    clearActingFiles,
     getSelectedFiles,
     refreshFiles,
   } = useServerStore();
@@ -44,14 +45,38 @@ export default function FileActionBar() {
   const [openModal, setOpenModal] = useState<'copy-remote' | 'archive' | 'delete' | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const doCopy = () => {
+    setLoading(true);
+
+    copyFiles({
+      uuid: server.uuid,
+      root: '/',
+      files: [...actingFileNames].map((f) => ({
+        from: join(actingFilesDirectory!, f),
+        to: join(browsingDirectory!, f),
+      })),
+    })
+      .then(() => {
+        addToast(
+          `${actingFileNames.size} File${actingFileNames.size === 1 ? ' has' : 's have'} have started copying.`,
+          'success',
+        );
+        clearActingFiles();
+      })
+      .catch((msg) => {
+        addToast(httpErrorToHuman(msg), 'error');
+      })
+      .finally(() => setLoading(false));
+  };
+
   const doMove = () => {
     setLoading(true);
 
     renameFiles({
       uuid: server.uuid,
       root: '/',
-      files: [...movingFileNames].map((f) => ({
-        from: join(movingFilesDirectory!, f),
+      files: [...actingFileNames].map((f) => ({
+        from: join(actingFilesDirectory!, f),
         to: join(browsingDirectory!, f),
       })),
     })
@@ -62,7 +87,7 @@ export default function FileActionBar() {
         }
 
         addToast(`${renamed} File${renamed === 1 ? ' has' : 's have'} been moved.`, 'success');
-        clearMovingFiles();
+        clearActingFiles();
         refreshFiles(Number(searchParams.get('page')) || 1);
       })
       .catch((msg) => {
@@ -94,8 +119,7 @@ export default function FileActionBar() {
 
   useFileKeyboardActions({
     onDelete: () => setOpenModal('delete'),
-    onPaste: () => doMove(),
-    browsingBackup: !!browsingBackup,
+    onPaste: () => (actingFileMode === 'copy' ? doCopy() : doMove()),
   });
 
   const selectedFiles = getSelectedFiles();
@@ -120,14 +144,21 @@ export default function FileActionBar() {
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
       />
-      <ActionBar opened={movingFileNames.size > 0 || selectedFileNames.size > 0}>
-        {movingFileNames.size > 0 ? (
+      <ActionBar opened={actingFileNames.size > 0 || selectedFileNames.size > 0}>
+        {actingFileNames.size > 0 ? (
           <>
-            <Button onClick={doMove} loading={loading}>
-              <FontAwesomeIcon icon={faAnglesDown} className='mr-2' /> Move {movingFileNames.size} File
-              {movingFileNames.size === 1 ? '' : 's'} Here
-            </Button>
-            <Button variant='default' onClick={clearMovingFiles}>
+            {actingFileMode === 'copy' ? (
+              <Button onClick={doCopy} loading={loading}>
+                <FontAwesomeIcon icon={faAnglesDown} className='mr-2' /> Copy {actingFileNames.size} File
+                {actingFileNames.size === 1 ? '' : 's'} Here
+              </Button>
+            ) : (
+              <Button onClick={doMove} loading={loading}>
+                <FontAwesomeIcon icon={faAnglesDown} className='mr-2' /> Move {actingFileNames.size} File
+                {actingFileNames.size === 1 ? '' : 's'} Here
+              </Button>
+            )}
+            <Button variant='default' onClick={clearActingFiles}>
               Cancel
             </Button>
           </>
@@ -143,7 +174,17 @@ export default function FileActionBar() {
                 <FontAwesomeIcon icon={faCopy} className='mr-2' /> Remote Copy
               </Button>
             </ServerCan>
-            {!browsingBackup && browsingWritableDirectory && (
+            <ServerCan action='files.create'>
+              <Button
+                onClick={() => {
+                  setActingFiles('copy', selectedFiles);
+                  setSelectedFiles([]);
+                }}
+              >
+                <FontAwesomeIcon icon={faCopy} className='mr-2' /> Copy
+              </Button>
+            </ServerCan>
+            {browsingWritableDirectory && (
               <>
                 <ServerCan action='files.archive'>
                   <Button onClick={() => setOpenModal('archive')}>
@@ -153,7 +194,7 @@ export default function FileActionBar() {
                 <ServerCan action='files.update'>
                   <Button
                     onClick={() => {
-                      setMovingFiles(selectedFiles);
+                      setActingFiles('move', selectedFiles);
                       setSelectedFiles([]);
                     }}
                   >

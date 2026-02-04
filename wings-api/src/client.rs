@@ -308,6 +308,21 @@ impl WingsClient {
         .await
     }
 
+    pub async fn post_servers_server_files_copy_many(
+        &self,
+        server: uuid::Uuid,
+        data: &super::servers_server_files_copy_many::post::RequestBody,
+    ) -> Result<super::servers_server_files_copy_many::post::Response, ApiHttpError> {
+        request_impl(
+            self,
+            Method::POST,
+            format!("/api/servers/{server}/files/copy-many"),
+            Some(data),
+            None,
+        )
+        .await
+    }
+
     pub async fn post_servers_server_files_copy_remote(
         &self,
         server: uuid::Uuid,

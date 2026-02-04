@@ -401,7 +401,10 @@ impl User {
         row.try_map(|row| Self::map(None, &row))
     }
 
-    pub async fn by_session_cached(
+    /// Returns the user and session associated with the given session string, if valid.
+    ///
+    /// Cached for 5 seconds.
+    pub async fn by_session(
         database: &crate::database::Database,
         session: &str,
     ) -> Result<Option<(Self, super::user_session::UserSession)>, anyhow::Error> {
@@ -439,7 +442,10 @@ impl User {
             .await
     }
 
-    pub async fn by_api_key_cached(
+    /// Returns the user and API key associated with the given API key string, if valid.
+    ///
+    /// Cached for 5 seconds.
+    pub async fn by_api_key(
         database: &crate::database::Database,
         key: &str,
     ) -> Result<Option<(Self, super::user_api_key::UserApiKey)>, anyhow::Error> {

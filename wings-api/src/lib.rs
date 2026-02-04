@@ -395,6 +395,8 @@ nestify::nest! {
             #[schema(inline)]
             pub used: u64,
             #[schema(inline)]
+            pub used_process: u64,
+            #[schema(inline)]
             pub total: u64,
         },
 
@@ -865,6 +867,54 @@ pub mod servers_server_files_copy {
         }
 
         pub type Response200 = DirectoryEntry;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response202 {
+                #[schema(inline)]
+                pub identifier: uuid::Uuid,
+            }
+        }
+
+        pub type Response404 = ApiError;
+
+        pub type Response417 = ApiError;
+
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        pub enum Response {
+            Ok(Response200),
+            Accepted(Response202),
+        }
+    }
+}
+pub mod servers_server_files_copy_many {
+    use super::*;
+
+    pub mod post {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
+                #[schema(inline)]
+                pub root: compact_str::CompactString,
+                #[schema(inline)]
+                pub files: Vec<#[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBodyFiles {
+                    #[schema(inline)]
+                    pub from: compact_str::CompactString,
+                    #[schema(inline)]
+                    pub to: compact_str::CompactString,
+                }>,
+                #[schema(inline)]
+                pub foreground: bool,
+            }
+        }
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
+                #[schema(inline)]
+                pub copied: u64,
+            }
+        }
 
         nestify::nest! {
             #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response202 {

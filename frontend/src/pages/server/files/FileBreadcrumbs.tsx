@@ -18,7 +18,7 @@ export default function FileBreadcrumbs({
   inFileEditor?: boolean;
   onSearchClick?: () => void;
 }) {
-  const { server, setBrowsingDirectory, browsingEntries, selectedFileNames, setSelectedFiles, movingFileNames } =
+  const { server, setBrowsingDirectory, browsingEntries, selectedFileNames, setSelectedFiles, actingFileNames } =
     useServerStore();
 
   const splittedPath = path.split('/').filter(Boolean);
@@ -68,7 +68,7 @@ export default function FileBreadcrumbs({
     <div className='flex flex-row items-center justify-between'>
       <Breadcrumbs separatorMargin='xs'>
         <Checkbox
-          disabled={movingFileNames.size > 0}
+          disabled={actingFileNames.size > 0}
           checked={!inFileEditor && selectedFileNames.size > 0 && selectedFileNames.size >= browsingEntries.data.length}
           indeterminate={selectedFileNames.size > 0 && selectedFileNames.size < browsingEntries.data.length}
           className='mr-2'

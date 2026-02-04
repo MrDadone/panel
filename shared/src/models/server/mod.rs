@@ -1344,7 +1344,7 @@ impl Server {
         None
     }
 
-    pub fn is_ignored(&mut self, path: &str, is_dir: bool) -> bool {
+    pub fn is_ignored(&mut self, path: impl AsRef<std::path::Path>, is_dir: bool) -> bool {
         if let Some(ignored_files) = &self.subuser_ignored_files {
             if let Some(overrides) = &self.subuser_ignored_files_overrides {
                 return overrides.matched(path, is_dir).is_whitelist();

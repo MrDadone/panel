@@ -183,6 +183,9 @@ export default function WebsocketListener() {
       case 'copy':
         addToast(`Copied ${fileOperation.path} to ${fileOperation.destinationPath} successfully.`, 'success');
         break;
+      case 'copy_many':
+        addToast(`Copied files from ${fileOperation.path} successfully.`, 'success');
+        break;
       case 'copy_remote':
         if (fileOperation.destinationServer === server.uuid) {
           addToast(`Received files from remote server successfully.`, 'success');
@@ -217,6 +220,9 @@ export default function WebsocketListener() {
         break;
       case 'copy':
         addToast(`Failed to copy ${fileOperation.path} to ${fileOperation.destinationPath}:\n${error}`, 'error');
+        break;
+      case 'copy_many':
+        addToast(`Failed to copy files from ${fileOperation.path}:\n${error}`, 'error');
         break;
       case 'copy_remote':
         if (fileOperation.destinationServer === server.uuid) {

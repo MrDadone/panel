@@ -12,6 +12,7 @@ mod put {
         },
         response::{ApiResponse, ApiResponseResult},
     };
+    use std::path::Path;
     use utoipa::ToSchema;
 
     #[derive(ToSchema, Deserialize)]
@@ -51,12 +52,15 @@ mod put {
         permissions.has_server_permission("files.update")?;
 
         let request_body = wings_api::servers_server_files_rename::put::RequestBody {
-            root: data.root,
             files: data
                 .files
                 .into_iter()
-                .filter(|f| !server.is_ignored(&f.from, false) && !server.is_ignored(&f.to, false))
+                .filter(|f| {
+                    !server.is_ignored(Path::new(&data.root).join(&f.from), false)
+                        && !server.is_ignored(Path::new(&data.root).join(&f.to), false)
+                })
                 .collect(),
+            root: data.root,
         };
 
         let data = match server

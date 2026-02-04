@@ -5,6 +5,7 @@ mod chmod;
 mod compress;
 mod contents;
 mod copy;
+mod copy_many;
 mod copy_remote;
 mod create_directory;
 mod decompress;
@@ -26,6 +27,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
         .nest("/upload", upload::router(state))
         .nest("/rename", rename::router(state))
         .nest("/copy", copy::router(state))
+        .nest("/copy-many", copy_many::router(state))
         .nest("/copy-remote", copy_remote::router(state))
         .nest("/write", write::router(state))
         .nest("/compress", compress::router(state))
