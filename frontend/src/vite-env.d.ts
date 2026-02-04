@@ -204,12 +204,12 @@ declare global {
     backupConfiguration: BackupConfiguration | null;
     name: string;
     public: boolean;
+    maintenance: boolean;
     description: string | null;
     publicUrl: string | null;
     url: string;
     sftpHost: string | null;
     sftpPort: number;
-    maintenanceMessage: string | null;
     memory: number;
     disk: number;
     tokenId: string;
@@ -335,7 +335,7 @@ declare global {
     permissions: string[];
     nodeUuid: string;
     nodeName: string;
-    nodeMaintenanceMessage: string | null;
+    nodeMaintenance: boolean;
     sftpHost: string;
     sftpPort: number;
     name: string;

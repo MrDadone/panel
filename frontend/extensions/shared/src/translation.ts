@@ -51,7 +51,7 @@ export class DefinedTranslations<
       this.items[`${other.namespace}.${item}` as keyof I] = other.items[item];
     }
     for (const key in other.mapping) {
-      this.mapping[`${other.namespace}.${key}` as string] = other.mapping[key];
+      (this.mapping as Record<string, string>)[`${other.namespace}.${key}` as string] = other.mapping[key] as string;
     }
     this.subTranslations[other.namespace] = {
       items: other.items,

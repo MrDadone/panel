@@ -4,9 +4,7 @@ use colored::Colorize;
 use compact_str::ToCompactString;
 use rustis::{
     client::Client,
-    commands::{
-        GenericCommands, InfoSection, ServerCommands, SetCondition, SetExpiration, StringCommands,
-    },
+    commands::{GenericCommands, InfoSection, ServerCommands, SetExpiration, StringCommands},
     resp::BulkString,
 };
 use serde::{Serialize, de::DeserializeOwned};
@@ -141,13 +139,7 @@ impl Cache {
 
         let limit_used = self.client.get::<u64>(&key).await.unwrap_or_default() + 1;
         self.client
-            .set_with_options(
-                key,
-                limit_used,
-                SetCondition::None,
-                SetExpiration::Exat(expire_unix),
-                false,
-            )
+            .set_with_options(key, limit_used, None, SetExpiration::Exat(expire_unix))
             .await?;
 
         if limit_used >= limit {
@@ -222,9 +214,8 @@ impl Cache {
                     .set_with_options(
                         &*key_owned,
                         serialized_arc.as_slice(),
-                        SetCondition::None,
+                        None,
                         SetExpiration::Ex(ttl),
-                        false,
                     )
                     .await;
 

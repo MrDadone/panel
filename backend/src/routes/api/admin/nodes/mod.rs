@@ -91,6 +91,7 @@ mod post {
         #[schema(min_length = 3, max_length = 255)]
         name: compact_str::CompactString,
         public: bool,
+        maintenance: bool,
         #[validate(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
@@ -105,10 +106,6 @@ mod post {
         #[schema(min_length = 3, max_length = 255)]
         sftp_host: Option<compact_str::CompactString>,
         sftp_port: u16,
-
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        maintenance_message: Option<String>,
 
         memory: i64,
         disk: i64,
@@ -173,12 +170,12 @@ mod post {
             backup_configuration.map(|backup_configuration| backup_configuration.uuid),
             &data.name,
             data.public,
+            data.maintenance,
             data.description.as_deref(),
             data.public_url.as_deref(),
             &data.url,
             data.sftp_host.as_deref(),
             data.sftp_port as i32,
-            data.maintenance_message.as_deref(),
             data.memory,
             data.disk,
         )
@@ -208,12 +205,12 @@ mod post {
 
                     "name": node.name,
                     "public": node.public,
+                    "maintenance": node.maintenance,
                     "description": node.description,
                     "public_url": node.public_url,
                     "url": node.url,
                     "sftp_host": node.sftp_host,
                     "sftp_port": node.sftp_port,
-                    "maintenance_message": node.maintenance_message,
                     "memory": node.memory,
                     "disk": node.disk,
                 }),

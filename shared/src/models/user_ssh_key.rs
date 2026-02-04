@@ -12,7 +12,7 @@ pub struct UserSshKey {
     pub uuid: uuid::Uuid,
 
     pub name: compact_str::CompactString,
-    pub fingerprint: String,
+    pub fingerprint: compact_str::CompactString,
 
     pub created: chrono::NaiveDateTime,
 }
@@ -201,7 +201,7 @@ pub struct ApiUserSshKey {
     pub uuid: uuid::Uuid,
 
     pub name: compact_str::CompactString,
-    pub fingerprint: String,
+    pub fingerprint: compact_str::CompactString,
 
     pub created: chrono::DateTime<chrono::Utc>,
 }

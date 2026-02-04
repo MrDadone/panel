@@ -49,13 +49,13 @@ pub struct ServerBackup {
     pub locked: bool,
 
     pub ignored_files: Vec<compact_str::CompactString>,
-    pub checksum: Option<String>,
+    pub checksum: Option<compact_str::CompactString>,
     pub bytes: i64,
     pub files: i64,
 
     pub disk: BackupDisk,
     pub upload_id: Option<compact_str::CompactString>,
-    pub upload_path: Option<String>,
+    pub upload_path: Option<compact_str::CompactString>,
 
     pub completed: Option<chrono::NaiveDateTime>,
     pub deleted: Option<chrono::NaiveDateTime>,
@@ -606,7 +606,7 @@ impl ServerBackup {
 
                                 let client = s3_configuration.into_client()?;
                                 let file_path = match &self.upload_path {
-                                    Some(path) => path,
+                                    Some(path) => path.as_str(),
                                     None => &Self::s3_path(server.uuid, self.uuid),
                                 };
 
@@ -656,8 +656,8 @@ impl ServerBackup {
     }
 
     #[inline]
-    pub fn s3_path(server_uuid: uuid::Uuid, backup_uuid: uuid::Uuid) -> String {
-        format!("{server_uuid}/{backup_uuid}.tar.gz")
+    pub fn s3_path(server_uuid: uuid::Uuid, backup_uuid: uuid::Uuid) -> compact_str::CompactString {
+        compact_str::format_compact!("{server_uuid}/{backup_uuid}.tar.gz")
     }
 
     #[inline]
@@ -857,7 +857,7 @@ pub struct AdminApiServerBackup {
     pub is_browsable: bool,
     pub is_streaming: bool,
 
-    pub checksum: Option<String>,
+    pub checksum: Option<compact_str::CompactString>,
     pub bytes: i64,
     pub files: i64,
 
@@ -878,7 +878,7 @@ pub struct ApiServerBackup {
     pub is_browsable: bool,
     pub is_streaming: bool,
 
-    pub checksum: Option<String>,
+    pub checksum: Option<compact_str::CompactString>,
     pub bytes: i64,
     pub files: i64,
 

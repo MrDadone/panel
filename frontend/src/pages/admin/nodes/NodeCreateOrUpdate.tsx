@@ -38,12 +38,12 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
       backupConfigurationUuid: uuidNil,
       name: '',
       public: false,
+      maintenance: false,
       description: null,
       publicUrl: null,
       url: '',
       sftpHost: null,
       sftpPort: 2022,
-      maintenanceMessage: null,
       memory: 8192,
       disk: 10240,
     },
@@ -68,12 +68,12 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
         backupConfigurationUuid: contextNode.backupConfiguration?.uuid ?? uuidNil,
         name: contextNode.name,
         public: contextNode.public,
+        maintenance: contextNode.maintenance,
         description: contextNode.description,
         publicUrl: contextNode.publicUrl,
         url: contextNode.url,
         sftpHost: contextNode.sftpHost,
         sftpPort: contextNode.sftpPort,
-        maintenanceMessage: contextNode.maintenanceMessage,
         memory: contextNode.memory,
         disk: contextNode.disk,
       });
@@ -203,16 +203,13 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
               onSearchChange={backupConfigurations.setSearch}
               {...form.getInputProps('backupConfigurationUuid')}
             />
-            <TextInput
-              label='Maintenance Message'
-              placeholder='Maintenance Message'
-              {...form.getInputProps('maintenanceMessage')}
-            />
+            <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
           </Group>
 
-          <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
-
-          <Switch label='Public' {...form.getInputProps('public', { type: 'checkbox' })} />
+          <Group grow>
+            <Switch label='Public' {...form.getInputProps('public', { type: 'checkbox' })} />
+            <Switch label='Maintenance Mode' {...form.getInputProps('maintenance', { type: 'checkbox' })} />
+          </Group>
 
           <Group>
             <AdminCan action={contextNode ? 'nodes.update' : 'nodes.create'} cantSave>

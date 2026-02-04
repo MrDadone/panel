@@ -1650,7 +1650,7 @@ impl Server {
             },
             node_uuid: node.uuid,
             node_name: node.name,
-            node_maintenance_message: node.maintenance_message,
+            node_maintenance: node.maintenance,
             sftp_host: node.sftp_host.unwrap_or_else(|| {
                 node.public_url
                     .unwrap_or(node.url)
@@ -1885,7 +1885,7 @@ pub struct ApiServer {
 
     pub node_uuid: uuid::Uuid,
     pub node_name: compact_str::CompactString,
-    pub node_maintenance_message: Option<String>,
+    pub node_maintenance: bool,
 
     pub sftp_host: compact_str::CompactString,
     pub sftp_port: i32,

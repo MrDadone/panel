@@ -92,7 +92,7 @@ mod patch {
     pub struct Payload {
         #[validate(length(max = 1024))]
         #[schema(max_length = 1024)]
-        notes: Option<String>,
+        notes: Option<compact_str::CompactString>,
 
         primary: Option<bool>,
     }
@@ -148,7 +148,11 @@ mod patch {
         let mut transaction = state.database.write().begin().await?;
 
         if let Some(notes) = &data.notes {
-            let notes = if notes.is_empty() { None } else { Some(notes) };
+            let notes = if notes.is_empty() {
+                None
+            } else {
+                Some(notes.as_str())
+            };
 
             sqlx::query!(
                 "UPDATE server_allocations

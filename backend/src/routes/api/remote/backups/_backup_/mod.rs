@@ -208,7 +208,7 @@ mod get {
             SET upload_id = $1, upload_path = $2
             WHERE server_backups.uuid = $3",
             multipart.upload_id,
-            file_path,
+            &file_path,
             backup.0.uuid
         )
         .execute(state.database.write())

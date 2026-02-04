@@ -3,7 +3,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod get {
     use axum::extract::Query;
-    use rustis::commands::{SetCondition, SetExpiration, StringCommands};
+    use rustis::commands::{SetExpiration, StringCommands};
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -67,9 +67,8 @@ mod get {
             .set_with_options(
                 format!("security_key_authentication::{uuid}"),
                 serde_json::to_string(&authentication)?,
-                SetCondition::None,
+                None,
                 SetExpiration::Ex(options.public_key.timeout.unwrap_or(300000) as u64 / 1000),
-                false,
             )
             .await?;
 

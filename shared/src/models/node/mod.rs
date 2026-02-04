@@ -21,14 +21,13 @@ pub struct Node {
 
     pub name: compact_str::CompactString,
     pub public: bool,
+    pub maintenance: bool,
     pub description: Option<compact_str::CompactString>,
 
     pub public_url: Option<reqwest::Url>,
     pub url: reqwest::Url,
     pub sftp_host: Option<compact_str::CompactString>,
     pub sftp_port: i32,
-
-    pub maintenance_message: Option<String>,
 
     pub memory: i64,
     pub disk: i64,
@@ -58,6 +57,10 @@ impl BaseModel for Node {
                 compact_str::format_compact!("{prefix}public"),
             ),
             (
+                "nodes.maintenance",
+                compact_str::format_compact!("{prefix}maintenance"),
+            ),
+            (
                 "nodes.description",
                 compact_str::format_compact!("{prefix}description"),
             ),
@@ -73,10 +76,6 @@ impl BaseModel for Node {
             (
                 "nodes.sftp_port",
                 compact_str::format_compact!("{prefix}sftp_port"),
-            ),
-            (
-                "nodes.maintenance_message",
-                compact_str::format_compact!("{prefix}maintenance_message"),
             ),
             (
                 "nodes.memory",
@@ -113,6 +112,8 @@ impl BaseModel for Node {
                 ),
             name: row.try_get(compact_str::format_compact!("{prefix}name").as_str())?,
             public: row.try_get(compact_str::format_compact!("{prefix}public").as_str())?,
+            maintenance: row
+                .try_get(compact_str::format_compact!("{prefix}maintenance").as_str())?,
             description: row
                 .try_get(compact_str::format_compact!("{prefix}description").as_str())?,
             public_url: row
@@ -127,8 +128,6 @@ impl BaseModel for Node {
                 .map_err(anyhow::Error::new)?,
             sftp_host: row.try_get(compact_str::format_compact!("{prefix}sftp_host").as_str())?,
             sftp_port: row.try_get(compact_str::format_compact!("{prefix}sftp_port").as_str())?,
-            maintenance_message: row
-                .try_get(compact_str::format_compact!("{prefix}maintenance_message").as_str())?,
             memory: row.try_get(compact_str::format_compact!("{prefix}memory").as_str())?,
             disk: row.try_get(compact_str::format_compact!("{prefix}disk").as_str())?,
             token_id: row.try_get(compact_str::format_compact!("{prefix}token_id").as_str())?,
@@ -146,12 +145,12 @@ impl Node {
         backup_configuration_uuid: Option<uuid::Uuid>,
         name: &str,
         public: bool,
+        maintenance: bool,
         description: Option<&str>,
         public_url: Option<&str>,
         url: &str,
         sftp_host: Option<&str>,
         sftp_port: i32,
-        maintenance_message: Option<&str>,
         memory: i64,
         disk: i64,
     ) -> Result<uuid::Uuid, crate::database::DatabaseError> {
@@ -160,7 +159,7 @@ impl Node {
 
         let row = sqlx::query(
             r#"
-            INSERT INTO nodes (location_uuid, backup_configuration_uuid, name, public, description, public_url, url, sftp_host, sftp_port, maintenance_message, memory, disk, token_id, token)
+            INSERT INTO nodes (location_uuid, backup_configuration_uuid, name, public, maintenance, description, public_url, url, sftp_host, sftp_port, memory, disk, token_id, token)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING uuid
             "#
@@ -169,12 +168,12 @@ impl Node {
         .bind(backup_configuration_uuid)
         .bind(name)
         .bind(public)
+        .bind(maintenance)
         .bind(description)
         .bind(public_url)
         .bind(url)
         .bind(sftp_host)
         .bind(sftp_port)
-        .bind(maintenance_message)
         .bind(memory)
         .bind(disk)
         .bind(token_id)
@@ -492,12 +491,12 @@ impl Node {
             backup_configuration,
             name: self.name,
             public: self.public,
+            maintenance: self.maintenance,
             description: self.description,
             public_url: self.public_url.map(|url| url.to_string()),
             url: self.url.to_string(),
             sftp_host: self.sftp_host,
             sftp_port: self.sftp_port,
-            maintenance_message: self.maintenance_message,
             memory: self.memory,
             disk: self.disk,
             token_id: self.token_id,
@@ -577,6 +576,7 @@ pub struct AdminApiNode {
 
     pub name: compact_str::CompactString,
     pub public: bool,
+    pub maintenance: bool,
     pub description: Option<compact_str::CompactString>,
 
     #[schema(format = "uri")]
@@ -585,8 +585,6 @@ pub struct AdminApiNode {
     pub url: String,
     pub sftp_host: Option<compact_str::CompactString>,
     pub sftp_port: i32,
-
-    pub maintenance_message: Option<String>,
 
     pub memory: i64,
     pub disk: i64,

@@ -6,7 +6,7 @@
     "generate": "pnpm build && cd lib && NODE_ENV=development node --enable-source-maps index && cd .."
   },
   "keywords": [],
-  "author": "pterodactyl-rs",
+  "author": "Calagopus",
   "license": "MIT",
   "dependencies": {
     "change-case": "^5.4.4",

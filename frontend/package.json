@@ -7,6 +7,7 @@
     "node": ">=24.0.0",
     "pnpm": ">=10.0.0"
   },
+  "author": "Calagopus",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

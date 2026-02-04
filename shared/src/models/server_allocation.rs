@@ -12,7 +12,7 @@ pub struct ServerAllocation {
     pub uuid: uuid::Uuid,
     pub allocation: super::node_allocation::NodeAllocation,
 
-    pub notes: Option<String>,
+    pub notes: Option<compact_str::CompactString>,
 
     pub created: chrono::NaiveDateTime,
 }
@@ -270,7 +270,7 @@ pub struct ApiServerAllocation {
     pub ip_alias: Option<compact_str::CompactString>,
     pub port: i32,
 
-    pub notes: Option<String>,
+    pub notes: Option<compact_str::CompactString>,
     pub is_primary: bool,
 
     pub created: chrono::DateTime<chrono::Utc>,
