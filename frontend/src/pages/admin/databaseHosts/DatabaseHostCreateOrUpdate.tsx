@@ -39,6 +39,7 @@ export default function DatabaseHostCreateOrUpdate({
       host: '',
       port: 3306,
       public: false,
+      maintenance: false,
       publicHost: null,
       publicPort: null,
       type: 'mysql',
@@ -69,6 +70,7 @@ export default function DatabaseHostCreateOrUpdate({
         host: contextDatabaseHost.host,
         port: contextDatabaseHost.port,
         public: contextDatabaseHost.public,
+        maintenance: contextDatabaseHost.maintenance,
         publicHost: contextDatabaseHost.publicHost,
         publicPort: contextDatabaseHost.publicPort,
         type: contextDatabaseHost.type,
@@ -145,7 +147,10 @@ export default function DatabaseHostCreateOrUpdate({
             />
           </Group>
 
-          <Switch label='Public' {...form.getInputProps('public', { type: 'checkbox' })} />
+          <Group grow>
+            <Switch label='Public' {...form.getInputProps('public', { type: 'checkbox' })} />
+            <Switch label='Maintenance Mode' {...form.getInputProps('maintenance', { type: 'checkbox' })} />
+          </Group>
 
           <Group>
             <AdminCan action={contextDatabaseHost ? 'database-hosts.update' : 'database-hosts.create'} cantSave>

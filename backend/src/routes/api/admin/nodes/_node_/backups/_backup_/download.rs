@@ -72,6 +72,14 @@ mod get {
             }
         };
 
+        if backup_configuration.maintenance {
+            return ApiResponse::error(
+                "cannot download backup while backup configuration is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .ok();
+        }
+
         if matches!(backup.disk, BackupDisk::S3)
             && let Some(mut s3_configuration) = backup_configuration.backup_configs.s3
         {

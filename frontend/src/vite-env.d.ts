@@ -23,6 +23,7 @@ declare global {
   interface BackupConfiguration {
     name: string;
     description?: string;
+    maintenance: boolean;
     backupDisk: BackupDisk;
     backupConfigs: BackupDiskConfigurations;
     uuid: string;
@@ -37,6 +38,7 @@ declare global {
     host: string;
     port: number;
     public: boolean;
+    maintenance: boolean;
     publicHost: string | null;
     publicPort: number | null;
     type: DatabaseType;

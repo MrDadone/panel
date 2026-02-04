@@ -1,12 +1,13 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE backup_configurations\n            SET name = $2, description = $3, backup_disk = $4, backup_configs = $5\n            WHERE backup_configurations.uuid = $1",
+  "query": "UPDATE backup_configurations\n            SET name = $2, maintenance = $3, description = $4, backup_disk = $5, backup_configs = $6\n            WHERE backup_configurations.uuid = $1",
   "describe": {
     "columns": [],
     "parameters": {
       "Left": [
         "Uuid",
         "Varchar",
+        "Bool",
         "Text",
         {
           "Custom": {
@@ -28,5 +29,5 @@
     },
     "nullable": []
   },
-  "hash": "39cdbcd3beed083f32bba331b5e593400439ffb08fe2bd07d07c4dee1713742c"
+  "hash": "65fc5e1834607a40a1e60ad6d32f68f06de9bfd3000ac898069296a8985445ed"
 }

@@ -19,5 +19,6 @@ export const adminBackupConfigurationS3Schema = z.object({
 export const adminBackupConfigurationSchema = z.object({
   name: z.string().min(3).max(255),
   description: z.string().max(1024).nullable(),
+  maintenance: z.boolean(),
   backupDisk: z.enum(['local', 's3', 'ddup-bak', 'btrfs', 'zfs', 'restic']),
 });

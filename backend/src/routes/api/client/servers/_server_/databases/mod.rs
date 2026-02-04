@@ -202,6 +202,14 @@ mod post {
                 .ok();
         }
 
+        if database_host.maintenance {
+            return ApiResponse::error(
+                "cannot create database while database host is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .ok();
+        }
+
         let database = match ServerDatabase::create(
             &state.database,
             &server,

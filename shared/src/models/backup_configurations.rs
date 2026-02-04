@@ -170,6 +170,7 @@ pub struct BackupConfiguration {
     pub uuid: uuid::Uuid,
 
     pub name: compact_str::CompactString,
+    pub maintenance: bool,
     pub description: Option<compact_str::CompactString>,
 
     pub backup_disk: super::server_backup::BackupDisk,
@@ -193,6 +194,10 @@ impl BaseModel for BackupConfiguration {
             (
                 "backup_configurations.name",
                 compact_str::format_compact!("{prefix}name"),
+            ),
+            (
+                "backup_configurations.maintenance",
+                compact_str::format_compact!("{prefix}maintenance"),
             ),
             (
                 "backup_configurations.description",
@@ -220,6 +225,8 @@ impl BaseModel for BackupConfiguration {
         Ok(Self {
             uuid: row.try_get(compact_str::format_compact!("{prefix}uuid").as_str())?,
             name: row.try_get(compact_str::format_compact!("{prefix}name").as_str())?,
+            maintenance: row
+                .try_get(compact_str::format_compact!("{prefix}maintenance").as_str())?,
             description: row
                 .try_get(compact_str::format_compact!("{prefix}description").as_str())?,
             backup_disk: row
@@ -237,6 +244,7 @@ impl BackupConfiguration {
     pub async fn create(
         database: &crate::database::Database,
         name: &str,
+        maintenance: bool,
         description: Option<&str>,
         backup_disk: super::server_backup::BackupDisk,
         mut backup_configs: BackupConfigs,
@@ -245,13 +253,14 @@ impl BackupConfiguration {
 
         let row = sqlx::query(&format!(
             r#"
-            INSERT INTO backup_configurations (name, description, backup_disk, backup_configs)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO backup_configurations (name, maintenance, description, backup_disk, backup_configs)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING {}
             "#,
             Self::columns_sql(None)
         ))
         .bind(name)
+        .bind(maintenance)
         .bind(description)
         .bind(backup_disk)
         .bind(serde_json::to_value(backup_configs)?)
@@ -308,6 +317,7 @@ impl BackupConfiguration {
         Ok(AdminApiBackupConfiguration {
             uuid: self.uuid,
             name: self.name,
+            maintenance: self.maintenance,
             description: self.description,
             backup_disk: self.backup_disk,
             backup_configs: self.backup_configs,
@@ -381,6 +391,7 @@ pub struct AdminApiBackupConfiguration {
     pub uuid: uuid::Uuid,
 
     pub name: compact_str::CompactString,
+    pub maintenance: bool,
     pub description: Option<compact_str::CompactString>,
 
     pub backup_disk: super::server_backup::BackupDisk,

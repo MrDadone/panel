@@ -161,6 +161,7 @@ mod patch {
         #[schema(min_length = 3, max_length = 255)]
         name: Option<compact_str::CompactString>,
         public: Option<bool>,
+        maintenance: Option<bool>,
 
         #[validate(length(max = 255))]
         #[schema(max_length = 255)]
@@ -215,6 +216,9 @@ mod patch {
         if let Some(public) = data.public {
             database_host.public = public;
         }
+        if let Some(maintenance) = data.maintenance {
+            database_host.maintenance = maintenance;
+        }
         if let Some(public_host) = data.public_host {
             if public_host.is_empty() {
                 database_host.public_host = None;
@@ -244,17 +248,18 @@ mod patch {
 
         match sqlx::query!(
             "UPDATE database_hosts
-            SET name = $1, public = $2, public_host = $3, host = $4, public_port = $5, port = $6, username = $7, password = $8
-            WHERE database_hosts.uuid = $9",
+            SET name = $2, public = $3, maintenance = $4, public_host = $5, host = $6, public_port = $7, port = $8, username = $9, password = $10
+            WHERE database_hosts.uuid = $1",
+            database_host.uuid,
             &database_host.name,
             database_host.public,
+            database_host.maintenance,
             database_host.public_host.as_deref(),
             &database_host.host,
             database_host.public_port,
             database_host.port,
             &database_host.username,
             database_host.password,
-            database_host.uuid,
         )
         .execute(state.database.write())
         .await
@@ -281,6 +286,7 @@ mod patch {
                     "uuid": database_host.uuid,
                     "name": database_host.name,
                     "public": database_host.public,
+                    "maintenance": database_host.maintenance,
                     "type": database_host.r#type,
 
                     "public_host": database_host.public_host,

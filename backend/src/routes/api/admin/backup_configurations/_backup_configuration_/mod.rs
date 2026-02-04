@@ -169,6 +169,7 @@ mod patch {
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: Option<compact_str::CompactString>,
+        maintenance: Option<bool>,
         #[validate(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
@@ -210,6 +211,9 @@ mod patch {
         if let Some(name) = data.name {
             backup_configuration.name = name;
         }
+        if let Some(maintenance) = data.maintenance {
+            backup_configuration.maintenance = maintenance;
+        }
         if let Some(description) = data.description {
             if description.is_empty() {
                 backup_configuration.description = None;
@@ -230,10 +234,11 @@ mod patch {
 
         match sqlx::query!(
             "UPDATE backup_configurations
-            SET name = $2, description = $3, backup_disk = $4, backup_configs = $5
+            SET name = $2, maintenance = $3, description = $4, backup_disk = $5, backup_configs = $6
             WHERE backup_configurations.uuid = $1",
             backup_configuration.uuid,
             &backup_configuration.name,
+            backup_configuration.maintenance,
             backup_configuration.description.as_deref(),
             backup_configuration.backup_disk as shared::models::server_backup::BackupDisk,
             serde_json::to_value(&backup_configuration.backup_configs)?,

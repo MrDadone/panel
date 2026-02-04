@@ -92,6 +92,7 @@ mod post {
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: String,
+        maintenance: bool,
         #[validate(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
@@ -128,6 +129,7 @@ mod post {
         let backup_configuration = match BackupConfiguration::create(
             &state.database,
             &data.name,
+            data.maintenance,
             data.description.as_deref(),
             data.backup_disk,
             data.backup_configs,
@@ -155,6 +157,7 @@ mod post {
                 serde_json::json!({
                     "uuid": backup_configuration.uuid,
                     "name": backup_configuration.name,
+                    "maintenance": backup_configuration.maintenance,
                     "description": backup_configuration.description,
                 }),
             )

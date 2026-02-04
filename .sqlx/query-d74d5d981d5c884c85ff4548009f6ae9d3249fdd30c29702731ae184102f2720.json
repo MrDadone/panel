@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE database_hosts\n            SET name = $2, public = $3, maintenance = $4, public_host = $5, host = $6, public_port = $7, port = $8, username = $9, password = $10\n            WHERE database_hosts.uuid = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Bool",
+        "Bool",
+        "Varchar",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Varchar",
+        "Bytea"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d74d5d981d5c884c85ff4548009f6ae9d3249fdd30c29702731ae184102f2720"
+}

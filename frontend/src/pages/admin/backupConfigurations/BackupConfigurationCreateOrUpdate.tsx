@@ -11,6 +11,7 @@ import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
+import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
@@ -35,6 +36,7 @@ export default function BackupConfigurationCreateOrUpdate({
     initialValues: {
       name: '',
       description: null,
+      maintenance: false,
       backupDisk: 'local',
     },
     validateInputOnBlur: true,
@@ -125,9 +127,13 @@ export default function BackupConfigurationCreateOrUpdate({
               {...form.getInputProps('backupDisk')}
             />
           </Group>
+
           <Group grow align='start'>
             <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
           </Group>
+
+          <Switch label='Maintenance Mode' {...form.getInputProps('maintenance', { type: 'checkbox' })} />
+
           <Group>
             <AdminCan
               action={contextBackupConfiguration ? 'backup-configurations.update' : 'backup-configurations.create'}

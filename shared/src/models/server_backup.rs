@@ -203,6 +203,14 @@ impl ServerBackup {
                 .with_status(StatusCode::EXPECTATION_FAILED)
             })?;
 
+        if backup_configuration.maintenance {
+            return Err(crate::response::DisplayError::new(
+                "cannot create backup while backup configuration is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .into());
+        }
+
         let row = sqlx::query(&format!(
             r#"
             INSERT INTO server_backups (server_uuid, node_uuid, backup_configuration_uuid, name, ignored_files, bytes, disk)
@@ -299,6 +307,14 @@ impl ServerBackup {
                 )
                 .with_status(StatusCode::EXPECTATION_FAILED)
             })?;
+
+        if backup_configuration.maintenance {
+            return Err(crate::response::DisplayError::new(
+                "cannot create backup while backup configuration is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .into());
+        }
 
         let row = sqlx::query(&format!(
             r#"
@@ -587,6 +603,14 @@ impl ServerBackup {
             .fetch_cached(database)
             .await?;
 
+        if backup_configuration.maintenance {
+            return Err(crate::response::DisplayError::new(
+                "cannot restore backup while backup configuration is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .into());
+        }
+
         server
             .node
             .fetch_cached(database)
@@ -776,6 +800,14 @@ impl DeletableModel for ServerBackup {
             })?
             .fetch_cached(&state.database)
             .await?;
+
+        if backup_configuration.maintenance {
+            return Err(crate::response::DisplayError::new(
+                "cannot delete backup while backup configuration is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .into());
+        }
 
         let database = Arc::clone(&state.database);
         let server_uuid = self.server.as_ref().map(|s| s.uuid);

@@ -60,6 +60,7 @@ pub struct DatabaseHost {
 
     pub name: compact_str::CompactString,
     pub public: bool,
+    pub maintenance: bool,
     pub r#type: DatabaseType,
 
     pub public_host: Option<compact_str::CompactString>,
@@ -92,6 +93,10 @@ impl BaseModel for DatabaseHost {
             (
                 "database_hosts.public",
                 compact_str::format_compact!("{prefix}public"),
+            ),
+            (
+                "database_hosts.maintenance",
+                compact_str::format_compact!("{prefix}maintenance"),
             ),
             (
                 "database_hosts.type",
@@ -136,6 +141,8 @@ impl BaseModel for DatabaseHost {
             uuid: row.try_get(compact_str::format_compact!("{prefix}uuid").as_str())?,
             name: row.try_get(compact_str::format_compact!("{prefix}name").as_str())?,
             public: row.try_get(compact_str::format_compact!("{prefix}public").as_str())?,
+            maintenance: row
+                .try_get(compact_str::format_compact!("{prefix}maintenance").as_str())?,
             r#type: row.try_get(compact_str::format_compact!("{prefix}type").as_str())?,
             public_host: row
                 .try_get(compact_str::format_compact!("{prefix}public_host").as_str())?,
@@ -156,6 +163,7 @@ impl DatabaseHost {
         database: &crate::database::Database,
         name: &str,
         public: bool,
+        maintenance: bool,
         r#type: DatabaseType,
         public_host: Option<&str>,
         host: &str,
@@ -166,14 +174,15 @@ impl DatabaseHost {
     ) -> Result<Self, crate::database::DatabaseError> {
         let row = sqlx::query(&format!(
             r#"
-            INSERT INTO database_hosts (name, public, type, public_host, host, public_port, port, username, password)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            INSERT INTO database_hosts (name, public, maintenance, type, public_host, host, public_port, port, username, password)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING {}
             "#,
             Self::columns_sql(None)
         ))
         .bind(name)
         .bind(public)
+        .bind(maintenance)
         .bind(r#type)
         .bind(public_host)
         .bind(host)
@@ -299,6 +308,7 @@ impl DatabaseHost {
             uuid: self.uuid,
             name: self.name,
             public: self.public,
+            maintenance: self.maintenance,
             r#type: self.r#type,
             public_host: self.public_host,
             host: self.host,
@@ -314,6 +324,7 @@ impl DatabaseHost {
         ApiDatabaseHost {
             uuid: self.uuid,
             name: self.name,
+            maintenance: self.maintenance,
             r#type: self.r#type,
             host: self.public_host.unwrap_or(self.host),
             port: self.public_port.unwrap_or(self.port),
@@ -387,6 +398,7 @@ pub struct AdminApiDatabaseHost {
 
     pub name: compact_str::CompactString,
     pub public: bool,
+    pub maintenance: bool,
     pub r#type: DatabaseType,
 
     pub public_host: Option<compact_str::CompactString>,
@@ -405,6 +417,7 @@ pub struct ApiDatabaseHost {
     pub uuid: uuid::Uuid,
 
     pub name: compact_str::CompactString,
+    pub maintenance: bool,
     pub r#type: DatabaseType,
 
     pub host: compact_str::CompactString,

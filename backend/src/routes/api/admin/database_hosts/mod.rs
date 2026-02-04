@@ -98,6 +98,7 @@ mod post {
         #[schema(min_length = 3, max_length = 255)]
         name: String,
         public: bool,
+        maintenance: bool,
         r#type: DatabaseType,
 
         #[validate(length(min = 3, max = 255))]
@@ -145,6 +146,7 @@ mod post {
             &state.database,
             &data.name,
             data.public,
+            data.maintenance,
             data.r#type,
             data.public_host.as_deref(),
             &data.host,
@@ -176,6 +178,7 @@ mod post {
                 serde_json::json!({
                     "name": database_host.name,
                     "public": database_host.public,
+                    "maintenance": database_host.maintenance,
                     "type": database_host.r#type,
 
                     "public_host": database_host.public_host,

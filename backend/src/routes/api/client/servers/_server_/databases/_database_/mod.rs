@@ -167,6 +167,14 @@ mod delete {
                 .ok();
         }
 
+        if database.database_host.maintenance {
+            return ApiResponse::error(
+                "cannot delete database while database host is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .ok();
+        }
+
         if let Err(err) = database.delete(&state, Default::default()).await {
             tracing::error!(server = %server.uuid, "failed to delete database: {:?}", err);
 
