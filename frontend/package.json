@@ -16,8 +16,9 @@
     "build:docs": "typedoc --options typedoc.json --skipErrorChecking",
     "build:translations": "tsx build-translations.mts",
     "translations:diff": "tsx diff-translations.mts",
-    "fix": "biome format --write --css-parse-tailwind-directives=true && biome lint --write --css-parse-tailwind-directives=true && biome check --write",
-    "fix:unsafe": "biome format --write --css-parse-tailwind-directives=true && biome lint --write --css-parse-tailwind-directives=true && biome check --write --unsafe"
+    "biome:validate": "biome format --css-parse-tailwind-directives=true && biome lint --css-parse-tailwind-directives=true && biome check",
+    "biome:fix": "biome format --write --css-parse-tailwind-directives=true && biome lint --write --css-parse-tailwind-directives=true && biome check --write",
+    "biome:fix-unsafe": "biome format --write --css-parse-tailwind-directives=true && biome lint --write --css-parse-tailwind-directives=true && biome check --write --unsafe"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
