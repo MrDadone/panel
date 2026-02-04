@@ -25,7 +25,6 @@ export interface NodesSlice {
 
   setSelectedNodeAllocations: (allocations: NodeAllocation[]) => void;
   addSelectedNodeAllocation: (allocation: NodeAllocation) => void;
-  isNodeAllocationSelected: (allocation: NodeAllocation) => boolean;
   removeSelectedNodeAllocation: (allocation: NodeAllocation) => void;
 }
 
@@ -101,7 +100,6 @@ export const createNodesSlice: StateCreator<AdminStore, [], [], NodesSlice> = (s
 
       return { ...state };
     }),
-  isNodeAllocationSelected: (value) => get().selectedNodeAllocations.some((a) => a.uuid === value.uuid),
   removeSelectedNodeAllocation: (value) =>
     set((state) => {
       return { ...state, selectedNodeAllocations: state.selectedNodeAllocations.filter((a) => a.uuid !== value.uuid) };

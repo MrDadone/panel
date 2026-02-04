@@ -24,19 +24,14 @@ export const FileTableRow = memo(
     const navigate = useNavigate();
     const [_, setSearchParams] = useSearchParams();
     const server = useServerStore((state) => state.server);
-    const {
-      browsingDirectory,
-      browsingFastDirectory,
-      movingFileNames,
-      movingFilesDirectory,
-      isFileSelected,
-      selectedFileNames,
-    } = useServerStore();
+    const { browsingDirectory, browsingFastDirectory, movingFileNames, movingFilesDirectory, selectedFileNames } =
+      useServerStore();
     const { settings } = useGlobalStore();
     const canOpenFile = useServerCan('files.read-content');
 
     const isSelected =
-      isFileSelected(file) || (movingFilesDirectory === browsingDirectory && movingFileNames.has(file.name));
+      selectedFileNames.has(file.name) ||
+      (movingFilesDirectory === browsingDirectory && movingFileNames.has(file.name));
     const isFileCurrentlySelected = selectedFileNames.has(file.name);
 
     // Draggable setup

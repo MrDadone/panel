@@ -55,8 +55,8 @@ const FileRow = memo(
       browsingWritableDirectory,
       browsingFastDirectory,
       movingFileNames,
+      selectedFileNames,
       setMovingFiles,
-      isFileSelected,
       addSelectedFile,
       removeSelectedFile,
     } = useServerStore();
@@ -220,10 +220,10 @@ const FileRow = memo(
                   <Checkbox
                     id={file.name}
                     disabled={movingFileNames.size > 0}
-                    checked={isFileSelected(file)}
+                    checked={selectedFileNames.has(file.name)}
                     classNames={{ input: 'cursor-pointer!' }}
                     onChange={() => {
-                      if (isFileSelected(file)) {
+                      if (selectedFileNames.has(file.name)) {
                         removeSelectedFile(file);
                       } else {
                         addSelectedFile(file);

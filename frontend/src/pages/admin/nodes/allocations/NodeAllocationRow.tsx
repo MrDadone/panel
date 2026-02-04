@@ -12,11 +12,13 @@ interface NodeAllocationRowProps {
 
 const NodeAllocationRow = memo(
   forwardRef<HTMLTableRowElement, NodeAllocationRowProps>(function FileRow({ allocation }, ref) {
-    const { isNodeAllocationSelected, addSelectedNodeAllocation, removeSelectedNodeAllocation } = useAdminStore();
+    const { selectedNodeAllocations, addSelectedNodeAllocation, removeSelectedNodeAllocation } = useAdminStore();
+
+    const isNodeAllocationSelected = selectedNodeAllocations.some((a) => a.uuid === allocation.uuid);
 
     return (
       <TableRow
-        bg={isNodeAllocationSelected(allocation) ? 'var(--mantine-color-blue-light)' : undefined}
+        bg={isNodeAllocationSelected ? 'var(--mantine-color-blue-light)' : undefined}
         onClick={(e) => {
           if (e.ctrlKey || e.metaKey) {
             addSelectedNodeAllocation(allocation);
@@ -30,9 +32,9 @@ const NodeAllocationRow = memo(
         <td className='pl-4 relative cursor-pointer w-10 text-center'>
           <Checkbox
             id={allocation.uuid}
-            checked={isNodeAllocationSelected(allocation)}
+            checked={isNodeAllocationSelected}
             onChange={() => {
-              if (isNodeAllocationSelected(allocation)) {
+              if (isNodeAllocationSelected) {
                 removeSelectedNodeAllocation(allocation);
               } else {
                 addSelectedNodeAllocation(allocation);
