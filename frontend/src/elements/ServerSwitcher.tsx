@@ -43,7 +43,7 @@ export default function ServerSwitcher({ className }: { className?: string }) {
     const server = otherServers.find((s) => s.uuid === option.value);
     if (!server) return option.label;
 
-    const stats = getServerResourceUsage(server.uuid);
+    const stats = getServerResourceUsage(server.uuid, server.nodeUuid);
 
     return (
       <div className='flex items-center gap-2'>
