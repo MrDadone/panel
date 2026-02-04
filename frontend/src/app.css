@@ -66,3 +66,7 @@ button:focus,
 button:focus-visible {
   @apply outline-none;
 }
+
+strong {
+  @apply font-semibold;
+}
