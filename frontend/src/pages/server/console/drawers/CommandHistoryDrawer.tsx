@@ -38,6 +38,7 @@ export default function CommandHistoryDrawer({ opened, onClose, ...props }: Draw
   const { loading, setPage } = useSearchablePaginatedTable({
     fetcher: (page) => getServerActivity(server.uuid, page, 'server:console.command'),
     setStoreData: setActivities,
+    modifyParams: false,
     deps: [server.uuid],
   });
 

@@ -35,15 +35,13 @@ export default function ServerSwitcher({ className }: { className?: string }) {
   });
   const loadingStats = useServerStats(servers.items);
 
-  if (loadingStats) return <Select className={className} placeholder={currentServer?.name || 'Switch server...'} />;
-
   const otherServers = servers.items.filter((s) => s.uuid !== currentServer?.uuid);
 
   const renderOption: SelectProps['renderOption'] = ({ option }) => {
     const server = otherServers.find((s) => s.uuid === option.value);
     if (!server) return option.label;
 
-    const stats = getServerResourceUsage(server.uuid, server.nodeUuid);
+    const stats = loadingStats ? null : getServerResourceUsage(server.uuid, server.nodeUuid);
 
     return (
       <div className='flex items-center gap-2'>
