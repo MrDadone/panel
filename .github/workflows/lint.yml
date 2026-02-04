@@ -43,7 +43,7 @@ jobs:
           cd frontend
           pnpm install
 
-      - name: Build frontend
+      - name: Run biome:validate
         run: |
           cd frontend
           pnpm run biome:validate
