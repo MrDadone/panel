@@ -1117,7 +1117,7 @@ declare global {
 
   type MailMode = MailModeNone | MailModeSmtp | MailModeSendmail | MailModeFilesystem;
 
-  type ProcessConfigurationConfigParser = 'file' | 'yaml' | 'properties' | 'ini' | 'json' | 'xml';
+  type ProcessConfigurationConfigParser = 'file' | 'yaml' | 'properties' | 'ini' | 'json' | 'xml' | 'toml';
 
   interface ProcessConfiguration {
     startup: {

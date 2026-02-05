@@ -64,6 +64,7 @@ export const processConfigurationParserLabelMapping: Record<ProcessConfiguration
   ini: 'INI',
   json: 'JSON',
   xml: 'XML',
+  toml: 'TOML',
 };
 
 export const databaseTypeLabelMapping: Record<DatabaseType, string> = {

@@ -37,6 +37,7 @@ pub enum ServerConfigurationFileParser {
     Ini,
     Json,
     Xml,
+    Toml,
 }
 
 #[derive(ToSchema, Serialize, Deserialize, Clone)]
