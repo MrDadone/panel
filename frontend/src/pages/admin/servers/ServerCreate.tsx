@@ -5,7 +5,6 @@ import {
   faNetworkWired,
   faPlay,
   faReply,
-  faSoccerBall,
   faStopwatch,
   faWrench,
 } from '@fortawesome/free-solid-svg-icons';
