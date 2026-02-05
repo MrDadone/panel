@@ -1,21 +1,12 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getMe from '@/api/me/getMe.ts';
 import logout from '@/api/me/logout.ts';
 import Spinner from '@/elements/Spinner.tsx';
+import { AuthContext } from '@/providers/contexts/authContext.ts';
 import { useToast } from './ToastProvider.tsx';
 import { useTranslations } from './TranslationProvider.tsx';
-
-interface AuthContextType {
-  user: User | null;
-
-  setUser: (user: User | null) => void;
-  doLogin: (user: User, doNavigate?: boolean) => void;
-  doLogout: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
@@ -65,12 +56,5 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export default AuthProvider;
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within a AuthProvider');
-  }
-  return context;
-};
+export { AuthProvider };
+export { useAuth } from './contexts/authContext.ts';

@@ -62,7 +62,8 @@
         "noNamespace": "error",
         "useArrayLiterals": "error",
         "useAsConstAssertion": "error",
-        "useConsistentCurlyBraces": "warn"
+        "useConsistentCurlyBraces": "warn",
+        "useComponentExportOnlyModules": "warn"
       },
       "suspicious": {
         "noAsyncPromiseExecutor": "error",

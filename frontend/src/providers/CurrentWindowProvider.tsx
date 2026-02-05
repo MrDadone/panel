@@ -1,13 +1,7 @@
-import { createContext, FC, ReactNode, useCallback, useContext, useMemo } from 'react';
+import { FC, ReactNode, useCallback, useMemo } from 'react';
+import { CurrentWindowContext } from '@/providers/contexts/currentWindowContext.ts';
 
-interface CurrentWindowContextType {
-  id: number | null;
-  getParent: () => HTMLDivElement | null;
-}
-
-const CurrentWindowContext = createContext<CurrentWindowContextType | undefined>(undefined);
-
-export const CurrentWindowProvider: FC<{ children: ReactNode; id: number | null }> = ({ children, id }) => {
+const CurrentWindowProvider: FC<{ children: ReactNode; id: number | null }> = ({ children, id }) => {
   const getParent = useCallback(() => {
     if (!id) {
       return null;
@@ -27,11 +21,5 @@ export const CurrentWindowProvider: FC<{ children: ReactNode; id: number | null 
   return <CurrentWindowContext.Provider value={contextValue}>{children}</CurrentWindowContext.Provider>;
 };
 
-export const useCurrentWindow = (): CurrentWindowContextType => {
-  const context = useContext(CurrentWindowContext);
-  if (!context) {
-    throw new Error('useWindows must be used within a WindowProvider');
-  }
-
-  return context;
-};
+export { CurrentWindowProvider };
+export { useCurrentWindow } from './contexts/currentWindowContext.ts';

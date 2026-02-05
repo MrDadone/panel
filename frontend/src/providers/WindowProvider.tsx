@@ -1,10 +1,11 @@
 import { faX, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Title } from '@mantine/core';
-import { createContext, FC, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+import { FC, ReactNode, useCallback, useMemo, useState } from 'react';
 import { Rnd } from 'react-rnd';
 import Card from '@/elements/Card.tsx';
-import { CurrentWindowProvider } from './CurrentWindowProvider.tsx';
+import { CurrentWindowProvider } from '@/providers/CurrentWindowProvider.tsx';
+import { WindowContext } from '@/providers/contexts/windowContext.ts';
 
 interface WindowType {
   id: number;
@@ -14,17 +15,9 @@ interface WindowType {
   zIndex: number;
 }
 
-interface WindowContextType {
-  addWindow: (icon: IconDefinition | undefined, title: string | undefined, component: ReactNode) => number;
-  updateWindow: (id: number, title: string | undefined) => void;
-  closeWindow: (id: number) => void;
-}
-
-const WindowContext = createContext<WindowContextType | undefined>(undefined);
-
 let windowId = 1;
 
-export const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
+const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [windows, setWindows] = useState<WindowType[]>([]);
   const [maxZIndex, setMaxZIndex] = useState(100);
 
@@ -130,11 +123,5 @@ export const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
 };
 
-export const useWindows = (): WindowContextType => {
-  const context = useContext(WindowContext);
-  if (!context) {
-    throw new Error('useWindows must be used within a WindowProvider');
-  }
-
-  return context;
-};
+export { WindowProvider };
+export { useWindows } from './contexts/windowContext.ts';

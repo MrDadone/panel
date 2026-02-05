@@ -16,7 +16,8 @@ import { to } from '@/lib/routes.ts';
 import { oobeLoginSchema } from '@/lib/schemas/oobe.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
-import { OobeComponentProps, steps } from '@/routers/OobeRouter.tsx';
+import { OobeComponentProps } from '@/routers/OobeRouter.tsx';
+import { steps } from '@/routers/oobeSteps.ts';
 import { useGlobalStore } from '@/stores/global.ts';
 
 export default function OobeLogin({ onNext }: OobeComponentProps) {

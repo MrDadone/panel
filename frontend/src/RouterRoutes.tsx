@@ -1,7 +1,7 @@
 import { Suspense, useEffect } from 'react';
 import { Route, Routes } from 'react-router';
 import Spinner from './elements/Spinner.tsx';
-import AuthProvider from './providers/AuthProvider.tsx';
+import { AuthProvider } from './providers/AuthProvider.tsx';
 import AdminGuard from './routers/guards/AdminGuard.tsx';
 import AuthenticatedGuard from './routers/guards/AuthenticatedGuard.tsx';
 import UnauthenticatedGuard from './routers/guards/UnauthenticatedGuard.tsx';

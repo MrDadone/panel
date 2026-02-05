@@ -914,6 +914,7 @@ declare global {
     | FileOperationCopy
     | FileOperationCopyMany
     | FileOperationCopyRemote;
+
   type UserToastPosition = 'top_left' | 'top_center' | 'top_right' | 'bottom_left' | 'bottom_center' | 'bottom_right';
 
   interface UpdateUser {

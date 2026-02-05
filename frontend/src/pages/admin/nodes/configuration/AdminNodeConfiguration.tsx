@@ -5,11 +5,11 @@ import jsYaml from 'js-yaml';
 import { useState } from 'react';
 import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
-import { handleCopyToClipboard } from '@/elements/CopyOnClick.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import HljsCode from '@/elements/HljsCode.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import { handleCopyToClipboard } from '@/lib/copy.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function AdminNodeConfiguration({ node }: { node: Node }) {

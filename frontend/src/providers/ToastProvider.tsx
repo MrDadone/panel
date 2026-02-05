@@ -1,25 +1,8 @@
 import classNames from 'classnames';
 import { AnimatePresence, motion } from 'motion/react';
-import { createContext, FC, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+import { FC, ReactNode, useCallback, useMemo, useState } from 'react';
 import Notification from '@/elements/Notification.tsx';
-
-type ToastType = 'success' | 'error' | 'warning' | 'info';
-
-interface Toast {
-  id: number;
-  message: string;
-  type: ToastType;
-}
-
-interface ToastContextType {
-  toastPosition: UserToastPosition;
-  setToastPosition: (position: UserToastPosition) => void;
-
-  addToast: (message: string, type?: ToastType) => number;
-  dismissToast: (id: number) => void;
-}
-
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+import { Toast, ToastContext, ToastType } from '@/providers/contexts/toastContext.ts';
 
 let toastId = 1;
 
@@ -72,7 +55,7 @@ const getToastPositionInitial = (position: UserToastPosition) => {
   }
 };
 
-export const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
+const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [toastPosition, setToastPosition] = useState<UserToastPosition>('bottom_right');
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -128,11 +111,5 @@ export const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
 };
 
-export const useToast = (): ToastContextType => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-
-  return context;
-};
+export { ToastProvider };
+export { useToast } from './contexts/toastContext.ts';
