@@ -1,4 +1,12 @@
-import { faCircleInfo, faReply } from '@fortawesome/free-solid-svg-icons';
+import {
+  faAddressCard,
+  faCircleInfo,
+  faIcons,
+  faInfoCircle,
+  faReply,
+  faStopwatch,
+  faWrench,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group, Paper, Stack, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
@@ -23,6 +31,7 @@ import SizeInput from '@/elements/input/SizeInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { adminServerUpdateSchema } from '@/lib/schemas/admin/servers.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
@@ -150,10 +159,8 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
           )}
 
           <Group grow align='normal'>
-            <Paper withBorder p='md'>
+            <TitleCard title='Basic Information' icon={<FontAwesomeIcon icon={faInfoCircle} />}>
               <Stack>
-                <Title order={3}>Basic Information</Title>
-
                 <Group grow>
                   <TextInput
                     withAsterisk
@@ -175,12 +182,10 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                   {...form.getInputProps('description')}
                 />
               </Stack>
-            </Paper>
+            </TitleCard>
 
-            <Paper withBorder p='md'>
+            <TitleCard title='Server Assignment' icon={<FontAwesomeIcon icon={faAddressCard} />}>
               <Stack>
-                <Title order={3}>Server Assignment</Title>
-
                 <Group grow>
                   <Select
                     withAsterisk
@@ -249,14 +254,12 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                   />
                 </Group>
               </Stack>
-            </Paper>
+            </TitleCard>
           </Group>
 
           <Group grow align='normal'>
-            <Paper withBorder p='md'>
+            <TitleCard title='Resource Limits' icon={<FontAwesomeIcon icon={faStopwatch} />}>
               <Stack>
-                <Title order={3}>Resource Limits</Title>
-
                 <Group grow>
                   <NumberInput
                     withAsterisk
@@ -295,12 +298,10 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                   <NumberInput label='IO Weight' {...form.getInputProps('limits.ioWeight')} />
                 </Group>
               </Stack>
-            </Paper>
+            </TitleCard>
 
-            <Paper withBorder p='md'>
+            <TitleCard title='Server Configuration' icon={<FontAwesomeIcon icon={faWrench} />}>
               <Stack>
-                <Title order={3}>Server Configuration</Title>
-
                 <Group grow>
                   <Select
                     withAsterisk
@@ -359,14 +360,12 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                   {...form.getInputProps('hugepagesPassthroughEnabled', { type: 'checkbox' })}
                 />
               </Stack>
-            </Paper>
+            </TitleCard>
           </Group>
 
           <Group grow align='normal'>
-            <Paper withBorder p='md'>
+            <TitleCard title='Feature Limits' icon={<FontAwesomeIcon icon={faIcons} />}>
               <Stack>
-                <Title order={3}>Feature Limits</Title>
-
                 <Group grow>
                   <NumberInput
                     withAsterisk
@@ -398,7 +397,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                   />
                 </Group>
               </Stack>
-            </Paper>
+            </TitleCard>
           </Group>
 
           <Group>

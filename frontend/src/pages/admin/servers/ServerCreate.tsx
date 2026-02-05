@@ -1,4 +1,14 @@
-import { faIcons, faReply, faSoccerBall } from '@fortawesome/free-solid-svg-icons';
+import {
+  faAddressCard,
+  faIcons,
+  faInfoCircle,
+  faNetworkWired,
+  faPlay,
+  faReply,
+  faSoccerBall,
+  faStopwatch,
+  faWrench,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
@@ -191,7 +201,7 @@ export default function ServerCreate() {
       >
         <Stack mt='16'>
           <Group grow align='normal'>
-            <TitleCard title='Basic Information' icon={<FontAwesomeIcon icon={faSoccerBall} />}>
+            <TitleCard title='Basic Information' icon={<FontAwesomeIcon icon={faInfoCircle} />}>
               <Stack>
                 <Group grow>
                   <TextInput
@@ -216,7 +226,7 @@ export default function ServerCreate() {
               </Stack>
             </TitleCard>
 
-            <TitleCard title='Server Assignment' icon={<FontAwesomeIcon icon={faIcons} />}>
+            <TitleCard title='Server Assignment' icon={<FontAwesomeIcon icon={faAddressCard} />}>
               <Stack>
                 <Group grow>
                   <Select
@@ -307,7 +317,7 @@ export default function ServerCreate() {
           </Group>
 
           <Group grow align='normal'>
-            <TitleCard title='Resource Limits' icon={<FontAwesomeIcon icon={faIcons} />}>
+            <TitleCard title='Resource Limits' icon={<FontAwesomeIcon icon={faStopwatch} />}>
               <Stack>
                 <Group grow>
                   <NumberInput
@@ -349,7 +359,7 @@ export default function ServerCreate() {
               </Stack>
             </TitleCard>
 
-            <TitleCard title='Server Configuration' icon={<FontAwesomeIcon icon={faIcons} />}>
+            <TitleCard title='Server Configuration' icon={<FontAwesomeIcon icon={faWrench} />}>
               <Stack>
                 <Group grow>
                   <Select
@@ -461,7 +471,7 @@ export default function ServerCreate() {
               </Stack>
             </TitleCard>
 
-            <TitleCard title='Allocations' icon={<FontAwesomeIcon icon={faIcons} />}>
+            <TitleCard title='Allocations' icon={<FontAwesomeIcon icon={faNetworkWired} />}>
               <Stack>
                 <Group grow>
                   <Select
@@ -500,7 +510,7 @@ export default function ServerCreate() {
             </TitleCard>
           </Group>
 
-          <TitleCard title='Variables' icon={<FontAwesomeIcon icon={faIcons} />}>
+          <TitleCard title='Variables' icon={<FontAwesomeIcon icon={faPlay} />}>
             <Stack>
               {!selectedNestUuid || !form.values.eggUuid ? (
                 <Alert>Please select an egg before you can configure variables.</Alert>
