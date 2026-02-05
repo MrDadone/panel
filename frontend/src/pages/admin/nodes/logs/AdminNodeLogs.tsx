@@ -45,7 +45,9 @@ export default function AdminNodeLogs({ node }: { node: Node }) {
   }, [selectedLog]);
 
   const doDownload = () => {
-    if (!selectedLog) return;
+    if (!selectedLog) {
+      return;
+    }
 
     setLoading(true);
 

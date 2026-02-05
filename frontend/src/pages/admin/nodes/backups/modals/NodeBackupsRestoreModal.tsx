@@ -31,12 +31,16 @@ export default function NodeBackupsRestoreModal({ node, backup, opened, onClose 
   }, [opened]);
 
   const doRestore = () => {
+    if (!selectedServer) {
+      return;
+    }
+
     setLoading(true);
 
-    restoreNodeBackup(node.uuid, backup.uuid, { serverUuid: selectedServer!.uuid, truncateDirectory: truncate })
+    restoreNodeBackup(node.uuid, backup.uuid, { serverUuid: selectedServer.uuid, truncateDirectory: truncate })
       .then(() => {
         onClose();
-        addToast(`Restoring backup to ${selectedServer?.name}...`, 'success');
+        addToast(`Restoring backup to ${selectedServer.name}...`, 'success');
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');

@@ -25,14 +25,18 @@ export default function EggMountAddModal({
   const mounts = useSearchableResource<Mount>({ fetcher: (search) => getMounts(1, search) });
 
   const doAdd = () => {
+    if (!mount) {
+      return;
+    }
+
     setLoading(true);
 
-    createEggMount(nest.uuid, egg.uuid, mount!.uuid)
+    createEggMount(nest.uuid, egg.uuid, mount.uuid)
       .then(() => {
         addToast('Egg Mount added.', 'success');
 
         onClose();
-        addEggMount({ mount: mount!, created: new Date() });
+        addEggMount({ mount, created: new Date() });
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');

@@ -25,12 +25,16 @@ export default function EggMoveModal({
   const nests = useSearchableResource<AdminNest>({ fetcher: (search) => getNests(1, search) });
 
   const doMove = () => {
+    if (!selectedNest) {
+      return;
+    }
+
     setLoading(true);
 
-    moveEgg(nest.uuid, egg.uuid, selectedNest!.uuid)
+    moveEgg(nest.uuid, egg.uuid, selectedNest.uuid)
       .then(() => {
         addToast('Egg moved.', 'success');
-        navigate(`/admin/nests/${selectedNest!.uuid}/eggs/${egg.uuid}`);
+        navigate(`/admin/nests/${selectedNest.uuid}/eggs/${egg.uuid}`);
 
         onClose();
       })

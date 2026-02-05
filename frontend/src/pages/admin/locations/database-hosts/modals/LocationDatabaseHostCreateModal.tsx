@@ -27,14 +27,18 @@ export default function LocationDatabaseHostCreateModal({
   });
 
   const doCreate = () => {
+    if (!databaseHost) {
+      return;
+    }
+
     setLoading(true);
 
-    createLocationDatabaseHost(location.uuid, databaseHost!.uuid)
+    createLocationDatabaseHost(location.uuid, databaseHost.uuid)
       .then(() => {
         addToast('Location Database Host created.', 'success');
 
         onClose();
-        addLocationDatabaseHost({ databaseHost: databaseHost!, created: new Date().toString() });
+        addLocationDatabaseHost({ databaseHost, created: new Date().toString() });
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');

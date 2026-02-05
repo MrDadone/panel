@@ -31,9 +31,13 @@ export default function UserOAuthLinkAddModal({ user, opened, onClose }: ModalPr
   }, [opened]);
 
   const doAdd = () => {
+    if (!selectedOAuthProvider) {
+      return;
+    }
+
     setLoading(true);
 
-    createUserOAuthLink(user.uuid, selectedOAuthProvider!.uuid, identifier)
+    createUserOAuthLink(user.uuid, selectedOAuthProvider.uuid, identifier)
       .then((oauthLink) => {
         addToast('OAuth Link added.', 'success');
 
