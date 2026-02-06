@@ -1,10 +1,9 @@
+use super::{BASE64_ENGINE, decrypt_laravel_value, process_table};
 use anyhow::Context;
 use base64::Engine;
 use clap::{Args, FromArgMatches};
 use colored::Colorize;
 use compact_str::ToCompactString;
-use openssl::symm::Cipher;
-use serde::Deserialize;
 use sqlx::Row;
 use std::{
     collections::{HashMap, HashSet},
@@ -12,26 +11,21 @@ use std::{
     sync::Arc,
 };
 
-static BASE64_ENGINE: base64::engine::general_purpose::GeneralPurpose =
-    base64::engine::general_purpose::GeneralPurpose::new(
-        &base64::alphabet::STANDARD,
-        base64::engine::general_purpose::GeneralPurposeConfig::new(),
-    );
-
 #[derive(Args)]
-pub struct ImportArgs {
+pub struct PterodactylArgs {
     #[arg(
         short = 'e',
         long = "environment",
         help = "the environment variable file location for the pterodactyl panel",
-        default_value = "/var/www/pterodactyl/.env"
+        default_value = "/var/www/pterodactyl/.env",
+        value_hint = clap::ValueHint::FilePath
     )]
     environment: String,
 }
 
-pub struct ImportCommand;
+pub struct PterodactylCommand;
 
-impl shared::extensions::commands::CliCommand<ImportArgs> for ImportCommand {
+impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCommand {
     fn get_command(&self, command: clap::Command) -> clap::Command {
         command
     }
@@ -39,7 +33,9 @@ impl shared::extensions::commands::CliCommand<ImportArgs> for ImportCommand {
     fn get_executor(self) -> Box<shared::extensions::commands::ExecutorFunc> {
         Box::new(|env, arg_matches| {
             Box::pin(async move {
-                let args = ImportArgs::from_arg_matches(&arg_matches)?;
+                let args = PterodactylArgs::from_arg_matches(&arg_matches)?;
+
+                let start_time = std::time::Instant::now();
 
                 let env = match env {
                     Some(env) => env,
@@ -1793,124 +1789,13 @@ impl shared::extensions::commands::CliCommand<ImportArgs> for ImportCommand {
                     std::process::exit(1);
                 }
 
+                tracing::info!(
+                    "finished processing import, took {:.2} seconds",
+                    start_time.elapsed().as_secs_f32()
+                );
+
                 Ok(())
             })
         })
     }
-}
-
-#[inline]
-fn extract_php_serialized_string(
-    serialized_data: &str,
-) -> Result<compact_str::CompactString, anyhow::Error> {
-    if !serialized_data.starts_with("s:") {
-        return Ok(serialized_data.into());
-    }
-
-    let first_colon = match serialized_data.find(':') {
-        Some(pos) => pos,
-        None => return Err(anyhow::anyhow!("Invalid PHP serialized string format")),
-    };
-
-    let second_colon_start = first_colon + 1;
-    let second_colon = match serialized_data[second_colon_start..].find(':') {
-        Some(pos) => second_colon_start + pos,
-        None => return Err(anyhow::anyhow!("Invalid PHP serialized string format")),
-    };
-
-    let length_str = &serialized_data[first_colon + 1..second_colon];
-    let length: usize = length_str.parse()?;
-
-    if serialized_data.len() <= second_colon + 1
-        || &serialized_data[second_colon + 1..second_colon + 2] != "\""
-    {
-        return Err(anyhow::anyhow!(
-            "Invalid PHP serialized string format, missing opening quote"
-        ));
-    }
-
-    let content_start = second_colon + 2;
-    let expected_end = content_start + length;
-
-    if serialized_data.len() < expected_end + 2 {
-        return Err(anyhow::anyhow!(
-            "Invalid PHP serialized string format, string is truncated"
-        ));
-    }
-
-    if &serialized_data[expected_end..expected_end + 2] != "\";" {
-        return Err(anyhow::anyhow!(
-            "Invalid PHP serialized string format, missing closing quote or semicolon"
-        ));
-    }
-
-    Ok(serialized_data[content_start..expected_end].into())
-}
-
-fn decrypt_laravel_value(
-    encrypted_value: &str,
-    decoded_key: &[u8],
-) -> Result<compact_str::CompactString, anyhow::Error> {
-    let clean_value = encrypted_value.trim_start_matches("base64:");
-    let decoded = BASE64_ENGINE.decode(clean_value)?;
-
-    #[derive(Deserialize)]
-    struct LaravelEncrypted {
-        iv: compact_str::CompactString,
-        value: compact_str::CompactString,
-    }
-
-    let payload: LaravelEncrypted = serde_json::from_slice(&decoded)?;
-
-    let iv = BASE64_ENGINE.decode(&payload.iv)?;
-    let value = BASE64_ENGINE.decode(&payload.value)?;
-
-    let key = &decoded_key[0..32];
-    let decrypted = openssl::symm::decrypt(Cipher::aes_256_cbc(), key, Some(&iv), &value)?;
-
-    let result = compact_str::CompactString::from_utf8(decrypted)?;
-
-    extract_php_serialized_string(&result)
-}
-
-pub async fn process_table<T, Fut: Future<Output = Result<T, anyhow::Error>>>(
-    source_database: &sqlx::Pool<sqlx::MySql>,
-    table: &str,
-    sql_where: Option<&str>,
-    compute: impl Fn(Vec<sqlx::mysql::MySqlRow>) -> Fut,
-    page_size: usize,
-) -> Result<Vec<T>, anyhow::Error> {
-    tracing::info!(table, "starting processing");
-
-    let mut offset: usize = 0;
-    let mut results = Vec::new();
-
-    loop {
-        tracing::info!(table, offset, "processing");
-
-        let rows = sqlx::query(&format!(
-            "SELECT * FROM `{table}` {} LIMIT {page_size} OFFSET {offset}",
-            if let Some(where_clause) = sql_where {
-                format!("WHERE {where_clause}")
-            } else {
-                String::new()
-            }
-        ))
-        .fetch_all(source_database)
-        .await?;
-
-        if rows.is_empty() {
-            break;
-        }
-
-        let result = compute(rows).await?;
-
-        if std::mem::size_of_val(&result) > 0 {
-            results.push(result);
-        }
-
-        offset += page_size;
-    }
-
-    Ok(results)
 }

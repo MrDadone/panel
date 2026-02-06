@@ -23,7 +23,7 @@ declare global {
   interface BackupConfiguration {
     name: string;
     description?: string;
-    maintenance: boolean;
+    maintenanceEnabled: boolean;
     backupDisk: BackupDisk;
     backupConfigs: BackupDiskConfigurations;
     uuid: string;
@@ -37,8 +37,8 @@ declare global {
     password: string;
     host: string;
     port: number;
-    public: boolean;
-    maintenance: boolean;
+    deploymentEnabled: boolean;
+    maintenanceEnabled: boolean;
     publicHost: string | null;
     publicPort: number | null;
     type: DatabaseType;
@@ -205,8 +205,8 @@ declare global {
     location: Location;
     backupConfiguration: BackupConfiguration | null;
     name: string;
-    public: boolean;
-    maintenance: boolean;
+    deploymentEnabled: boolean;
+    maintenanceEnabled: boolean;
     description: string | null;
     publicUrl: string | null;
     url: string;
@@ -269,6 +269,7 @@ declare global {
     autoStartBehavior: ServerAutostartBehavior;
     timezone: string;
     hugepagesPassthroughEnabled: boolean;
+    kvmPassthroughEnabled: boolean;
     created: Date;
   }
 
@@ -337,7 +338,7 @@ declare global {
     permissions: string[];
     nodeUuid: string;
     nodeName: string;
-    nodeMaintenance: boolean;
+    nodeMaintenanceEnabled: boolean;
     sftpHost: string;
     sftpPort: number;
     name: string;

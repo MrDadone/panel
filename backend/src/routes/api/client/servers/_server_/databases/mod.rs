@@ -202,7 +202,7 @@ mod post {
                 .ok();
         }
 
-        if database_host.maintenance {
+        if database_host.maintenance_enabled {
             return ApiResponse::error(
                 "cannot create database while database host is in maintenance mode",
             )

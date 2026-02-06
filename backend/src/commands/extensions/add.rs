@@ -9,7 +9,7 @@ use tokio::process::Command;
 
 #[derive(Args)]
 pub struct AddArgs {
-    #[arg(help = "the file to add as an extension")]
+    #[arg(help = "the file to add as an extension", value_hint = clap::ValueHint::FilePath)]
     file: String,
     #[arg(
         long = "skip-version-check",

@@ -37,8 +37,8 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
       locationUuid: '',
       backupConfigurationUuid: uuidNil,
       name: '',
-      public: false,
-      maintenance: false,
+      deploymentEnabled: true,
+      maintenanceEnabled: false,
       description: null,
       publicUrl: null,
       url: '',
@@ -67,8 +67,8 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
         locationUuid: contextNode.location.uuid,
         backupConfigurationUuid: contextNode.backupConfiguration?.uuid ?? uuidNil,
         name: contextNode.name,
-        public: contextNode.public,
-        maintenance: contextNode.maintenance,
+        deploymentEnabled: contextNode.deploymentEnabled,
+        maintenanceEnabled: contextNode.maintenanceEnabled,
         description: contextNode.description,
         publicUrl: contextNode.publicUrl,
         url: contextNode.url,
@@ -207,8 +207,8 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
           </Group>
 
           <Group grow>
-            <Switch label='Public' {...form.getInputProps('public', { type: 'checkbox' })} />
-            <Switch label='Maintenance Mode' {...form.getInputProps('maintenance', { type: 'checkbox' })} />
+            <Switch label='Deployment Enabled' {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })} />
+            <Switch label='Maintenance Enabled' {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })} />
           </Group>
 
           <Group>

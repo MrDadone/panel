@@ -97,9 +97,10 @@ mod post {
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: String,
-        public: bool,
-        maintenance: bool,
         r#type: DatabaseType,
+
+        deployment_enabled: bool,
+        maintenance_enabled: bool,
 
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
@@ -145,9 +146,9 @@ mod post {
         let database_host = match DatabaseHost::create(
             &state.database,
             &data.name,
-            data.public,
-            data.maintenance,
             data.r#type,
+            data.deployment_enabled,
+            data.maintenance_enabled,
             data.public_host.as_deref(),
             &data.host,
             data.public_port.map(|port| port as i32),
@@ -176,10 +177,12 @@ mod post {
             .log(
                 "database-host:create",
                 serde_json::json!({
+                    "uuid": database_host.uuid,
                     "name": database_host.name,
-                    "public": database_host.public,
-                    "maintenance": database_host.maintenance,
                     "type": database_host.r#type,
+
+                    "deployment_enabled": database_host.deployment_enabled,
+                    "maintenance_enabled": database_host.maintenance_enabled,
 
                     "public_host": database_host.public_host,
                     "host": database_host.host,

@@ -13,7 +13,7 @@ pub struct RemoveArgs {
     package_name: String,
     #[arg(
         long = "remove-migrations",
-        help = "whether to remove the database migrations of this extension (usually not recommended)",
+        help = "whether to remove the database migrations definition of this extension (usually not recommended)",
         default_value = "false"
     )]
     remove_migrations: bool,

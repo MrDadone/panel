@@ -229,6 +229,7 @@ mod patch {
         timezone: Option<compact_str::CompactString>,
 
         hugepages_passthrough_enabled: Option<bool>,
+        kvm_passthrough_enabled: Option<bool>,
 
         feature_limits: Option<shared::models::server::ApiServerFeatureLimits>,
     }
@@ -362,6 +363,9 @@ mod patch {
         if let Some(hugepages_passthrough_enabled) = data.hugepages_passthrough_enabled {
             server.hugepages_passthrough_enabled = hugepages_passthrough_enabled;
         }
+        if let Some(kvm_passthrough_enabled) = data.kvm_passthrough_enabled {
+            server.kvm_passthrough_enabled = kvm_passthrough_enabled;
+        }
         if let Some(feature_limits) = &data.feature_limits {
             server.allocation_limit = feature_limits.allocations;
             server.backup_limit = feature_limits.backups;
@@ -376,9 +380,9 @@ mod patch {
                 suspended = $4, external_id = $5, name = $6, description = $7,
                 cpu = $8, memory = $9, swap = $10, disk = $11, io_weight = $12,
                 pinned_cpus = $13, startup = $14, image = $15, timezone = $16,
-                hugepages_passthrough_enabled = $17, allocation_limit = $18, backup_limit = $19,
-                database_limit = $20, schedule_limit = $21
-            WHERE servers.uuid = $22",
+                hugepages_passthrough_enabled = $17, kvm_passthrough_enabled = $18, allocation_limit = $19, backup_limit = $20,
+                database_limit = $21, schedule_limit = $22
+            WHERE servers.uuid = $23",
             server.owner.uuid,
             server.egg.uuid,
             server
@@ -399,6 +403,7 @@ mod patch {
             &server.image,
             server.timezone.as_deref(),
             server.hugepages_passthrough_enabled,
+            server.kvm_passthrough_enabled,
             server.allocation_limit,
             server.backup_limit,
             server.database_limit,

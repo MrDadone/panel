@@ -52,7 +52,7 @@ mod post {
                 .ok();
         }
 
-        if database.database_host.maintenance {
+        if database.database_host.maintenance_enabled {
             return ApiResponse::error(
                 "cannot rotate database password while database host is in maintenance mode",
             )

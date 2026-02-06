@@ -141,6 +141,7 @@ mod post {
         timezone: Option<chrono_tz::Tz>,
 
         hugepages_passthrough_enabled: bool,
+        kvm_passthrough_enabled: bool,
 
         feature_limits: shared::models::server::ApiServerFeatureLimits,
         #[schema(inline)]
@@ -289,6 +290,7 @@ mod post {
             &data.image,
             data.timezone.as_ref().map(|tz| tz.name()),
             data.hugepages_passthrough_enabled,
+            data.kvm_passthrough_enabled,
             &data.feature_limits,
             &server_variables,
         )
@@ -334,6 +336,7 @@ mod post {
                     "timezone": data.timezone,
 
                     "hugepages_passthrough_enabled": data.hugepages_passthrough_enabled,
+                    "kvm_passthrough_enabled": data.kvm_passthrough_enabled,
 
                     "feature_limits": data.feature_limits,
                     "variables": data.variables,

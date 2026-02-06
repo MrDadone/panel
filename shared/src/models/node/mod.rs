@@ -20,9 +20,10 @@ pub struct Node {
     pub backup_configuration: Option<Fetchable<super::backup_configurations::BackupConfiguration>>,
 
     pub name: compact_str::CompactString,
-    pub public: bool,
-    pub maintenance: bool,
     pub description: Option<compact_str::CompactString>,
+
+    pub deployment_enabled: bool,
+    pub maintenance_enabled: bool,
 
     pub public_url: Option<reqwest::Url>,
     pub url: reqwest::Url,
@@ -53,16 +54,16 @@ impl BaseModel for Node {
             ),
             ("nodes.name", compact_str::format_compact!("{prefix}name")),
             (
-                "nodes.public",
-                compact_str::format_compact!("{prefix}public"),
-            ),
-            (
-                "nodes.maintenance",
-                compact_str::format_compact!("{prefix}maintenance"),
-            ),
-            (
                 "nodes.description",
                 compact_str::format_compact!("{prefix}description"),
+            ),
+            (
+                "nodes.deployment_enabled",
+                compact_str::format_compact!("{prefix}deployment_enabled"),
+            ),
+            (
+                "nodes.maintenance_enabled",
+                compact_str::format_compact!("{prefix}maintenance_enabled"),
             ),
             (
                 "nodes.public_url",
@@ -111,11 +112,12 @@ impl BaseModel for Node {
                     compact_str::format_compact!("{prefix}node_backup_configuration_uuid"),
                 ),
             name: row.try_get(compact_str::format_compact!("{prefix}name").as_str())?,
-            public: row.try_get(compact_str::format_compact!("{prefix}public").as_str())?,
-            maintenance: row
-                .try_get(compact_str::format_compact!("{prefix}maintenance").as_str())?,
             description: row
                 .try_get(compact_str::format_compact!("{prefix}description").as_str())?,
+            deployment_enabled: row
+                .try_get(compact_str::format_compact!("{prefix}deployment_enabled").as_str())?,
+            maintenance_enabled: row
+                .try_get(compact_str::format_compact!("{prefix}maintenance_enabled").as_str())?,
             public_url: row
                 .try_get::<Option<String>, _>(
                     compact_str::format_compact!("{prefix}public_url").as_str(),
@@ -144,9 +146,9 @@ impl Node {
         location_uuid: uuid::Uuid,
         backup_configuration_uuid: Option<uuid::Uuid>,
         name: &str,
-        public: bool,
-        maintenance: bool,
         description: Option<&str>,
+        deployment_enabled: bool,
+        maintenance_enabled: bool,
         public_url: Option<&str>,
         url: &str,
         sftp_host: Option<&str>,
@@ -159,7 +161,7 @@ impl Node {
 
         let row = sqlx::query(
             r#"
-            INSERT INTO nodes (location_uuid, backup_configuration_uuid, name, public, maintenance, description, public_url, url, sftp_host, sftp_port, memory, disk, token_id, token)
+            INSERT INTO nodes (location_uuid, backup_configuration_uuid, name, description, deployment_enabled, maintenance_enabled, public_url, url, sftp_host, sftp_port, memory, disk, token_id, token)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING uuid
             "#
@@ -167,9 +169,9 @@ impl Node {
         .bind(location_uuid)
         .bind(backup_configuration_uuid)
         .bind(name)
-        .bind(public)
-        .bind(maintenance)
         .bind(description)
+        .bind(deployment_enabled)
+        .bind(maintenance_enabled)
         .bind(public_url)
         .bind(url)
         .bind(sftp_host)
@@ -490,9 +492,9 @@ impl Node {
             location,
             backup_configuration,
             name: self.name,
-            public: self.public,
-            maintenance: self.maintenance,
             description: self.description,
+            deployment_enabled: self.deployment_enabled,
+            maintenance_enabled: self.maintenance_enabled,
             public_url: self.public_url.map(|url| url.to_string()),
             url: self.url.to_string(),
             sftp_host: self.sftp_host,
@@ -575,9 +577,10 @@ pub struct AdminApiNode {
     pub backup_configuration: Option<super::backup_configurations::AdminApiBackupConfiguration>,
 
     pub name: compact_str::CompactString,
-    pub public: bool,
-    pub maintenance: bool,
     pub description: Option<compact_str::CompactString>,
+
+    pub deployment_enabled: bool,
+    pub maintenance_enabled: bool,
 
     #[schema(format = "uri")]
     pub public_url: Option<String>,

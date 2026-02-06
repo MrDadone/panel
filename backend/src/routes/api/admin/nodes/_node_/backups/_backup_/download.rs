@@ -72,7 +72,7 @@ mod get {
             }
         };
 
-        if backup_configuration.maintenance {
+        if backup_configuration.maintenance_enabled {
             return ApiResponse::error(
                 "cannot download backup while backup configuration is in maintenance mode",
             )

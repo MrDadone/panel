@@ -70,6 +70,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
       image: '',
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       hugepagesPassthroughEnabled: false,
+      kvmPassthroughEnabled: false,
       featureLimits: {
         allocations: 5,
         databases: 5,
@@ -104,6 +105,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
         image: contextServer.image,
         timezone: contextServer.timezone,
         hugepagesPassthroughEnabled: contextServer.hugepagesPassthroughEnabled,
+        kvmPassthroughEnabled: contextServer.kvmPassthroughEnabled,
         featureLimits: contextServer.featureLimits,
       });
     }
@@ -358,6 +360,12 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                   label='Enable Hugepages Passthrough'
                   description='Enable hugepages passthrough for the server (mounts /dev/hugepages into the container)'
                   {...form.getInputProps('hugepagesPassthroughEnabled', { type: 'checkbox' })}
+                />
+
+                <Switch
+                  label='Enable KVM Passthrough'
+                  description='Enable KVM passthrough for the server (allows access to /dev/kvm inside the container)'
+                  {...form.getInputProps('kvmPassthroughEnabled', { type: 'checkbox' })}
                 />
               </Stack>
             </TitleCard>

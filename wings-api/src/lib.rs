@@ -310,6 +310,8 @@ nestify::nest! {
             #[schema(inline)]
             pub hugepages_passthrough_enabled: bool,
             #[schema(inline)]
+            pub kvm_passthrough_enabled: bool,
+            #[schema(inline)]
             pub seccomp: #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct ServerConfigurationContainerSeccomp {
                 #[schema(inline)]
                 pub remove_allowed: Vec<compact_str::CompactString>,

@@ -203,7 +203,7 @@ impl ServerBackup {
                 .with_status(StatusCode::EXPECTATION_FAILED)
             })?;
 
-        if backup_configuration.maintenance {
+        if backup_configuration.maintenance_enabled {
             return Err(crate::response::DisplayError::new(
                 "cannot create backup while backup configuration is in maintenance mode",
             )
@@ -308,7 +308,7 @@ impl ServerBackup {
                 .with_status(StatusCode::EXPECTATION_FAILED)
             })?;
 
-        if backup_configuration.maintenance {
+        if backup_configuration.maintenance_enabled {
             return Err(crate::response::DisplayError::new(
                 "cannot create backup while backup configuration is in maintenance mode",
             )
@@ -603,7 +603,7 @@ impl ServerBackup {
             .fetch_cached(database)
             .await?;
 
-        if backup_configuration.maintenance {
+        if backup_configuration.maintenance_enabled {
             return Err(crate::response::DisplayError::new(
                 "cannot restore backup while backup configuration is in maintenance mode",
             )
@@ -801,7 +801,7 @@ impl DeletableModel for ServerBackup {
             .fetch_cached(&state.database)
             .await?;
 
-        if backup_configuration.maintenance {
+        if backup_configuration.maintenance_enabled {
             return Err(crate::response::DisplayError::new(
                 "cannot delete backup while backup configuration is in maintenance mode",
             )

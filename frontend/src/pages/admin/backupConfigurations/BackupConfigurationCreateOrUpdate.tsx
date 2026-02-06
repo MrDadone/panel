@@ -36,7 +36,7 @@ export default function BackupConfigurationCreateOrUpdate({
     initialValues: {
       name: '',
       description: null,
-      maintenance: false,
+      maintenanceEnabled: false,
       backupDisk: 'local',
     },
     validateInputOnBlur: true,
@@ -93,6 +93,7 @@ export default function BackupConfigurationCreateOrUpdate({
       form.setValues({
         name: contextBackupConfiguration.name,
         description: contextBackupConfiguration.description,
+        maintenanceEnabled: contextBackupConfiguration.maintenanceEnabled,
         backupDisk: contextBackupConfiguration.backupDisk,
       });
       backupConfigS3Form.setValues(contextBackupConfiguration.backupConfigs.s3);
@@ -132,7 +133,7 @@ export default function BackupConfigurationCreateOrUpdate({
             <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
           </Group>
 
-          <Switch label='Maintenance Mode' {...form.getInputProps('maintenance', { type: 'checkbox' })} />
+          <Switch label='Maintenance Enabled' {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })} />
 
           <Group>
             <AdminCan

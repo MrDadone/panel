@@ -59,9 +59,10 @@ pub struct DatabaseHost {
     pub uuid: uuid::Uuid,
 
     pub name: compact_str::CompactString,
-    pub public: bool,
-    pub maintenance: bool,
     pub r#type: DatabaseType,
+
+    pub deployment_enabled: bool,
+    pub maintenance_enabled: bool,
 
     pub public_host: Option<compact_str::CompactString>,
     pub host: compact_str::CompactString,
@@ -91,16 +92,16 @@ impl BaseModel for DatabaseHost {
                 compact_str::format_compact!("{prefix}name"),
             ),
             (
-                "database_hosts.public",
-                compact_str::format_compact!("{prefix}public"),
-            ),
-            (
-                "database_hosts.maintenance",
-                compact_str::format_compact!("{prefix}maintenance"),
-            ),
-            (
                 "database_hosts.type",
                 compact_str::format_compact!("{prefix}type"),
+            ),
+            (
+                "database_hosts.deployment_enabled",
+                compact_str::format_compact!("{prefix}deployment_enabled"),
+            ),
+            (
+                "database_hosts.maintenance_enabled",
+                compact_str::format_compact!("{prefix}maintenance_enabled"),
             ),
             (
                 "database_hosts.public_host",
@@ -140,10 +141,11 @@ impl BaseModel for DatabaseHost {
         Ok(Self {
             uuid: row.try_get(compact_str::format_compact!("{prefix}uuid").as_str())?,
             name: row.try_get(compact_str::format_compact!("{prefix}name").as_str())?,
-            public: row.try_get(compact_str::format_compact!("{prefix}public").as_str())?,
-            maintenance: row
-                .try_get(compact_str::format_compact!("{prefix}maintenance").as_str())?,
             r#type: row.try_get(compact_str::format_compact!("{prefix}type").as_str())?,
+            deployment_enabled: row
+                .try_get(compact_str::format_compact!("{prefix}deployment_enabled").as_str())?,
+            maintenance_enabled: row
+                .try_get(compact_str::format_compact!("{prefix}maintenance_enabled").as_str())?,
             public_host: row
                 .try_get(compact_str::format_compact!("{prefix}public_host").as_str())?,
             host: row.try_get(compact_str::format_compact!("{prefix}host").as_str())?,
@@ -162,9 +164,9 @@ impl DatabaseHost {
     pub async fn create(
         database: &crate::database::Database,
         name: &str,
-        public: bool,
-        maintenance: bool,
         r#type: DatabaseType,
+        deployment_enabled: bool,
+        maintenance_enabled: bool,
         public_host: Option<&str>,
         host: &str,
         public_port: Option<i32>,
@@ -174,16 +176,16 @@ impl DatabaseHost {
     ) -> Result<Self, crate::database::DatabaseError> {
         let row = sqlx::query(&format!(
             r#"
-            INSERT INTO database_hosts (name, public, maintenance, type, public_host, host, public_port, port, username, password)
+            INSERT INTO database_hosts (name, type, deployment_enabled, maintenance_enabled, public_host, host, public_port, port, username, password)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING {}
             "#,
             Self::columns_sql(None)
         ))
         .bind(name)
-        .bind(public)
-        .bind(maintenance)
         .bind(r#type)
+        .bind(deployment_enabled)
+        .bind(maintenance_enabled)
         .bind(public_host)
         .bind(host)
         .bind(public_port)
@@ -307,9 +309,9 @@ impl DatabaseHost {
         AdminApiDatabaseHost {
             uuid: self.uuid,
             name: self.name,
-            public: self.public,
-            maintenance: self.maintenance,
             r#type: self.r#type,
+            deployment_enabled: self.deployment_enabled,
+            maintenance_enabled: self.maintenance_enabled,
             public_host: self.public_host,
             host: self.host,
             public_port: self.public_port,
@@ -324,7 +326,7 @@ impl DatabaseHost {
         ApiDatabaseHost {
             uuid: self.uuid,
             name: self.name,
-            maintenance: self.maintenance,
+            maintenance_enabled: self.maintenance_enabled,
             r#type: self.r#type,
             host: self.public_host.unwrap_or(self.host),
             port: self.public_port.unwrap_or(self.port),
@@ -397,8 +399,8 @@ pub struct AdminApiDatabaseHost {
     pub uuid: uuid::Uuid,
 
     pub name: compact_str::CompactString,
-    pub public: bool,
-    pub maintenance: bool,
+    pub deployment_enabled: bool,
+    pub maintenance_enabled: bool,
     pub r#type: DatabaseType,
 
     pub public_host: Option<compact_str::CompactString>,
@@ -417,7 +419,7 @@ pub struct ApiDatabaseHost {
     pub uuid: uuid::Uuid,
 
     pub name: compact_str::CompactString,
-    pub maintenance: bool,
+    pub maintenance_enabled: bool,
     pub r#type: DatabaseType,
 
     pub host: compact_str::CompactString,

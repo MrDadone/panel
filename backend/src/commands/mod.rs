@@ -22,10 +22,10 @@ pub fn commands(cli: CliCommandGroupBuilder) -> CliCommandGroupBuilder {
         "Gets Diagnostic Data for the Panel.",
         diagnostics::DiagnosticsCommand,
     )
-    .add_command(
+    .add_group(
         "import",
-        "Imports Data from a Pterodactyl Instance to the Panel.",
-        import::ImportCommand,
+        "Import data from other panel software into Calagopus.",
+        import::commands,
     )
     .add_group(
         "extensions",

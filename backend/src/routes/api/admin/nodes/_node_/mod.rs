@@ -175,11 +175,12 @@ mod patch {
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: Option<compact_str::CompactString>,
-        public: Option<bool>,
-        maintenance: Option<bool>,
         #[validate(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
+
+        deployment_enabled: Option<bool>,
+        maintenance_enabled: Option<bool>,
 
         #[validate(length(min = 3, max = 255), url)]
         #[schema(min_length = 3, max_length = 255, format = "uri")]
@@ -268,11 +269,11 @@ mod patch {
         if let Some(name) = data.name {
             node.name = name;
         }
-        if let Some(public) = data.public {
-            node.public = public;
+        if let Some(deployment_enabled) = data.deployment_enabled {
+            node.deployment_enabled = deployment_enabled;
         }
-        if let Some(maintenance) = data.maintenance {
-            node.maintenance = maintenance;
+        if let Some(maintenance_enabled) = data.maintenance_enabled {
+            node.maintenance_enabled = maintenance_enabled;
         }
         if let Some(description) = data.description {
             if description.is_empty() {
@@ -311,7 +312,7 @@ mod patch {
         match sqlx::query!(
             "UPDATE nodes
             SET location_uuid = $1, backup_configuration_uuid = $2, name = $3,
-                public = $4, maintenance = $5, description = $6, public_url = $7,
+                description = $4, deployment_enabled = $5, maintenance_enabled = $6, public_url = $7,
                 url = $8, sftp_host = $9, sftp_port = $10,
                 memory = $11, disk = $12
             WHERE nodes.uuid = $13",
@@ -320,9 +321,9 @@ mod patch {
                 .as_ref()
                 .map(|backup_configuration| backup_configuration.uuid),
             &node.name,
-            node.public,
-            node.maintenance,
             node.description.as_deref(),
+            node.deployment_enabled,
+            node.maintenance_enabled,
             node.public_url.as_ref().map(|url| url.to_string()),
             &node.url.to_compact_string(),
             node.sftp_host.as_deref(),
@@ -357,9 +358,9 @@ mod patch {
                     "location_uuid": node.location.uuid,
 
                     "name": node.name,
-                    "public": node.public,
-                    "maintenance": node.maintenance,
                     "description": node.description,
+                    "deployment_enabled": node.deployment_enabled,
+                    "maintenance_enabled": node.maintenance_enabled,
                     "public_url": node.public_url,
                     "url": node.url,
                     "sftp_host": node.sftp_host,

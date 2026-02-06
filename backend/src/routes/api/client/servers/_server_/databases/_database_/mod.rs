@@ -167,7 +167,7 @@ mod delete {
                 .ok();
         }
 
-        if database.database_host.maintenance {
+        if database.database_host.maintenance_enabled {
             return ApiResponse::error(
                 "cannot delete database while database host is in maintenance mode",
             )

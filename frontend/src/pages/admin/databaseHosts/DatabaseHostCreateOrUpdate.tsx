@@ -38,8 +38,8 @@ export default function DatabaseHostCreateOrUpdate({
       password: '',
       host: '',
       port: 3306,
-      public: false,
-      maintenance: false,
+      deploymentEnabled: true,
+      maintenanceEnabled: false,
       publicHost: null,
       publicPort: null,
       type: 'mysql',
@@ -69,8 +69,8 @@ export default function DatabaseHostCreateOrUpdate({
         password: null,
         host: contextDatabaseHost.host,
         port: contextDatabaseHost.port,
-        public: contextDatabaseHost.public,
-        maintenance: contextDatabaseHost.maintenance,
+        deploymentEnabled: contextDatabaseHost.deploymentEnabled,
+        maintenanceEnabled: contextDatabaseHost.maintenanceEnabled,
         publicHost: contextDatabaseHost.publicHost,
         publicPort: contextDatabaseHost.publicPort,
         type: contextDatabaseHost.type,
@@ -148,8 +148,8 @@ export default function DatabaseHostCreateOrUpdate({
           </Group>
 
           <Group grow>
-            <Switch label='Public' {...form.getInputProps('public', { type: 'checkbox' })} />
-            <Switch label='Maintenance Mode' {...form.getInputProps('maintenance', { type: 'checkbox' })} />
+            <Switch label='Deployment Enabled' {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })} />
+            <Switch label='Maintenance Enabled' {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })} />
           </Group>
 
           <Group>

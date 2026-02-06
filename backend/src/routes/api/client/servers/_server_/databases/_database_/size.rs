@@ -41,7 +41,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_server_permission("databases.read")?;
 
-        if database.database_host.maintenance {
+        if database.database_host.maintenance_enabled {
             return ApiResponse::error(
                 "cannot get database size while database host is in maintenance mode",
             )

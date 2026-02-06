@@ -90,11 +90,12 @@ mod post {
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: compact_str::CompactString,
-        public: bool,
-        maintenance: bool,
         #[validate(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
+
+        deployment_enabled: bool,
+        maintenance_enabled: bool,
 
         #[validate(length(min = 3, max = 255), url)]
         #[schema(min_length = 3, max_length = 255, format = "uri")]
@@ -169,9 +170,9 @@ mod post {
             location.uuid,
             backup_configuration.map(|backup_configuration| backup_configuration.uuid),
             &data.name,
-            data.public,
-            data.maintenance,
             data.description.as_deref(),
+            data.deployment_enabled,
+            data.maintenance_enabled,
             data.public_url.as_deref(),
             &data.url,
             data.sftp_host.as_deref(),
@@ -204,9 +205,9 @@ mod post {
                     "location_uuid": location.uuid,
 
                     "name": node.name,
-                    "public": node.public,
-                    "maintenance": node.maintenance,
                     "description": node.description,
+                    "deployment_enabled": node.deployment_enabled,
+                    "maintenance_enabled": node.maintenance_enabled,
                     "public_url": node.public_url,
                     "url": node.url,
                     "sftp_host": node.sftp_host,
