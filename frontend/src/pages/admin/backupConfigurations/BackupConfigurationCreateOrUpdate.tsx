@@ -77,12 +77,14 @@ export default function BackupConfigurationCreateOrUpdate({
         ...form.values,
         backupConfigs: { s3: backupConfigS3Form.values, restic: backupConfigResticForm.values },
       }),
-    updateFn: () =>
-      updateBackupConfiguration(contextBackupConfiguration!.uuid, {
-        ...form.values,
-        backupConfigs: { s3: backupConfigS3Form.values, restic: backupConfigResticForm.values },
-      }),
-    deleteFn: () => deleteBackupConfiguration(contextBackupConfiguration!.uuid),
+    updateFn: contextBackupConfiguration
+      ? () =>
+          updateBackupConfiguration(contextBackupConfiguration.uuid, {
+            ...form.values,
+            backupConfigs: { s3: backupConfigS3Form.values, restic: backupConfigResticForm.values },
+          })
+      : undefined,
+    deleteFn: contextBackupConfiguration ? () => deleteBackupConfiguration(contextBackupConfiguration.uuid) : undefined,
     doUpdate: !!contextBackupConfiguration,
     basePath: '/admin/backup-configurations',
     resourceName: 'Backup configuration',

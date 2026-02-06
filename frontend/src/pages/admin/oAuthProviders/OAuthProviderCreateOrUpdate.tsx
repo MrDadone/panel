@@ -67,8 +67,8 @@ export default function OAuthProviderCreateOrUpdate({
   >({
     form,
     createFn: () => createOAuthProvider(form.values),
-    updateFn: () => updateOAuthProvider(contextOAuthProvider!.uuid, form.values),
-    deleteFn: () => deleteOAuthProvider(contextOAuthProvider!.uuid),
+    updateFn: contextOAuthProvider ? () => updateOAuthProvider(contextOAuthProvider.uuid, form.values) : undefined,
+    deleteFn: contextOAuthProvider ? () => deleteOAuthProvider(contextOAuthProvider.uuid) : undefined,
     doUpdate: !!contextOAuthProvider,
     basePath: '/admin/oauth-providers',
     resourceName: 'OAuth Provider',

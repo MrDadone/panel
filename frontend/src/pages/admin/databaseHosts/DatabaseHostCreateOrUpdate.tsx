@@ -54,8 +54,8 @@ export default function DatabaseHostCreateOrUpdate({
   >({
     form,
     createFn: () => createDatabaseHost(form.values),
-    updateFn: () => updateDatabaseHost(contextDatabaseHost!.uuid, form.values),
-    deleteFn: () => deleteDatabaseHost(contextDatabaseHost!.uuid),
+    updateFn: contextDatabaseHost ? () => updateDatabaseHost(contextDatabaseHost.uuid, form.values) : undefined,
+    deleteFn: contextDatabaseHost ? () => deleteDatabaseHost(contextDatabaseHost.uuid) : undefined,
     doUpdate: !!contextDatabaseHost,
     basePath: '/admin/database-hosts',
     resourceName: 'Database host',
