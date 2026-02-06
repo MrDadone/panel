@@ -42,11 +42,12 @@ impl<T: DeserializeOwned> Payload<T> {
     pub fn from_bytes(content_type: mime::Mime, bytes: &Bytes) -> Result<Self, PayloadRejection> {
         match content_type.essence_str() {
             m if m == mime::APPLICATION_JSON.essence_str() => {
-                let value = serde_json::from_slice::<T>(bytes).map_err(anyhow::Error::from)?;
+                let value = serde_json::from_slice(bytes).map_err(anyhow::Error::from)?;
                 Ok(Payload(value))
             }
             m if m == mime::APPLICATION_MSGPACK.essence_str() => {
-                let value = rmp_serde::from_slice::<T>(bytes).map_err(anyhow::Error::from)?;
+                let mut de = rmp_serde::Deserializer::new(bytes.as_ref()).with_human_readable();
+                let value = T::deserialize(&mut de).map_err(anyhow::Error::from)?;
                 Ok(Payload(value))
             }
             m if m == mime::TEXT_XML.essence_str() => {
@@ -55,7 +56,7 @@ impl<T: DeserializeOwned> Payload<T> {
                 Ok(Payload(value))
             }
             "application/yaml" => {
-                let value = serde_norway::from_slice::<T>(bytes).map_err(anyhow::Error::from)?;
+                let value = serde_norway::from_slice(bytes).map_err(anyhow::Error::from)?;
                 Ok(Payload(value))
             }
             _ => Err(PayloadRejection(anyhow::anyhow!(
