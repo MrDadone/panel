@@ -543,9 +543,10 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             let location_mappings = location_mappings.clone();
                             let database = database.clone();
                             futures.push(async move {
-                                let public: bool = row.try_get("public")?;
                                 let name: &str = row.try_get("name")?;
                                 let description: Option<&str> = row.try_get("description")?;
+                                let public: bool = row.try_get("public")?;
+                                let maintenance_mode: bool = row.try_get("maintenance_mode")?;
                                 let location_id: u32 = row.try_get("location_id")?;
                                 let fqdn: &str = row.try_get("fqdn")?;
                                 let scheme: &str = row.try_get("scheme")?;
@@ -574,15 +575,16 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
 
                                 sqlx::query(
                                     r#"
-                                    INSERT INTO nodes (uuid, public, name, description, location_uuid, url, sftp_port, memory, disk, token_id, token, created)
-                                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                                    INSERT INTO nodes (uuid, name, description, deployment_enabled, maintenance_enabled, location_uuid, url, sftp_port, memory, disk, token_id, token, created)
+                                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                                     ON CONFLICT DO NOTHING
                                     "#
                                 )
                                 .bind(uuid.as_uuid())
-                                .bind(public)
                                 .bind(name)
                                 .bind(description)
+                                .bind(public)
+                                .bind(maintenance_mode)
                                 .bind(location_uuid)
                                 .bind(url.to_string())
                                 .bind(daemon_sftp as i32)
