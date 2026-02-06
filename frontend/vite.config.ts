@@ -84,7 +84,12 @@ export default defineConfig({
   plugins: [
     react({
       babel: {
-        plugins: ['babel-plugin-react-compiler'],
+        overrides: [
+          {
+            include: ['./src/elements/**/*.{ts,tsx}', './src/pages/**/*.{ts,tsx}'],
+            plugins: ['babel-plugin-react-compiler'],
+          },
+        ],
       },
     }),
     tsconfigPaths(),
