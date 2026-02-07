@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{models::InsertQueryBuilder, prelude::*};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,6 +6,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LocationDatabaseHost {
@@ -55,25 +56,6 @@ impl BaseModel for LocationDatabaseHost {
 }
 
 impl LocationDatabaseHost {
-    pub async fn create(
-        database: &crate::database::Database,
-        location_uuid: uuid::Uuid,
-        database_host_uuid: uuid::Uuid,
-    ) -> Result<(), crate::database::DatabaseError> {
-        sqlx::query(
-            r#"
-            INSERT INTO location_database_hosts (location_uuid, database_host_uuid)
-            VALUES ($1, $2)
-            "#,
-        )
-        .bind(location_uuid)
-        .bind(database_host_uuid)
-        .execute(database.write())
-        .await?;
-
-        Ok(())
-    }
-
     pub async fn by_location_uuid_database_host_uuid(
         database: &crate::database::Database,
         location_uuid: uuid::Uuid,
@@ -145,7 +127,7 @@ impl LocationDatabaseHost {
             SELECT {}
             FROM location_database_hosts
             JOIN database_hosts ON location_database_hosts.database_host_uuid = database_hosts.uuid
-            WHERE location_database_hosts.location_uuid = $1 AND database_hosts.public
+            WHERE location_database_hosts.location_uuid = $1 AND database_hosts.deployment_enabled
             ORDER BY location_database_hosts.created DESC
             "#,
             Self::columns_sql(None)
@@ -164,6 +146,65 @@ impl LocationDatabaseHost {
         AdminApiLocationDatabaseHost {
             database_host: self.database_host.into_admin_api_object(),
             created: self.created.and_utc(),
+        }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateLocationDatabaseHostOptions {
+    pub location_uuid: uuid::Uuid,
+    pub database_host_uuid: uuid::Uuid,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for LocationDatabaseHost {
+    type CreateOptions<'a> = CreateLocationDatabaseHostOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<LocationDatabaseHost>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        super::database_host::DatabaseHost::by_uuid_optional(
+            &state.database,
+            options.database_host_uuid,
+        )
+        .await?
+        .ok_or(crate::database::InvalidRelationError("database_host"))?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("location_database_hosts");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("location_uuid", options.location_uuid)
+            .set("database_host_uuid", options.database_host_uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        transaction.commit().await?;
+
+        match Self::by_location_uuid_database_host_uuid(
+            &state.database,
+            options.location_uuid,
+            options.database_host_uuid,
+        )
+        .await?
+        {
+            Some(location_database_host) => Ok(location_database_host),
+            None => Err(sqlx::Error::RowNotFound.into()),
         }
     }
 }

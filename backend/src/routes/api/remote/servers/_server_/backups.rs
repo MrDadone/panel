@@ -7,15 +7,13 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
-            server::GetServer,
-            server_activity::ServerActivity,
-            server_backup::{BackupDisk, ServerBackup},
+            CreatableModel, server::GetServer, server_activity::ServerActivity,
+            server_backup::ServerBackup,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
     use validator::Validate;
-    use wings_api::BackupAdapter;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
@@ -23,14 +21,14 @@ mod post {
 
         #[validate(length(min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
-        name: Option<String>,
+        name: Option<compact_str::CompactString>,
 
-        ignored_files: Vec<String>,
+        ignored_files: Vec<compact_str::CompactString>,
     }
 
     #[derive(ToSchema, Serialize)]
     struct Response {
-        adapter: BackupAdapter,
+        adapter: wings_api::BackupAdapter,
         uuid: uuid::Uuid,
     }
 
@@ -76,36 +74,38 @@ mod post {
             .await?;
 
         let name = data.name.unwrap_or_else(|| {
-            format!("Backup {}", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"))
+            compact_str::format_compact!(
+                "Backup {}",
+                chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
+            )
         });
 
-        let backup =
-            match ServerBackup::create_raw(&state.database, &server, &name, data.ignored_files)
-                .await
-            {
-                Ok(backup) => backup,
-                Err(err) => {
-                    tracing::error!(name = %name, "failed to create backup: {:?}", err);
+        let options = shared::models::server_backup::CreateServerBackupOptions {
+            server: &server,
+            name,
+            ignored_files: data.ignored_files,
+        };
+        let backup = match ServerBackup::create_raw(&state, options).await {
+            Ok(backup) => backup,
+            Err(err) => return ApiResponse::from(err).ok(),
+        };
 
-                    return ApiResponse::error("failed to create backup")
-                        .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                        .ok();
-                }
-            };
-
-        if let Err(err) = ServerActivity::log_remote(
-            &state.database,
-            server.uuid,
-            None,
-            data.schedule_uuid,
-            "server:backup.create",
-            None,
-            serde_json::json!({
-                "uuid": backup.uuid,
-                "name": backup.name,
-                "ignored_files": backup.ignored_files,
-            }),
-            chrono::Utc::now(),
+        if let Err(err) = ServerActivity::create(
+            &state,
+            shared::models::server_activity::CreateServerActivityOptions {
+                server_uuid: server.uuid,
+                user_uuid: None,
+                api_key_uuid: None,
+                schedule_uuid: data.schedule_uuid,
+                event: "server:backup.create".into(),
+                ip: None,
+                data: serde_json::json!({
+                    "uuid": backup.uuid,
+                    "name": backup.name,
+                    "ignored_files": backup.ignored_files,
+                }),
+                created: None,
+            },
         )
         .await
         {
@@ -117,14 +117,7 @@ mod post {
         }
 
         ApiResponse::new_serialized(Response {
-            adapter: match backup.disk {
-                BackupDisk::Local => wings_api::BackupAdapter::Wings,
-                BackupDisk::S3 => wings_api::BackupAdapter::S3,
-                BackupDisk::DdupBak => wings_api::BackupAdapter::DdupBak,
-                BackupDisk::Btrfs => wings_api::BackupAdapter::Btrfs,
-                BackupDisk::Zfs => wings_api::BackupAdapter::Zfs,
-                BackupDisk::Restic => wings_api::BackupAdapter::Restic,
-            },
+            adapter: backup.disk.to_wings_adapter(),
             uuid: backup.uuid,
         })
         .ok()

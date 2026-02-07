@@ -1,5 +1,8 @@
 use crate::{
-    models::user::{AuthMethod, GetAuthMethod},
+    models::{
+        InsertQueryBuilder,
+        user::{AuthMethod, GetAuthMethod},
+    },
     prelude::*,
 };
 use rand::distr::SampleString;
@@ -11,6 +14,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UserSession {
@@ -69,36 +73,6 @@ impl BaseModel for UserSession {
 }
 
 impl UserSession {
-    pub async fn create(
-        database: &crate::database::Database,
-        user_uuid: uuid::Uuid,
-        ip: sqlx::types::ipnetwork::IpNetwork,
-        user_agent: &str,
-    ) -> Result<String, crate::database::DatabaseError> {
-        let key_id = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 16);
-
-        let mut hash = sha2::Sha256::new();
-        hash.update(chrono::Utc::now().timestamp().to_le_bytes());
-        hash.update(user_uuid.to_bytes_le());
-        let hash = format!("{:x}", hash.finalize());
-
-        sqlx::query(
-            r#"
-            INSERT INTO user_sessions (user_uuid, key_id, key, ip, user_agent, last_used, created)
-            VALUES ($1, $2, crypt($3, gen_salt('xdes', 321)), $4, $5, NOW(), NOW())
-            "#,
-        )
-        .bind(user_uuid)
-        .bind(&key_id)
-        .bind(&hash)
-        .bind(ip)
-        .bind(user_agent)
-        .execute(database.write())
-        .await?;
-
-        Ok(format!("{key_id}:{hash}"))
-    }
-
     pub async fn by_user_uuid_uuid(
         database: &crate::database::Database,
         user_uuid: uuid::Uuid,
@@ -184,6 +158,63 @@ impl UserSession {
             last_used: self.last_used.and_utc(),
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateUserSessionOptions {
+    pub user_uuid: uuid::Uuid,
+    #[schema(value_type = String)]
+    pub ip: sqlx::types::ipnetwork::IpNetwork,
+    #[validate(length(min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub user_agent: compact_str::CompactString,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for UserSession {
+    type CreateOptions<'a> = CreateUserSessionOptions;
+    type CreateResult = String;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<UserSession>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self::CreateResult, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("user_sessions");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        let key_id = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 16);
+
+        let mut hash = sha2::Sha256::new();
+        hash.update(chrono::Utc::now().timestamp().to_le_bytes());
+        hash.update(options.user_uuid.to_bytes_le());
+        let hash = format!("{:x}", hash.finalize());
+
+        query_builder
+            .set("user_uuid", options.user_uuid)
+            .set("key_id", key_id.clone())
+            .set_expr("key", "crypt($1, gen_salt('xdes', 321))", vec![&hash])
+            .set("ip", options.ip)
+            .set("user_agent", &options.user_agent);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        transaction.commit().await?;
+
+        Ok(format!("{key_id}:{hash}"))
     }
 }
 

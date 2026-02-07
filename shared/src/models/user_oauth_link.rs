@@ -1,4 +1,4 @@
-use crate::{prelude::*, storage::StorageUrlRetriever};
+use crate::{models::InsertQueryBuilder, prelude::*, storage::StorageUrlRetriever};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,6 +6,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct UserOAuthLink {
@@ -74,29 +75,6 @@ impl BaseModel for UserOAuthLink {
 }
 
 impl UserOAuthLink {
-    pub async fn create(
-        database: &crate::database::Database,
-        user_uuid: uuid::Uuid,
-        oauth_provider_uuid: uuid::Uuid,
-        identifier: &str,
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO user_oauth_links (user_uuid, oauth_provider_uuid, identifier, created)
-            VALUES ($1, $2, $3, NOW())
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(user_uuid)
-        .bind(oauth_provider_uuid)
-        .bind(identifier)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn by_oauth_provider_uuid_identifier(
         database: &crate::database::Database,
         oauth_provider_uuid: uuid::Uuid,
@@ -311,6 +289,66 @@ impl UserOAuthLink {
             last_used: self.last_used.map(|dt| dt.and_utc()),
             created: self.created.and_utc(),
         })
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateUserOAuthLinkOptions {
+    pub user_uuid: uuid::Uuid,
+    pub oauth_provider_uuid: uuid::Uuid,
+
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub identifier: compact_str::CompactString,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for UserOAuthLink {
+    type CreateOptions<'a> = CreateUserOAuthLinkOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<UserOAuthLink>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        // Validate oauth_provider_uuid
+        super::oauth_provider::OAuthProvider::by_uuid_optional(
+            &state.database,
+            options.oauth_provider_uuid,
+        )
+        .await?
+        .ok_or(crate::database::InvalidRelationError("oauth_provider"))?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("user_oauth_links");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("user_uuid", options.user_uuid)
+            .set("oauth_provider_uuid", options.oauth_provider_uuid)
+            .set("identifier", &options.identifier);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+
+        let oauth_link = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(oauth_link)
     }
 }
 

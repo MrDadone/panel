@@ -8,6 +8,7 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             user::{GetPermissionManager, GetUser},
             user_activity::GetUserActivityLogger,
             user_ssh_key::UserSshKey,
@@ -96,10 +97,9 @@ mod post {
                         Err(_) => continue,
                     };
 
-                    let ssh_key = match UserSshKey::create(
-                        &state.database,
-                        user.uuid,
-                        &format!(
+                    let options = shared::models::user_ssh_key::CreateUserSshKeyOptions {
+                        user_uuid: user.uuid,
+                        name: compact_str::format_compact!(
                             "gh-{}-{}-{:02}-{:02}",
                             limit_string(&data.username, 17),
                             raw_ssh_key.created_at.year(),
@@ -107,18 +107,11 @@ mod post {
                             raw_ssh_key.created_at.day()
                         ),
                         public_key,
-                    )
-                    .await
-                    {
+                    };
+                    let ssh_key = match UserSshKey::create(&state, options).await {
                         Ok(ssh_key) => ssh_key,
                         Err(err) if err.is_unique_violation() => continue,
-                        Err(err) => {
-                            tracing::error!("failed to create ssh key: {:?}", err);
-
-                            return ApiResponse::error("failed to create ssh key")
-                                .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                                .ok();
-                        }
+                        Err(err) => return ApiResponse::from(err).ok(),
                     };
 
                     ssh_keys.push(ssh_key);
@@ -158,16 +151,15 @@ mod post {
                     let hostname = raw_ssh_key.title.split("@");
                     let hostname = hostname.last();
 
-                    let ssh_key = match UserSshKey::create(
-                        &state.database,
-                        user.uuid,
-                        &match hostname {
-                            Some(hostname) => format!(
+                    let options = shared::models::user_ssh_key::CreateUserSshKeyOptions {
+                        user_uuid: user.uuid,
+                        name: match hostname {
+                            Some(hostname) => compact_str::format_compact!(
                                 "gl-{}-{}",
                                 limit_string(&data.username, 27),
                                 limit_string(hostname, 27 - data.username.chars().count())
                             ),
-                            None => format!(
+                            None => compact_str::format_compact!(
                                 "gl-{}-{}-{:02}-{:02}",
                                 limit_string(&data.username, 17),
                                 raw_ssh_key.created_at.year(),
@@ -176,18 +168,11 @@ mod post {
                             ),
                         },
                         public_key,
-                    )
-                    .await
-                    {
+                    };
+                    let ssh_key = match UserSshKey::create(&state, options).await {
                         Ok(ssh_key) => ssh_key,
                         Err(err) if err.is_unique_violation() => continue,
-                        Err(err) => {
-                            tracing::error!("failed to create ssh key: {:?}", err);
-
-                            return ApiResponse::error("failed to create ssh key")
-                                .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                                .ok();
-                        }
+                        Err(err) => return ApiResponse::from(err).ok(),
                     };
 
                     ssh_keys.push(ssh_key);
@@ -232,23 +217,19 @@ mod post {
                         Err(_) => continue,
                     };
 
-                    let ssh_key = match UserSshKey::create(
-                        &state.database,
-                        user.uuid,
-                        &format!("lp-{}-{:02}", limit_string(&data.username, 25), i + 1),
+                    let options = shared::models::user_ssh_key::CreateUserSshKeyOptions {
+                        user_uuid: user.uuid,
+                        name: compact_str::format_compact!(
+                            "lp-{}-{:02}",
+                            limit_string(&data.username, 25),
+                            i + 1
+                        ),
                         public_key,
-                    )
-                    .await
-                    {
+                    };
+                    let ssh_key = match UserSshKey::create(&state, options).await {
                         Ok(ssh_key) => ssh_key,
                         Err(err) if err.is_unique_violation() => continue,
-                        Err(err) => {
-                            tracing::error!("failed to create ssh key: {:?}", err);
-
-                            return ApiResponse::error("failed to create ssh key")
-                                .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                                .ok();
-                        }
+                        Err(err) => return ApiResponse::from(err).ok(),
                     };
 
                     ssh_keys.push(ssh_key);

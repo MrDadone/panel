@@ -40,28 +40,16 @@ mod post {
         activity_logger: GetAdminActivityLogger,
         shared::Payload(data): shared::Payload<ExportedNestEgg>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("eggs.create")?;
 
-        let egg = match NestEgg::import(&state.database, nest.uuid, None, data).await {
+        let egg = match NestEgg::import(&state, nest.uuid, None, data).await {
             Ok(egg) => egg,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("egg with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create egg: {:?}", err);
-
-                return ApiResponse::error("failed to create egg")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

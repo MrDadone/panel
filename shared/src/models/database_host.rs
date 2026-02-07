@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type};
 use std::{
@@ -8,6 +11,7 @@ use std::{
 };
 use tokio::sync::Mutex;
 use utoipa::ToSchema;
+use validator::Validate;
 
 pub enum DatabaseTransaction<'a> {
     Mysql(sqlx::Transaction<'a, sqlx::MySql>),
@@ -160,44 +164,6 @@ impl BaseModel for DatabaseHost {
 }
 
 impl DatabaseHost {
-    #[allow(clippy::too_many_arguments)]
-    pub async fn create(
-        database: &crate::database::Database,
-        name: &str,
-        r#type: DatabaseType,
-        deployment_enabled: bool,
-        maintenance_enabled: bool,
-        public_host: Option<&str>,
-        host: &str,
-        public_port: Option<i32>,
-        port: i32,
-        username: &str,
-        password: &str,
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO database_hosts (name, type, deployment_enabled, maintenance_enabled, public_host, host, public_port, port, username, password)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(name)
-        .bind(r#type)
-        .bind(deployment_enabled)
-        .bind(maintenance_enabled)
-        .bind(public_host)
-        .bind(host)
-        .bind(public_port)
-        .bind(port)
-        .bind(username)
-        .bind(database.encrypt(password.to_string()).await?)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn get_connection(
         &self,
         database: &crate::database::Database,
@@ -353,6 +319,202 @@ impl ByUuid for DatabaseHost {
         .await?;
 
         Self::map(None, &row)
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateDatabaseHostOptions {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: compact_str::CompactString,
+    pub r#type: DatabaseType,
+
+    pub deployment_enabled: bool,
+    pub maintenance_enabled: bool,
+
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub public_host: Option<compact_str::CompactString>,
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub host: compact_str::CompactString,
+    pub public_port: Option<u16>,
+    pub port: u16,
+
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub username: compact_str::CompactString,
+    #[validate(length(min = 1, max = 512))]
+    #[schema(min_length = 1, max_length = 512)]
+    pub password: compact_str::CompactString,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for DatabaseHost {
+    type CreateOptions<'a> = CreateDatabaseHostOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<DatabaseHost>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("database_hosts");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("name", &options.name)
+            .set("type", options.r#type)
+            .set("deployment_enabled", options.deployment_enabled)
+            .set("maintenance_enabled", options.maintenance_enabled)
+            .set("public_host", &options.public_host)
+            .set("host", &options.host)
+            .set("public_port", options.public_port.map(|p| p as i32))
+            .set("port", options.port as i32)
+            .set("username", &options.username)
+            .set(
+                "password",
+                state.database.encrypt(options.password.to_string()).await?,
+            );
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let database_host = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(database_host)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
+pub struct UpdateDatabaseHostOptions {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    name: Option<compact_str::CompactString>,
+
+    deployment_enabled: Option<bool>,
+    maintenance_enabled: Option<bool>,
+
+    #[validate(length(max = 255))]
+    #[schema(max_length = 255)]
+    public_host: Option<Option<compact_str::CompactString>>,
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    host: Option<compact_str::CompactString>,
+    public_port: Option<Option<u16>>,
+    port: Option<u16>,
+
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    username: Option<compact_str::CompactString>,
+    #[validate(length(min = 1, max = 512))]
+    #[schema(min_length = 1, max_length = 512)]
+    password: Option<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for DatabaseHost {
+    type UpdateOptions = UpdateDatabaseHostOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<DatabaseHost>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("database_hosts");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        let password = if let Some(password) = options.password {
+            Some(state.database.encrypt(password.to_string()).await?)
+        } else {
+            None
+        };
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .set("deployment_enabled", options.deployment_enabled)
+            .set("maintenance_enabled", options.maintenance_enabled)
+            .set("public_host", options.public_host.as_ref())
+            .set("host", options.host.as_ref())
+            .set(
+                "public_port",
+                options
+                    .public_port
+                    .as_ref()
+                    .map(|p| p.as_ref().map(|port| *port as i32)),
+            )
+            .set("port", options.port.as_ref().map(|p| *p as i32))
+            .set("username", options.username.as_ref())
+            .set("password", password.as_ref())
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(deployment_enabled) = options.deployment_enabled {
+            self.deployment_enabled = deployment_enabled;
+        }
+        if let Some(maintenance_enabled) = options.maintenance_enabled {
+            self.maintenance_enabled = maintenance_enabled;
+        }
+        if let Some(public_host) = options.public_host {
+            self.public_host = public_host;
+        }
+        if let Some(host) = options.host {
+            self.host = host;
+        }
+        if let Some(public_port) = options.public_port {
+            self.public_port = public_port.map(|port| port as i32);
+        }
+        if let Some(port) = options.port {
+            self.port = port as i32;
+        }
+        if let Some(username) = options.username {
+            self.username = username;
+        }
+        if let Some(password) = password {
+            self.password = password;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

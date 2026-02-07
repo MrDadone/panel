@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{models::InsertQueryBuilder, prelude::*};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,6 +6,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct NestEggMount {
@@ -55,25 +56,6 @@ impl BaseModel for NestEggMount {
 }
 
 impl NestEggMount {
-    pub async fn create(
-        database: &crate::database::Database,
-        egg_uuid: uuid::Uuid,
-        mount_uuid: uuid::Uuid,
-    ) -> Result<(), crate::database::DatabaseError> {
-        sqlx::query(
-            r#"
-            INSERT INTO nest_egg_mounts (egg_uuid, mount_uuid)
-            VALUES ($1, $2)
-            "#,
-        )
-        .bind(egg_uuid)
-        .bind(mount_uuid)
-        .execute(database.write())
-        .await?;
-
-        Ok(())
-    }
-
     pub async fn by_egg_uuid_mount_uuid(
         database: &crate::database::Database,
         egg_uuid: uuid::Uuid,
@@ -207,6 +189,58 @@ impl NestEggMount {
                 .into_admin_api_object(),
             created: self.created.and_utc(),
         })
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateNestEggMountOptions {
+    pub egg_uuid: uuid::Uuid,
+    pub mount_uuid: uuid::Uuid,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for NestEggMount {
+    type CreateOptions<'a> = CreateNestEggMountOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<NestEggMount>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        super::mount::Mount::by_uuid_optional(&state.database, options.mount_uuid)
+            .await?
+            .ok_or(crate::database::InvalidRelationError("mount"))?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("nest_egg_mounts");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("egg_uuid", options.egg_uuid)
+            .set("mount_uuid", options.mount_uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        transaction.commit().await?;
+
+        match Self::by_egg_uuid_mount_uuid(&state.database, options.egg_uuid, options.mount_uuid)
+            .await?
+        {
+            Some(nest_egg_mount) => Ok(nest_egg_mount),
+            None => Err(sqlx::Error::RowNotFound.into()),
+        }
     }
 }
 

@@ -7,7 +7,7 @@ use axum::{
 };
 use shared::{
     GetState,
-    models::{ByUuid, backup_configurations::BackupConfiguration, user::GetPermissionManager},
+    models::{ByUuid, backup_configuration::BackupConfiguration, user::GetPermissionManager},
     response::ApiResponse,
 };
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -72,7 +72,7 @@ mod get {
 
     #[derive(ToSchema, Serialize)]
     struct Response {
-        backup_configuration: shared::models::backup_configurations::AdminApiBackupConfiguration,
+        backup_configuration: shared::models::backup_configuration::AdminApiBackupConfiguration,
     }
 
     #[utoipa::path(get, path = "/", responses(
@@ -154,30 +154,16 @@ mod delete {
 mod patch {
     use crate::routes::api::admin::backup_configurations::_backup_configuration_::GetBackupConfiguration;
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
-        models::{admin_activity::GetAdminActivityLogger, user::GetPermissionManager},
-        prelude::SqlxErrorExt,
+        models::{
+            UpdatableModel, admin_activity::GetAdminActivityLogger,
+            backup_configuration::UpdateBackupConfigurationOptions, user::GetPermissionManager,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: Option<compact_str::CompactString>,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-
-        maintenance_enabled: Option<bool>,
-
-        backup_disk: Option<shared::models::server_backup::BackupDisk>,
-        backup_configs: Option<shared::models::backup_configurations::BackupConfigs>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -193,73 +179,24 @@ mod patch {
             description = "The backup configuration ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateBackupConfigurationOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         mut backup_configuration: GetBackupConfiguration,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateBackupConfigurationOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("backup-configurations.update")?;
 
-        if let Some(name) = data.name {
-            backup_configuration.name = name;
-        }
-        if let Some(maintenance_enabled) = data.maintenance_enabled {
-            backup_configuration.maintenance_enabled = maintenance_enabled;
-        }
-        if let Some(description) = data.description {
-            if description.is_empty() {
-                backup_configuration.description = None;
-            } else {
-                backup_configuration.description = Some(description);
-            }
-        }
-        if let Some(backup_disk) = data.backup_disk {
-            backup_configuration.backup_disk = backup_disk;
-        }
-        if let Some(backup_configs) = data.backup_configs {
-            backup_configuration.backup_configs = backup_configs;
-            backup_configuration
-                .backup_configs
-                .encrypt(&state.database)
-                .await?;
-        }
-
-        match sqlx::query!(
-            "UPDATE backup_configurations
-            SET name = $2, description = $3, maintenance_enabled = $4, backup_disk = $5, backup_configs = $6
-            WHERE backup_configurations.uuid = $1",
-            backup_configuration.uuid,
-            &backup_configuration.name,
-            backup_configuration.description.as_deref(),
-            backup_configuration.maintenance_enabled,
-            backup_configuration.backup_disk as shared::models::server_backup::BackupDisk,
-            serde_json::to_value(&backup_configuration.backup_configs)?,
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match backup_configuration.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("backup configuration with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update backup configuration: {:?}", err);
-
-                return ApiResponse::error("failed to update backup configuration")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

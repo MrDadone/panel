@@ -86,6 +86,7 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             user::{GetPermissionManager, GetUser},
             user_security_key::UserSecurityKey,
         },
@@ -99,7 +100,7 @@ mod post {
     pub struct Payload {
         #[validate(length(min = 3, max = 31))]
         #[schema(min_length = 3, max_length = 31)]
-        name: String,
+        name: compact_str::CompactString,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -139,7 +140,7 @@ mod post {
         .fetch_all(state.database.read())
         .await?;
 
-        let (options, registration) = webauthn.start_passkey_registration(
+        let (webauthn_options, registration) = webauthn.start_passkey_registration(
             user.uuid,
             &user.email,
             &user.username,
@@ -151,28 +152,24 @@ mod post {
             ),
         )?;
 
-        let security_key =
-            match UserSecurityKey::create(&state.database, user.uuid, &data.name, registration)
-                .await
-            {
-                Ok(security_key) => security_key,
-                Err(err) if err.is_unique_violation() => {
-                    return ApiResponse::error("security key with name already exists")
-                        .with_status(StatusCode::CONFLICT)
-                        .ok();
-                }
-                Err(err) => {
-                    tracing::error!("failed to create security key: {:?}", err);
-
-                    return ApiResponse::error("failed to create security key")
-                        .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                        .ok();
-                }
-            };
+        let options = shared::models::user_security_key::CreateUserSecurityKeyOptions {
+            user_uuid: user.uuid,
+            name: data.name,
+            registration,
+        };
+        let security_key = match UserSecurityKey::create(&state, options).await {
+            Ok(security_key) => security_key,
+            Err(err) if err.is_unique_violation() => {
+                return ApiResponse::error("security key with name already exists")
+                    .with_status(StatusCode::CONFLICT)
+                    .ok();
+            }
+            Err(err) => return ApiResponse::from(err).ok(),
+        };
 
         ApiResponse::new_serialized(Response {
             security_key: security_key.into_api_object(),
-            options,
+            options: webauthn_options,
         })
         .ok()
     }

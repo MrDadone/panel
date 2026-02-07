@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use compact_str::ToCompactString;
 use futures_util::StreamExt;
 use git2::FetchOptions;
@@ -10,6 +13,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct EggRepository {
@@ -77,29 +81,6 @@ impl BaseModel for EggRepository {
 }
 
 impl EggRepository {
-    pub async fn create(
-        database: &crate::database::Database,
-        name: &str,
-        description: Option<&str>,
-        git_repository: &str,
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO egg_repositories (name, description, git_repository)
-            VALUES ($1, $2, $3)
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(name)
-        .bind(description)
-        .bind(git_repository)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn all_with_pagination(
         database: &crate::database::Database,
         page: i64,
@@ -252,6 +233,132 @@ impl EggRepository {
             last_synced: self.last_synced.map(|dt| dt.and_utc()),
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateEggRepositoryOptions {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: compact_str::CompactString,
+    #[validate(length(max = 1024))]
+    #[schema(max_length = 1024)]
+    pub description: Option<compact_str::CompactString>,
+    #[validate(url)]
+    #[schema(example = "https://github.com/example/repo.git", format = "uri")]
+    pub git_repository: compact_str::CompactString,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for EggRepository {
+    type CreateOptions<'a> = CreateEggRepositoryOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<EggRepository>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self::CreateResult, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("egg_repositories");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("name", &options.name)
+            .set("description", &options.description)
+            .set("git_repository", &options.git_repository);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let egg_repository = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(egg_repository)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
+pub struct UpdateEggRepositoryOptions {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: Option<compact_str::CompactString>,
+    #[validate(length(max = 1024))]
+    #[schema(max_length = 1024)]
+    pub description: Option<Option<compact_str::CompactString>>,
+    #[validate(url)]
+    #[schema(example = "https://github.com/example/repo.git", format = "uri")]
+    pub git_repository: Option<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for EggRepository {
+    type UpdateOptions = UpdateEggRepositoryOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<EggRepository>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("egg_repositories");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .set(
+                "description",
+                options.description.as_ref().map(|d| d.as_ref()),
+            )
+            .set("git_repository", options.git_repository.as_ref())
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(description) = options.description {
+            self.description = description;
+        }
+        if let Some(git_repository) = options.git_repository {
+            self.git_repository = git_repository;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

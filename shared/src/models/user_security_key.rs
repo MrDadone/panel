@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,6 +9,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct UserSecurityKey {
@@ -95,30 +99,6 @@ impl BaseModel for UserSecurityKey {
 }
 
 impl UserSecurityKey {
-    pub async fn create(
-        database: &crate::database::Database,
-        user_uuid: uuid::Uuid,
-        name: &str,
-        registration: webauthn_rs::prelude::PasskeyRegistration,
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO user_security_keys (user_uuid, name, credential_id, registration, created)
-            VALUES ($1, $2, $3, $4, NOW())
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(user_uuid)
-        .bind(name)
-        .bind(rand::random_iter::<u8>().take(16).collect::<Vec<u8>>())
-        .bind(serde_json::to_value(registration)?)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn by_user_uuid_uuid(
         database: &crate::database::Database,
         user_uuid: uuid::Uuid,
@@ -187,6 +167,116 @@ impl UserSecurityKey {
             last_used: self.last_used.map(|dt| dt.and_utc()),
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateUserSecurityKeyOptions {
+    pub user_uuid: uuid::Uuid,
+
+    #[validate(length(min = 3, max = 31))]
+    #[schema(min_length = 3, max_length = 31)]
+    pub name: compact_str::CompactString,
+
+    #[schema(value_type = serde_json::Value)]
+    pub registration: webauthn_rs::prelude::PasskeyRegistration,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for UserSecurityKey {
+    type CreateOptions<'a> = CreateUserSecurityKeyOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<UserSecurityKey>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("user_security_keys");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("user_uuid", options.user_uuid)
+            .set("name", &options.name)
+            .set(
+                "credential_id",
+                rand::random_iter().take(16).collect::<Vec<u8>>(),
+            )
+            .set("registration", serde_json::to_value(options.registration)?);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let security_key = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(security_key)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
+pub struct UpdateUserSecurityKeyOptions {
+    #[validate(length(min = 3, max = 31))]
+    #[schema(min_length = 3, max_length = 31)]
+    pub name: Option<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for UserSecurityKey {
+    type UpdateOptions = UpdateUserSecurityKeyOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<UserSecurityKey>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("user_security_keys");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

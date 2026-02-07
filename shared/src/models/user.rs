@@ -1,4 +1,9 @@
-use crate::{prelude::*, response::ApiResponse, storage::StorageUrlRetriever};
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+    response::ApiResponse,
+    storage::StorageUrlRetriever,
+};
 use axum::http::StatusCode;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -8,6 +13,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 use webauthn_rs::prelude::CredentialID;
 
 pub static USERNAME_REGEX: LazyLock<Regex> =
@@ -315,7 +321,7 @@ impl BaseModel for User {
 
 impl User {
     #[allow(clippy::too_many_arguments)]
-    pub async fn create(
+    pub async fn create_internal(
         database: &crate::database::Database,
         role_uuid: Option<uuid::Uuid>,
         external_id: Option<&str>,
@@ -784,6 +790,223 @@ impl User {
             start_on_grouped_servers: self.start_on_grouped_servers,
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateUserOptions {
+    pub role_uuid: Option<uuid::Uuid>,
+
+    #[validate(length(max = 255))]
+    #[schema(max_length = 255)]
+    pub external_id: Option<compact_str::CompactString>,
+
+    #[validate(length(min = 3, max = 15), regex(path = "*USERNAME_REGEX"))]
+    #[schema(min_length = 3, max_length = 15)]
+    #[schema(pattern = "^[a-zA-Z0-9_]+$")]
+    pub username: compact_str::CompactString,
+    #[validate(email)]
+    #[schema(format = "email")]
+    pub email: String,
+    #[validate(length(min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub name_first: compact_str::CompactString,
+    #[validate(length(min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub name_last: compact_str::CompactString,
+    #[validate(length(min = 8, max = 512))]
+    #[schema(min_length = 8, max_length = 512)]
+    pub password: String,
+
+    pub admin: bool,
+
+    #[validate(
+        length(min = 5, max = 15),
+        custom(function = "crate::validate_language")
+    )]
+    #[schema(min_length = 5, max_length = 15)]
+    pub language: compact_str::CompactString,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for User {
+    type CreateOptions<'a> = CreateUserOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<User>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        if let Some(role_uuid) = options.role_uuid {
+            super::role::Role::by_uuid_optional_cached(&state.database, role_uuid)
+                .await?
+                .ok_or(crate::database::InvalidRelationError("role"))?;
+        }
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("users");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("role_uuid", options.role_uuid)
+            .set("external_id", options.external_id.as_deref())
+            .set("username", &options.username)
+            .set("email", &options.email)
+            .set("name_first", &options.name_first)
+            .set("name_last", &options.name_last)
+            .set_expr(
+                "password",
+                "crypt($1, gen_salt('bf', 8))",
+                vec![&options.password],
+            )
+            .set("admin", options.admin)
+            .set("language", &options.language);
+
+        let row = query_builder
+            .returning("uuid")
+            .fetch_one(&mut *transaction)
+            .await?;
+        let uuid: uuid::Uuid = row.get("uuid");
+
+        transaction.commit().await?;
+
+        Self::by_uuid(&state.database, uuid).await
+    }
+}
+
+#[derive(Default, ToSchema, Serialize, Deserialize, Validate)]
+pub struct UpdateUserOptions {
+    pub role_uuid: Option<Option<uuid::Uuid>>,
+
+    #[validate(length(max = 255))]
+    #[schema(max_length = 255)]
+    pub external_id: Option<Option<compact_str::CompactString>>,
+
+    #[validate(length(min = 3, max = 15), regex(path = "*USERNAME_REGEX"))]
+    #[schema(min_length = 3, max_length = 15)]
+    #[schema(pattern = "^[a-zA-Z0-9_]+$")]
+    pub username: Option<compact_str::CompactString>,
+    #[validate(email)]
+    #[schema(format = "email")]
+    pub email: Option<String>,
+    #[validate(length(min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub name_first: Option<compact_str::CompactString>,
+    #[validate(length(min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub name_last: Option<compact_str::CompactString>,
+    #[validate(length(min = 8, max = 512))]
+    #[schema(min_length = 8, max_length = 512)]
+    pub password: Option<compact_str::CompactString>,
+
+    pub admin: Option<bool>,
+
+    #[validate(
+        length(min = 5, max = 15),
+        custom(function = "crate::validate_language")
+    )]
+    #[schema(min_length = 5, max_length = 15)]
+    pub language: Option<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for User {
+    type UpdateOptions = UpdateUserOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<User>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let role = if let Some(role_uuid) = options.role_uuid {
+            if let Some(role_uuid) = role_uuid {
+                Some(Some(
+                    super::role::Role::by_uuid_optional_cached(&state.database, role_uuid)
+                        .await?
+                        .ok_or(crate::database::InvalidRelationError("role"))?,
+                ))
+            } else {
+                Some(None)
+            }
+        } else {
+            None
+        };
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("users");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("role_uuid", options.role_uuid.as_ref())
+            .set("external_id", options.external_id.as_ref())
+            .set("username", options.username.as_ref())
+            .set("email", options.email.as_ref())
+            .set("name_first", options.name_first.as_ref())
+            .set("name_last", options.name_last.as_ref())
+            .set("admin", options.admin)
+            .set("language", options.language.as_ref());
+
+        if let Some(role) = role {
+            self.role = role;
+        }
+        if let Some(external_id) = options.external_id {
+            self.external_id = external_id;
+        }
+        if let Some(username) = options.username {
+            self.username = username;
+        }
+        if let Some(email) = options.email {
+            self.email = email.into();
+        }
+        if let Some(password) = options.password {
+            self.update_password(&state.database, &password).await?;
+        }
+        if let Some(name_first) = options.name_first {
+            self.name_first = name_first;
+        }
+        if let Some(name_last) = options.name_last {
+            self.name_last = name_last;
+        }
+        if let Some(admin) = options.admin {
+            self.admin = admin;
+        }
+        if let Some(language) = options.language {
+            self.language = language;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

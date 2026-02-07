@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -102,33 +105,6 @@ impl BaseModel for ServerSchedule {
 }
 
 impl ServerSchedule {
-    pub async fn create(
-        database: &crate::database::Database,
-        server_uuid: uuid::Uuid,
-        name: &str,
-        enabled: bool,
-        triggers: Vec<wings_api::ScheduleTrigger>,
-        condition: wings_api::SchedulePreCondition,
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO server_schedules (server_uuid, name, enabled, triggers, condition, created)
-            VALUES ($1, $2, $3, $4, $5, NOW())
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(server_uuid)
-        .bind(name)
-        .bind(enabled)
-        .bind(serde_json::to_value(triggers)?)
-        .bind(serde_json::to_value(condition)?)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn by_uuid(
         database: &crate::database::Database,
         uuid: uuid::Uuid,
@@ -257,6 +233,144 @@ impl ServerSchedule {
             last_failure: self.last_failure.map(|dt| dt.and_utc()),
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateServerScheduleOptions {
+    pub server_uuid: uuid::Uuid,
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub name: compact_str::CompactString,
+    pub enabled: bool,
+    pub triggers: Vec<wings_api::ScheduleTrigger>,
+    pub condition: wings_api::SchedulePreCondition,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for ServerSchedule {
+    type CreateOptions<'a> = CreateServerScheduleOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<ServerSchedule>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("server_schedules");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("server_uuid", options.server_uuid)
+            .set("name", &options.name)
+            .set("enabled", options.enabled)
+            .set("triggers", serde_json::to_value(&options.triggers)?)
+            .set("condition", serde_json::to_value(&options.condition)?);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let schedule = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(schedule)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
+pub struct UpdateServerScheduleOptions {
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub name: Option<compact_str::CompactString>,
+    pub enabled: Option<bool>,
+    pub triggers: Option<Vec<wings_api::ScheduleTrigger>>,
+    pub condition: Option<wings_api::SchedulePreCondition>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for ServerSchedule {
+    type UpdateOptions = UpdateServerScheduleOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<ServerSchedule>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("server_schedules");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .set("enabled", options.enabled)
+            .set(
+                "triggers",
+                if let Some(triggers) = &options.triggers {
+                    Some(serde_json::to_value(triggers)?)
+                } else {
+                    None
+                },
+            )
+            .set(
+                "condition",
+                if let Some(condition) = &options.condition {
+                    Some(serde_json::to_value(condition)?)
+                } else {
+                    None
+                },
+            )
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(enabled) = options.enabled {
+            self.enabled = enabled;
+        }
+        if let Some(triggers) = options.triggers {
+            self.triggers = triggers;
+        }
+        if let Some(condition) = options.condition {
+            self.condition = condition;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

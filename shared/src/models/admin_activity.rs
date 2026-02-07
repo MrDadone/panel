@@ -1,8 +1,12 @@
-use crate::{State, prelude::*, storage::StorageUrlRetriever};
+use crate::{State, models::InsertQueryBuilder, prelude::*, storage::StorageUrlRetriever};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, LazyLock},
+};
 use utoipa::ToSchema;
+use validator::Validate;
 
 pub type GetAdminActivityLogger = crate::extract::ConsumingExtension<AdminActivityLogger>;
 
@@ -15,17 +19,16 @@ pub struct AdminActivityLogger {
 }
 
 impl AdminActivityLogger {
-    pub async fn log(&self, event: &str, data: serde_json::Value) {
-        if let Err(err) = crate::models::admin_activity::AdminActivity::log(
-            &self.state.database,
-            Some(self.user_uuid),
-            self.api_key_uuid,
-            event,
-            Some(self.ip.into()),
+    pub async fn log(&self, event: impl Into<compact_str::CompactString>, data: serde_json::Value) {
+        let options = CreateAdminActivityOptions {
+            user_uuid: Some(self.user_uuid),
+            api_key_uuid: self.api_key_uuid,
+            event: event.into(),
+            ip: Some(self.ip.into()),
             data,
-        )
-        .await
-        {
+            created: None,
+        };
+        if let Err(err) = AdminActivity::create(&self.state, options).await {
             tracing::warn!(
                 user = %self.user_uuid,
                 "failed to log admin activity: {:#?}",
@@ -106,31 +109,6 @@ impl BaseModel for AdminActivity {
 }
 
 impl AdminActivity {
-    pub async fn log(
-        database: &crate::database::Database,
-        user_uuid: Option<uuid::Uuid>,
-        api_key_uuid: Option<uuid::Uuid>,
-        event: &str,
-        ip: Option<sqlx::types::ipnetwork::IpNetwork>,
-        data: serde_json::Value,
-    ) -> Result<(), crate::database::DatabaseError> {
-        sqlx::query(
-            r#"
-            INSERT INTO admin_activities (user_uuid, api_key_uuid, event, ip, data)
-            VALUES ($1, $2, $3, $4, $5)
-            "#,
-        )
-        .bind(user_uuid)
-        .bind(api_key_uuid)
-        .bind(event)
-        .bind(ip)
-        .bind(data)
-        .execute(database.write())
-        .await?;
-
-        Ok(())
-    }
-
     pub async fn all_with_pagination(
         database: &crate::database::Database,
         page: i64,
@@ -204,6 +182,63 @@ impl AdminActivity {
             is_api: self.api_key_uuid.is_some(),
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateAdminActivityOptions {
+    pub user_uuid: Option<uuid::Uuid>,
+    pub api_key_uuid: Option<uuid::Uuid>,
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub event: compact_str::CompactString,
+    #[schema(value_type = Option<String>)]
+    pub ip: Option<sqlx::types::ipnetwork::IpNetwork>,
+    pub data: serde_json::Value,
+    pub created: Option<chrono::NaiveDateTime>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for AdminActivity {
+    type CreateOptions<'a> = CreateAdminActivityOptions;
+    type CreateResult = ();
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<AdminActivity>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self::CreateResult, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("admin_activities");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("user_uuid", options.user_uuid)
+            .set("api_key_uuid", options.api_key_uuid)
+            .set("event", &options.event)
+            .set("ip", options.ip)
+            .set("data", options.data);
+
+        if let Some(created) = options.created {
+            query_builder.set("created", created);
+        }
+
+        query_builder.execute(&mut *transaction).await?;
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

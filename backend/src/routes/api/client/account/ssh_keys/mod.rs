@@ -87,6 +87,7 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             user::{GetPermissionManager, GetUser},
             user_activity::GetUserActivityLogger,
             user_ssh_key::UserSshKey,
@@ -100,9 +101,11 @@ mod post {
     pub struct Payload {
         #[validate(length(min = 3, max = 31))]
         #[schema(min_length = 3, max_length = 31)]
-        name: String,
+        name: compact_str::CompactString,
 
-        public_key: String,
+        #[schema(value_type = String)]
+        #[serde(deserialize_with = "shared::deserialize::deserialize_public_key")]
+        public_key: russh::keys::PublicKey,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -130,31 +133,20 @@ mod post {
 
         permissions.has_user_permission("ssh-keys.create")?;
 
-        let public_key = match russh::keys::PublicKey::from_openssh(&data.public_key) {
-            Ok(key) => key,
-            Err(_) => {
-                return ApiResponse::error("invalid public key")
-                    .with_status(StatusCode::BAD_REQUEST)
+        let options = shared::models::user_ssh_key::CreateUserSshKeyOptions {
+            user_uuid: user.uuid,
+            name: data.name,
+            public_key: data.public_key,
+        };
+        let ssh_key = match UserSshKey::create(&state, options).await {
+            Ok(ssh_key) => ssh_key,
+            Err(err) if err.is_unique_violation() => {
+                return ApiResponse::error("ssh key with name or fingerprint already exists")
+                    .with_status(StatusCode::CONFLICT)
                     .ok();
             }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
-
-        let ssh_key =
-            match UserSshKey::create(&state.database, user.uuid, &data.name, public_key).await {
-                Ok(ssh_key) => ssh_key,
-                Err(err) if err.is_unique_violation() => {
-                    return ApiResponse::error("ssh key with name or fingerprint already exists")
-                        .with_status(StatusCode::CONFLICT)
-                        .ok();
-                }
-                Err(err) => {
-                    tracing::error!("failed to create ssh key: {:?}", err);
-
-                    return ApiResponse::error("failed to create ssh key")
-                        .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                        .ok();
-                }
-            };
 
         activity_logger
             .log(

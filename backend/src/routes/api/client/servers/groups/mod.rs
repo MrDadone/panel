@@ -49,6 +49,7 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             user::{GetPermissionManager, GetUser},
             user_activity::GetUserActivityLogger,
             user_server_group::UserServerGroup,
@@ -62,7 +63,7 @@ mod post {
     pub struct Payload {
         #[validate(length(min = 2, max = 31))]
         #[schema(min_length = 2, max_length = 31)]
-        name: String,
+        name: compact_str::CompactString,
         #[validate(length(max = 100))]
         #[schema(max_length = 100)]
         server_order: Vec<uuid::Uuid>,
@@ -84,12 +85,6 @@ mod post {
         activity_logger: GetUserActivityLogger,
         shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_user_permission("servers.create")?;
 
         let server_groups = UserServerGroup::count_by_user_uuid(&state.database, user.uuid).await;
@@ -99,9 +94,12 @@ mod post {
                 .ok();
         }
 
-        let server_group =
-            UserServerGroup::create(&state.database, user.uuid, &data.name, &data.server_order)
-                .await?;
+        let options = shared::models::user_server_group::CreateUserServerGroupOptions {
+            user_uuid: user.uuid,
+            name: data.name,
+            server_order: data.server_order,
+        };
+        let server_group = UserServerGroup::create(&state, options).await?;
 
         activity_logger
             .log(

@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,6 +9,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UserServerGroup {
@@ -65,29 +69,6 @@ impl BaseModel for UserServerGroup {
 }
 
 impl UserServerGroup {
-    pub async fn create(
-        database: &crate::database::Database,
-        user_uuid: uuid::Uuid,
-        name: &str,
-        server_order: &[uuid::Uuid],
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO user_server_groups (user_uuid, name, server_order)
-            VALUES ($1, $2, $3)
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(user_uuid)
-        .bind(name)
-        .bind(server_order)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn by_user_uuid_uuid(
         database: &crate::database::Database,
         user_uuid: uuid::Uuid,
@@ -157,6 +138,123 @@ impl UserServerGroup {
             server_order: self.server_order,
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateUserServerGroupOptions {
+    pub user_uuid: uuid::Uuid,
+
+    #[validate(length(min = 2, max = 31))]
+    #[schema(min_length = 2, max_length = 31)]
+    pub name: compact_str::CompactString,
+
+    #[validate(length(max = 100))]
+    #[schema(max_length = 100)]
+    pub server_order: Vec<uuid::Uuid>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for UserServerGroup {
+    type CreateOptions<'a> = CreateUserServerGroupOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<UserServerGroup>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("user_server_groups");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("user_uuid", options.user_uuid)
+            .set("name", &options.name)
+            .set("server_order", &options.server_order);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let user_server_group = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(user_server_group)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
+pub struct UpdateUserServerGroupOptions {
+    #[validate(length(min = 2, max = 31))]
+    #[schema(min_length = 2, max_length = 31, value_type = String)]
+    pub name: Option<compact_str::CompactString>,
+
+    #[validate(length(max = 100))]
+    #[schema(max_length = 100)]
+    pub server_order: Option<Vec<uuid::Uuid>>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for UserServerGroup {
+    type UpdateOptions = UpdateUserServerGroupOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<UserServerGroup>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("user_server_groups");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .set("server_order", options.server_order.as_ref())
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(server_order) = options.server_order {
+            self.server_order = server_order;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

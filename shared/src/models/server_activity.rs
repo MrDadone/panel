@@ -1,8 +1,12 @@
-use crate::{prelude::*, storage::StorageUrlRetriever};
+use crate::{models::InsertQueryBuilder, prelude::*, storage::StorageUrlRetriever};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, LazyLock},
+};
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct ServerActivity {
@@ -82,63 +86,6 @@ impl BaseModel for ServerActivity {
 }
 
 impl ServerActivity {
-    pub async fn log(
-        database: &crate::database::Database,
-        server_uuid: uuid::Uuid,
-        user_uuid: Option<uuid::Uuid>,
-        api_key_uuid: Option<uuid::Uuid>,
-        event: &str,
-        ip: Option<sqlx::types::ipnetwork::IpNetwork>,
-        data: serde_json::Value,
-    ) -> Result<(), crate::database::DatabaseError> {
-        sqlx::query(
-            r#"
-            INSERT INTO server_activities (server_uuid, user_uuid, api_key_uuid, event, ip, data)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            "#,
-        )
-        .bind(server_uuid)
-        .bind(user_uuid)
-        .bind(api_key_uuid)
-        .bind(event)
-        .bind(ip)
-        .bind(data)
-        .execute(database.write())
-        .await?;
-
-        Ok(())
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub async fn log_remote(
-        database: &crate::database::Database,
-        server_uuid: uuid::Uuid,
-        user_uuid: Option<uuid::Uuid>,
-        schedule_uuid: Option<uuid::Uuid>,
-        event: &str,
-        ip: Option<sqlx::types::ipnetwork::IpNetwork>,
-        data: serde_json::Value,
-        timestamp: chrono::DateTime<chrono::Utc>,
-    ) -> Result<(), crate::database::DatabaseError> {
-        sqlx::query(
-            r#"
-            INSERT INTO server_activities (server_uuid, user_uuid, schedule_uuid, event, ip, data, created)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            "#,
-        )
-        .bind(server_uuid)
-        .bind(user_uuid)
-        .bind(schedule_uuid)
-        .bind(event)
-        .bind(ip)
-        .bind(data)
-        .bind(timestamp.naive_utc())
-        .execute(database.write())
-        .await?;
-
-        Ok(())
-    }
-
     pub async fn by_server_uuid_with_pagination(
         database: &crate::database::Database,
         server_uuid: uuid::Uuid,
@@ -215,6 +162,68 @@ impl ServerActivity {
             is_schedule: self.schedule_uuid.is_some(),
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateServerActivityOptions {
+    pub server_uuid: uuid::Uuid,
+    pub user_uuid: Option<uuid::Uuid>,
+    pub api_key_uuid: Option<uuid::Uuid>,
+    pub schedule_uuid: Option<uuid::Uuid>,
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub event: compact_str::CompactString,
+    #[schema(value_type = Option<String>)]
+    pub ip: Option<sqlx::types::ipnetwork::IpNetwork>,
+    pub data: serde_json::Value,
+
+    pub created: Option<chrono::NaiveDateTime>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for ServerActivity {
+    type CreateOptions<'a> = CreateServerActivityOptions;
+    type CreateResult = ();
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<ServerActivity>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self::CreateResult, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("server_activities");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("server_uuid", options.server_uuid)
+            .set("user_uuid", options.user_uuid)
+            .set("api_key_uuid", options.api_key_uuid)
+            .set("schedule_uuid", options.schedule_uuid)
+            .set("event", &options.event)
+            .set("ip", options.ip)
+            .set("data", options.data);
+
+        if let Some(created) = options.created {
+            query_builder.set("created", created);
+        }
+
+        query_builder.execute(&mut *transaction).await?;
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

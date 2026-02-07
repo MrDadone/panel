@@ -170,3 +170,14 @@ where
 
     Ok(value)
 }
+
+pub fn deserialize_public_key<'de, D>(deserializer: D) -> Result<russh::keys::PublicKey, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = <&str>::deserialize(deserializer)?;
+    let public_key = russh::keys::PublicKey::from_openssh(value)
+        .map_err(|_| serde::de::Error::custom("invalid public key"))?;
+
+    Ok(public_key)
+}

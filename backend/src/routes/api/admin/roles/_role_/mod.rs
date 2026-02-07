@@ -130,33 +130,16 @@ mod delete {
 mod patch {
     use crate::routes::api::admin::roles::_role_::GetRole;
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
-        models::{admin_activity::GetAdminActivityLogger, user::GetPermissionManager},
-        prelude::SqlxErrorExt,
+        models::{
+            UpdatableModel, admin_activity::GetAdminActivityLogger, role::UpdateRoleOptions,
+            user::GetPermissionManager,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
-    use std::sync::Arc;
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: Option<compact_str::CompactString>,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-
-        require_two_factor: Option<bool>,
-
-        #[validate(custom(function = "shared::permissions::validate_admin_permissions"))]
-        admin_permissions: Option<Vec<compact_str::CompactString>>,
-        #[validate(custom(function = "shared::permissions::validate_server_permissions"))]
-        server_permissions: Option<Vec<compact_str::CompactString>>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -172,69 +155,24 @@ mod patch {
             description = "The user ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateRoleOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         mut role: GetRole,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateRoleOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("roles.update")?;
 
-        if let Some(name) = data.name {
-            role.name = name;
-        }
-        if let Some(description) = data.description {
-            if description.is_empty() {
-                role.description = None;
-            } else {
-                role.description = Some(description);
-            }
-        }
-        if let Some(require_two_factor) = data.require_two_factor {
-            role.require_two_factor = require_two_factor;
-        }
-        if let Some(admin_permissions) = data.admin_permissions {
-            role.admin_permissions = Arc::new(admin_permissions);
-        }
-        if let Some(server_permissions) = data.server_permissions {
-            role.server_permissions = Arc::new(server_permissions);
-        }
-
-        match sqlx::query!(
-            "UPDATE roles
-            SET name = $2, description = $3, require_two_factor = $4, admin_permissions = $5, server_permissions = $6
-            WHERE roles.uuid = $1",
-            role.uuid,
-            &role.name,
-            role.description.as_deref(),
-            role.require_two_factor,
-            &*role.admin_permissions as &[compact_str::CompactString],
-            &*role.server_permissions as &[compact_str::CompactString]
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match role.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("role with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update role: {:?}", err);
-
-                return ApiResponse::error("failed to update role")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,6 +9,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Mount {
@@ -80,35 +84,6 @@ impl BaseModel for Mount {
 }
 
 impl Mount {
-    pub async fn create(
-        database: &crate::database::Database,
-        name: &str,
-        description: Option<&str>,
-        source: &str,
-        target: &str,
-        read_only: bool,
-        user_mountable: bool,
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO mounts (name, description, source, target, read_only, user_mountable)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(name)
-        .bind(description)
-        .bind(source)
-        .bind(target)
-        .bind(read_only)
-        .bind(user_mountable)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn by_node_uuid_egg_uuid_uuid(
         database: &crate::database::Database,
         node_uuid: uuid::Uuid,
@@ -205,6 +180,157 @@ impl ByUuid for Mount {
         .await?;
 
         Self::map(None, &row)
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateMountOptions {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: compact_str::CompactString,
+    #[validate(length(min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<compact_str::CompactString>,
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub source: compact_str::CompactString,
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub target: compact_str::CompactString,
+    pub read_only: bool,
+    pub user_mountable: bool,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for Mount {
+    type CreateOptions<'a> = CreateMountOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<Mount>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("mounts");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("name", &options.name)
+            .set("description", &options.description)
+            .set("source", &options.source)
+            .set("target", &options.target)
+            .set("read_only", options.read_only)
+            .set("user_mountable", options.user_mountable);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let mount = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(mount)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
+pub struct UpdateMountOptions {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: Option<compact_str::CompactString>,
+    #[validate(length(min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<Option<compact_str::CompactString>>,
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub source: Option<compact_str::CompactString>,
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub target: Option<compact_str::CompactString>,
+    pub read_only: Option<bool>,
+    pub user_mountable: Option<bool>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for Mount {
+    type UpdateOptions = UpdateMountOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<Mount>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("mounts");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .set(
+                "description",
+                options.description.as_ref().map(|d| d.as_ref()),
+            )
+            .set("source", options.source.as_ref())
+            .set("target", options.target.as_ref())
+            .set("read_only", options.read_only)
+            .set("user_mountable", options.user_mountable)
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(description) = options.description {
+            self.description = description;
+        }
+        if let Some(source) = options.source {
+            self.source = source;
+        }
+        if let Some(target) = options.target {
+            self.target = target;
+        }
+        if let Some(read_only) = options.read_only {
+            self.read_only = read_only;
+        }
+        if let Some(user_mountable) = options.user_mountable {
+            self.user_mountable = user_mountable;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

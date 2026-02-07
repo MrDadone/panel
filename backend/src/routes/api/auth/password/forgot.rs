@@ -6,7 +6,10 @@ mod post {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{user::User, user_activity::UserActivity, user_password_reset::UserPasswordReset},
+        models::{
+            CreatableModel, user::User, user_activity::UserActivity,
+            user_password_reset::UserPasswordReset,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -97,21 +100,30 @@ mod post {
                     ),
                 );
 
-            UserActivity::log(
-                &state.database,
-                user.uuid,
-                None,
-                "email:password-reset",
-                Some(ip.0.into()),
-                serde_json::json!({
-                    "user_agent": headers
-                        .get("User-Agent")
-                        .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
-                        .unwrap_or("unknown"),
-                }),
+            if let Err(err) = UserActivity::create(
+                &state,
+                shared::models::user_activity::CreateUserActivityOptions {
+                    user_uuid: user.uuid,
+                    api_key_uuid: None,
+                    event: "email:password-reset".into(),
+                    ip: Some(ip.0.into()),
+                    data: serde_json::json!({
+                        "user_agent": headers
+                            .get("User-Agent")
+                            .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                            .unwrap_or("unknown"),
+                    }),
+                    created: None,
+                },
             )
             .await
-            .ok();
+            {
+                tracing::warn!(
+                    user = %user.uuid,
+                    "failed to log user activity: {:#?}",
+                    err
+                );
+            }
 
             state
                 .mail

@@ -82,7 +82,9 @@ mod post {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{user::User, user_activity::UserActivity, user_session::UserSession},
+        models::{
+            CreatableModel, user::User, user_activity::UserActivity, user_session::UserSession,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use tower_cookies::{Cookie, Cookies};
@@ -182,13 +184,16 @@ mod post {
         }
 
         let key = UserSession::create(
-            &state.database,
-            user.uuid,
-            ip.0.into(),
-            headers
-                .get("User-Agent")
-                .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
-                .unwrap_or("unknown"),
+            &state,
+            shared::models::user_session::CreateUserSessionOptions {
+                user_uuid: user.uuid,
+                ip: ip.0.into(),
+                user_agent: headers
+                    .get("User-Agent")
+                    .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                    .unwrap_or("unknown")
+                    .into(),
+            },
         )
         .await?;
 
@@ -209,20 +214,32 @@ mod post {
 
         drop(settings);
 
-        if let Err(err) = UserActivity::log(
-            &state.database,
-            user.uuid,
-            None,
-            "auth:success",
-            Some(ip.0.into()),
-            serde_json::json!({
-                "using": "security-key",
-                "uuid": security_key.uuid,
-            }),
+        if let Err(err) = UserActivity::create(
+            &state,
+            shared::models::user_activity::CreateUserActivityOptions {
+                user_uuid: user.uuid,
+                api_key_uuid: None,
+                event: "auth:success".into(),
+                ip: Some(ip.0.into()),
+                data: serde_json::json!({
+                    "using": "security-key",
+                    "uuid": security_key.uuid,
+
+                    "user_agent": headers
+                        .get("User-Agent")
+                        .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                        .unwrap_or("unknown"),
+                }),
+                created: None,
+            },
         )
         .await
         {
-            tracing::warn!(user = %user.uuid, "failed to log user activity: {:?}", err);
+            tracing::warn!(
+                user = %user.uuid,
+                "failed to log user activity: {:#?}",
+                err
+            );
         }
 
         ApiResponse::new_serialized(Response {

@@ -469,7 +469,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     .bind(shared::models::server_backup::BackupDisk::Local)
                     .bind(
                         serde_json::to_value(
-                            shared::models::backup_configurations::BackupConfigs::default(),
+                            shared::models::backup_configuration::BackupConfigs::default(),
                         )
                         .unwrap(),
                     )

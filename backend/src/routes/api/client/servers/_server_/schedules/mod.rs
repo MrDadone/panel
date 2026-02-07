@@ -92,6 +92,7 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             server::{GetServer, GetServerActivityLogger},
             server_schedule::ServerSchedule,
             user::GetPermissionManager,
@@ -105,9 +106,8 @@ mod post {
     pub struct Payload {
         #[validate(length(min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
-        name: String,
+        name: compact_str::CompactString,
         enabled: bool,
-
         triggers: Vec<wings_api::ScheduleTrigger>,
         condition: wings_api::SchedulePreCondition,
     }
@@ -150,29 +150,21 @@ mod post {
                 .ok();
         }
 
-        let schedule = match ServerSchedule::create(
-            &state.database,
-            server.uuid,
-            &data.name,
-            data.enabled,
-            data.triggers,
-            data.condition,
-        )
-        .await
-        {
+        let options = shared::models::server_schedule::CreateServerScheduleOptions {
+            server_uuid: server.uuid,
+            name: data.name,
+            enabled: data.enabled,
+            triggers: data.triggers,
+            condition: data.condition,
+        };
+        let schedule = match ServerSchedule::create(&state, options).await {
             Ok(schedule) => schedule,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("schedule with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!(name = %data.name, "failed to create schedule: {:?}", err);
-
-                return ApiResponse::error("failed to create schedule")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

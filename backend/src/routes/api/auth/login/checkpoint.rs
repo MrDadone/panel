@@ -17,8 +17,8 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, user::User, user_activity::UserActivity, user_recovery_code::UserRecoveryCode,
-            user_session::UserSession,
+            ByUuid, CreatableModel, user::User, user_activity::UserActivity,
+            user_recovery_code::UserRecoveryCode, user_session::UserSession,
         },
         response::{ApiResponse, ApiResponseResult},
     };
@@ -136,20 +136,28 @@ mod post {
                     }
                 }
 
-                if let Err(err) = UserActivity::log(
-                    &state.database,
-                    payload.user_uuid,
-                    None,
-                    "auth:success",
-                    Some(ip.0.into()),
-                    serde_json::json!({
-                        "using": "two_factor",
-                    }),
+                if let Err(err) = UserActivity::create(
+                    &state,
+                    shared::models::user_activity::CreateUserActivityOptions {
+                        user_uuid: user.uuid,
+                        api_key_uuid: None,
+                        event: "auth:success".into(),
+                        ip: Some(ip.0.into()),
+                        data: serde_json::json!({
+                            "using": "two-factor",
+
+                            "user_agent": headers
+                                .get("User-Agent")
+                                .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                                .unwrap_or("unknown"),
+                        }),
+                        created: None,
+                    },
                 )
                 .await
                 {
                     tracing::warn!(
-                        user = %payload.user_uuid,
+                        user = %user.uuid,
                         "failed to log user activity: {:#?}",
                         err
                     );
@@ -164,20 +172,28 @@ mod post {
                 .await?
                 .is_some()
                 {
-                    if let Err(err) = UserActivity::log(
-                        &state.database,
-                        payload.user_uuid,
-                        None,
-                        "auth:success",
-                        Some(ip.0.into()),
-                        serde_json::json!({
-                            "using": "recovery_code",
-                        }),
+                    if let Err(err) = UserActivity::create(
+                        &state,
+                        shared::models::user_activity::CreateUserActivityOptions {
+                            user_uuid: user.uuid,
+                            api_key_uuid: None,
+                            event: "auth:success".into(),
+                            ip: Some(ip.0.into()),
+                            data: serde_json::json!({
+                                "using": "recovery-code",
+
+                                "user_agent": headers
+                                    .get("User-Agent")
+                                    .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                                    .unwrap_or("unknown"),
+                            }),
+                            created: None,
+                        },
                     )
                     .await
                     {
                         tracing::warn!(
-                            user = %payload.user_uuid,
+                            user = %user.uuid,
                             "failed to log user activity: {:#?}",
                             err
                         );
@@ -196,13 +212,16 @@ mod post {
         }
 
         let key = UserSession::create(
-            &state.database,
-            user.uuid,
-            ip.0.into(),
-            headers
-                .get("User-Agent")
-                .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
-                .unwrap_or("unknown"),
+            &state,
+            shared::models::user_session::CreateUserSessionOptions {
+                user_uuid: user.uuid,
+                ip: ip.0.into(),
+                user_agent: headers
+                    .get("User-Agent")
+                    .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                    .unwrap_or("unknown")
+                    .into(),
+            },
         )
         .await?;
 

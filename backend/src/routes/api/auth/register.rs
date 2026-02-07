@@ -6,7 +6,7 @@ mod post {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{ByUuid, user::User, user_session::UserSession},
+        models::{ByUuid, CreatableModel, user::User, user_session::UserSession},
         response::{ApiResponse, ApiResponseResult},
     };
     use tower_cookies::{Cookie, Cookies};
@@ -108,13 +108,16 @@ mod post {
         };
 
         let key = UserSession::create(
-            &state.database,
-            user.uuid,
-            ip.0.into(),
-            headers
-                .get("User-Agent")
-                .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
-                .unwrap_or("unknown"),
+            &state,
+            shared::models::user_session::CreateUserSessionOptions {
+                user_uuid: user.uuid,
+                ip: ip.0.into(),
+                user_agent: headers
+                    .get("User-Agent")
+                    .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                    .unwrap_or("unknown")
+                    .into(),
+            },
         )
         .await?;
 

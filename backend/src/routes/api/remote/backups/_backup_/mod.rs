@@ -225,7 +225,7 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid,
+            ByUuid, CreatableModel,
             node::GetNode,
             server::Server,
             server_activity::ServerActivity,
@@ -425,21 +425,26 @@ mod post {
         }
 
         if let Some(server) = &backup.0.server
-            && let Err(err) = ServerActivity::log(
-                &state.database,
-                server.uuid,
-                None,
-                None,
-                if data.successful {
-                    "server:backup.complete"
-                } else {
-                    "server:backup.fail"
+            && let Err(err) = ServerActivity::create(
+                &state,
+                shared::models::server_activity::CreateServerActivityOptions {
+                    server_uuid: server.uuid,
+                    user_uuid: None,
+                    api_key_uuid: None,
+                    schedule_uuid: None,
+                    event: if data.successful {
+                        "server:backup.complete"
+                    } else {
+                        "server:backup.fail"
+                    }
+                    .into(),
+                    ip: None,
+                    data: serde_json::json!({
+                        "uuid": backup.0.uuid,
+                        "name": backup.0.name,
+                    }),
+                    created: None,
                 },
-                None,
-                serde_json::json!({
-                    "uuid": backup.0.uuid,
-                    "name": backup.0.name,
-                }),
             )
             .await
         {

@@ -1,5 +1,8 @@
 use crate::{
-    models::database_host::{DatabaseTransaction, DatabaseType},
+    models::{
+        InsertQueryBuilder, UpdateQueryBuilder,
+        database_host::{DatabaseTransaction, DatabaseType},
+    },
     prelude::*,
     storage::StorageUrlRetriever,
 };
@@ -12,6 +15,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 pub static DB_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"^[a-zA-Z0-9_]+$").expect("Failed to compile database name regex")
@@ -97,121 +101,6 @@ impl BaseModel for ServerDatabase {
 }
 
 impl ServerDatabase {
-    pub async fn create(
-        database: &crate::database::Database,
-        server: &super::server::Server,
-        database_host: &super::database_host::DatabaseHost,
-        name: &str,
-    ) -> Result<uuid::Uuid, crate::database::DatabaseError> {
-        let server_id = format!("{:08x}", server.uuid_short);
-        let name = format!("s{server_id}_{name}");
-        let username = format!(
-            "u{}_{}",
-            server_id,
-            rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 10)
-        );
-        let password = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 24);
-
-        let transaction: DatabaseTransaction = match database_host.get_connection(database).await? {
-            crate::models::database_host::DatabasePool::Mysql(pool) => {
-                let mut transaction = pool.begin().await?;
-
-                sqlx::query(&format!(
-                    "CREATE USER IF NOT EXISTS '{username}'@'%' IDENTIFIED BY '{password}'"
-                ))
-                .execute(&mut *transaction)
-                .await?;
-                sqlx::query(&format!("CREATE DATABASE IF NOT EXISTS `{name}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"))
-                    .execute(&mut *transaction)
-                    .await?;
-                sqlx::query(&format!(
-                    "GRANT ALL PRIVILEGES ON `{name}`.* TO '{username}'@'%' WITH GRANT OPTION"
-                ))
-                .execute(&mut *transaction)
-                .await?;
-
-                DatabaseTransaction::Mysql(transaction)
-            }
-            crate::models::database_host::DatabasePool::Postgres(pool) => {
-                let transaction = pool.begin().await?;
-
-                sqlx::query(&format!(
-                    "CREATE USER \"{username}\" WITH PASSWORD '{password}'"
-                ))
-                .execute(pool.as_ref())
-                .await?;
-                sqlx::query(&format!(
-                    "CREATE DATABASE \"{name}\" WITH OWNER \"{username}\" ENCODING 'UTF8'"
-                ))
-                .execute(pool.as_ref())
-                .await?;
-
-                DatabaseTransaction::Postgres(transaction, pool)
-            }
-        };
-
-        let row = match sqlx::query(
-            r#"
-            INSERT INTO server_databases (server_uuid, database_host_uuid, name, username, password)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING uuid
-            "#,
-        )
-        .bind(server.uuid)
-        .bind(database_host.uuid)
-        .bind(&name)
-        .bind(&username)
-        .bind(database.encrypt(password.clone()).await?)
-        .fetch_one(database.write())
-        .await
-        {
-            Ok(row) => row,
-            Err(err) => {
-                match transaction {
-                    DatabaseTransaction::Mysql(transaction) => {
-                        transaction.rollback().await?;
-                    }
-                    DatabaseTransaction::Postgres(transaction, pool) => {
-                        transaction.rollback().await?;
-
-                        let drop_database = format!("DROP DATABASE IF EXISTS \"{name}\"");
-                        let drop_user = format!("DROP USER IF EXISTS \"{username}\"");
-
-                        let (_, _) = tokio::join!(
-                            sqlx::query(&drop_database).execute(pool.as_ref()),
-                            sqlx::query(&drop_user).execute(pool.as_ref())
-                        );
-                    }
-                }
-
-                return Err(err.into());
-            }
-        };
-
-        match match transaction {
-            DatabaseTransaction::Mysql(transaction) => transaction.commit().await,
-            DatabaseTransaction::Postgres(transaction, _) => transaction.commit().await,
-        } {
-            Ok(_) => {}
-            Err(err) => {
-                sqlx::query(
-                    r#"
-                    DELETE FROM server_databases
-                    WHERE server_databases.uuid = $1
-                    "#,
-                )
-                .bind(row.get::<uuid::Uuid, _>("uuid"))
-                .execute(database.write())
-                .await
-                .ok();
-
-                return Err(err.into());
-            }
-        }
-
-        Ok(row.try_get("uuid")?)
-    }
-
     pub async fn by_uuid(
         database: &crate::database::Database,
         uuid: uuid::Uuid,
@@ -520,6 +409,214 @@ impl ServerDatabase {
             },
             created: self.created.and_utc(),
         })
+    }
+}
+
+#[derive(Validate)]
+pub struct CreateServerDatabaseOptions<'a> {
+    pub server: &'a super::server::Server,
+    pub database_host: &'a super::database_host::DatabaseHost,
+
+    #[validate(length(min = 3, max = 31), regex(path = "*DB_NAME_REGEX"))]
+    pub name: compact_str::CompactString,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for ServerDatabase {
+    type CreateOptions<'a> = CreateServerDatabaseOptions<'a>;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<ServerDatabase>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let server_id = format!("{:08x}", options.server.uuid_short);
+        let name = format!("s{}_{}", server_id, options.name);
+        let username = format!(
+            "u{}_{}",
+            server_id,
+            rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 10)
+        );
+        let password = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 24);
+
+        let transaction: DatabaseTransaction = match options
+            .database_host
+            .get_connection(&state.database)
+            .await?
+        {
+            crate::models::database_host::DatabasePool::Mysql(pool) => {
+                let mut transaction = pool.begin().await?;
+
+                sqlx::query(&format!(
+                    "CREATE USER IF NOT EXISTS '{username}'@'%' IDENTIFIED BY '{password}'"
+                ))
+                .execute(&mut *transaction)
+                .await?;
+                sqlx::query(&format!("CREATE DATABASE IF NOT EXISTS `{name}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"))
+                        .execute(&mut *transaction)
+                        .await?;
+                sqlx::query(&format!(
+                    "GRANT ALL PRIVILEGES ON `{name}`.* TO '{username}'@'%' WITH GRANT OPTION"
+                ))
+                .execute(&mut *transaction)
+                .await?;
+
+                DatabaseTransaction::Mysql(transaction)
+            }
+            crate::models::database_host::DatabasePool::Postgres(pool) => {
+                let transaction = pool.begin().await?;
+
+                sqlx::query(&format!(
+                    "CREATE USER \"{username}\" WITH PASSWORD '{password}'"
+                ))
+                .execute(pool.as_ref())
+                .await?;
+                sqlx::query(&format!(
+                    "CREATE DATABASE \"{name}\" WITH OWNER \"{username}\" ENCODING 'UTF8'"
+                ))
+                .execute(pool.as_ref())
+                .await?;
+
+                DatabaseTransaction::Postgres(transaction, pool)
+            }
+        };
+
+        let mut panel_transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("server_databases");
+
+        Self::run_create_handlers(
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut panel_transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("server_uuid", options.server.uuid)
+            .set("database_host_uuid", options.database_host.uuid)
+            .set("name", &name)
+            .set("username", &username)
+            .set("password", state.database.encrypt(password.clone()).await?);
+
+        let row = match query_builder
+            .returning("uuid")
+            .fetch_one(&mut *panel_transaction)
+            .await
+        {
+            Ok(row) => row,
+            Err(err) => {
+                match transaction {
+                    DatabaseTransaction::Mysql(transaction) => {
+                        transaction.rollback().await?;
+                    }
+                    DatabaseTransaction::Postgres(transaction, pool) => {
+                        transaction.rollback().await?;
+
+                        let drop_database = format!("DROP DATABASE IF EXISTS \"{name}\"");
+                        let drop_user = format!("DROP USER IF EXISTS \"{username}\"");
+
+                        let (_, _) = tokio::join!(
+                            sqlx::query(&drop_database).execute(pool.as_ref()),
+                            sqlx::query(&drop_user).execute(pool.as_ref())
+                        );
+                    }
+                }
+
+                return Err(err.into());
+            }
+        };
+
+        let uuid: uuid::Uuid = row.get("uuid");
+
+        match match transaction {
+            DatabaseTransaction::Mysql(transaction) => transaction.commit().await,
+            DatabaseTransaction::Postgres(transaction, _) => transaction.commit().await,
+        } {
+            Ok(_) => {}
+            Err(err) => {
+                sqlx::query(
+                    r#"
+                    DELETE FROM server_databases
+                    WHERE server_databases.uuid = $1
+                    "#,
+                )
+                .bind(uuid)
+                .execute(&mut *panel_transaction)
+                .await
+                .ok();
+
+                return Err(err.into());
+            }
+        }
+
+        panel_transaction.commit().await?;
+
+        Self::by_uuid(&state.database, uuid)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound.into())
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
+pub struct UpdateServerDatabaseOptions {
+    pub locked: Option<bool>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for ServerDatabase {
+    type UpdateOptions = UpdateServerDatabaseOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<ServerDatabase>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("server_databases");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("locked", options.locked)
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(locked) = options.locked {
+            self.locked = locked;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

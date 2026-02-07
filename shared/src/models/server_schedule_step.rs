@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,6 +9,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(ToSchema, Serialize, Deserialize)]
 pub struct ExportedServerScheduleStep {
@@ -72,29 +76,6 @@ impl BaseModel for ServerScheduleStep {
 }
 
 impl ServerScheduleStep {
-    pub async fn create(
-        database: &crate::database::Database,
-        schedule_uuid: uuid::Uuid,
-        action: wings_api::ScheduleActionInner,
-        order: i16,
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO server_schedule_steps (schedule_uuid, action, order_, created)
-            VALUES ($1, $2, $3, NOW())
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(schedule_uuid)
-        .bind(serde_json::to_value(action)?)
-        .bind(order)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn by_schedule_uuid_uuid(
         database: &crate::database::Database,
         schedule_uuid: uuid::Uuid,
@@ -172,6 +153,119 @@ impl ServerScheduleStep {
             error: self.error,
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateServerScheduleStepOptions {
+    pub schedule_uuid: uuid::Uuid,
+    pub action: wings_api::ScheduleActionInner,
+    pub order: i16,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for ServerScheduleStep {
+    type CreateOptions<'a> = CreateServerScheduleStepOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<ServerScheduleStep>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("server_schedule_steps");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("schedule_uuid", options.schedule_uuid)
+            .set("action", serde_json::to_value(&options.action)?)
+            .set("order_", options.order);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let step = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(step)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
+pub struct UpdateServerScheduleStepOptions {
+    pub action: Option<wings_api::ScheduleActionInner>,
+    pub order: Option<i16>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for ServerScheduleStep {
+    type UpdateOptions = UpdateServerScheduleStepOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<ServerScheduleStep>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("server_schedule_steps");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set(
+                "action",
+                if let Some(action) = &options.action {
+                    Some(serde_json::to_value(action)?)
+                } else {
+                    None
+                },
+            )
+            .set("order_", options.order)
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(action) = options.action {
+            self.action = action;
+        }
+        if let Some(order) = options.order {
+            self.order = order;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

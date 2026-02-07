@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -140,47 +143,6 @@ impl BaseModel for NestEggVariable {
 }
 
 impl NestEggVariable {
-    #[allow(clippy::too_many_arguments)]
-    pub async fn create(
-        database: &crate::database::Database,
-        egg_uuid: uuid::Uuid,
-        name: &str,
-        description: Option<&str>,
-        order: i16,
-        env_variable: &str,
-        default_value: Option<&str>,
-        user_viewable: bool,
-        user_editable: bool,
-        secret: bool,
-        rules: &[compact_str::CompactString],
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO nest_egg_variables (
-                egg_uuid, name, description, order_, env_variable,
-                default_value, user_viewable, user_editable, secret, rules
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(egg_uuid)
-        .bind(name)
-        .bind(description)
-        .bind(order)
-        .bind(env_variable)
-        .bind(default_value)
-        .bind(user_viewable)
-        .bind(user_editable)
-        .bind(secret)
-        .bind(rules)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn by_egg_uuid_uuid(
         database: &crate::database::Database,
         egg_uuid: uuid::Uuid,
@@ -254,6 +216,198 @@ impl NestEggVariable {
             rules: self.rules,
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateNestEggVariableOptions {
+    pub egg_uuid: uuid::Uuid,
+
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: compact_str::CompactString,
+
+    #[validate(length(min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<compact_str::CompactString>,
+
+    pub order: i16,
+
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub env_variable: compact_str::CompactString,
+
+    #[validate(length(max = 1024))]
+    #[schema(max_length = 1024)]
+    pub default_value: Option<String>,
+
+    pub user_viewable: bool,
+    pub user_editable: bool,
+    pub secret: bool,
+
+    #[validate(custom(function = "rule_validator::validate_rules"))]
+    pub rules: Vec<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for NestEggVariable {
+    type CreateOptions<'a> = CreateNestEggVariableOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<NestEggVariable>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self::CreateResult, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("nest_egg_variables");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("egg_uuid", options.egg_uuid)
+            .set("name", &options.name)
+            .set("description", &options.description)
+            .set("order_", options.order)
+            .set("env_variable", &options.env_variable)
+            .set("default_value", &options.default_value)
+            .set("user_viewable", options.user_viewable)
+            .set("user_editable", options.user_editable)
+            .set("secret", options.secret)
+            .set("rules", &options.rules);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let nest_egg_variable = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(nest_egg_variable)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
+pub struct UpdateNestEggVariableOptions {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: Option<compact_str::CompactString>,
+
+    #[validate(length(min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<Option<compact_str::CompactString>>,
+
+    pub order: Option<i16>,
+
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub env_variable: Option<compact_str::CompactString>,
+
+    #[validate(length(max = 1024))]
+    #[schema(max_length = 1024)]
+    pub default_value: Option<Option<String>>,
+
+    pub user_viewable: Option<bool>,
+    pub user_editable: Option<bool>,
+    pub secret: Option<bool>,
+
+    #[validate(custom(function = "rule_validator::validate_rules"))]
+    pub rules: Option<Vec<compact_str::CompactString>>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for NestEggVariable {
+    type UpdateOptions = UpdateNestEggVariableOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<NestEggVariable>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("nest_egg_variables");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .set(
+                "description",
+                options.description.as_ref().map(|d| d.as_ref()),
+            )
+            .set("order_", options.order)
+            .set("env_variable", options.env_variable.as_ref())
+            .set(
+                "default_value",
+                options.default_value.as_ref().map(|d| d.as_ref()),
+            )
+            .set("user_viewable", options.user_viewable)
+            .set("user_editable", options.user_editable)
+            .set("secret", options.secret)
+            .set("rules", options.rules.as_ref())
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(description) = options.description {
+            self.description = description;
+        }
+        if let Some(order) = options.order {
+            self.order = order;
+        }
+        if let Some(env_variable) = options.env_variable {
+            self.env_variable = env_variable;
+        }
+        if let Some(default_value) = options.default_value {
+            self.default_value = default_value;
+        }
+        if let Some(user_viewable) = options.user_viewable {
+            self.user_viewable = user_viewable;
+        }
+        if let Some(user_editable) = options.user_editable {
+            self.user_editable = user_editable;
+        }
+        if let Some(secret) = options.secret {
+            self.secret = secret;
+        }
+        if let Some(rules) = options.rules {
+            self.rules = rules;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

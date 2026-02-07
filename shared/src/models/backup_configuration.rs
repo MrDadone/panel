@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -7,6 +10,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(ToSchema, Serialize, Deserialize, Clone)]
 pub struct BackupConfigsS3 {
@@ -242,35 +246,6 @@ impl BaseModel for BackupConfiguration {
 }
 
 impl BackupConfiguration {
-    pub async fn create(
-        database: &crate::database::Database,
-        name: &str,
-        description: Option<&str>,
-        maintenance_enabled: bool,
-        backup_disk: super::server_backup::BackupDisk,
-        mut backup_configs: BackupConfigs,
-    ) -> Result<Self, crate::database::DatabaseError> {
-        backup_configs.encrypt(database).await?;
-
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO backup_configurations (name, description, maintenance_enabled, backup_disk, backup_configs)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(name)
-        .bind(description)
-        .bind(maintenance_enabled)
-        .bind(backup_disk)
-        .bind(serde_json::to_value(backup_configs)?)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn all_with_pagination(
         database: &crate::database::Database,
         page: i64,
@@ -346,6 +321,154 @@ impl ByUuid for BackupConfiguration {
         .await?;
 
         Self::map(None, &row)
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateBackupConfigurationOptions {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: compact_str::CompactString,
+    #[validate(length(min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<compact_str::CompactString>,
+    pub maintenance_enabled: bool,
+    pub backup_disk: super::server_backup::BackupDisk,
+    #[serde(default)]
+    pub backup_configs: BackupConfigs,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for BackupConfiguration {
+    type CreateOptions<'a> = CreateBackupConfigurationOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<BackupConfiguration>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("backup_configurations");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("name", &options.name)
+            .set("description", &options.description)
+            .set("maintenance_enabled", options.maintenance_enabled)
+            .set("backup_disk", options.backup_disk)
+            .set(
+                "backup_configs",
+                serde_json::to_value(&options.backup_configs)?,
+            );
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let backup_configuration = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(backup_configuration)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
+pub struct UpdateBackupConfigurationOptions {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: Option<compact_str::CompactString>,
+    #[validate(length(min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<Option<compact_str::CompactString>>,
+    pub maintenance_enabled: Option<bool>,
+    pub backup_disk: Option<super::server_backup::BackupDisk>,
+    #[serde(default)]
+    pub backup_configs: Option<BackupConfigs>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for BackupConfiguration {
+    type UpdateOptions = UpdateBackupConfigurationOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<BackupConfiguration>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("backup_configurations");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .set(
+                "description",
+                options.description.as_ref().map(|d| d.as_ref()),
+            )
+            .set("maintenance_enabled", options.maintenance_enabled)
+            .set("backup_disk", options.backup_disk)
+            .set(
+                "backup_configs",
+                if let Some(backup_configs) = &options.backup_configs {
+                    Some(serde_json::to_value(backup_configs)?)
+                } else {
+                    None
+                },
+            )
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(description) = options.description {
+            self.description = description;
+        }
+        if let Some(maintenance_enabled) = options.maintenance_enabled {
+            self.maintenance_enabled = maintenance_enabled;
+        }
+        if let Some(backup_disk) = options.backup_disk {
+            self.backup_disk = backup_disk;
+        }
+        if let Some(backup_configs) = options.backup_configs {
+            self.backup_configs = backup_configs;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

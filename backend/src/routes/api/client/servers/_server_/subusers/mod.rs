@@ -93,6 +93,7 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             server::{GetServer, GetServerActivityLogger},
             server_subuser::ServerSubuser,
             user::{GetPermissionManager, GetUser},
@@ -166,18 +167,14 @@ mod post {
 
         permissions.has_server_permission("subusers.create")?;
 
-        let username = match ServerSubuser::create(
-            &state.database,
-            &state.settings,
-            &state.mail,
-            &server,
-            &data.email,
-            &data.permissions,
-            &data.ignored_files,
-        )
-        .await
-        {
-            Ok(username) => username,
+        let options = shared::models::server_subuser::CreateServerSubuserOptions {
+            server: &server,
+            email: data.email,
+            permissions: data.permissions,
+            ignored_files: data.ignored_files,
+        };
+        let subuser = match ServerSubuser::create(&state, options).await {
+            Ok(subuser) => subuser,
             Err(shared::database::DatabaseError::Sqlx(sqlx::Error::InvalidArgument(err))) => {
                 return ApiResponse::error(&err)
                     .with_status(StatusCode::BAD_REQUEST)
@@ -188,40 +185,22 @@ mod post {
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!(email = %data.email, "failed to create subuser: {:?}", err);
-
-                return ApiResponse::error("failed to create subuser")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger
             .log(
                 "server:subuser.create",
                 serde_json::json!({
-                    "username": username,
-                    "email": data.email,
-                    "permissions": data.permissions,
+                    "username": subuser.user.username,
+                    "email": subuser.user.email,
+                    "permissions": subuser.permissions,
                 }),
             )
             .await;
 
         ApiResponse::new_serialized(Response {
-            subuser: ServerSubuser::by_server_uuid_username(
-                &state.database,
-                server.uuid,
-                &username,
-            )
-            .await?
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "subuser with username {} not found after creation",
-                    username
-                )
-            })?
-            .into_api_object(&state.storage.retrieve_urls().await?),
+            subuser: subuser.into_api_object(&state.storage.retrieve_urls().await?),
         })
         .ok()
     }

@@ -180,59 +180,18 @@ mod delete {
 
 mod patch {
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid,
+            UpdatableModel,
             admin_activity::GetAdminActivityLogger,
-            backup_configurations::BackupConfiguration,
-            nest_egg::NestEgg,
-            server::GetServer,
-            user::{GetPermissionManager, User},
+            server::{GetServer, UpdateServerOptions},
+            user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
-    use std::str::FromStr;
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        owner_uuid: Option<uuid::Uuid>,
-        egg_uuid: Option<uuid::Uuid>,
-        backup_configuration_uuid: Option<uuid::Uuid>,
-
-        suspended: Option<bool>,
-
-        #[validate(length(max = 255))]
-        #[schema(max_length = 255)]
-        external_id: Option<compact_str::CompactString>,
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: Option<compact_str::CompactString>,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-
-        limits: Option<shared::models::server::ApiServerLimits>,
-        pinned_cpus: Option<Vec<i16>>,
-
-        #[validate(length(min = 1, max = 8192))]
-        #[schema(min_length = 1, max_length = 8192)]
-        startup: Option<compact_str::CompactString>,
-        #[validate(length(min = 2, max = 255))]
-        #[schema(min_length = 2, max_length = 255)]
-        image: Option<compact_str::CompactString>,
-        #[validate(length(max = 255))]
-        #[schema(max_length = 255)]
-        timezone: Option<compact_str::CompactString>,
-
-        hugepages_passthrough_enabled: Option<bool>,
-        kvm_passthrough_enabled: Option<bool>,
-
-        feature_limits: Option<shared::models::server::ApiServerFeatureLimits>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -248,179 +207,26 @@ mod patch {
             description = "The server ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateServerOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         mut server: GetServer,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateServerOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("servers.update")?;
 
-        if let Some(owner_uuid) = data.owner_uuid {
-            let owner = match User::by_uuid_optional(&state.database, owner_uuid).await? {
-                Some(owner) => owner,
-                None => {
-                    return ApiResponse::error("owner not found")
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
-                }
-            };
-
-            server.owner = owner;
-        }
-        if let Some(egg_uuid) = data.egg_uuid {
-            let egg = match NestEgg::by_uuid_optional(&state.database, egg_uuid).await? {
-                Some(egg) => egg,
-                None => {
-                    return ApiResponse::error("egg not found")
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
-                }
-            };
-
-            *server.egg = egg;
-        }
-        if let Some(backup_configuration_uuid) = data.backup_configuration_uuid {
-            if backup_configuration_uuid.is_nil() {
-                server.backup_configuration = None;
-            } else {
-                let backup_configuration = match BackupConfiguration::by_uuid_optional(
-                    &state.database,
-                    backup_configuration_uuid,
-                )
-                .await?
-                {
-                    Some(backup_configuration) => backup_configuration,
-                    None => {
-                        return ApiResponse::error("backup configuration not found")
-                            .with_status(StatusCode::NOT_FOUND)
-                            .ok();
-                    }
-                };
-
-                server.backup_configuration = Some(BackupConfiguration::get_fetchable(
-                    backup_configuration.uuid,
-                ));
-            }
-        }
-        if let Some(suspended) = data.suspended {
-            server.suspended = suspended;
-        }
-        if let Some(external_id) = &data.external_id {
-            if external_id.is_empty() {
-                server.external_id = None;
-            } else {
-                server.external_id = Some(external_id.clone());
-            }
-        }
-        if let Some(name) = data.name {
-            server.name = name;
-        }
-        if let Some(description) = data.description {
-            if description.is_empty() {
-                server.description = None;
-            } else {
-                server.description = Some(description);
-            }
-        }
-        if let Some(limits) = &data.limits {
-            server.cpu = limits.cpu;
-            server.memory = limits.memory;
-            server.swap = limits.swap;
-            server.disk = limits.disk;
-            server.io_weight = limits.io_weight;
-        }
-        if let Some(pinned_cpus) = data.pinned_cpus {
-            server.pinned_cpus = pinned_cpus;
-        }
-        if let Some(startup) = data.startup {
-            server.startup = startup;
-        }
-        if let Some(image) = data.image {
-            server.image = image;
-        }
-        if let Some(timezone) = data.timezone {
-            if timezone.is_empty() {
-                server.timezone = None;
-            } else {
-                if chrono_tz::Tz::from_str(&timezone).is_err() {
-                    return ApiResponse::error("invalid timezone")
-                        .with_status(StatusCode::BAD_REQUEST)
-                        .ok();
-                }
-
-                server.timezone = Some(timezone);
-            }
-        }
-        if let Some(hugepages_passthrough_enabled) = data.hugepages_passthrough_enabled {
-            server.hugepages_passthrough_enabled = hugepages_passthrough_enabled;
-        }
-        if let Some(kvm_passthrough_enabled) = data.kvm_passthrough_enabled {
-            server.kvm_passthrough_enabled = kvm_passthrough_enabled;
-        }
-        if let Some(feature_limits) = &data.feature_limits {
-            server.allocation_limit = feature_limits.allocations;
-            server.backup_limit = feature_limits.backups;
-            server.database_limit = feature_limits.databases;
-            server.schedule_limit = feature_limits.schedules;
-        }
-
-        match sqlx::query!(
-            "UPDATE servers
-            SET
-                owner_uuid = $1, egg_uuid = $2, backup_configuration_uuid = $3,
-                suspended = $4, external_id = $5, name = $6, description = $7,
-                cpu = $8, memory = $9, swap = $10, disk = $11, io_weight = $12,
-                pinned_cpus = $13, startup = $14, image = $15, timezone = $16,
-                hugepages_passthrough_enabled = $17, kvm_passthrough_enabled = $18, allocation_limit = $19, backup_limit = $20,
-                database_limit = $21, schedule_limit = $22
-            WHERE servers.uuid = $23",
-            server.owner.uuid,
-            server.egg.uuid,
-            server
-                .backup_configuration
-                .as_ref()
-                .map(|backup_configuration| backup_configuration.uuid),
-            server.suspended,
-            server.external_id.as_deref(),
-            &server.name,
-            server.description.as_deref(),
-            server.cpu,
-            server.memory,
-            server.swap,
-            server.disk,
-            server.io_weight,
-            &server.pinned_cpus,
-            &server.startup,
-            &server.image,
-            server.timezone.as_deref(),
-            server.hugepages_passthrough_enabled,
-            server.kvm_passthrough_enabled,
-            server.allocation_limit,
-            server.backup_limit,
-            server.database_limit,
-            server.schedule_limit,
-            server.uuid,
-        )
-        .execute(state.database.write())
-        .await
-        {
+        let limits = data.limits;
+        let feature_limits = data.feature_limits;
+        match server.update(&state, data).await {
             Ok(_) => {}
-            Err(err) => {
-                tracing::error!("failed to update server: {:?}", err);
-
-                return ApiResponse::error(&format!("failed to update server: {err}"))
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
+            Err(err) if err.is_unique_violation() => {
+                return ApiResponse::error("server with external id already exists")
+                    .with_status(StatusCode::CONFLICT)
                     .ok();
             }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger
@@ -434,15 +240,16 @@ mod patch {
                     "external_id": server.external_id,
                     "name": server.name,
                     "description": server.description,
-                    "limits": data.limits,
+                    "limits": limits,
                     "pinned_cpus": server.pinned_cpus,
                     "startup": server.startup,
                     "image": server.image,
                     "timezone": server.timezone,
 
                     "hugepages_passthrough_enabled": server.hugepages_passthrough_enabled,
+                    "kvm_passthrough_enabled": server.kvm_passthrough_enabled,
 
-                    "feature_limits": data.feature_limits,
+                    "feature_limits": feature_limits,
                 }),
             )
             .await;

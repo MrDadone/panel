@@ -2,11 +2,13 @@ use super::State;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod post {
-    use axum::http::StatusCode;
+    use axum::http::{HeaderMap, StatusCode};
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{user_activity::UserActivity, user_password_reset::UserPasswordReset},
+        models::{
+            CreatableModel, user_activity::UserActivity, user_password_reset::UserPasswordReset,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -32,6 +34,7 @@ mod post {
     pub async fn route(
         state: GetState,
         ip: shared::GetIp,
+        headers: HeaderMap,
         shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
@@ -49,13 +52,21 @@ mod post {
             }
         };
 
-        if let Err(err) = UserActivity::log(
-            &state.database,
-            token.user.uuid,
-            None,
-            "auth:reset-password",
-            Some(ip.0.into()),
-            serde_json::json!({}),
+        if let Err(err) = UserActivity::create(
+            &state,
+            shared::models::user_activity::CreateUserActivityOptions {
+                user_uuid: token.user.uuid,
+                api_key_uuid: None,
+                event: "auth:reset-password".into(),
+                ip: Some(ip.0.into()),
+                data: serde_json::json!({
+                    "user_agent": headers
+                        .get("User-Agent")
+                        .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                        .unwrap_or("unknown"),
+                }),
+                created: None,
+            },
         )
         .await
         {

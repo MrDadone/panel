@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,6 +9,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Role {
@@ -78,33 +82,6 @@ impl BaseModel for Role {
 }
 
 impl Role {
-    pub async fn create(
-        database: &crate::database::Database,
-        name: &str,
-        description: Option<&str>,
-        two_factor_required: bool,
-        admin_permissions: &[compact_str::CompactString],
-        server_permissions: &[compact_str::CompactString],
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO roles (name, description, require_two_factor, admin_permissions, server_permissions)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(name)
-        .bind(description)
-        .bind(two_factor_required)
-        .bind(admin_permissions)
-        .bind(server_permissions)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn all_with_pagination(
         database: &crate::database::Database,
         page: i64,
@@ -174,6 +151,146 @@ impl ByUuid for Role {
         .await?;
 
         Self::map(None, &row)
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateRoleOptions {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: compact_str::CompactString,
+    #[validate(length(min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<compact_str::CompactString>,
+    pub require_two_factor: bool,
+    #[validate(custom(function = "crate::permissions::validate_admin_permissions"))]
+    pub admin_permissions: Vec<compact_str::CompactString>,
+    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    pub server_permissions: Vec<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for Role {
+    type CreateOptions<'a> = CreateRoleOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<Role>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("roles");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("name", &options.name)
+            .set("description", &options.description)
+            .set("require_two_factor", options.require_two_factor)
+            .set("admin_permissions", &options.admin_permissions)
+            .set("server_permissions", &options.server_permissions);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let role = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(role)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
+pub struct UpdateRoleOptions {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: Option<compact_str::CompactString>,
+    #[validate(length(min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<Option<compact_str::CompactString>>,
+    pub require_two_factor: Option<bool>,
+    #[validate(custom(function = "crate::permissions::validate_admin_permissions"))]
+    pub admin_permissions: Option<Vec<compact_str::CompactString>>,
+    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    pub server_permissions: Option<Vec<compact_str::CompactString>>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for Role {
+    type UpdateOptions = UpdateRoleOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<Role>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("roles");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .set(
+                "description",
+                options.description.as_ref().map(|d| d.as_ref()),
+            )
+            .set("require_two_factor", options.require_two_factor)
+            .set("admin_permissions", options.admin_permissions.as_ref())
+            .set("server_permissions", options.server_permissions.as_ref())
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(description) = options.description {
+            self.description = description;
+        }
+        if let Some(require_two_factor) = options.require_two_factor {
+            self.require_two_factor = require_two_factor;
+        }
+        if let Some(admin_permissions) = options.admin_permissions {
+            self.admin_permissions = Arc::new(admin_permissions);
+        }
+        if let Some(server_permissions) = options.server_permissions {
+            self.server_permissions = Arc::new(server_permissions);
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

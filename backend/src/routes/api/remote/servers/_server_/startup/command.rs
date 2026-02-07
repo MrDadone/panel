@@ -6,7 +6,9 @@ mod put {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{server::GetServer, server_activity::ServerActivity},
+        models::{
+            CreatableModel, UpdatableModel, server::GetServer, server_activity::ServerActivity,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -18,7 +20,7 @@ mod put {
 
         #[validate(length(min = 1, max = 1024))]
         #[schema(min_length = 1, max_length = 1024)]
-        command: String,
+        command: compact_str::CompactString,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -38,7 +40,7 @@ mod put {
     ), request_body = inline(Payload))]
     pub async fn route(
         state: GetState,
-        server: GetServer,
+        mut server: GetServer,
         shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
@@ -55,27 +57,30 @@ mod put {
                 .ok();
         }
 
-        sqlx::query!(
-            "UPDATE servers
-            SET startup = $1
-            WHERE servers.uuid = $2",
-            data.command,
-            server.uuid
-        )
-        .execute(state.database.write())
-        .await?;
+        server
+            .update(
+                &state,
+                shared::models::server::UpdateServerOptions {
+                    startup: Some(data.command),
+                    ..Default::default()
+                },
+            )
+            .await?;
 
-        if let Err(err) = ServerActivity::log_remote(
-            &state.database,
-            server.uuid,
-            None,
-            data.schedule_uuid,
-            "server:startup.command",
-            None,
-            serde_json::json!({
-                "command": data.command,
-            }),
-            chrono::Utc::now(),
+        if let Err(err) = ServerActivity::create(
+            &state,
+            shared::models::server_activity::CreateServerActivityOptions {
+                server_uuid: server.uuid,
+                user_uuid: None,
+                api_key_uuid: None,
+                schedule_uuid: data.schedule_uuid,
+                event: "server:startup.command".into(),
+                ip: None,
+                data: serde_json::json!({
+                    "command": server.startup,
+                }),
+                created: None,
+            },
         )
         .await
         {

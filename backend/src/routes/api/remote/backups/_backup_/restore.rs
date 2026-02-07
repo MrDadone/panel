@@ -7,7 +7,7 @@ mod post {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{node::GetNode, server_activity::ServerActivity},
+        models::{CreatableModel, node::GetNode, server_activity::ServerActivity},
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -68,21 +68,26 @@ mod post {
                 .ok();
         }
 
-        if let Err(err) = ServerActivity::log(
-            &state.database,
-            server_uuid,
-            None,
-            None,
-            if data.successful {
-                "server:backup.restore-completed"
-            } else {
-                "server:backup.restore-failed"
+        if let Err(err) = ServerActivity::create(
+            &state,
+            shared::models::server_activity::CreateServerActivityOptions {
+                server_uuid,
+                user_uuid: None,
+                api_key_uuid: None,
+                schedule_uuid: None,
+                event: if data.successful {
+                    "server:backup.restore-completed"
+                } else {
+                    "server:backup.restore-failed"
+                }
+                .into(),
+                ip: None,
+                data: serde_json::json!({
+                    "uuid": backup.0.uuid,
+                    "name": backup.0.name,
+                }),
+                created: None,
             },
-            None,
-            serde_json::json!({
-                "uuid": backup.uuid,
-                "name": backup.name,
-            }),
         )
         .await
         {

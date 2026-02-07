@@ -9,7 +9,7 @@ mod get {
     use shared::{
         ApiError, GetState,
         models::{
-            Pagination, PaginationParamsWithSearch, backup_configurations::BackupConfiguration,
+            Pagination, PaginationParamsWithSearch, backup_configuration::BackupConfiguration,
             user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
@@ -20,7 +20,7 @@ mod get {
     struct Response {
         #[schema(inline)]
         backup_configurations:
-            Pagination<shared::models::backup_configurations::AdminApiBackupConfiguration>,
+            Pagination<shared::models::backup_configuration::AdminApiBackupConfiguration>,
     }
 
     #[utoipa::path(get, path = "/", responses(
@@ -75,81 +75,45 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
-            admin_activity::GetAdminActivityLogger, backup_configurations::BackupConfiguration,
+            CreatableModel,
+            admin_activity::GetAdminActivityLogger,
+            backup_configuration::{BackupConfiguration, CreateBackupConfigurationOptions},
             user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: String,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-
-        maintenance_enabled: bool,
-
-        backup_disk: shared::models::server_backup::BackupDisk,
-        #[serde(default)]
-        backup_configs: shared::models::backup_configurations::BackupConfigs,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {
-        backup_configuration: shared::models::backup_configurations::AdminApiBackupConfiguration,
+        backup_configuration: shared::models::backup_configuration::AdminApiBackupConfiguration,
     }
 
     #[utoipa::path(post, path = "/", responses(
         (status = OK, body = inline(Response)),
         (status = BAD_REQUEST, body = ApiError),
         (status = CONFLICT, body = ApiError),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(CreateBackupConfigurationOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<CreateBackupConfigurationOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("backup-configurations.create")?;
 
-        let backup_configuration = match BackupConfiguration::create(
-            &state.database,
-            &data.name,
-            data.description.as_deref(),
-            data.maintenance_enabled,
-            data.backup_disk,
-            data.backup_configs,
-        )
-        .await
-        {
+        let backup_configuration = match BackupConfiguration::create(&state, data).await {
             Ok(backup_configuration) => backup_configuration,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("backup configuration with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create backup configuration: {:?}", err);
-
-                return ApiResponse::error("failed to create backup configuration")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE server_backups\n                    SET successful = false, completed = NOW()\n                    WHERE server_backups.uuid = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e8708a4efa8889d36ee27ad81c9eb0dac93a3d8f45863cc4d2314da02519a95d"
+}

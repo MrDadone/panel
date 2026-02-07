@@ -5,7 +5,7 @@ mod post {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::server_activity::ServerActivity,
+        models::{CreatableModel, server_activity::ServerActivity},
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -15,7 +15,7 @@ mod post {
         server: uuid::Uuid,
         user: Option<uuid::Uuid>,
         schedule: Option<uuid::Uuid>,
-        event: String,
+        event: compact_str::CompactString,
         metadata: Option<serde_json::Value>,
 
         #[schema(value_type = Option<String>)]
@@ -49,18 +49,17 @@ mod post {
                 continue;
             }
 
-            if let Err(err) = ServerActivity::log_remote(
-                &state.database,
-                activity.server,
-                activity.user,
-                activity.schedule,
-                &activity.event,
-                activity.ip.map(|ip| ip.into()),
-                activity.metadata.unwrap_or_else(|| serde_json::json!({})),
-                activity.timestamp,
-            )
-            .await
-            {
+            let options = shared::models::server_activity::CreateServerActivityOptions {
+                server_uuid: activity.server,
+                user_uuid: activity.user,
+                api_key_uuid: None,
+                schedule_uuid: activity.schedule,
+                event: activity.event,
+                ip: activity.ip.map(|ip| ip.into()),
+                data: activity.metadata.unwrap_or_else(|| serde_json::json!({})),
+                created: Some(activity.timestamp.naive_utc()),
+            };
+            if let Err(err) = ServerActivity::create(&state, options).await {
                 tracing::warn!(
                     server = %activity.server,
                     "failed to log remote activity for server: {:#?}",

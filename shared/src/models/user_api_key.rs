@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use rand::distr::SampleString;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -7,6 +10,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UserApiKey {
@@ -103,45 +107,6 @@ impl BaseModel for UserApiKey {
 }
 
 impl UserApiKey {
-    #[allow(clippy::too_many_arguments)]
-    pub async fn create(
-        database: &crate::database::Database,
-        user_uuid: uuid::Uuid,
-        name: &str,
-        allowed_ips: &[sqlx::types::ipnetwork::IpNetwork],
-        user_permissions: &[compact_str::CompactString],
-        admin_permissions: &[compact_str::CompactString],
-        server_permissions: &[compact_str::CompactString],
-        expires: Option<chrono::NaiveDateTime>,
-    ) -> Result<(String, Self), crate::database::DatabaseError> {
-        let key = format!(
-            "c7sp_{}",
-            rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 43)
-        );
-
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO user_api_keys (user_uuid, name, key_start, key, allowed_ips, user_permissions, admin_permissions, server_permissions, expires, created)
-            VALUES ($1, $2, $3, crypt($4, gen_salt('xdes', 321)), $5, $6, $7, $8, $9, NOW())
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(user_uuid)
-        .bind(name)
-        .bind(&key[0..16])
-        .bind(&key)
-        .bind(allowed_ips)
-        .bind(user_permissions)
-        .bind(admin_permissions)
-        .bind(server_permissions)
-        .bind(expires)
-        .fetch_one(database.write())
-        .await?;
-
-        Ok((key, Self::map(None, &row)?))
-    }
-
     pub async fn by_user_uuid_uuid(
         database: &crate::database::Database,
         user_uuid: uuid::Uuid,
@@ -229,6 +194,177 @@ impl UserApiKey {
             expires: self.expires.map(|dt| dt.and_utc()),
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateUserApiKeyOptions {
+    pub user_uuid: uuid::Uuid,
+
+    #[validate(length(min = 3, max = 31))]
+    #[schema(min_length = 3, max_length = 31)]
+    pub name: compact_str::CompactString,
+
+    #[schema(value_type = Vec<String>)]
+    pub allowed_ips: Vec<sqlx::types::ipnetwork::IpNetwork>,
+
+    #[validate(custom(function = "crate::permissions::validate_user_permissions"))]
+    pub user_permissions: Vec<compact_str::CompactString>,
+
+    #[validate(custom(function = "crate::permissions::validate_admin_permissions"))]
+    pub admin_permissions: Vec<compact_str::CompactString>,
+
+    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    pub server_permissions: Vec<compact_str::CompactString>,
+
+    pub expires: Option<chrono::NaiveDateTime>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for UserApiKey {
+    type CreateOptions<'a> = CreateUserApiKeyOptions;
+    type CreateResult = (String, Self);
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<UserApiKey>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self::CreateResult, crate::database::DatabaseError> {
+        options.validate()?;
+
+        // Generate the API key
+        let key = format!(
+            "c7sp_{}",
+            rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 43)
+        );
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("user_api_keys");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("user_uuid", options.user_uuid)
+            .set("name", &options.name)
+            .set("key_start", &key[0..16])
+            .set_expr("key", "crypt($?, gen_salt('xdes', 321))", vec![&key])
+            .set("allowed_ips", &options.allowed_ips)
+            .set("user_permissions", &options.user_permissions)
+            .set("admin_permissions", &options.admin_permissions)
+            .set("server_permissions", &options.server_permissions)
+            .set("expires", options.expires);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let user_api_key = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok((key, user_api_key))
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
+pub struct UpdateUserApiKeyOptions {
+    #[validate(length(min = 3, max = 31))]
+    #[schema(min_length = 3, max_length = 31)]
+    pub name: Option<compact_str::CompactString>,
+
+    #[schema(value_type = Vec<String>)]
+    pub allowed_ips: Option<Vec<sqlx::types::ipnetwork::IpNetwork>>,
+
+    #[validate(custom(function = "crate::permissions::validate_user_permissions"))]
+    pub user_permissions: Option<Vec<compact_str::CompactString>>,
+
+    #[validate(custom(function = "crate::permissions::validate_admin_permissions"))]
+    pub admin_permissions: Option<Vec<compact_str::CompactString>>,
+
+    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    pub server_permissions: Option<Vec<compact_str::CompactString>>,
+
+    pub expires: Option<Option<chrono::DateTime<chrono::Utc>>>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for UserApiKey {
+    type UpdateOptions = UpdateUserApiKeyOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<UserApiKey>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("user_api_keys");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .set("allowed_ips", options.allowed_ips.as_ref())
+            .set("user_permissions", options.user_permissions.as_ref())
+            .set("admin_permissions", options.admin_permissions.as_ref())
+            .set("server_permissions", options.server_permissions.as_ref())
+            .set(
+                "expires",
+                options
+                    .expires
+                    .as_ref()
+                    .map(|e| e.as_ref().map(|d| d.naive_utc())),
+            )
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(allowed_ips) = options.allowed_ips {
+            self.allowed_ips = allowed_ips;
+        }
+        if let Some(user_permissions) = options.user_permissions {
+            self.user_permissions = Arc::new(user_permissions);
+        }
+        if let Some(admin_permissions) = options.admin_permissions {
+            self.admin_permissions = Arc::new(admin_permissions);
+        }
+        if let Some(server_permissions) = options.server_permissions {
+            self.server_permissions = Arc::new(server_permissions);
+        }
+        if let Some(expires) = options.expires {
+            self.expires = expires.map(|d| d.naive_utc());
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

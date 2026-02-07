@@ -199,18 +199,16 @@ mod delete {
 
 mod patch {
     use crate::routes::api::client::servers::_server_::databases::_database_::GetServerDatabase;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
-        models::{server::GetServerActivityLogger, user::GetPermissionManager},
+        models::{
+            UpdatableModel, server::GetServerActivityLogger,
+            server_database::UpdateServerDatabaseOptions, user::GetPermissionManager,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-
-    #[derive(ToSchema, Deserialize)]
-    pub struct Payload {
-        locked: Option<bool>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -231,29 +229,17 @@ mod patch {
             description = "The database ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateServerDatabaseOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetServerActivityLogger,
         mut database: GetServerDatabase,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateServerDatabaseOptions>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("databases.update")?;
 
-        if let Some(locked) = data.locked {
-            database.locked = locked;
-        }
-
-        sqlx::query!(
-            "UPDATE server_databases
-            SET locked = $1
-            WHERE server_databases.uuid = $2",
-            database.locked,
-            database.uuid,
-        )
-        .execute(state.database.write())
-        .await?;
+        database.update(&state, data).await?;
 
         activity_logger
             .log(

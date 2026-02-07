@@ -79,45 +79,18 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             admin_activity::GetAdminActivityLogger,
-            database_host::{DatabaseHost, DatabaseType},
+            database_host::{CreateDatabaseHostOptions, DatabaseHost},
             user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: String,
-        r#type: DatabaseType,
-
-        deployment_enabled: bool,
-        maintenance_enabled: bool,
-
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        public_host: Option<String>,
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        host: String,
-        public_port: Option<u16>,
-        port: u16,
-
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        username: String,
-        #[validate(length(min = 1, max = 512))]
-        #[schema(min_length = 1, max_length = 512)]
-        password: String,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {
@@ -128,49 +101,23 @@ mod post {
         (status = OK, body = inline(Response)),
         (status = BAD_REQUEST, body = ApiError),
         (status = CONFLICT, body = ApiError),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(CreateDatabaseHostOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<CreateDatabaseHostOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("database-hosts.create")?;
 
-        let database_host = match DatabaseHost::create(
-            &state.database,
-            &data.name,
-            data.r#type,
-            data.deployment_enabled,
-            data.maintenance_enabled,
-            data.public_host.as_deref(),
-            &data.host,
-            data.public_port.map(|port| port as i32),
-            data.port as i32,
-            &data.username,
-            &data.password,
-        )
-        .await
-        {
+        let database_host = match DatabaseHost::create(&state, data).await {
             Ok(database_host) => database_host,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("database host with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create database host: {:?}", err);
-
-                return ApiResponse::error("failed to create database host")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

@@ -91,6 +91,7 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             server::{GetServer, GetServerActivityLogger},
             server_backup::ServerBackup,
             user::GetPermissionManager,
@@ -104,9 +105,9 @@ mod post {
     pub struct Payload {
         #[validate(length(min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
-        name: String,
+        name: compact_str::CompactString,
 
-        ignored_files: Vec<String>,
+        ignored_files: Vec<compact_str::CompactString>,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -157,8 +158,12 @@ mod post {
             )
             .await?;
 
-        let backup =
-            ServerBackup::create(&state.database, server.0, &data.name, data.ignored_files).await?;
+        let options = shared::models::server_backup::CreateServerBackupOptions {
+            server: &server,
+            name: data.name,
+            ignored_files: data.ignored_files,
+        };
+        let backup = ServerBackup::create(&state, options).await?;
 
         activity_logger
             .log(

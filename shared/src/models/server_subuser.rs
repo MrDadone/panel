@@ -1,4 +1,8 @@
-use crate::{prelude::*, storage::StorageUrlRetriever};
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+    storage::StorageUrlRetriever,
+};
 use rand::distr::SampleString;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -7,6 +11,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct ServerSubuser {
@@ -69,130 +74,6 @@ impl BaseModel for ServerSubuser {
 }
 
 impl ServerSubuser {
-    pub async fn create(
-        database: &crate::database::Database,
-        settings: &crate::settings::Settings,
-        mail: &Arc<crate::mail::Mail>,
-        server: &super::server::Server,
-        email: &str,
-        permissions: &[compact_str::CompactString],
-        ignored_files: &[compact_str::CompactString],
-    ) -> Result<compact_str::CompactString, crate::database::DatabaseError> {
-        let user = match super::user::User::by_email(database, email).await? {
-            Some(user) => user,
-            None => {
-                let username = email
-                    .split('@')
-                    .next()
-                    .unwrap_or("unknown")
-                    .chars()
-                    .filter(|c| c.is_alphanumeric() || *c == '_')
-                    .take(10)
-                    .collect::<String>();
-                let username = format!(
-                    "{username}_{}",
-                    rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 4)
-                );
-                let password = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 32);
-
-                let app_settings = settings.get().await?;
-
-                let user = match super::user::User::create(
-                    database,
-                    None,
-                    None,
-                    &username,
-                    email,
-                    "Server",
-                    "Subuser",
-                    &password,
-                    false,
-                    &app_settings.app.language,
-                )
-                .await
-                {
-                    Ok(user_uuid) => super::user::User::by_uuid(database, user_uuid).await?,
-                    Err(err) => {
-                        tracing::error!(username = %username, email = %email, "failed to create subuser user: {:?}", err);
-
-                        return Err(err);
-                    }
-                };
-                drop(app_settings);
-
-                match super::user_password_reset::UserPasswordReset::create(database, user.uuid)
-                    .await
-                {
-                    Ok(token) => {
-                        let settings = settings.get().await?;
-
-                        let mail_content = crate::mail::MAIL_ACCOUNT_CREATED
-                            .replace("{{app_name}}", &settings.app.name)
-                            .replace("{{user_username}}", &user.username)
-                            .replace(
-                                "{{reset_link}}",
-                                &format!(
-                                    "{}/auth/reset-password?token={}",
-                                    settings.app.url,
-                                    urlencoding::encode(&token),
-                                ),
-                            );
-
-                        super::user_activity::UserActivity::log(
-                            database,
-                            user.uuid,
-                            None,
-                            "email:account-created",
-                            None,
-                            serde_json::json!({}),
-                        )
-                        .await?;
-
-                        mail.send(
-                            user.email.clone(),
-                            format!("{} - Account Created", settings.app.name).into(),
-                            mail_content,
-                        )
-                        .await;
-
-                        user
-                    }
-                    Err(err) => {
-                        tracing::warn!(
-                            user = %user.uuid,
-                            "failed to create subuser password reset token: {:#?}",
-                            err
-                        );
-
-                        user
-                    }
-                }
-            }
-        };
-
-        if server.owner.uuid == user.uuid {
-            return Err(sqlx::Error::InvalidArgument(
-                "cannot create subuser for server owner".into(),
-            )
-            .into());
-        }
-
-        sqlx::query(
-            r#"
-            INSERT INTO server_subusers (server_uuid, user_uuid, permissions, ignored_files)
-            VALUES ($1, $2, $3, $4)
-            "#,
-        )
-        .bind(server.uuid)
-        .bind(user.uuid)
-        .bind(permissions)
-        .bind(ignored_files)
-        .execute(database.write())
-        .await?;
-
-        Ok(user.username)
-    }
-
     pub async fn by_server_uuid_username(
         database: &crate::database::Database,
         server_uuid: uuid::Uuid,
@@ -287,6 +168,228 @@ impl ServerSubuser {
             ignored_files: self.ignored_files,
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(Validate)]
+pub struct CreateServerSubuserOptions<'a> {
+    pub server: &'a super::server::Server,
+
+    #[validate(email)]
+    pub email: String,
+    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    pub permissions: Vec<compact_str::CompactString>,
+    pub ignored_files: Vec<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for ServerSubuser {
+    type CreateOptions<'a> = CreateServerSubuserOptions<'a>;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<ServerSubuser>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let user = match super::user::User::by_email(&state.database, &options.email).await? {
+            Some(user) => user,
+            None => {
+                let username = options
+                    .email
+                    .split('@')
+                    .next()
+                    .unwrap_or("unknown")
+                    .chars()
+                    .filter(|c| c.is_alphanumeric() || *c == '_')
+                    .take(10)
+                    .collect::<compact_str::CompactString>();
+                let username = compact_str::format_compact!(
+                    "{username}_{}",
+                    rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 4)
+                );
+                let password = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 32);
+
+                let app_settings = state.settings.get().await?;
+
+                let create_options = super::user::CreateUserOptions {
+                    role_uuid: None,
+                    external_id: None,
+                    username: username.clone(),
+                    email: options.email.clone(),
+                    name_first: "Server".into(),
+                    name_last: "Subuser".into(),
+                    password,
+                    admin: false,
+                    language: app_settings.app.language.clone(),
+                };
+                drop(app_settings);
+                let user = match super::user::User::create(state, create_options).await {
+                    Ok(user) => user,
+                    Err(err) => {
+                        tracing::error!(username = %username, email = %options.email, "failed to create subuser user: {:?}", err);
+                        return Err(err);
+                    }
+                };
+
+                match super::user_password_reset::UserPasswordReset::create(
+                    &state.database,
+                    user.uuid,
+                )
+                .await
+                {
+                    Ok(token) => {
+                        let settings = state.settings.get().await?;
+
+                        let mail_content = crate::mail::MAIL_ACCOUNT_CREATED
+                            .replace("{{app_name}}", &settings.app.name)
+                            .replace("{{user_username}}", &user.username)
+                            .replace(
+                                "{{reset_link}}",
+                                &format!(
+                                    "{}/auth/reset-password?token={}",
+                                    settings.app.url,
+                                    urlencoding::encode(&token),
+                                ),
+                            );
+
+                        super::user_activity::UserActivity::create(
+                            state,
+                            super::user_activity::CreateUserActivityOptions {
+                                user_uuid: user.uuid,
+                                api_key_uuid: None,
+                                event: "email:account-created".into(),
+                                ip: None,
+                                data: serde_json::json!({}),
+                                created: None,
+                            },
+                        )
+                        .await?;
+
+                        state
+                            .mail
+                            .send(
+                                user.email.clone(),
+                                format!("{} - Account Created", settings.app.name).into(),
+                                mail_content,
+                            )
+                            .await;
+                    }
+                    Err(err) => {
+                        tracing::warn!(
+                            user = %user.uuid,
+                            "failed to create subuser password reset token: {:#?}",
+                            err
+                        );
+                    }
+                }
+
+                user
+            }
+        };
+
+        if options.server.owner.uuid == user.uuid {
+            return Err(sqlx::Error::InvalidArgument(
+                "cannot create subuser for server owner".into(),
+            )
+            .into());
+        }
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("server_subusers");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("server_uuid", options.server.uuid)
+            .set("user_uuid", user.uuid)
+            .set("permissions", &options.permissions)
+            .set("ignored_files", &options.ignored_files);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        transaction.commit().await?;
+
+        let subuser =
+            Self::by_server_uuid_username(&state.database, options.server.uuid, &user.username)
+                .await?
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "subuser with username {} not found after creation",
+                        user.username
+                    )
+                })?;
+
+        Ok(subuser)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
+pub struct UpdateServerSubuserOptions {
+    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    pub permissions: Option<Vec<compact_str::CompactString>>,
+    pub ignored_files: Option<Vec<compact_str::CompactString>>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for ServerSubuser {
+    type UpdateOptions = UpdateServerSubuserOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<ServerSubuser>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("server_subusers");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("permissions", options.permissions.as_ref())
+            .set("ignored_files", options.ignored_files.as_ref())
+            .where_eq("server_uuid", self.server.uuid)
+            .where_eq("user_uuid", self.user.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(permissions) = options.permissions {
+            self.permissions = permissions;
+        }
+        if let Some(ignored_files) = options.ignored_files {
+            self.ignored_files = ignored_files;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

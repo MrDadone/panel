@@ -25,6 +25,7 @@ tokio-util = { workspace = true }
 utoipa = { workspace = true }
 utoipa-axum = { workspace = true }
 chrono = { workspace = true }
+chrono-tz = { workspace = true }
 indexmap = { workspace = true }
 tower-http = { version = "0.6.2", features = ["normalize-path"] }
 reqwest = { workspace = true }
@@ -40,7 +41,6 @@ totp-rs = { version = "5.7.0", features = ["gen_secret"] }
 validator = { workspace = true }
 russh = { workspace = true }
 urlencoding = { workspace = true }
-chrono-tz = { version = "0.10.4", features = ["serde"] }
 infer = "0.19.0"
 anyhow = { workspace = true }
 clap = { workspace = true }

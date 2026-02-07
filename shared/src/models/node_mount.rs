@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{models::InsertQueryBuilder, prelude::*};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,6 +6,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct NodeMount {
@@ -55,25 +56,6 @@ impl BaseModel for NodeMount {
 }
 
 impl NodeMount {
-    pub async fn create(
-        database: &crate::database::Database,
-        node_uuid: uuid::Uuid,
-        mount_uuid: uuid::Uuid,
-    ) -> Result<(), crate::database::DatabaseError> {
-        sqlx::query(
-            r#"
-            INSERT INTO node_mounts (node_uuid, mount_uuid)
-            VALUES ($1, $2)
-            "#,
-        )
-        .bind(node_uuid)
-        .bind(mount_uuid)
-        .execute(database.write())
-        .await?;
-
-        Ok(())
-    }
-
     pub async fn by_node_uuid_mount_uuid(
         database: &crate::database::Database,
         node_uuid: uuid::Uuid,
@@ -204,6 +186,58 @@ impl NodeMount {
                 .into_admin_api_object(),
             created: self.created.and_utc(),
         })
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateNodeMountOptions {
+    pub node_uuid: uuid::Uuid,
+    pub mount_uuid: uuid::Uuid,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for NodeMount {
+    type CreateOptions<'a> = CreateNodeMountOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<NodeMount>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        super::mount::Mount::by_uuid_optional(&state.database, options.mount_uuid)
+            .await?
+            .ok_or(crate::database::InvalidRelationError("mount"))?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("node_mounts");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("node_uuid", options.node_uuid)
+            .set("mount_uuid", options.mount_uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        transaction.commit().await?;
+
+        match Self::by_node_uuid_mount_uuid(&state.database, options.node_uuid, options.mount_uuid)
+            .await?
+        {
+            Some(node_mount) => Ok(node_mount),
+            None => Err(sqlx::Error::RowNotFound.into()),
+        }
     }
 }
 

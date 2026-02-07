@@ -94,7 +94,9 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
-            admin_activity::GetAdminActivityLogger, location_database_host::LocationDatabaseHost,
+            CreatableModel,
+            admin_activity::GetAdminActivityLogger,
+            location_database_host::{CreateLocationDatabaseHostOptions, LocationDatabaseHost},
             user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
@@ -128,22 +130,18 @@ mod post {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("locations.database-hosts")?;
 
-        match LocationDatabaseHost::create(&state.database, location.uuid, data.database_host_uuid)
-            .await
-        {
+        let options = CreateLocationDatabaseHostOptions {
+            location_uuid: location.uuid,
+            database_host_uuid: data.database_host_uuid,
+        };
+        match LocationDatabaseHost::create(&state, options).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("database host already exists in this location")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create location database host: {:?}", err);
-
-                return ApiResponse::error("failed to create location database host")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

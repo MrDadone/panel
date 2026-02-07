@@ -172,31 +172,20 @@ mod delete {
 }
 
 mod patch {
-    use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
+            UpdatableModel,
             server::{GetServer, GetServerActivityLogger},
+            server_schedule::UpdateServerScheduleOptions,
             user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     use crate::routes::api::client::servers::_server_::schedules::_schedule_::GetServerSchedule;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 1, max = 255))]
-        #[schema(min_length = 1, max_length = 255)]
-        name: Option<compact_str::CompactString>,
-        enabled: Option<bool>,
-
-        triggers: Option<Vec<wings_api::ScheduleTrigger>>,
-        condition: Option<wings_api::SchedulePreCondition>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -217,48 +206,18 @@ mod patch {
             description = "The schedule ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateServerScheduleOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         server: GetServer,
         activity_logger: GetServerActivityLogger,
         mut schedule: GetServerSchedule,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateServerScheduleOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_server_permission("schedules.update")?;
 
-        if let Some(name) = data.name {
-            schedule.name = name
-        }
-        if let Some(enabled) = data.enabled {
-            schedule.enabled = enabled;
-        }
-        if let Some(triggers) = data.triggers {
-            schedule.triggers = triggers;
-        }
-        if let Some(condition) = data.condition {
-            schedule.condition = condition;
-        }
-
-        sqlx::query!(
-            "UPDATE server_schedules
-            SET name = $1, enabled = $2, triggers = $3, condition = $4
-            WHERE server_schedules.uuid = $5",
-            &schedule.name,
-            schedule.enabled,
-            serde_json::to_value(&schedule.triggers)?,
-            serde_json::to_value(&schedule.condition)?,
-            schedule.uuid,
-        )
-        .execute(state.database.write())
-        .await?;
+        schedule.update(&state, data).await?;
 
         activity_logger
             .log(

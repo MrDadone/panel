@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,11 +9,12 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Location {
     pub uuid: uuid::Uuid,
-    pub backup_configuration: Option<Fetchable<super::backup_configurations::BackupConfiguration>>,
+    pub backup_configuration: Option<Fetchable<super::backup_configuration::BackupConfiguration>>,
 
     pub name: compact_str::CompactString,
     pub description: Option<compact_str::CompactString>,
@@ -56,7 +60,7 @@ impl BaseModel for Location {
         Ok(Self {
             uuid: row.try_get(compact_str::format_compact!("{prefix}uuid").as_str())?,
             backup_configuration:
-                super::backup_configurations::BackupConfiguration::get_fetchable_from_row(
+                super::backup_configuration::BackupConfiguration::get_fetchable_from_row(
                     row,
                     compact_str::format_compact!("{prefix}location_backup_configuration_uuid"),
                 ),
@@ -69,29 +73,6 @@ impl BaseModel for Location {
 }
 
 impl Location {
-    pub async fn create(
-        database: &crate::database::Database,
-        backup_configuration_uuid: Option<uuid::Uuid>,
-        name: &str,
-        description: Option<&str>,
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO locations (backup_configuration_uuid, name, description)
-            VALUES ($1, $2, $3)
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(backup_configuration_uuid)
-        .bind(name)
-        .bind(description)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn by_backup_configuration_uuid_with_pagination(
         database: &crate::database::Database,
         backup_configuration_uuid: uuid::Uuid,
@@ -217,6 +198,171 @@ impl ByUuid for Location {
     }
 }
 
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateLocationOptions {
+    pub backup_configuration_uuid: Option<uuid::Uuid>,
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: compact_str::CompactString,
+    #[validate(length(min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for Location {
+    type CreateOptions<'a> = CreateLocationOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<Location>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        if let Some(backup_configuration_uuid) = &options.backup_configuration_uuid {
+            super::backup_configuration::BackupConfiguration::by_uuid_optional(
+                &state.database,
+                *backup_configuration_uuid,
+            )
+            .await?
+            .ok_or(crate::database::InvalidRelationError(
+                "backup_configuration",
+            ))?;
+        }
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("locations");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set(
+                "backup_configuration_uuid",
+                options.backup_configuration_uuid,
+            )
+            .set("name", &options.name)
+            .set("description", &options.description);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let location = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(location)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
+pub struct UpdateLocationOptions {
+    pub backup_configuration_uuid: Option<Option<uuid::Uuid>>,
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: Option<compact_str::CompactString>,
+    #[validate(length(min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<Option<compact_str::CompactString>>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for Location {
+    type UpdateOptions = UpdateLocationOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<Location>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let backup_configuration =
+            if let Some(backup_configuration_uuid) = &options.backup_configuration_uuid {
+                match backup_configuration_uuid {
+                    Some(uuid) => {
+                        super::backup_configuration::BackupConfiguration::by_uuid_optional(
+                            &state.database,
+                            *uuid,
+                        )
+                        .await?
+                        .ok_or(crate::database::InvalidRelationError(
+                            "backup_configuration",
+                        ))?;
+
+                        Some(Some(
+                            super::backup_configuration::BackupConfiguration::get_fetchable(*uuid),
+                        ))
+                    }
+                    None => Some(None),
+                }
+            } else {
+                None
+            };
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("locations");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set(
+                "backup_configuration_uuid",
+                options
+                    .backup_configuration_uuid
+                    .as_ref()
+                    .map(|u| u.as_ref()),
+            )
+            .set("name", options.name.as_ref())
+            .set(
+                "description",
+                options.description.as_ref().map(|d| d.as_ref()),
+            )
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(backup_configuration) = backup_configuration {
+            self.backup_configuration = backup_configuration;
+        }
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(description) = options.description {
+            self.description = description;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
+    }
+}
+
 #[async_trait::async_trait]
 impl DeletableModel for Location {
     type DeleteOptions = ();
@@ -258,7 +404,7 @@ impl DeletableModel for Location {
 #[schema(title = "Location")]
 pub struct AdminApiLocation {
     pub uuid: uuid::Uuid,
-    pub backup_configuration: Option<super::backup_configurations::AdminApiBackupConfiguration>,
+    pub backup_configuration: Option<super::backup_configuration::AdminApiBackupConfiguration>,
 
     pub name: compact_str::CompactString,
     pub description: Option<compact_str::CompactString>,

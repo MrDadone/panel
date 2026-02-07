@@ -152,30 +152,16 @@ mod delete {
 mod patch {
     use crate::routes::api::admin::locations::_location_::GetLocation;
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger,
-            backup_configurations::BackupConfiguration, user::GetPermissionManager,
+            UpdatableModel, admin_activity::GetAdminActivityLogger,
+            location::UpdateLocationOptions, user::GetPermissionManager,
         },
-        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        backup_configuration_uuid: Option<uuid::Uuid>,
-
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: Option<compact_str::CompactString>,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -191,84 +177,24 @@ mod patch {
             description = "The location ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateLocationOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         mut location: GetLocation,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateLocationOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("locations.update")?;
 
-        if let Some(backup_configuration_uuid) = data.backup_configuration_uuid {
-            if backup_configuration_uuid.is_nil() {
-                location.backup_configuration = None;
-            } else {
-                let backup_configuration = match BackupConfiguration::by_uuid_optional(
-                    &state.database,
-                    backup_configuration_uuid,
-                )
-                .await?
-                {
-                    Some(backup_configuration) => backup_configuration,
-                    None => {
-                        return ApiResponse::error("backup configuration not found")
-                            .with_status(StatusCode::NOT_FOUND)
-                            .ok();
-                    }
-                };
-
-                location.backup_configuration = Some(BackupConfiguration::get_fetchable(
-                    backup_configuration.uuid,
-                ));
-            }
-        }
-        if let Some(name) = data.name {
-            location.name = name;
-        }
-        if let Some(description) = data.description {
-            if description.is_empty() {
-                location.description = None;
-            } else {
-                location.description = Some(description);
-            }
-        }
-
-        match sqlx::query!(
-            "UPDATE locations
-            SET backup_configuration_uuid = $2, name = $3, description = $4
-            WHERE locations.uuid = $1",
-            location.uuid,
-            location
-                .backup_configuration
-                .as_ref()
-                .map(|backup_configuration| backup_configuration.uuid),
-            &location.name,
-            location.description.as_deref(),
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match location.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("location with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update location: {:?}", err);
-
-                return ApiResponse::error("failed to update location")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

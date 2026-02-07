@@ -90,8 +90,10 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger, mount::Mount,
-            nest_egg_mount::NestEggMount, user::GetPermissionManager,
+            CreatableModel,
+            admin_activity::GetAdminActivityLogger,
+            nest_egg_mount::{CreateNestEggMountOptions, NestEggMount},
+            user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
@@ -133,35 +135,22 @@ mod post {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("eggs.mounts")?;
 
-        let mount = match Mount::by_uuid_optional(&state.database, data.mount_uuid).await? {
-            Some(mount) => mount,
-            None => {
-                return ApiResponse::error("mount not found")
-                    .with_status(StatusCode::NOT_FOUND)
-                    .ok();
-            }
-        };
-
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
-        match NestEggMount::create(&state.database, egg.uuid, mount.uuid).await {
-            Ok(_) => {}
+        let nest_egg_mount = match NestEggMount::create(
+            &state,
+            CreateNestEggMountOptions {
+                egg_uuid: egg.uuid,
+                mount_uuid: data.mount_uuid,
+            },
+        )
+        .await
+        {
+            Ok(nest_egg_mount) => nest_egg_mount,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("mount already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create egg mount: {:?}", err);
-
-                return ApiResponse::error("failed to create egg mount")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger
@@ -170,7 +159,7 @@ mod post {
                 serde_json::json!({
                     "nest_uuid": nest.uuid,
                     "egg_uuid": egg.uuid,
-                    "mount_uuid": mount.uuid,
+                    "mount_uuid": nest_egg_mount.mount.uuid,
                 }),
             )
             .await;

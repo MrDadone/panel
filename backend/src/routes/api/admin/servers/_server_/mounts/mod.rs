@@ -84,8 +84,8 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
-            admin_activity::GetAdminActivityLogger, mount::Mount, server::GetServer,
-            server_mount::ServerMount, user::GetPermissionManager,
+            CreatableModel, admin_activity::GetAdminActivityLogger, mount::Mount,
+            server::GetServer, server_mount::ServerMount, user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
@@ -143,20 +143,18 @@ mod post {
                 .ok();
         }
 
-        match ServerMount::create(&state.database, server.uuid, mount.uuid).await {
+        let options = shared::models::server_mount::CreateServerMountOptions {
+            server_uuid: server.uuid,
+            mount_uuid: mount.uuid,
+        };
+        match ServerMount::create(&state, options).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("mount already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create server mount: {:?}", err);
-
-                return ApiResponse::error("failed to create server mount")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

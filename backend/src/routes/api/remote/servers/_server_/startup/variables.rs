@@ -7,7 +7,8 @@ mod put {
     use shared::{
         ApiError, GetState,
         models::{
-            server::GetServer, server_activity::ServerActivity, server_variable::ServerVariable,
+            CreatableModel, server::GetServer, server_activity::ServerActivity,
+            server_variable::ServerVariable,
         },
         response::{ApiResponse, ApiResponseResult},
     };
@@ -110,22 +111,25 @@ mod put {
 
         ServerVariable::create(&state.database, server.uuid, variable_uuid, &data.value).await?;
 
-        if let Err(err) = ServerActivity::log_remote(
-            &state.database,
-            server.uuid,
-            None,
-            data.schedule_uuid,
-            "server:startup.variables",
-            None,
-            serde_json::json!({
-                "variables": [
-                    {
-                        "env_variable": data.env_variable,
-                        "value": data.value,
-                    }
-                ]
-            }),
-            chrono::Utc::now(),
+        if let Err(err) = ServerActivity::create(
+            &state,
+            shared::models::server_activity::CreateServerActivityOptions {
+                server_uuid: server.uuid,
+                user_uuid: None,
+                api_key_uuid: None,
+                schedule_uuid: data.schedule_uuid,
+                event: "server:startup.variables".into(),
+                ip: None,
+                data: serde_json::json!({
+                    "variables": [
+                        {
+                            "env_variable": data.env_variable,
+                            "value": data.value,
+                        }
+                    ]
+                }),
+                created: None,
+            },
         )
         .await
         {

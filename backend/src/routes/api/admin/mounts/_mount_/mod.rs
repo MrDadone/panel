@@ -133,35 +133,16 @@ mod delete {
 mod patch {
     use crate::routes::api::admin::mounts::_mount_::GetMount;
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
-        models::{admin_activity::GetAdminActivityLogger, user::GetPermissionManager},
-        prelude::SqlxErrorExt,
+        models::{
+            UpdatableModel, admin_activity::GetAdminActivityLogger, mount::UpdateMountOptions,
+            user::GetPermissionManager,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: Option<compact_str::CompactString>,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-
-        #[validate(length(min = 1, max = 255))]
-        #[schema(min_length = 1, max_length = 255)]
-        source: Option<compact_str::CompactString>,
-        #[validate(length(min = 1, max = 255))]
-        #[schema(min_length = 1, max_length = 255)]
-        target: Option<compact_str::CompactString>,
-
-        read_only: Option<bool>,
-        user_mountable: Option<bool>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -177,73 +158,24 @@ mod patch {
             description = "The mount ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateMountOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
         mut mount: GetMount,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateMountOptions>,
     ) -> ApiResponseResult {
         permissions.has_admin_permission("mounts.update")?;
 
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
-        if let Some(name) = data.name {
-            mount.name = name;
-        }
-        if let Some(description) = data.description {
-            if description.is_empty() {
-                mount.description = None;
-            } else {
-                mount.description = Some(description);
-            }
-        }
-        if let Some(source) = data.source {
-            mount.source = source;
-        }
-        if let Some(target) = data.target {
-            mount.target = target;
-        }
-        if let Some(read_only) = data.read_only {
-            mount.read_only = read_only;
-        }
-        if let Some(user_mountable) = data.user_mountable {
-            mount.user_mountable = user_mountable;
-        }
-
-        match sqlx::query!(
-            "UPDATE mounts
-            SET name = $1, description = $2, source = $3, target = $4, read_only = $5, user_mountable = $6
-            WHERE mounts.uuid = $7",
-            &mount.name,
-            mount.description.as_deref(),
-            &mount.source,
-            &mount.target,
-            mount.read_only,
-            mount.user_mountable,
-            mount.uuid,
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match mount.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("mount with name/source/target already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update mount: {:?}", err);
-
-                return ApiResponse::error("failed to update mount")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

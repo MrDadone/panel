@@ -1,4 +1,4 @@
-use crate::{prelude::*, storage::StorageUrlRetriever};
+use crate::{models::InsertQueryBuilder, prelude::*, storage::StorageUrlRetriever};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,6 +6,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct ServerMount {
@@ -57,25 +58,6 @@ impl BaseModel for ServerMount {
 }
 
 impl ServerMount {
-    pub async fn create(
-        database: &crate::database::Database,
-        server_uuid: uuid::Uuid,
-        mount_uuid: uuid::Uuid,
-    ) -> Result<(), crate::database::DatabaseError> {
-        sqlx::query(
-            r#"
-            INSERT INTO server_mounts (server_uuid, mount_uuid)
-            VALUES ($1, $2)
-            "#,
-        )
-        .bind(server_uuid)
-        .bind(mount_uuid)
-        .execute(database.write())
-        .await?;
-
-        Ok(())
-    }
-
     pub async fn by_server_uuid_mount_uuid(
         database: &crate::database::Database,
         server_uuid: uuid::Uuid,
@@ -326,6 +308,55 @@ impl ServerMount {
             mount: mount.into_admin_api_object(),
             created: self.created.map(|dt| dt.and_utc()),
         })
+    }
+}
+
+#[derive(Validate)]
+pub struct CreateServerMountOptions {
+    pub server_uuid: uuid::Uuid,
+    pub mount_uuid: uuid::Uuid,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for ServerMount {
+    type CreateOptions<'a> = CreateServerMountOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<ServerMount>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        super::mount::Mount::by_uuid_optional(&state.database, options.mount_uuid)
+            .await?
+            .ok_or(crate::database::InvalidRelationError("mount"))?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("server_mounts");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("server_uuid", options.server_uuid)
+            .set("mount_uuid", options.mount_uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        transaction.commit().await?;
+
+        Self::by_server_uuid_mount_uuid(&state.database, options.server_uuid, options.mount_uuid)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound.into())
     }
 }
 

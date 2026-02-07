@@ -152,54 +152,18 @@ mod delete {
 
 mod patch {
     use axum::http::StatusCode;
-    use compact_str::ToCompactString;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger,
-            backup_configurations::BackupConfiguration, location::Location, node::GetNode,
+            UpdatableModel,
+            admin_activity::GetAdminActivityLogger,
+            node::{GetNode, UpdateNodeOptions},
             user::GetPermissionManager,
         },
-        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        location_uuid: Option<uuid::Uuid>,
-        backup_configuration_uuid: Option<uuid::Uuid>,
-
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: Option<compact_str::CompactString>,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-
-        deployment_enabled: Option<bool>,
-        maintenance_enabled: Option<bool>,
-
-        #[validate(length(min = 3, max = 255), url)]
-        #[schema(min_length = 3, max_length = 255, format = "uri")]
-        public_url: Option<compact_str::CompactString>,
-        #[validate(length(min = 3, max = 255), url)]
-        #[schema(min_length = 3, max_length = 255, format = "uri")]
-        url: Option<compact_str::CompactString>,
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        sftp_host: Option<compact_str::CompactString>,
-        sftp_port: Option<u16>,
-
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        maintenance_message: Option<String>,
-
-        memory: Option<i64>,
-        disk: Option<i64>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -215,139 +179,24 @@ mod patch {
             description = "The node ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateNodeOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         mut node: GetNode,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateNodeOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("nodes.update")?;
 
-        if let Some(location_uuid) = data.location_uuid {
-            let location = match Location::by_uuid_optional(&state.database, location_uuid).await? {
-                Some(location) => location,
-                None => {
-                    return ApiResponse::error("location not found")
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
-                }
-            };
-
-            node.location = location;
-        }
-        if let Some(backup_configuration_uuid) = data.backup_configuration_uuid {
-            if backup_configuration_uuid.is_nil() {
-                node.backup_configuration = None;
-            } else {
-                let backup_configuration = match BackupConfiguration::by_uuid_optional(
-                    &state.database,
-                    backup_configuration_uuid,
-                )
-                .await?
-                {
-                    Some(backup_configuration) => backup_configuration,
-                    None => {
-                        return ApiResponse::error("backup configuration not found")
-                            .with_status(StatusCode::NOT_FOUND)
-                            .ok();
-                    }
-                };
-
-                node.backup_configuration = Some(BackupConfiguration::get_fetchable(
-                    backup_configuration.uuid,
-                ));
-            }
-        }
-        if let Some(name) = data.name {
-            node.name = name;
-        }
-        if let Some(deployment_enabled) = data.deployment_enabled {
-            node.deployment_enabled = deployment_enabled;
-        }
-        if let Some(maintenance_enabled) = data.maintenance_enabled {
-            node.maintenance_enabled = maintenance_enabled;
-        }
-        if let Some(description) = data.description {
-            if description.is_empty() {
-                node.description = None;
-            } else {
-                node.description = Some(description);
-            }
-        }
-        if let Some(public_url) = data.public_url {
-            if public_url.is_empty() {
-                node.public_url = None;
-            } else {
-                node.public_url = Some(public_url.parse()?);
-            }
-        }
-        if let Some(url) = data.url {
-            node.url = url.parse()?;
-        }
-        if let Some(sftp_host) = data.sftp_host {
-            if sftp_host.is_empty() {
-                node.sftp_host = None;
-            } else {
-                node.sftp_host = Some(sftp_host);
-            }
-        }
-        if let Some(sftp_port) = data.sftp_port {
-            node.sftp_port = sftp_port as i32;
-        }
-        if let Some(memory) = data.memory {
-            node.memory = memory;
-        }
-        if let Some(disk) = data.disk {
-            node.disk = disk;
-        }
-
-        match sqlx::query!(
-            "UPDATE nodes
-            SET location_uuid = $1, backup_configuration_uuid = $2, name = $3,
-                description = $4, deployment_enabled = $5, maintenance_enabled = $6, public_url = $7,
-                url = $8, sftp_host = $9, sftp_port = $10,
-                memory = $11, disk = $12
-            WHERE nodes.uuid = $13",
-            node.location.uuid,
-            node.backup_configuration
-                .as_ref()
-                .map(|backup_configuration| backup_configuration.uuid),
-            &node.name,
-            node.description.as_deref(),
-            node.deployment_enabled,
-            node.maintenance_enabled,
-            node.public_url.as_ref().map(|url| url.to_string()),
-            &node.url.to_compact_string(),
-            node.sftp_host.as_deref(),
-            node.sftp_port,
-            node.memory,
-            node.disk,
-            node.uuid,
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match node.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("node with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update node: {:?}", err);
-
-                return ApiResponse::error("failed to update node")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

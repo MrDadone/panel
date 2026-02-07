@@ -149,13 +149,7 @@ mod post {
                     .with_status(StatusCode::EXPECTATION_FAILED)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!(server = %server.uuid, "failed to create allocation: {:?}", err);
-
-                return ApiResponse::error("failed to create allocation")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

@@ -86,8 +86,10 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger, egg_repository_egg::EggRepositoryEgg,
-            nest_egg::NestEgg, user::GetPermissionManager,
+            CreatableModel,
+            admin_activity::GetAdminActivityLogger,
+            nest_egg::{CreateNestEggOptions, NestEgg},
+            user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
@@ -104,8 +106,8 @@ mod post {
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: compact_str::CompactString,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
+        #[validate(length(min = 1, max = 1024))]
+        #[schema(min_length = 1, max_length = 1024)]
         description: Option<compact_str::CompactString>,
 
         #[schema(inline)]
@@ -117,6 +119,7 @@ mod post {
         #[schema(inline)]
         config_script: shared::models::nest_egg::NestEggConfigScript,
         #[schema(inline)]
+        #[validate(custom(function = "shared::models::nest_egg::validate_config_allocations"))]
         config_allocations: shared::models::nest_egg::NestEggConfigAllocations,
 
         #[validate(length(min = 1, max = 4096))]
@@ -162,63 +165,33 @@ mod post {
 
         permissions.has_admin_permission("eggs.create")?;
 
-        let egg_repository_egg = if let Some(egg_repository_egg_uuid) = data.egg_repository_egg_uuid
-            && !egg_repository_egg_uuid.is_nil()
-        {
-            match EggRepositoryEgg::by_uuid_optional(&state.database, egg_repository_egg_uuid)
-                .await?
-            {
-                Some(egg_repository_egg) => Some(egg_repository_egg),
-                None => {
-                    return ApiResponse::error("egg repository egg not found")
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
-                }
-            }
-        } else {
-            None
+        let options = CreateNestEggOptions {
+            nest_uuid: nest.uuid,
+            egg_repository_egg_uuid: data.egg_repository_egg_uuid,
+            author: data.author,
+            name: data.name,
+            description: data.description,
+            config_files: data.config_files,
+            config_startup: data.config_startup,
+            config_stop: data.config_stop,
+            config_script: data.config_script,
+            config_allocations: data.config_allocations,
+            startup: data.startup,
+            force_outgoing_ip: data.force_outgoing_ip,
+            separate_port: data.separate_port,
+            features: data.features,
+            docker_images: data.docker_images,
+            file_denylist: data.file_denylist,
         };
 
-        if !data.config_allocations.user_self_assign.is_valid() {
-            return ApiResponse::error("config_allocations.user_self_assign: port ranges must be 1024-65535 and start_port < end_port")
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
-        let egg = match NestEgg::create(
-            &state.database,
-            nest.uuid,
-            egg_repository_egg.map(|e| e.uuid),
-            &data.author,
-            &data.name,
-            data.description.as_deref(),
-            data.config_files,
-            data.config_startup,
-            data.config_stop,
-            data.config_script,
-            data.config_allocations,
-            &data.startup,
-            data.force_outgoing_ip,
-            data.separate_port,
-            &data.features,
-            data.docker_images,
-            &data.file_denylist,
-        )
-        .await
-        {
+        let egg = match NestEgg::create(&state, options).await {
             Ok(egg) => egg,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("egg with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create egg: {:?}", err);
-
-                return ApiResponse::error("failed to create egg")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

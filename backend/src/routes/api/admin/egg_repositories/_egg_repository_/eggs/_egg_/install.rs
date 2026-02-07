@@ -75,7 +75,7 @@ mod post {
         };
 
         let egg = match NestEgg::import(
-            &state.database,
+            &state,
             nest.uuid,
             Some(egg_repository_egg.uuid),
             egg_repository_egg.exported_egg,
@@ -88,13 +88,7 @@ mod post {
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create egg: {:?}", err);
-
-                return ApiResponse::error("failed to create egg")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

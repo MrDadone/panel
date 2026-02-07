@@ -119,6 +119,7 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             database_host::DatabaseHost,
             server::{GetServer, GetServerActivityLogger},
             server_database::ServerDatabase,
@@ -137,9 +138,8 @@ mod post {
             length(min = 3, max = 31),
             regex(path = "*shared::models::server_database::DB_NAME_REGEX")
         )]
-        #[schema(min_length = 3, max_length = 31)]
-        #[schema(pattern = "^[a-zA-Z0-9_]+$")]
-        name: String,
+        #[schema(min_length = 3, max_length = 31, pattern = "^[a-zA-Z0-9_]+$")]
+        name: compact_str::CompactString,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -210,34 +210,19 @@ mod post {
             .ok();
         }
 
-        let database = match ServerDatabase::create(
-            &state.database,
-            &server,
-            &database_host,
-            &data.name,
-        )
-        .await
-        {
-            Ok(database_uuid) => ServerDatabase::by_uuid(&state.database, database_uuid)
-                .await?
-                .ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "failed to retrieve database after creation: {}",
-                        database_uuid
-                    )
-                })?,
+        let options = shared::models::server_database::CreateServerDatabaseOptions {
+            server: &server,
+            database_host: &database_host,
+            name: data.name,
+        };
+        let database = match ServerDatabase::create(&state, options).await {
+            Ok(database) => database,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("database with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!(server = %server.uuid, "failed to create database: {:?}", err);
-
-                return ApiResponse::error("failed to create database")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

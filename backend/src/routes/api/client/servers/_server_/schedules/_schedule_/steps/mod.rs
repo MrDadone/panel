@@ -72,8 +72,9 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             server::{GetServer, GetServerActivityLogger},
-            server_schedule_step::ServerScheduleStep,
+            server_schedule_step::{CreateServerScheduleStepOptions, ServerScheduleStep},
             user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
@@ -124,23 +125,23 @@ mod post {
 
         permissions.has_server_permission("schedules.update")?;
 
-        let settings = state.settings.get().await?;
-
         let schedule_steps =
             ServerScheduleStep::count_by_schedule_uuid(&state.database, schedule.uuid).await;
+        let settings = state.settings.get().await?;
         if schedule_steps >= settings.server.max_schedules_step_count as i64 {
             return ApiResponse::error("maximum number of schedule steps reached")
                 .with_status(StatusCode::EXPECTATION_FAILED)
                 .ok();
         }
-
         drop(settings);
 
         let schedule_step = match ServerScheduleStep::create(
-            &state.database,
-            schedule.uuid,
-            data.action,
-            data.order,
+            &state,
+            CreateServerScheduleStepOptions {
+                schedule_uuid: schedule.uuid,
+                action: data.action,
+                order: data.order,
+            },
         )
         .await
         {

@@ -232,6 +232,8 @@ pub enum DatabaseError {
     Sqlx(sqlx::Error),
     Serde(serde_json::Error),
     Any(anyhow::Error),
+    Validation(validator::ValidationErrors),
+    InvalidRelation(InvalidRelationError),
 }
 
 impl Display for DatabaseError {
@@ -240,6 +242,8 @@ impl Display for DatabaseError {
             Self::Sqlx(sqlx_value) => sqlx_value.fmt(f),
             Self::Serde(serde_value) => serde_value.fmt(f),
             Self::Any(any_value) => any_value.fmt(f),
+            Self::Validation(validation_value) => validation_value.fmt(f),
+            Self::InvalidRelation(relation_value) => relation_value.fmt(f),
         }
     }
 }
@@ -269,6 +273,19 @@ impl From<sqlx::Error> for DatabaseError {
     #[inline]
     fn from(value: sqlx::Error) -> Self {
         Self::Sqlx(value)
+    }
+}
+
+impl From<validator::ValidationErrors> for DatabaseError {
+    #[inline]
+    fn from(value: validator::ValidationErrors) -> Self {
+        Self::Validation(value)
+    }
+}
+
+impl From<InvalidRelationError> for DatabaseError {
+    fn from(value: InvalidRelationError) -> Self {
+        Self::InvalidRelation(value)
     }
 }
 
@@ -304,13 +321,13 @@ impl DatabaseError {
     }
 }
 
-impl From<DatabaseError> for anyhow::Error {
-    #[inline]
-    fn from(value: DatabaseError) -> Self {
-        match value {
-            DatabaseError::Sqlx(sqlx_value) => anyhow::anyhow!(sqlx_value),
-            DatabaseError::Serde(serde_value) => anyhow::anyhow!(serde_value),
-            DatabaseError::Any(any_value) => any_value,
-        }
+impl std::error::Error for DatabaseError {}
+
+#[derive(Debug)]
+pub struct InvalidRelationError(pub &'static str);
+
+impl Display for InvalidRelationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "invalid relation `{}` provided", self.0)
     }
 }

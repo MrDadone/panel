@@ -7,6 +7,7 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             server::{GetServer, GetServerActivityLogger},
             server_schedule::{ExportedServerSchedule, ServerSchedule},
             server_schedule_step::ServerScheduleStep,
@@ -54,29 +55,21 @@ mod post {
                 .ok();
         }
 
-        let schedule = match ServerSchedule::create(
-            &state.database,
-            server.uuid,
-            &data.name,
-            data.enabled,
-            data.triggers,
-            data.condition,
-        )
-        .await
-        {
+        let options = shared::models::server_schedule::CreateServerScheduleOptions {
+            server_uuid: server.uuid,
+            name: data.name,
+            enabled: data.enabled,
+            triggers: data.triggers,
+            condition: data.condition,
+        };
+        let schedule = match ServerSchedule::create(&state, options).await {
             Ok(schedule) => schedule,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("schedule with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!(name = %data.name, "failed to create schedule: {:?}", err);
-
-                return ApiResponse::error("failed to create schedule")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         let settings = state.settings.get().await?;
@@ -86,13 +79,12 @@ mod post {
             .iter()
             .take(settings.server.max_schedules_step_count as usize)
         {
-            ServerScheduleStep::create(
-                &state.database,
-                schedule.uuid,
-                schedule_step.action.clone(),
-                schedule_step.order,
-            )
-            .await?;
+            let options = shared::models::server_schedule_step::CreateServerScheduleStepOptions {
+                schedule_uuid: schedule.uuid,
+                action: schedule_step.action.clone(),
+                order: schedule_step.order,
+            };
+            ServerScheduleStep::create(&state, options).await?;
         }
 
         drop(settings);

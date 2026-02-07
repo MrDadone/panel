@@ -83,7 +83,7 @@ mod post {
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger, mount::Mount, node::GetNode,
+            CreatableModel, admin_activity::GetAdminActivityLogger, node::GetNode,
             node_mount::NodeMount, user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
@@ -119,35 +119,18 @@ mod post {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("nodes.mounts")?;
 
-        let mount = match Mount::by_uuid_optional(&state.database, data.mount_uuid).await? {
-            Some(mount) => mount,
-            None => {
-                return ApiResponse::error("mount not found")
-                    .with_status(StatusCode::NOT_FOUND)
-                    .ok();
-            }
+        let options = shared::models::node_mount::CreateNodeMountOptions {
+            node_uuid: node.uuid,
+            mount_uuid: data.mount_uuid,
         };
-
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
-        match NodeMount::create(&state.database, node.uuid, mount.uuid).await {
+        match NodeMount::create(&state, options).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("mount already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create node mount: {:?}", err);
-
-                return ApiResponse::error("failed to create node mount")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger
@@ -155,7 +138,7 @@ mod post {
                 "node:mount.create",
                 serde_json::json!({
                     "node_uuid": node.uuid,
-                    "mount_uuid": mount.uuid,
+                    "mount_uuid": data.mount_uuid,
                 }),
             )
             .await;

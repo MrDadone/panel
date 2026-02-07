@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,6 +9,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct UserSshKey {
@@ -59,34 +63,6 @@ impl BaseModel for UserSshKey {
 }
 
 impl UserSshKey {
-    pub async fn create(
-        database: &crate::database::Database,
-        user_uuid: uuid::Uuid,
-        name: &str,
-        public_key: russh::keys::PublicKey,
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO user_ssh_keys (user_uuid, name, fingerprint, public_key, created)
-            VALUES ($1, $2, $3, $4, NOW())
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(user_uuid)
-        .bind(name)
-        .bind(
-            public_key
-                .fingerprint(russh::keys::HashAlg::Sha256)
-                .to_string(),
-        )
-        .bind(public_key.to_bytes().map_err(anyhow::Error::new)?)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn by_user_uuid_uuid(
         database: &crate::database::Database,
         user_uuid: uuid::Uuid,
@@ -155,6 +131,123 @@ impl UserSshKey {
             fingerprint: self.fingerprint,
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateUserSshKeyOptions {
+    pub user_uuid: uuid::Uuid,
+
+    #[validate(length(min = 3, max = 31))]
+    #[schema(min_length = 3, max_length = 31)]
+    pub name: compact_str::CompactString,
+
+    #[schema(value_type = String)]
+    #[serde(deserialize_with = "crate::deserialize::deserialize_public_key")]
+    pub public_key: russh::keys::PublicKey,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for UserSshKey {
+    type CreateOptions<'a> = CreateUserSshKeyOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<UserSshKey>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("user_ssh_keys");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("user_uuid", options.user_uuid)
+            .set("name", &options.name)
+            .set(
+                "fingerprint",
+                options
+                    .public_key
+                    .fingerprint(russh::keys::HashAlg::Sha256)
+                    .to_string(),
+            )
+            .set(
+                "public_key",
+                options.public_key.to_bytes().map_err(anyhow::Error::from)?,
+            );
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let ssh_key = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(ssh_key)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
+pub struct UpdateUserSshKeyOptions {
+    #[validate(length(min = 3, max = 31))]
+    #[schema(min_length = 3, max_length = 31)]
+    pub name: Option<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for UserSshKey {
+    type UpdateOptions = UpdateUserSshKeyOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<UserSshKey>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("user_ssh_keys");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 
