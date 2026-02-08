@@ -68,6 +68,7 @@ export default function OobeLocation({ onNext, skipFrom }: OobeComponentProps) {
     createBackupConfiguration({
       name: form.values.backupName,
       description: null,
+      maintenanceEnabled: false,
       backupDisk: form.values.backupDisk,
       backupConfigs: {
         s3: form.values.backupDisk === 's3' ? backupConfigS3Form.values : null,

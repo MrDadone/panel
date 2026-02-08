@@ -54,12 +54,12 @@ export default function NodeRow({ node }: { node: Node }) {
       <TableData>
         <span className='flex gap-2 items-center'>
           {node.name}&nbsp;
-          {node.public ? (
-            <Tooltip label='Public Node'>
+          {node.deploymentEnabled ? (
+            <Tooltip label='Deployment Enabled'>
               <FontAwesomeIcon icon={faGlobe} className='text-green-500' />
             </Tooltip>
           ) : (
-            <Tooltip label='Private Node'>
+            <Tooltip label='Deployment Disabled'>
               <FontAwesomeIcon icon={faGlobe} className='text-red-500' />
             </Tooltip>
           )}
