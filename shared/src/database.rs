@@ -153,7 +153,6 @@ impl Database {
         self.read.as_ref().unwrap_or(&self.write)
     }
 
-    #[inline]
     pub async fn encrypt(
         &self,
         data: impl AsRef<[u8]> + Send + 'static,
@@ -167,18 +166,16 @@ impl Database {
     }
 
     #[inline]
-    pub fn encrypt_sync(&self, data: impl AsRef<[u8]>) -> Option<Vec<u8>> {
-        simple_crypt::encrypt(data.as_ref(), self.encryption_key.as_bytes()).ok()
+    pub fn blocking_encrypt(&self, data: impl AsRef<[u8]>) -> Result<Vec<u8>, anyhow::Error> {
+        simple_crypt::encrypt(data.as_ref(), self.encryption_key.as_bytes())
     }
 
-    #[inline]
     pub async fn decrypt(
         &self,
         data: impl AsRef<[u8]> + Send + 'static,
     ) -> Result<compact_str::CompactString, anyhow::Error> {
         if self.use_decryption_cache {
-            return self
-                .cache
+            self.cache
                 .cached(
                     &format!(
                         "decryption_cache::{}",
@@ -196,23 +193,25 @@ impl Database {
                         .await?
                     },
                 )
-                .await;
+                .await
+        } else {
+            let encryption_key = self.encryption_key.clone();
+
+            tokio::task::spawn_blocking(move || {
+                simple_crypt::decrypt(data.as_ref(), encryption_key.as_bytes())
+                    .map(|s| compact_str::CompactString::from_utf8_lossy(&s))
+            })
+            .await?
         }
-
-        let encryption_key = self.encryption_key.clone();
-
-        tokio::task::spawn_blocking(move || {
-            simple_crypt::decrypt(data.as_ref(), encryption_key.as_bytes())
-                .map(|s| compact_str::CompactString::from_utf8_lossy(&s))
-        })
-        .await?
     }
 
     #[inline]
-    pub fn decrypt_sync(&self, data: impl AsRef<[u8]>) -> Option<compact_str::CompactString> {
+    pub fn blocking_decrypt(
+        &self,
+        data: impl AsRef<[u8]>,
+    ) -> Result<compact_str::CompactString, anyhow::Error> {
         simple_crypt::decrypt(data.as_ref(), self.encryption_key.as_bytes())
             .map(|s| compact_str::CompactString::from_utf8_lossy(&s))
-            .ok()
     }
 
     #[inline]

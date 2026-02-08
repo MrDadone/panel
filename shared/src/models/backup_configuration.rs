@@ -12,12 +12,22 @@ use std::{
 use utoipa::ToSchema;
 use validator::Validate;
 
-#[derive(ToSchema, Serialize, Deserialize, Clone)]
+#[derive(ToSchema, Serialize, Deserialize, Validate, Clone)]
 pub struct BackupConfigsS3 {
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
     pub access_key: compact_str::CompactString,
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
     pub secret_key: compact_str::CompactString,
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
     pub bucket: compact_str::CompactString,
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
     pub region: compact_str::CompactString,
+    #[validate(length(min = 1, max = 255), url)]
+    #[schema(min_length = 1, max_length = 255, format = "uri")]
     pub endpoint: compact_str::CompactString,
     pub path_style: bool,
     pub part_size: u64,
@@ -77,8 +87,10 @@ impl BackupConfigsS3 {
     }
 }
 
-#[derive(ToSchema, Serialize, Deserialize, Clone)]
+#[derive(ToSchema, Serialize, Deserialize, Validate, Clone)]
 pub struct BackupConfigsRestic {
+    #[validate(length(min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
     pub repository: compact_str::CompactString,
     pub retry_lock_seconds: u64,
 
@@ -120,13 +132,11 @@ impl BackupConfigsRestic {
     }
 }
 
-#[derive(ToSchema, Serialize, Deserialize, Default, Clone)]
+#[derive(ToSchema, Serialize, Deserialize, Default, Validate, Clone)]
 pub struct BackupConfigs {
-    #[serde(default)]
-    #[schema(inline)]
+    #[validate(nested)]
     pub s3: Option<BackupConfigsS3>,
-    #[serde(default)]
-    #[schema(inline)]
+    #[validate(nested)]
     pub restic: Option<BackupConfigsRestic>,
 }
 
@@ -334,7 +344,7 @@ pub struct CreateBackupConfigurationOptions {
     pub description: Option<compact_str::CompactString>,
     pub maintenance_enabled: bool,
     pub backup_disk: super::server_backup::BackupDisk,
-    #[serde(default)]
+    #[validate(nested)]
     pub backup_configs: BackupConfigs,
 }
 
@@ -395,7 +405,7 @@ pub struct UpdateBackupConfigurationOptions {
     pub description: Option<Option<compact_str::CompactString>>,
     pub maintenance_enabled: Option<bool>,
     pub backup_disk: Option<super::server_backup::BackupDisk>,
-    #[serde(default)]
+    #[validate(nested)]
     pub backup_configs: Option<BackupConfigs>,
 }
 

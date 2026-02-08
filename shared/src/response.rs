@@ -167,20 +167,9 @@ where
         if let Some(error) = err.downcast_ref::<DisplayError>() {
             return ApiResponse::error(&error.message).with_status(error.status);
         } else if let Some(DatabaseError::Validation(error)) = err.downcast_ref::<DatabaseError>() {
-            let mut errors = Vec::new();
-            errors.reserve_exact(error.field_errors().len());
+            let error_messages = crate::utils::flatten_validation_errors(error, "");
 
-            for (field, field_errors) in error.field_errors() {
-                for field_error in field_errors {
-                    if let Some(message) = &field_error.message {
-                        errors.push(format!("{field}: {message}"));
-                    } else {
-                        errors.push(format!("{field}: invalid {}", field_error.code));
-                    }
-                }
-            }
-
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(error_messages))
                 .with_status(axum::http::StatusCode::BAD_REQUEST);
         } else if let Some(DatabaseError::InvalidRelation(error)) =
             err.downcast_ref::<DatabaseError>()

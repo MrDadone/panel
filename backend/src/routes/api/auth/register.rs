@@ -82,8 +82,6 @@ mod post {
 
         let user = match User::create_automatic_admin(
             &state.database,
-            None,
-            None,
             &data.username,
             &data.email,
             &data.name_first,

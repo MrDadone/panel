@@ -408,7 +408,7 @@ impl Node {
     ) -> wings_api::client::WingsClient {
         wings_api::client::WingsClient::new(
             self.url.to_string(),
-            database.decrypt_sync(&self.token).unwrap().into(),
+            database.blocking_decrypt(&self.token).unwrap().into(),
         )
     }
 
@@ -420,7 +420,7 @@ impl Node {
         payload: &T,
     ) -> Result<String, jwt::Error> {
         jwt.create_custom(
-            database.decrypt_sync(&self.token).unwrap().as_bytes(),
+            database.blocking_decrypt(&self.token).unwrap().as_bytes(),
             payload,
         )
     }

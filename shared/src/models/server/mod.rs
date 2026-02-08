@@ -1550,6 +1550,7 @@ pub struct CreateServerOptions {
     #[schema(min_length = 1, max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
 
+    #[validate(nested)]
     pub limits: ApiServerLimits,
     pub pinned_cpus: Vec<i16>,
 
@@ -1565,6 +1566,7 @@ pub struct CreateServerOptions {
     pub hugepages_passthrough_enabled: bool,
     pub kvm_passthrough_enabled: bool,
 
+    #[validate(nested)]
     pub feature_limits: ApiServerFeatureLimits,
     pub variables: HashMap<uuid::Uuid, compact_str::CompactString>,
 }
@@ -1779,6 +1781,7 @@ pub struct UpdateServerOptions {
     #[schema(min_length = 1, max_length = 1024)]
     pub description: Option<Option<compact_str::CompactString>>,
 
+    #[validate(nested)]
     pub limits: Option<ApiServerLimits>,
     pub pinned_cpus: Option<Vec<i16>>,
 
@@ -1794,6 +1797,7 @@ pub struct UpdateServerOptions {
     pub hugepages_passthrough_enabled: Option<bool>,
     pub kvm_passthrough_enabled: Option<bool>,
 
+    #[validate(nested)]
     pub feature_limits: Option<ApiServerFeatureLimits>,
 }
 

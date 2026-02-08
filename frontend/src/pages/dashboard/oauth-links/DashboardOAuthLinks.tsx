@@ -46,6 +46,7 @@ export default function DashboardOAuthLinks() {
                       icon: faFingerprint,
                       label: t('pages.account.oauthLinks.button.connectTo', { provider: oauthProvider.name }),
                       onClick: () => window.location.replace(`/api/auth/oauth/redirect/${oauthProvider.uuid}`),
+                      disabled: !oauthProvider.linkViewable,
                       color: 'gray',
                     }) as const,
                 )}

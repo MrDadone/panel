@@ -122,6 +122,7 @@ mod post {
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
 
+        #[validate(nested)]
         limits: shared::models::server::ApiServerLimits,
         pinned_cpus: Vec<i16>,
 
@@ -137,8 +138,10 @@ mod post {
         hugepages_passthrough_enabled: bool,
         kvm_passthrough_enabled: bool,
 
+        #[validate(nested)]
         feature_limits: shared::models::server::ApiServerFeatureLimits,
         #[schema(inline)]
+        #[validate(nested)]
         variables: Vec<PayloadVariable>,
     }
 

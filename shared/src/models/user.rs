@@ -320,46 +320,8 @@ impl BaseModel for User {
 }
 
 impl User {
-    #[allow(clippy::too_many_arguments)]
-    pub async fn create_internal(
-        database: &crate::database::Database,
-        role_uuid: Option<uuid::Uuid>,
-        external_id: Option<&str>,
-        username: &str,
-        email: &str,
-        name_first: &str,
-        name_last: &str,
-        password: &str,
-        admin: bool,
-        language: &str,
-    ) -> Result<uuid::Uuid, crate::database::DatabaseError> {
-        let row = sqlx::query(
-            r#"
-            INSERT INTO users (role_uuid, external_id, username, email, name_first, name_last, password, admin, language)
-            VALUES ($1, $2, $3, $4, $5, $6, crypt($7, gen_salt('bf', 8)), $8, $9)
-            RETURNING users.uuid
-            "#,
-        )
-        .bind(role_uuid)
-        .bind(external_id)
-        .bind(username)
-        .bind(email)
-        .bind(name_first)
-        .bind(name_last)
-        .bind(password)
-        .bind(admin)
-        .bind(language)
-        .fetch_one(database.write())
-        .await?;
-
-        Ok(row.try_get("uuid")?)
-    }
-
-    #[allow(clippy::too_many_arguments)]
     pub async fn create_automatic_admin(
         database: &crate::database::Database,
-        role_uuid: Option<uuid::Uuid>,
-        external_id: Option<&str>,
         username: &str,
         email: &str,
         name_first: &str,
@@ -368,13 +330,11 @@ impl User {
     ) -> Result<uuid::Uuid, crate::database::DatabaseError> {
         let row = sqlx::query(
             r#"
-            INSERT INTO users (role_uuid, external_id, username, email, name_first, name_last, password, admin)
-            VALUES ($1, $2, $3, $4, $5, $6, crypt($7, gen_salt('bf', 8)), (SELECT COUNT(*) = 0 FROM users))
+            INSERT INTO users (username, email, name_first, name_last, password, admin)
+            VALUES ($1, $2, $3, $4, crypt($5, gen_salt('bf', 8)), (SELECT COUNT(*) = 0 FROM users))
             RETURNING users.uuid
             "#,
         )
-        .bind(role_uuid)
-        .bind(external_id)
         .bind(username)
         .bind(email)
         .bind(name_first)

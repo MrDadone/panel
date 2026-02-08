@@ -208,7 +208,15 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                     oauth_provider_uuid: oauth_provider.uuid,
                     identifier: identifier.to_compact_string(),
                 };
-                shared::models::user_oauth_link::UserOAuthLink::create(&state, options).await?;
+                match shared::models::user_oauth_link::UserOAuthLink::create(&state, options).await {
+                    Ok(_) => {},
+                    Err(err) if err.is_unique_violation() => {
+                        return ApiResponse::error("you have already connected with this oauth provider")
+                            .with_status(StatusCode::CONFLICT)
+                            .ok();
+                    }
+                    Err(err) => return ApiResponse::from(err).ok(),
+                }
 
                 if let Err(err) = UserActivity::create(
                     &state,
@@ -356,7 +364,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                         let secure = settings.app.url.starts_with("https://");
 
                         let username = match oauth_provider.extract_username(&info) {
-                            Ok(username) => username,
+                            Ok(username) => username.into(),
                             Err(err) => {
                                 return ApiResponse::error(&err.to_string())
                                     .with_status(StatusCode::INTERNAL_SERVER_ERROR)
@@ -372,7 +380,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                             }
                         };
                         let name_first = match oauth_provider.extract_name_first(&info) {
-                            Ok(name_first) => name_first,
+                            Ok(name_first) => name_first.into(),
                             Err(err) => {
                                 return ApiResponse::error(&err.to_string())
                                     .with_status(StatusCode::INTERNAL_SERVER_ERROR)
@@ -380,7 +388,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                             }
                         };
                         let name_last = match oauth_provider.extract_name_last(&info) {
-                            Ok(name_last) => name_last,
+                            Ok(name_last) => name_last.into(),
                             Err(err) => {
                                 return ApiResponse::error(&err.to_string())
                                     .with_status(StatusCode::INTERNAL_SERVER_ERROR)
@@ -388,22 +396,20 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                             }
                         };
 
-                        let password = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 16);
-                        let user = match User::create_internal(
-                            &state.database,
-                            None,
-                            None,
-                            &username,
-                            &email,
-                            &name_first,
-                            &name_last,
-                            &password,
-                            false,
-                            &settings.app.language,
-                        )
-                        .await
-                        {
-                            Ok(user_uuid) => User::by_uuid(&state.database, user_uuid).await?,
+                        let options = shared::models::user::CreateUserOptions {
+                            role_uuid: None,
+                            external_id: None,
+                            username,
+                            email,
+                            name_first,
+                            name_last,
+                            password: rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 16),
+                            admin: false,
+                            language: settings.app.language.clone(),
+                        };
+                        drop(settings);
+                        let user = match User::create(&state, options).await {
+                            Ok(user) => user,
                             Err(err) if err.is_unique_violation() => {
                                 return ApiResponse::error("user with username or email already exists")
                                     .with_status(StatusCode::BAD_REQUEST)
@@ -417,8 +423,6 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                                     .ok();
                             }
                         };
-
-                        drop(settings);
 
                         let key = UserSession::create(
                             &state,
