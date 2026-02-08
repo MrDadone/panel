@@ -1,7 +1,9 @@
+import { faUpload } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ModalProps, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useState } from 'react';
+import { ChangeEvent, useRef, useState } from 'react';
 import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import createSshKey from '@/api/me/ssh-keys/createSshKey.ts';
@@ -22,6 +24,7 @@ export default function SshKeyCreateModal({ opened, onClose }: ModalProps) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { addSshKey } = useUserStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -33,6 +36,24 @@ export default function SshKeyCreateModal({ opened, onClose }: ModalProps) {
     validateInputOnBlur: true,
     validate: zod4Resolver(schema),
   });
+
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        form.setFieldValue('publicKey', content.trim());
+        if (!form.values.name) {
+          form.setFieldValue('name', file.name);
+        }
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   const doCreate = () => {
     setLoading(true);
@@ -68,6 +89,21 @@ export default function SshKeyCreateModal({ opened, onClose }: ModalProps) {
           resize='none'
           {...form.getInputProps('publicKey')}
         />
+
+        <input
+          type='file'
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileUpload}
+          accept='.pub,application/x-pem-file,text/plain'
+        />
+        <Button
+          leftSection={<FontAwesomeIcon icon={faUpload} />}
+          className='max-w-fit'
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {t('pages.account.sshKeys.modal.createSshKey.button.uploadKeyFile', {})}
+        </Button>
 
         <Modal.Footer>
           <Button onClick={doCreate} loading={loading} disabled={!form.isValid()}>

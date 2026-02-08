@@ -487,6 +487,9 @@
               "toast": {
                 "created": "SSH-Schlüssel erstellt."
               },
+              "button": {
+                "uploadKeyFile": "Schlüssel-Datei hochladen"
+              },
               "form": {
                 "publicKey": "Öffentlicher Schlüssel (Public Key)"
               }

@@ -238,7 +238,6 @@ impl CreatableModel for UserApiKey {
     ) -> Result<Self::CreateResult, crate::database::DatabaseError> {
         options.validate()?;
 
-        // Generate the API key
         let key = format!(
             "c7sp_{}",
             rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 43)
@@ -255,7 +254,7 @@ impl CreatableModel for UserApiKey {
             .set("user_uuid", options.user_uuid)
             .set("name", &options.name)
             .set("key_start", &key[0..16])
-            .set_expr("key", "crypt($?, gen_salt('xdes', 321))", vec![&key])
+            .set_expr("key", "crypt($1, gen_salt('xdes', 321))", vec![&key])
             .set("allowed_ips", &options.allowed_ips)
             .set("user_permissions", &options.user_permissions)
             .set("admin_permissions", &options.admin_permissions)

@@ -515,6 +515,9 @@ const baseTranslations = defineTranslations({
               toast: {
                 created: 'SSH key created.',
               },
+              button: {
+                uploadKeyFile: 'Upload Key File',
+              },
               form: {
                 publicKey: 'Public Key',
               },
