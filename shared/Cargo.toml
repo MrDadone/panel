@@ -21,7 +21,7 @@ clap = { workspace = true }
 include_dir = { workspace = true }
 cron = { workspace = true }
 lettre = { version = "0.11.17", default-features = false, features = ["tokio1-native-tls", "builder", "pool", "smtp-transport", "sendmail-transport", "file-transport"] }
-zip = { version = "7.0.0", default-features = false, features = ["deflate"] }
+zip = { version = "=7.1.0", default-features = false, features = ["deflate"] } # pinned due to typed-path dep conflicting with utopia
 toml = "0.9.7"
 serde = { workspace = true }
 serde_json_path = "0.7.2"
