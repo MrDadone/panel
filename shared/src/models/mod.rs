@@ -198,10 +198,10 @@ pub trait EventEmittingModel: BaseModel {
 type CreateListenerResult<'a> =
     Pin<Box<dyn Future<Output = Result<(), crate::database::DatabaseError>> + Send + 'a>>;
 type CreateListener<M> = dyn for<'a> Fn(
-        &'a mut <M as CreatableModel>::CreateOptions<'a>,
+        &'a mut <M as CreatableModel>::CreateOptions<'_>,
         &'a mut InsertQueryBuilder,
         &'a crate::State,
-        &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+        &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> CreateListenerResult<'a>
     + Send
     + Sync;
@@ -216,10 +216,10 @@ pub trait CreatableModel: BaseModel + Send + Sync + 'static {
 
     async fn register_create_handler<
         F: for<'a> Fn(
-                &'a mut Self::CreateOptions<'a>,
+                &'a mut Self::CreateOptions<'_>,
                 &'a mut InsertQueryBuilder,
                 &'a crate::State,
-                &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
             ) -> Pin<
                 Box<dyn Future<Output = Result<(), crate::database::DatabaseError>> + Send + 'a>,
             > + Send
@@ -240,10 +240,10 @@ pub trait CreatableModel: BaseModel + Send + Sync + 'static {
     /// This method will block the current thread if the lock is not available
     fn blocking_register_create_handler<
         F: for<'a> Fn(
-                &'a mut Self::CreateOptions<'a>,
+                &'a mut Self::CreateOptions<'_>,
                 &'a mut InsertQueryBuilder,
                 &'a crate::State,
-                &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
             ) -> Pin<
                 Box<dyn Future<Output = Result<(), crate::database::DatabaseError>> + Send + 'a>,
             > + Send
@@ -267,13 +267,7 @@ pub trait CreatableModel: BaseModel + Send + Sync + 'static {
         let listeners = Self::get_create_handlers().listeners.read().await;
 
         for listener in listeners.iter() {
-            let options_ref: &mut Self::CreateOptions<'_> =
-                unsafe { std::mem::transmute(options as &mut Self::CreateOptions<'_>) };
-            let transaction_ref: &mut sqlx::Transaction<'_, sqlx::Postgres> = unsafe {
-                std::mem::transmute(transaction as &mut sqlx::Transaction<'_, sqlx::Postgres>)
-            };
-
-            (*listener.callback)(options_ref, query_builder, state, transaction_ref).await?;
+            (*listener.callback)(options, query_builder, state, transaction).await?;
         }
 
         Ok(())
@@ -292,7 +286,7 @@ type UpdateListener<M> = dyn for<'a> Fn(
         &'a mut <M as UpdatableModel>::UpdateOptions,
         &'a mut UpdateQueryBuilder,
         &'a crate::State,
-        &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+        &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> UpdateListenerResult<'a>
     + Send
     + Sync;
@@ -310,7 +304,7 @@ pub trait UpdatableModel: BaseModel + Send + Sync + 'static {
                 &'a mut Self::UpdateOptions,
                 &'a mut UpdateQueryBuilder,
                 &'a crate::State,
-                &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
             ) -> Pin<
                 Box<dyn Future<Output = Result<(), crate::database::DatabaseError>> + Send + 'a>,
             > + Send
@@ -335,7 +329,7 @@ pub trait UpdatableModel: BaseModel + Send + Sync + 'static {
                 &'a mut Self::UpdateOptions,
                 &'a mut UpdateQueryBuilder,
                 &'a crate::State,
-                &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
             ) -> Pin<
                 Box<dyn Future<Output = Result<(), crate::database::DatabaseError>> + Send + 'a>,
             > + Send
@@ -360,11 +354,7 @@ pub trait UpdatableModel: BaseModel + Send + Sync + 'static {
         let listeners = Self::get_update_handlers().listeners.read().await;
 
         for listener in listeners.iter() {
-            let transaction_ref: &mut sqlx::Transaction<'_, sqlx::Postgres> = unsafe {
-                std::mem::transmute(transaction as &mut sqlx::Transaction<'_, sqlx::Postgres>)
-            };
-
-            (*listener.callback)(self, options, query_builder, state, transaction_ref).await?;
+            (*listener.callback)(self, options, query_builder, state, transaction).await?;
         }
 
         Ok(())
@@ -383,7 +373,7 @@ type DeleteListener<M> = dyn for<'a> Fn(
         &'a M,
         &'a <M as DeletableModel>::DeleteOptions,
         &'a crate::State,
-        &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+        &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> DeleteListenerResult<'a>
     + Send
     + Sync;
@@ -400,7 +390,7 @@ pub trait DeletableModel: BaseModel + Send + Sync + 'static {
                 &'a Self,
                 &'a Self::DeleteOptions,
                 &'a crate::State,
-                &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
             )
                 -> Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'a>>
             + Send
@@ -424,7 +414,7 @@ pub trait DeletableModel: BaseModel + Send + Sync + 'static {
                 &'a Self,
                 &'a Self::DeleteOptions,
                 &'a crate::State,
-                &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
             )
                 -> Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'a>>
             + Send
@@ -448,11 +438,7 @@ pub trait DeletableModel: BaseModel + Send + Sync + 'static {
         let listeners = Self::get_delete_handlers().listeners.read().await;
 
         for listener in listeners.iter() {
-            let transaction_ref: &mut sqlx::Transaction<'_, sqlx::Postgres> = unsafe {
-                std::mem::transmute(transaction as &mut sqlx::Transaction<'_, sqlx::Postgres>)
-            };
-
-            (*listener.callback)(self, options, state, transaction_ref).await?;
+            (*listener.callback)(self, options, state, transaction).await?;
         }
 
         Ok(())
