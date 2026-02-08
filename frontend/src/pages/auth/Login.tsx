@@ -34,6 +34,7 @@ export default function Login() {
   const [passkeyUuid, setPasskeyUuid] = useState('');
   const [passkeyOptions, setPasskeyOptions] = useState<CredentialRequestOptions>();
   const [twoFactorToken, setTwoFactorToken] = useState('');
+  const [timeOffset, setTimeOffset] = useState(0);
   const captchaRef = useRef<CaptchaRef>(null);
 
   const usernameForm = useForm({
@@ -77,6 +78,8 @@ export default function Login() {
 
     getSecurityKeys(usernameForm.values.username)
       .then((keys) => {
+        setTimeOffset(new Date().getTime() - keys.serverTime.getTime());
+
         if (keys.options.publicKey?.allowCredentials?.length === 0) {
           setStep('password');
         } else {
@@ -175,7 +178,10 @@ export default function Login() {
   const doSubmitTotp = () => {
     setLoading(true);
 
-    checkpointLogin({ code: totpForm.values.code, confirmation_token: twoFactorToken })
+    checkpointLogin({
+      code: totpForm.values.code,
+      confirmation_token: twoFactorToken,
+    })
       .then((response) => {
         doLogin(response.user);
       })
@@ -187,7 +193,14 @@ export default function Login() {
 
   return (
     <AuthWrapper>
-      <Stack>
+      <div className='flex flex-col space-y-4 mb-4'>
+        {(timeOffset > 5000 || timeOffset < -5000) && (
+          <Alert icon={<FontAwesomeIcon icon={faExclamationTriangle} />} color='yellow' title='Warning'>
+            Your system clock is out of sync with the server by more than 5 seconds. This may cause issues with passkey
+            authentication and two-factor authentication. Please sync your clock if issues arise. Current offset:{' '}
+            {Math.round(timeOffset / 1000)} seconds.
+          </Alert>
+        )}
         {error && (
           <Alert
             icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
@@ -199,6 +212,9 @@ export default function Login() {
             {error}
           </Alert>
         )}
+      </div>
+
+      <Stack>
         <Card>
           {step === 'username' ? (
             <Stack>

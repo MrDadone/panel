@@ -49,7 +49,7 @@ export default function ForgotPassword() {
 
   return (
     <AuthWrapper>
-      <Stack>
+      <div className='flex flex-col space-y-4 mb-4'>
         {error && (
           <Alert
             icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
@@ -72,7 +72,9 @@ export default function ForgotPassword() {
             {success}
           </Alert>
         )}
+      </div>
 
+      <Stack>
         <Card>
           <Stack>
             <Title order={2} ta='center'>

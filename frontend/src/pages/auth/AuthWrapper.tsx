@@ -14,7 +14,7 @@ export default function AuthWrapper({ title, children }: { title?: string; child
           alt='Minecraft Background'
           className='hidden md:block w-1/2 h-full object-cover opacity-90'
         />
-        <div className='md:w-1/2 h-full'>
+        <div className='md:w-1/2 h-full p-8'>
           <div className='flex flex-col items-center justify-center h-full px-2 md:px-0'>
             {title && <h1 className='text-3xl font-bold text-white mb-4'>{title}</h1>}
             {children}

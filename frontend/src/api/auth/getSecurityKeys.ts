@@ -33,6 +33,7 @@ function prepareCredentialOptions(options: CredentialRequestOptions): Credential
 
 interface Response {
   uuid: string;
+  serverTime: Date;
   options: CredentialRequestOptions;
 }
 
@@ -40,7 +41,13 @@ export default async (user: string): Promise<Response> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get('/api/auth/login/security-key', { params: { user } })
-      .then(({ data }) => resolve({ uuid: data.uuid, options: prepareCredentialOptions(data.options) }))
+      .then(({ data, headers }) =>
+        resolve({
+          uuid: data.uuid,
+          serverTime: new Date(headers['date']),
+          options: prepareCredentialOptions(data.options),
+        }),
+      )
       .catch(reject);
   });
 };

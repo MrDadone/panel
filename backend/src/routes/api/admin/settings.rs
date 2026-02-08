@@ -66,7 +66,7 @@ mod put {
         rp_origin: Option<compact_str::CompactString>,
     }
 
-    #[derive(ToSchema, Deserialize)]
+    #[derive(ToSchema, Validate, Deserialize)]
     pub struct PayloadServer {
         max_file_manager_view_size: Option<u64>,
         max_file_manager_content_search_size: Option<u64>,
@@ -99,12 +99,16 @@ mod put {
         captcha_provider: Option<shared::settings::CaptchaProvider>,
 
         #[schema(inline)]
+        #[validate(nested)]
         app: Option<PayloadApp>,
         #[schema(inline)]
+        #[validate()]
         webauthn: Option<PayloadWebauthn>,
         #[schema(inline)]
+        #[validate(nested)]
         server: Option<PayloadServer>,
         #[schema(inline)]
+        #[validate(nested)]
         activity: Option<PayloadActivity>,
     }
 

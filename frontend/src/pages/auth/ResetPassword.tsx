@@ -48,14 +48,14 @@ export default function ResetPassword() {
         navigate('/auth/login');
       })
       .catch((msg) => {
-        addToast(httpErrorToHuman(msg), 'error');
+        setError(httpErrorToHuman(msg));
       })
       .finally(() => setLoading(false));
   };
 
   return (
     <AuthWrapper>
-      <Stack>
+      <div className='flex flex-col space-y-4 mb-4'>
         {error && (
           <Alert
             icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
@@ -67,7 +67,9 @@ export default function ResetPassword() {
             {error}
           </Alert>
         )}
+      </div>
 
+      <Stack>
         <Card>
           <Stack>
             <Title order={2} ta='center'>
