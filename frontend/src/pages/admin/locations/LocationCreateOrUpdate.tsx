@@ -2,7 +2,6 @@ import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
-import { NIL as uuidNil } from 'uuid';
 import { z } from 'zod';
 import getBackupConfigurations from '@/api/admin/backup-configurations/getBackupConfigurations.ts';
 import createLocation from '@/api/admin/locations/createLocation.ts';
@@ -30,7 +29,7 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
     initialValues: {
       name: '',
       description: null,
-      backupConfigurationUuid: uuidNil,
+      backupConfigurationUuid: null,
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(adminLocationSchema),
@@ -51,7 +50,7 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
       form.setValues({
         name: contextLocation.name,
         description: contextLocation.description,
-        backupConfigurationUuid: contextLocation.backupConfiguration?.uuid ?? uuidNil,
+        backupConfigurationUuid: contextLocation.backupConfiguration?.uuid ?? null,
       });
     }
   }, [contextLocation]);
@@ -79,21 +78,17 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
           <Group grow>
             <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
             <Select
-              allowDeselect
               label='Backup Configuration'
-              data={[
-                {
-                  label: 'None',
-                  value: uuidNil,
-                },
-                ...backupConfigurations.items.map((backupConfiguration) => ({
-                  label: backupConfiguration.name,
-                  value: backupConfiguration.uuid,
-                })),
-              ]}
+              placeholder='None'
+              data={backupConfigurations.items.map((backupConfiguration) => ({
+                label: backupConfiguration.name,
+                value: backupConfiguration.uuid,
+              }))}
               searchable
               searchValue={backupConfigurations.search}
               onSearchChange={backupConfigurations.setSearch}
+              allowDeselect
+              clearable
               disabled={!canReadBackupConfigurations}
               {...form.getInputProps('backupConfigurationUuid')}
             />

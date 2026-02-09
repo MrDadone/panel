@@ -31,7 +31,10 @@ export default function StorageS3({ form }: { form: UseFormReturnType<z.infer<ty
         <TextInput withAsterisk label='Region' placeholder='Region' {...form.getInputProps('region')} />
       </Group>
 
-      <TextInput withAsterisk label='Endpoint' placeholder='Endpoint' {...form.getInputProps('endpoint')} />
+      <Group grow>
+        <TextInput withAsterisk label='Public URL' placeholder='Public URL' {...form.getInputProps('publicUrl')} />
+        <TextInput withAsterisk label='Endpoint' placeholder='Endpoint' {...form.getInputProps('endpoint')} />
+      </Group>
 
       <Switch
         label={form.values.pathStyle ? 'Using path-style URLs' : 'Using virtual-hosted-style URLs'}

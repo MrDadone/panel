@@ -13,6 +13,8 @@ export default function EmailSmtp({ form }: { form: UseFormReturnType<z.infer<ty
     form.setValues({
       host: form.values.host ?? '',
       port: form.values.port ?? 587,
+      username: form.values.username ?? null,
+      password: form.values.password ?? null,
       useTls: form.values.useTls ?? true,
       fromAddress: form.values.fromAddress ?? '',
       fromName: form.values.fromName ?? null,

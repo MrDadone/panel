@@ -8,5 +8,5 @@ export const adminUserSchema = z.object({
   password: z.string().nullable(),
   admin: z.boolean(),
   language: z.string(),
-  roleUuid: z.uuid(),
+  roleUuid: z.uuid().nullable(),
 });

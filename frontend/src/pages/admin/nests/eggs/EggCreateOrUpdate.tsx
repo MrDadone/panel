@@ -16,7 +16,6 @@ import { useForm } from '@mantine/form';
 import jsYaml from 'js-yaml';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { NIL as uuidNil } from 'uuid';
 import { z } from 'zod';
 import getEggRepositoryEggs from '@/api/admin/egg-repositories/eggs/getEggRepositoryEggs.ts';
 import getEggRepositories from '@/api/admin/egg-repositories/getEggRepositories.ts';
@@ -292,18 +291,18 @@ export default function EggCreateOrUpdate({
             />
             <Select
               label='Egg Repository Egg'
-              placeholder='Egg Repository Egg'
+              placeholder='None'
               disabled={!selectedEggRepositoryUuid}
               data={eggRepositoryEggs.items.map((eggRepositoryEgg) => ({
                 label: eggRepositoryEgg.name,
                 value: eggRepositoryEgg.uuid,
               }))}
               searchable
+              allowDeselect
               clearable
               searchValue={eggRepositoryEggs.search}
               onSearchChange={eggRepositoryEggs.setSearch}
-              value={form.values.eggRepositoryEggUuid}
-              onChange={(value) => form.setFieldValue('eggRepositoryEggUuid', value || uuidNil)}
+              {...form.getInputProps('eggRepositoryEggUuid')}
             />
           </Group>
 

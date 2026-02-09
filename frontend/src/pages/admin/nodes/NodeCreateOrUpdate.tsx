@@ -2,7 +2,6 @@ import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
-import { NIL as uuidNil } from 'uuid';
 import { z } from 'zod';
 import getBackupConfigurations from '@/api/admin/backup-configurations/getBackupConfigurations.ts';
 import getLocations from '@/api/admin/locations/getLocations.ts';
@@ -35,7 +34,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
   const form = useForm<z.infer<typeof adminNodeSchema>>({
     initialValues: {
       locationUuid: '',
-      backupConfigurationUuid: uuidNil,
+      backupConfigurationUuid: null,
       name: '',
       deploymentEnabled: true,
       maintenanceEnabled: false,
@@ -65,7 +64,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
     if (contextNode) {
       form.setValues({
         locationUuid: contextNode.location.uuid,
-        backupConfigurationUuid: contextNode.backupConfiguration?.uuid ?? uuidNil,
+        backupConfigurationUuid: contextNode.backupConfiguration?.uuid ?? null,
         name: contextNode.name,
         deploymentEnabled: contextNode.deploymentEnabled,
         maintenanceEnabled: contextNode.maintenanceEnabled,
@@ -186,21 +185,17 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
 
           <Group grow align='start'>
             <Select
-              allowDeselect
               label='Backup Configuration'
-              data={[
-                {
-                  label: 'Inherit from Location',
-                  value: uuidNil,
-                },
-                ...backupConfigurations.items.map((backupConfiguration) => ({
-                  label: backupConfiguration.name,
-                  value: backupConfiguration.uuid,
-                })),
-              ]}
+              placeholder='Inherit from Location'
+              data={backupConfigurations.items.map((backupConfiguration) => ({
+                label: backupConfiguration.name,
+                value: backupConfiguration.uuid,
+              }))}
               searchable
               searchValue={backupConfigurations.search}
               onSearchChange={backupConfigurations.setSearch}
+              allowDeselect
+              clearable
               {...form.getInputProps('backupConfigurationUuid')}
             />
             <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />

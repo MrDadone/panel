@@ -13,7 +13,6 @@ import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
 import { zones } from 'tzdata';
-import { NIL as uuidNil } from 'uuid';
 import { z } from 'zod';
 import getBackupConfigurations from '@/api/admin/backup-configurations/getBackupConfigurations.ts';
 import getEggs from '@/api/admin/nests/eggs/getEggs.ts';
@@ -52,9 +51,9 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
 
   const form = useForm<z.infer<typeof adminServerUpdateSchema>>({
     initialValues: {
-      ownerUuid: uuidNil,
-      eggUuid: uuidNil,
-      backupConfigurationUuid: uuidNil,
+      ownerUuid: '',
+      eggUuid: '',
+      backupConfigurationUuid: null,
       externalId: null,
       name: '',
       description: null,
@@ -95,7 +94,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
       form.setValues({
         ownerUuid: contextServer.owner.uuid,
         eggUuid: contextServer.egg.uuid,
-        backupConfigurationUuid: contextServer.backupConfiguration?.uuid ?? uuidNil,
+        backupConfigurationUuid: contextServer.backupConfiguration?.uuid ?? null,
         externalId: contextServer.externalId,
         name: contextServer.name,
         description: contextServer.description,
@@ -204,21 +203,17 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     {...form.getInputProps('ownerUuid')}
                   />
                   <Select
-                    allowDeselect
                     label='Backup Configuration'
-                    data={[
-                      {
-                        label: 'Inherit from Node/Location',
-                        value: uuidNil,
-                      },
-                      ...backupConfigurations.items.map((backupConfiguration) => ({
-                        label: backupConfiguration.name,
-                        value: backupConfiguration.uuid,
-                      })),
-                    ]}
+                    placeholder='Inherit from Node/Location'
+                    data={backupConfigurations.items.map((backupConfiguration) => ({
+                      label: backupConfiguration.name,
+                      value: backupConfiguration.uuid,
+                    }))}
                     searchable
                     searchValue={backupConfigurations.search}
                     onSearchChange={backupConfigurations.setSearch}
+                    allowDeselect
+                    clearable
                     disabled={!canReadBackupConfigurations}
                     {...form.getInputProps('backupConfigurationUuid')}
                   />

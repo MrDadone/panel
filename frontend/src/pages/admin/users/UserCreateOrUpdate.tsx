@@ -1,7 +1,6 @@
 import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useEffect, useState } from 'react';
-import { NIL as uuidNil } from 'uuid';
 import { z } from 'zod';
 import getRoles from '@/api/admin/roles/getRoles.ts';
 import createUser from '@/api/admin/users/createUser.ts';
@@ -40,7 +39,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
       password: '',
       admin: false,
       language: settings.app.language,
-      roleUuid: uuidNil,
+      roleUuid: null,
     },
   });
 
@@ -61,10 +60,10 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
         email: contextUser.email,
         nameFirst: contextUser.nameFirst,
         nameLast: contextUser.nameLast,
-        password: null,
+        password: undefined,
         admin: contextUser.admin,
         language: contextUser.language,
-        roleUuid: contextUser.role?.uuid ?? uuidNil,
+        roleUuid: contextUser.role?.uuid ?? null,
       });
     }
   }, [contextUser]);
@@ -136,7 +135,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
 
             <Select
               label='Role'
-              placeholder='Role'
+              placeholder='None'
               data={roles.items.map((role) => ({
                 label: role.name,
                 value: role.uuid,
@@ -145,9 +144,9 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
               searchValue={roles.search}
               onSearchChange={roles.setSearch}
               allowDeselect
+              clearable
               disabled={!canReadRoles}
               {...form.getInputProps('roleUuid')}
-              onChange={(value) => form.setFieldValue('roleUuid', value || uuidNil)}
             />
           </Group>
 

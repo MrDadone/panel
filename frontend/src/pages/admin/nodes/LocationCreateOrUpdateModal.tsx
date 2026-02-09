@@ -2,7 +2,6 @@ import { Group, Stack, Text } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
-import { NIL as uuidNil } from 'uuid';
 import { z } from 'zod';
 import getBackupConfigurations from '@/api/admin/backup-configurations/getBackupConfigurations.ts';
 import createLocation from '@/api/admin/locations/createLocation.ts';
@@ -37,7 +36,7 @@ export default function LocationCreateOrUpdateModal({
     initialValues: {
       name: '',
       description: null,
-      backupConfigurationUuid: uuidNil,
+      backupConfigurationUuid: null,
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(adminLocationSchema),
@@ -80,21 +79,17 @@ export default function LocationCreateOrUpdateModal({
             <Group grow>
               <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
               <Select
-                allowDeselect
                 label='Backup Configuration'
-                data={[
-                  {
-                    label: 'None',
-                    value: uuidNil,
-                  },
-                  ...backupConfigurations.items.map((backupConfiguration) => ({
-                    label: backupConfiguration.name,
-                    value: backupConfiguration.uuid,
-                  })),
-                ]}
+                placeholder='None'
+                data={backupConfigurations.items.map((backupConfiguration) => ({
+                  label: backupConfiguration.name,
+                  value: backupConfiguration.uuid,
+                }))}
                 searchable
                 searchValue={backupConfigurations.search}
                 onSearchChange={backupConfigurations.setSearch}
+                allowDeselect
+                clearable
                 disabled={!canReadBackupConfigurations}
                 {...form.getInputProps('backupConfigurationUuid')}
               />
