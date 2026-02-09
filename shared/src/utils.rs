@@ -1,3 +1,4 @@
+use compact_str::ToCompactString;
 use validator::{Validate, ValidationErrors, ValidationErrorsKind};
 
 #[inline]
@@ -30,9 +31,9 @@ pub fn flatten_validation_errors(errors: &ValidationErrors, prefix: &str) -> Vec
 
     for (field, kind) in errors.errors() {
         let full_name = if prefix.is_empty() {
-            field.to_string()
+            field.to_compact_string()
         } else {
-            format!("{}.{}", prefix, field)
+            compact_str::format_compact!("{}.{}", prefix, field)
         };
 
         match kind {
@@ -50,7 +51,7 @@ pub fn flatten_validation_errors(errors: &ValidationErrors, prefix: &str) -> Vec
             }
             ValidationErrorsKind::List(list_errors) => {
                 for (index, nested_errors) in list_errors {
-                    let list_prefix = format!("{}[{}]", full_name, index);
+                    let list_prefix = compact_str::format_compact!("{}[{}]", full_name, index);
                     messages.extend(flatten_validation_errors(nested_errors, &list_prefix));
                 }
             }

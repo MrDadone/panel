@@ -5,6 +5,8 @@
 //! and ensure consistency across the project. If something for a job exists in here,
 //! it's generally preferred to be used instead of re-implementing it elsewhere.
 
+use anyhow::Context;
+use colored::Colorize;
 use include_dir::{Dir, include_dir};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -99,6 +101,68 @@ pub struct AppState {
     pub database: Arc<database::Database>,
     pub cache: Arc<cache::Cache>,
     pub env: Arc<env::Env>,
+}
+
+impl AppState {
+    pub async fn new_cli(env: Option<Arc<env::Env>>) -> Result<State, anyhow::Error> {
+        let env = match env {
+            Some(env) => env,
+            None => {
+                eprintln!(
+                    "{}",
+                    "please setup the new panel environment before using this command.".red()
+                );
+                std::process::exit(1);
+            }
+        };
+
+        let jwt = Arc::new(jwt::Jwt::new(&env));
+        let cache = Arc::new(cache::Cache::new(&env).await);
+        let database = Arc::new(database::Database::new(&env, cache.clone()).await);
+
+        let background_tasks =
+            Arc::new(extensions::background_tasks::BackgroundTaskManager::default());
+        let shutdown_handlers =
+            Arc::new(extensions::shutdown_handlers::ShutdownHandlerManager::default());
+        let settings = Arc::new(
+            settings::Settings::new(database.clone())
+                .await
+                .context("failed to load settings")?,
+        );
+        let storage = Arc::new(storage::Storage::new(settings.clone()));
+        let captcha = Arc::new(captcha::Captcha::new(settings.clone()));
+        let mail = Arc::new(mail::Mail::new(settings.clone()));
+
+        let state = Arc::new(AppState {
+            start_time: Instant::now(),
+            container_type: match std::env::var("OCI_CONTAINER").as_deref() {
+                Ok("official") => AppContainerType::Official,
+                Ok("official-heavy") => AppContainerType::OfficialHeavy,
+                Ok(_) => AppContainerType::Unknown,
+                Err(_) => AppContainerType::None,
+            },
+            version: format!("{}:{}@{}", VERSION, GIT_COMMIT, GIT_BRANCH),
+
+            client: reqwest::ClientBuilder::new()
+                .user_agent(format!("github.com/calagopus/panel {}", VERSION))
+                .build()
+                .unwrap(),
+
+            extensions: Arc::new(extensions::manager::ExtensionManager::new(vec![])),
+            background_tasks: background_tasks.clone(),
+            shutdown_handlers: shutdown_handlers.clone(),
+            settings: settings.clone(),
+            jwt,
+            storage,
+            captcha,
+            mail,
+            database: database.clone(),
+            cache: cache.clone(),
+            env: env.clone(),
+        });
+
+        Ok(state)
+    }
 }
 
 pub type State = Arc<AppState>;

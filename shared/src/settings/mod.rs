@@ -21,13 +21,10 @@ use std::{
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard, Semaphore, SemaphorePermit};
 use utoipa::ToSchema;
 
-#[derive(ToSchema, Serialize, Deserialize, Clone, Copy)]
-#[serde(rename_all = "snake_case")]
-pub enum TwoFactorRequirement {
-    Admins,
-    AllUsers,
-    None,
-}
+pub mod activity;
+pub mod app;
+pub mod server;
+pub mod webauthn;
 
 #[derive(ToSchema, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -162,287 +159,6 @@ pub enum PublicCaptchaProvider<'a> {
     Hcaptcha { site_key: &'a str },
 }
 
-#[derive(Clone, ToSchema, Serialize, Deserialize)]
-pub struct AppSettingsApp {
-    pub name: compact_str::CompactString,
-    pub url: compact_str::CompactString,
-    pub language: compact_str::CompactString,
-    pub two_factor_requirement: TwoFactorRequirement,
-
-    pub telemetry_enabled: bool,
-    pub registration_enabled: bool,
-}
-
-#[async_trait::async_trait]
-impl SettingsSerializeExt for AppSettingsApp {
-    async fn serialize(
-        &self,
-        serializer: SettingsSerializer,
-    ) -> Result<SettingsSerializer, anyhow::Error> {
-        Ok(serializer
-            .write_raw_setting("name", &*self.name)
-            .write_raw_setting("url", &*self.url)
-            .write_raw_setting("language", &*self.language)
-            .write_raw_setting(
-                "two_factor_requirement",
-                match self.two_factor_requirement {
-                    TwoFactorRequirement::Admins => "admins",
-                    TwoFactorRequirement::AllUsers => "all_users",
-                    TwoFactorRequirement::None => "none",
-                },
-            )
-            .write_raw_setting(
-                "telemetry_enabled",
-                self.telemetry_enabled.to_compact_string(),
-            )
-            .write_raw_setting(
-                "registration_enabled",
-                self.registration_enabled.to_compact_string(),
-            ))
-    }
-}
-
-pub struct AppSettingsAppDeserializer;
-
-#[async_trait::async_trait]
-impl SettingsDeserializeExt for AppSettingsAppDeserializer {
-    async fn deserialize_boxed(
-        &self,
-        mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<ExtensionSettings, anyhow::Error> {
-        Ok(Box::new(AppSettingsApp {
-            name: deserializer
-                .take_raw_setting("name")
-                .unwrap_or_else(|| "Calagopus".into()),
-            url: deserializer
-                .take_raw_setting("url")
-                .unwrap_or_else(|| "http://localhost:8000".into()),
-            language: deserializer
-                .take_raw_setting("language")
-                .unwrap_or_else(|| "en-US".into()),
-            two_factor_requirement: match deserializer
-                .take_raw_setting("two_factor_requirement")
-                .as_deref()
-            {
-                Some("admins") => TwoFactorRequirement::Admins,
-                Some("all_users") => TwoFactorRequirement::AllUsers,
-                _ => TwoFactorRequirement::None,
-            },
-            telemetry_enabled: deserializer
-                .take_raw_setting("telemetry_enabled")
-                .map(|s| s == "true")
-                .unwrap_or(true),
-            registration_enabled: deserializer
-                .take_raw_setting("registration_enabled")
-                .map(|s| s == "true")
-                .unwrap_or(true),
-        }))
-    }
-}
-
-#[derive(Clone, ToSchema, Serialize, Deserialize)]
-pub struct AppSettingsWebauthn {
-    pub rp_id: compact_str::CompactString,
-    pub rp_origin: compact_str::CompactString,
-}
-
-#[async_trait::async_trait]
-impl SettingsSerializeExt for AppSettingsWebauthn {
-    async fn serialize(
-        &self,
-        serializer: SettingsSerializer,
-    ) -> Result<SettingsSerializer, anyhow::Error> {
-        Ok(serializer
-            .write_raw_setting("rp_id", &*self.rp_id)
-            .write_raw_setting("rp_origin", &*self.rp_origin))
-    }
-}
-
-pub struct AppSettingsWebauthnDeserializer;
-
-#[async_trait::async_trait]
-impl SettingsDeserializeExt for AppSettingsWebauthnDeserializer {
-    async fn deserialize_boxed(
-        &self,
-        mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<ExtensionSettings, anyhow::Error> {
-        Ok(Box::new(AppSettingsWebauthn {
-            rp_id: deserializer
-                .take_raw_setting("rp_id")
-                .unwrap_or_else(|| "localhost".into()),
-            rp_origin: deserializer
-                .take_raw_setting("rp_origin")
-                .unwrap_or_else(|| "http://localhost".into()),
-        }))
-    }
-}
-
-#[derive(Clone, ToSchema, Serialize, Deserialize)]
-pub struct AppSettingsServer {
-    pub max_file_manager_view_size: u64,
-    pub max_file_manager_content_search_size: u64,
-    pub max_file_manager_search_results: u64,
-    pub max_schedules_step_count: u64,
-
-    pub allow_overwriting_custom_docker_image: bool,
-    pub allow_editing_startup_command: bool,
-    pub allow_viewing_installation_logs: bool,
-}
-
-#[async_trait::async_trait]
-impl SettingsSerializeExt for AppSettingsServer {
-    async fn serialize(
-        &self,
-        serializer: SettingsSerializer,
-    ) -> Result<SettingsSerializer, anyhow::Error> {
-        Ok(serializer
-            .write_raw_setting(
-                "max_file_manager_view_size",
-                self.max_file_manager_view_size.to_compact_string(),
-            )
-            .write_raw_setting(
-                "max_file_manager_content_search_size",
-                self.max_file_manager_content_search_size
-                    .to_compact_string(),
-            )
-            .write_raw_setting(
-                "max_file_manager_search_results",
-                self.max_file_manager_search_results.to_compact_string(),
-            )
-            .write_raw_setting(
-                "max_schedules_step_count",
-                self.max_schedules_step_count.to_compact_string(),
-            )
-            .write_raw_setting(
-                "allow_overwriting_custom_docker_image",
-                self.allow_overwriting_custom_docker_image
-                    .to_compact_string(),
-            )
-            .write_raw_setting(
-                "allow_editing_startup_command",
-                self.allow_editing_startup_command.to_compact_string(),
-            )
-            .write_raw_setting(
-                "allow_viewing_installation_logs",
-                self.allow_viewing_installation_logs.to_compact_string(),
-            ))
-    }
-}
-
-pub struct AppSettingsServerDeserializer;
-
-#[async_trait::async_trait]
-impl SettingsDeserializeExt for AppSettingsServerDeserializer {
-    async fn deserialize_boxed(
-        &self,
-        mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<ExtensionSettings, anyhow::Error> {
-        Ok(Box::new(AppSettingsServer {
-            max_file_manager_view_size: deserializer
-                .take_raw_setting("max_file_manager_view_size")
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(10 * 1024 * 1024),
-            max_file_manager_content_search_size: deserializer
-                .take_raw_setting("max_file_manager_content_search_size")
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(5 * 1024 * 1024),
-            max_file_manager_search_results: deserializer
-                .take_raw_setting("max_file_manager_search_results")
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(100),
-            max_schedules_step_count: deserializer
-                .take_raw_setting("max_schedules_step_count")
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(100),
-            allow_overwriting_custom_docker_image: deserializer
-                .take_raw_setting("allow_overwriting_custom_docker_image")
-                .map(|s| s == "true")
-                .unwrap_or(true),
-            allow_editing_startup_command: deserializer
-                .take_raw_setting("allow_editing_startup_command")
-                .map(|s| s == "true")
-                .unwrap_or(false),
-            allow_viewing_installation_logs: deserializer
-                .take_raw_setting("allow_viewing_installation_logs")
-                .map(|s| s == "true")
-                .unwrap_or(true),
-        }))
-    }
-}
-
-#[derive(Clone, ToSchema, Serialize, Deserialize)]
-pub struct AppSettingsActivity {
-    pub admin_log_retention_days: u16,
-    pub user_log_retention_days: u16,
-    pub server_log_retention_days: u16,
-
-    pub server_log_admin_activity: bool,
-    pub server_log_schedule_activity: bool,
-}
-
-#[async_trait::async_trait]
-impl SettingsSerializeExt for AppSettingsActivity {
-    async fn serialize(
-        &self,
-        serializer: SettingsSerializer,
-    ) -> Result<SettingsSerializer, anyhow::Error> {
-        Ok(serializer
-            .write_raw_setting(
-                "admin_log_retention_days",
-                self.admin_log_retention_days.to_compact_string(),
-            )
-            .write_raw_setting(
-                "user_log_retention_days",
-                self.user_log_retention_days.to_compact_string(),
-            )
-            .write_raw_setting(
-                "server_log_retention_days",
-                self.server_log_retention_days.to_compact_string(),
-            )
-            .write_raw_setting(
-                "server_log_admin_activity",
-                self.server_log_admin_activity.to_compact_string(),
-            )
-            .write_raw_setting(
-                "server_log_schedule_activity",
-                self.server_log_schedule_activity.to_compact_string(),
-            ))
-    }
-}
-
-pub struct AppSettingsActivityDeserializer;
-
-#[async_trait::async_trait]
-impl SettingsDeserializeExt for AppSettingsActivityDeserializer {
-    async fn deserialize_boxed(
-        &self,
-        mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<ExtensionSettings, anyhow::Error> {
-        Ok(Box::new(AppSettingsActivity {
-            admin_log_retention_days: deserializer
-                .take_raw_setting("admin_log_retention_days")
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(180),
-            user_log_retention_days: deserializer
-                .take_raw_setting("user_log_retention_days")
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(180),
-            server_log_retention_days: deserializer
-                .take_raw_setting("server_log_retention_days")
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(90),
-            server_log_admin_activity: deserializer
-                .take_raw_setting("server_log_admin_activity")
-                .map(|s| s == "true")
-                .unwrap_or(true),
-            server_log_schedule_activity: deserializer
-                .take_raw_setting("server_log_schedule_activity")
-                .map(|s| s == "true")
-                .unwrap_or(true),
-        }))
-    }
-}
-
 #[derive(ToSchema, Serialize, Deserialize)]
 pub struct AppSettings {
     pub telemetry_uuid: Option<uuid::Uuid>,
@@ -455,13 +171,13 @@ pub struct AppSettings {
     pub captcha_provider: CaptchaProvider,
 
     #[schema(inline)]
-    pub app: AppSettingsApp,
+    pub app: app::AppSettingsApp,
     #[schema(inline)]
-    pub webauthn: AppSettingsWebauthn,
+    pub webauthn: webauthn::AppSettingsWebauthn,
     #[schema(inline)]
-    pub server: AppSettingsServer,
+    pub server: server::AppSettingsServer,
     #[schema(inline)]
-    pub activity: AppSettingsActivity,
+    pub activity: activity::AppSettingsActivity,
 
     #[serde(skip)]
     pub extensions: HashMap<&'static str, ExtensionSettings>,
@@ -909,16 +625,16 @@ impl SettingsDeserializeExt for AppSettingsDeserializer {
                 _ => CaptchaProvider::None,
             },
             app: deserializer
-                .nest("app", &AppSettingsAppDeserializer)
+                .nest("app", &app::AppSettingsAppDeserializer)
                 .await?,
             webauthn: deserializer
-                .nest("webauthn", &AppSettingsWebauthnDeserializer)
+                .nest("webauthn", &webauthn::AppSettingsWebauthnDeserializer)
                 .await?,
             server: deserializer
-                .nest("server", &AppSettingsServerDeserializer)
+                .nest("server", &server::AppSettingsServerDeserializer)
                 .await?,
             activity: deserializer
-                .nest("activity", &AppSettingsActivityDeserializer)
+                .nest("activity", &activity::AppSettingsActivityDeserializer)
                 .await?,
             extensions,
         }))

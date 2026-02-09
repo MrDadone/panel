@@ -494,6 +494,48 @@ impl User {
         row.try_map(|row| Self::map(None, &row))
     }
 
+    pub async fn by_email_password(
+        database: &crate::database::Database,
+        email: &str,
+        password: &str,
+    ) -> Result<Option<Self>, crate::database::DatabaseError> {
+        let row = sqlx::query(&format!(
+            r#"
+            SELECT {}
+            FROM users
+            LEFT JOIN roles ON roles.uuid = users.role_uuid
+            WHERE lower(users.email) = lower($1) AND users.password = crypt($2, users.password)
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(email)
+        .bind(password)
+        .fetch_optional(database.read())
+        .await?;
+
+        row.try_map(|row| Self::map(None, &row))
+    }
+
+    pub async fn by_username(
+        database: &crate::database::Database,
+        username: &str,
+    ) -> Result<Option<Self>, crate::database::DatabaseError> {
+        let row = sqlx::query(&format!(
+            r#"
+            SELECT {}
+            FROM users
+            LEFT JOIN roles ON roles.uuid = users.role_uuid
+            WHERE lower(users.username) = lower($1)
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(username)
+        .fetch_optional(database.read())
+        .await?;
+
+        row.try_map(|row| Self::map(None, &row))
+    }
+
     pub async fn by_username_password(
         database: &crate::database::Database,
         username: &str,
@@ -537,28 +579,6 @@ impl User {
                 .fingerprint(russh::keys::HashAlg::Sha256)
                 .to_string(),
         )
-        .fetch_optional(database.read())
-        .await?;
-
-        row.try_map(|row| Self::map(None, &row))
-    }
-
-    pub async fn by_email_password(
-        database: &crate::database::Database,
-        email: &str,
-        password: &str,
-    ) -> Result<Option<Self>, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            SELECT {}
-            FROM users
-            LEFT JOIN roles ON roles.uuid = users.role_uuid
-            WHERE lower(users.email) = lower($1) AND users.password = crypt($2, users.password)
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(email)
-        .bind(password)
         .fetch_optional(database.read())
         .await?;
 
@@ -700,9 +720,9 @@ impl User {
             role.require_two_factor
         } else {
             match settings.app.two_factor_requirement {
-                crate::settings::TwoFactorRequirement::Admins => self.admin,
-                crate::settings::TwoFactorRequirement::AllUsers => true,
-                crate::settings::TwoFactorRequirement::None => false,
+                crate::settings::app::TwoFactorRequirement::Admins => self.admin,
+                crate::settings::app::TwoFactorRequirement::AllUsers => true,
+                crate::settings::app::TwoFactorRequirement::None => false,
             }
         }
     }
@@ -774,8 +794,8 @@ pub struct CreateUserOptions {
     #[validate(length(min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub name_last: compact_str::CompactString,
-    #[validate(length(min = 8, max = 512))]
-    #[schema(min_length = 8, max_length = 512)]
+    #[validate(length(min = 1, max = 512))]
+    #[schema(min_length = 1, max_length = 512)]
     pub password: String,
 
     pub admin: bool,

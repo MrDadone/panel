@@ -53,7 +53,7 @@ mod put {
             custom(function = "shared::validate_language")
         )]
         language: Option<compact_str::CompactString>,
-        two_factor_requirement: Option<shared::settings::TwoFactorRequirement>,
+        two_factor_requirement: Option<shared::settings::app::TwoFactorRequirement>,
         telemetry_enabled: Option<bool>,
         registration_enabled: Option<bool>,
     }

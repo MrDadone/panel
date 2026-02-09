@@ -160,6 +160,20 @@ async fn main() {
                         std::process::exit(0);
                     }
                     Err(err) => {
+                        if let Some(shared::database::DatabaseError::Validation(error)) =
+                            err.downcast_ref::<shared::database::DatabaseError>()
+                        {
+                            let error_messages =
+                                shared::utils::flatten_validation_errors(error, "");
+
+                            eprintln!("{}", "validation error(s) occurred:".red());
+                            for message in error_messages {
+                                eprintln!("  {}", message.red());
+                            }
+
+                            std::process::exit(1);
+                        }
+
                         eprintln!(
                             "{}: {:#?}",
                             "an error occurred while running cli command".red(),

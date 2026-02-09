@@ -215,11 +215,11 @@ impl Database {
     }
 
     #[inline]
-    pub async fn batch_action<F: Future<Output = Result<(), anyhow::Error>> + Send + 'static>(
+    pub async fn batch_action(
         &self,
         key: &'static str,
         uuid: uuid::Uuid,
-        action: F,
+        action: impl Future<Output = Result<(), anyhow::Error>> + Send + 'static,
     ) {
         let mut actions = self.batch_actions.lock().await;
         actions.insert((key, uuid), Box::pin(action));

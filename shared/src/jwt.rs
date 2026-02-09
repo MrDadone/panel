@@ -51,7 +51,7 @@ impl BasePayload {
 }
 
 pub struct Jwt {
-    pub key: hmac::Hmac<sha2::Sha256>,
+    key: hmac::Hmac<sha2::Sha256>,
 }
 
 impl Jwt {

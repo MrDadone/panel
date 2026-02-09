@@ -4,6 +4,7 @@ mod diagnostics;
 mod extensions;
 mod import;
 mod service_install;
+mod user;
 mod version;
 
 pub fn commands(cli: CliCommandGroupBuilder) -> CliCommandGroupBuilder {
@@ -22,6 +23,7 @@ pub fn commands(cli: CliCommandGroupBuilder) -> CliCommandGroupBuilder {
         "Gets Diagnostic Data for the Panel.",
         diagnostics::DiagnosticsCommand,
     )
+    .add_group("user", "Manage users within the Panel.", user::commands)
     .add_group(
         "import",
         "Import data from other panel software into Calagopus.",
