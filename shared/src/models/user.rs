@@ -947,6 +947,8 @@ impl UpdatableModel for User {
             .set("language", options.language.as_ref())
             .where_eq("uuid", self.uuid);
 
+        query_builder.execute(&mut *transaction).await?;
+
         if let Some(role) = role {
             self.role = role;
         }
