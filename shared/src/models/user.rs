@@ -855,8 +855,8 @@ pub struct UpdateUserOptions {
     )]
     pub role_uuid: Option<Option<uuid::Uuid>>,
 
-    #[validate(length(max = 255))]
-    #[schema(max_length = 255)]
+    #[validate(length(min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",

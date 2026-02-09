@@ -319,8 +319,7 @@ impl CreatableModel for UserOAuthLink {
     ) -> Result<Self, crate::database::DatabaseError> {
         options.validate()?;
 
-        // Validate oauth_provider_uuid
-        super::oauth_provider::OAuthProvider::by_uuid_optional(
+        super::oauth_provider::OAuthProvider::by_uuid_optional_cached(
             &state.database,
             options.oauth_provider_uuid,
         )

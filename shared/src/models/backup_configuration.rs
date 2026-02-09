@@ -373,6 +373,8 @@ impl CreatableModel for BackupConfiguration {
         Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
             .await?;
 
+        options.backup_configs.encrypt(&state.database).await?;
+
         query_builder
             .set("name", &options.name)
             .set("description", &options.description)
@@ -455,7 +457,9 @@ impl UpdatableModel for BackupConfiguration {
             .set("backup_disk", options.backup_disk)
             .set(
                 "backup_configs",
-                if let Some(backup_configs) = &options.backup_configs {
+                if let Some(backup_configs) = &mut options.backup_configs {
+                    backup_configs.encrypt(&state.database).await?;
+
                     Some(serde_json::to_value(backup_configs)?)
                 } else {
                     None

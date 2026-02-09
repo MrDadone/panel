@@ -833,13 +833,13 @@ impl<'a> UpdateQueryBuilder<'a> {
         column: &'a str,
         value: Option<T>,
     ) -> &mut Self {
-        if !self.updated_fields.insert(column) {
-            return self;
-        }
-
         let Some(value) = value else {
             return self;
         };
+
+        if !self.updated_fields.insert(column) {
+            return self;
+        }
 
         if self.has_set_fields {
             self.builder.push(", ");
@@ -868,14 +868,12 @@ impl<'a> UpdateQueryBuilder<'a> {
     pub async fn execute(
         mut self,
         executor: impl sqlx::Executor<'a, Database = Postgres>,
-    ) -> Result<sqlx::postgres::PgQueryResult, sqlx::Error> {
+    ) -> Result<sqlx::any::AnyQueryResult, sqlx::Error> {
         if !self.has_set_fields {
-            return Err(sqlx::Error::Protocol(
-                "No fields were set for update".into(),
-            ));
+            return Ok(sqlx::any::AnyQueryResult::default());
         }
 
         let query = self.builder.build();
-        query.execute(executor).await
+        query.execute(executor).await.map(|r| r.into())
     }
 }

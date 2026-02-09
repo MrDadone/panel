@@ -174,7 +174,7 @@ impl CreatableModel for LocationDatabaseHost {
     ) -> Result<Self, crate::database::DatabaseError> {
         options.validate()?;
 
-        super::database_host::DatabaseHost::by_uuid_optional(
+        super::database_host::DatabaseHost::by_uuid_optional_cached(
             &state.database,
             options.database_host_uuid,
         )

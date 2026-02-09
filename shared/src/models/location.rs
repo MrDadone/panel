@@ -228,7 +228,7 @@ impl CreatableModel for Location {
         options.validate()?;
 
         if let Some(backup_configuration_uuid) = &options.backup_configuration_uuid {
-            super::backup_configuration::BackupConfiguration::by_uuid_optional(
+            super::backup_configuration::BackupConfiguration::by_uuid_optional_cached(
                 &state.database,
                 *backup_configuration_uuid,
             )
@@ -308,7 +308,7 @@ impl UpdatableModel for Location {
             if let Some(backup_configuration_uuid) = &options.backup_configuration_uuid {
                 match backup_configuration_uuid {
                     Some(uuid) => {
-                        super::backup_configuration::BackupConfiguration::by_uuid_optional(
+                        super::backup_configuration::BackupConfiguration::by_uuid_optional_cached(
                             &state.database,
                             *uuid,
                         )

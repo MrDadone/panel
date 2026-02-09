@@ -213,7 +213,7 @@ impl CreatableModel for NodeMount {
     ) -> Result<Self, crate::database::DatabaseError> {
         options.validate()?;
 
-        super::mount::Mount::by_uuid_optional(&state.database, options.mount_uuid)
+        super::mount::Mount::by_uuid_optional_cached(&state.database, options.mount_uuid)
             .await?
             .ok_or(crate::database::InvalidRelationError("mount"))?;
 

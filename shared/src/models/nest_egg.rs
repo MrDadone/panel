@@ -852,7 +852,7 @@ impl CreatableModel for NestEgg {
         options.validate()?;
 
         if let Some(egg_repository_egg_uuid) = options.egg_repository_egg_uuid {
-            super::egg_repository_egg::EggRepositoryEgg::by_uuid_optional(
+            super::egg_repository_egg::EggRepositoryEgg::by_uuid_optional_cached(
                 &state.database,
                 egg_repository_egg_uuid,
             )
@@ -975,7 +975,7 @@ impl UpdatableModel for NestEgg {
             if let Some(egg_repository_egg_uuid) = &options.egg_repository_egg_uuid {
                 match egg_repository_egg_uuid {
                     Some(uuid) => {
-                        super::egg_repository_egg::EggRepositoryEgg::by_uuid_optional(
+                        super::egg_repository_egg::EggRepositoryEgg::by_uuid_optional_cached(
                             &state.database,
                             *uuid,
                         )
