@@ -115,7 +115,6 @@ export default function ScheduleDynamicParameterInput<N extends boolean = false,
           },
         ]}
         onChange={(v) => {
-          console.log(v, typeof value);
           switch (v) {
             case 'null':
               if (value !== null) {

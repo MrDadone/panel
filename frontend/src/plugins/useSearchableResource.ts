@@ -42,10 +42,10 @@ export function useSearchableResource<T>({
 
   useEffect(() => {
     setDebouncedSearch(search);
-  }, [search, setDebouncedSearch]);
+  }, [search]);
 
   useEffect(() => {
-    if (deps.filter((d) => !!d).length !== deps.length) {
+    if (!deps?.length || deps.filter((d) => !!d).length !== deps.length) {
       return;
     }
 

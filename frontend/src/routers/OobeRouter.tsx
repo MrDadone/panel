@@ -58,8 +58,6 @@ export default function OobeRouter() {
       });
     }
 
-    console.log('navigating', to(nextStep.path, '/oobe'));
-
     navigate(to(nextStep.path, '/oobe'));
   };
 

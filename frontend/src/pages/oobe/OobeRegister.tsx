@@ -49,7 +49,6 @@ export default function OobeRegister({ onNext }: OobeComponentProps) {
     })
       .then((response) => {
         doLogin(response.user!, false);
-        console.log('next');
         onNext();
       })
       .catch((msg) => {

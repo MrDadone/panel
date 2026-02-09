@@ -31,7 +31,7 @@ export default function OobeConfiguration({ onNext }: OobeComponentProps) {
       applicationLanguage: 'en-US',
       applicationUrl: '',
       applicationTelemetry: true,
-      applicationRegistration: true,
+      applicationRegistration: false,
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(oobeConfigurationSchema),
