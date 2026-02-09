@@ -36,18 +36,16 @@ export default function BackupS3({
         </Group>
 
         <Group grow>
-          <TextInput withAsterisk label='Public URL' placeholder='Public URL' {...form.getInputProps('publicUrl')} />
           <TextInput withAsterisk label='Endpoint' placeholder='Endpoint' {...form.getInputProps('endpoint')} />
+          <SizeInput
+            withAsterisk
+            label='Part Size'
+            mode='b'
+            min={0}
+            value={form.values.partSize}
+            onChange={(v) => form.setFieldValue('partSize', v)}
+          />
         </Group>
-
-        <SizeInput
-          withAsterisk
-          label='Part Size'
-          mode='b'
-          min={0}
-          value={form.values.partSize}
-          onChange={(v) => form.setFieldValue('partSize', v)}
-        />
 
         <Switch
           label={form.values.pathStyle ? 'Using path-style URLs' : 'Using virtual-hosted-style URLs'}
