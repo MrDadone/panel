@@ -412,10 +412,20 @@ pub struct UpdateDatabaseHostOptions {
 
     #[validate(length(max = 255))]
     #[schema(max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     public_host: Option<Option<compact_str::CompactString>>,
     #[validate(length(min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     host: Option<compact_str::CompactString>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     public_port: Option<Option<u16>>,
     port: Option<u16>,
 

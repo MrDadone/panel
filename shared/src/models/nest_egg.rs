@@ -851,7 +851,6 @@ impl CreatableModel for NestEgg {
     ) -> Result<Self, crate::database::DatabaseError> {
         options.validate()?;
 
-        // Validate egg_repository_egg_uuid if provided
         if let Some(egg_repository_egg_uuid) = options.egg_repository_egg_uuid {
             super::egg_repository_egg::EggRepositoryEgg::by_uuid_optional(
                 &state.database,
@@ -912,6 +911,11 @@ impl CreatableModel for NestEgg {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UpdateNestEggOptions {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub egg_repository_egg_uuid: Option<Option<uuid::Uuid>>,
     #[validate(length(min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
@@ -921,6 +925,11 @@ pub struct UpdateNestEggOptions {
     pub name: Option<compact_str::CompactString>,
     #[validate(length(min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub description: Option<Option<compact_str::CompactString>>,
     #[schema(inline)]
     pub config_files: Option<Vec<ProcessConfigurationFile>>,
@@ -962,7 +971,7 @@ impl UpdatableModel for NestEgg {
     ) -> Result<(), crate::database::DatabaseError> {
         options.validate()?;
 
-        let new_egg_repository_egg_fetchable =
+        let egg_repository_egg =
             if let Some(egg_repository_egg_uuid) = &options.egg_repository_egg_uuid {
                 match egg_repository_egg_uuid {
                     Some(uuid) => {
@@ -1063,7 +1072,7 @@ impl UpdatableModel for NestEgg {
 
         query_builder.execute(&mut *transaction).await?;
 
-        if let Some(egg_repository_egg) = new_egg_repository_egg_fetchable {
+        if let Some(egg_repository_egg) = egg_repository_egg {
             self.egg_repository_egg = egg_repository_egg;
         }
         if let Some(author) = options.author {

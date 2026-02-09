@@ -512,6 +512,11 @@ pub struct UpdateOAuthProviderOptions {
     pub name: Option<compact_str::CompactString>,
     #[validate(length(min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub description: Option<Option<compact_str::CompactString>>,
     pub enabled: Option<bool>,
     pub login_only: Option<bool>,
@@ -544,15 +549,35 @@ pub struct UpdateOAuthProviderOptions {
     pub identifier_path: Option<String>,
     #[validate(length(min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub email_path: Option<Option<String>>,
     #[validate(length(min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub username_path: Option<Option<String>>,
     #[validate(length(min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub name_first_path: Option<Option<String>>,
     #[validate(length(min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub name_last_path: Option<Option<String>>,
 }
 

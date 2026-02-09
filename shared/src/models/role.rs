@@ -220,6 +220,11 @@ pub struct UpdateRoleOptions {
     pub name: Option<compact_str::CompactString>,
     #[validate(length(min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub description: Option<Option<compact_str::CompactString>>,
     pub require_two_factor: Option<bool>,
     #[validate(custom(function = "crate::permissions::validate_admin_permissions"))]

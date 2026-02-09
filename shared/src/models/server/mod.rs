@@ -1767,18 +1767,33 @@ impl CreatableModel for Server {
 pub struct UpdateServerOptions {
     pub owner_uuid: Option<uuid::Uuid>,
     pub egg_uuid: Option<uuid::Uuid>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub backup_configuration_uuid: Option<Option<uuid::Uuid>>,
 
     pub suspended: Option<bool>,
 
     #[validate(length(min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub external_id: Option<Option<compact_str::CompactString>>,
     #[validate(length(min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
     #[validate(length(min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub description: Option<Option<compact_str::CompactString>>,
 
     #[validate(nested)]
@@ -1792,6 +1807,11 @@ pub struct UpdateServerOptions {
     #[schema(min_length = 2, max_length = 255)]
     pub image: Option<compact_str::CompactString>,
     #[schema(value_type = Option<Option<String>>)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub timezone: Option<Option<chrono_tz::Tz>>,
 
     pub hugepages_passthrough_enabled: Option<bool>,

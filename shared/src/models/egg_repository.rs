@@ -298,6 +298,11 @@ pub struct UpdateEggRepositoryOptions {
     pub name: Option<compact_str::CompactString>,
     #[validate(length(max = 1024))]
     #[schema(max_length = 1024)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub description: Option<Option<compact_str::CompactString>>,
     #[validate(url)]
     #[schema(example = "https://github.com/example/repo.git", format = "uri")]

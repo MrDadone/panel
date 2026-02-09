@@ -254,6 +254,7 @@ mod patch {
         ip: std::net::IpAddr,
         #[validate(length(min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
+        #[serde(default, with = "::serde_with::rust::double_option")]
         ip_alias: Option<Option<String>>,
     }
 

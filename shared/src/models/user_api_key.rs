@@ -204,16 +204,13 @@ pub struct CreateUserApiKeyOptions {
     #[validate(length(min = 3, max = 31))]
     #[schema(min_length = 3, max_length = 31)]
     pub name: compact_str::CompactString,
-
     #[schema(value_type = Vec<String>)]
     pub allowed_ips: Vec<sqlx::types::ipnetwork::IpNetwork>,
 
     #[validate(custom(function = "crate::permissions::validate_user_permissions"))]
     pub user_permissions: Vec<compact_str::CompactString>,
-
     #[validate(custom(function = "crate::permissions::validate_admin_permissions"))]
     pub admin_permissions: Vec<compact_str::CompactString>,
-
     #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
     pub server_permissions: Vec<compact_str::CompactString>,
 
@@ -278,19 +275,21 @@ pub struct UpdateUserApiKeyOptions {
     #[validate(length(min = 3, max = 31))]
     #[schema(min_length = 3, max_length = 31)]
     pub name: Option<compact_str::CompactString>,
-
     #[schema(value_type = Vec<String>)]
     pub allowed_ips: Option<Vec<sqlx::types::ipnetwork::IpNetwork>>,
 
     #[validate(custom(function = "crate::permissions::validate_user_permissions"))]
     pub user_permissions: Option<Vec<compact_str::CompactString>>,
-
     #[validate(custom(function = "crate::permissions::validate_admin_permissions"))]
     pub admin_permissions: Option<Vec<compact_str::CompactString>>,
-
     #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
     pub server_permissions: Option<Vec<compact_str::CompactString>>,
 
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub expires: Option<Option<chrono::DateTime<chrono::Utc>>>,
 }
 

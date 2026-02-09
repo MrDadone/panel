@@ -848,10 +848,20 @@ impl CreatableModel for User {
 
 #[derive(Default, ToSchema, Serialize, Deserialize, Validate)]
 pub struct UpdateUserOptions {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub role_uuid: Option<Option<uuid::Uuid>>,
 
     #[validate(length(max = 255))]
     #[schema(max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub external_id: Option<Option<compact_str::CompactString>>,
 
     #[validate(length(min = 3, max = 15), regex(path = "*USERNAME_REGEX"))]

@@ -306,6 +306,11 @@ pub struct UpdateNestEggVariableOptions {
 
     #[validate(length(min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub description: Option<Option<compact_str::CompactString>>,
 
     pub order: Option<i16>,
@@ -316,6 +321,11 @@ pub struct UpdateNestEggVariableOptions {
 
     #[validate(length(max = 1024))]
     #[schema(max_length = 1024)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
     pub default_value: Option<Option<String>>,
 
     pub user_viewable: Option<bool>,

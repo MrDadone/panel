@@ -59,6 +59,7 @@ tempfile = "3.23.0"
 compact_str = { git = "https://github.com/ParkMyCar/compact_str.git", version = "0.9.0", features = ["serde", "utoipa", "sqlx", "sqlx-postgres", "sqlx-mysql"] }
 nestify = "0.3.3"
 sysinfo = "0.38.0"
+serde_with = "3.16.1"
 
 # dev (for development)
 [profile.dev.package."*"]
