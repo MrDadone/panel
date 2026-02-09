@@ -136,6 +136,8 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
     canRequest: canReadBackupConfigurations,
   });
 
+  const eggImages = eggs.items.find((egg) => egg.uuid === form.values.eggUuid)?.dockerImages || {};
+
   useEffect(() => {
     if (!form.values.eggUuid || contextServer) {
       return;
@@ -322,29 +324,40 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
               <Stack>
                 <Group grow>
                   <Select
-                    withAsterisk
-                    label='Docker Image'
-                    placeholder='ghcr.io/...'
-                    data={Object.entries(
-                      eggs.items.find((egg) => egg.uuid === form.values.eggUuid)?.dockerImages || {},
-                    ).map(([label, value]) => ({
+                    label='Predefined Docker Images'
+                    placeholder='No predefined image selected'
+                    data={Object.entries(eggImages).map(([label, value]) => ({
                       label,
                       value,
                     }))}
-                    searchable
-                    {...form.getInputProps('image')}
-                  />
-                  <Select
-                    withAsterisk
-                    label='Timezone'
-                    placeholder='System'
-                    data={timezones}
                     allowDeselect
                     clearable
                     searchable
-                    {...form.getInputProps('timezone')}
+                    value={
+                      Object.entries(eggImages).some(([label, value]) => value === form.values.image)
+                        ? form.values.image
+                        : null
+                    }
+                    onChange={(value) => form.setFieldValue('image', value || '')}
+                  />
+                  <TextInput
+                    withAsterisk
+                    label='Docker Image'
+                    placeholder='ghcr.io/...'
+                    {...form.getInputProps('image')}
                   />
                 </Group>
+
+                <Select
+                  withAsterisk
+                  label='Timezone'
+                  placeholder='System'
+                  data={timezones}
+                  allowDeselect
+                  clearable
+                  searchable
+                  {...form.getInputProps('timezone')}
+                />
 
                 <TextArea
                   label='Startup Command'

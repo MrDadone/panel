@@ -1,4 +1,4 @@
-import { faReply } from '@fortawesome/free-solid-svg-icons';
+import { faImage, faPlay, faReply } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group, Title } from '@mantine/core';
 import debounce from 'debounce';
@@ -13,6 +13,7 @@ import Card from '@/elements/Card.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import VariableContainer from '@/elements/VariableContainer.tsx';
 import { useKeyboardShortcut } from '@/plugins/useKeyboardShortcuts.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
@@ -109,10 +110,13 @@ export default function ServerStartup() {
   return (
     <ServerContentContainer title={t('pages.server.startup.title', {})}>
       <div className='grid grid-cols-3 gap-4'>
-        <Card className='flex flex-col justify-between rounded-md p-4 h-full col-span-2'>
+        <TitleCard
+          title={t('pages.server.startup.form.startupCommand', {})}
+          icon={<FontAwesomeIcon icon={faPlay} />}
+          className='col-span-2'
+        >
           <TextArea
             withAsterisk
-            label={t('pages.server.startup.form.startupCommand', {})}
             placeholder={t('pages.server.startup.form.startupCommand', {})}
             value={command}
             onChange={(e) => setCommand(e.target.value)}
@@ -129,11 +133,10 @@ export default function ServerStartup() {
               </ActionIcon>
             }
           />
-        </Card>
-        <Card className='flex flex-col justify-between rounded-md p-4 h-full'>
+        </TitleCard>
+        <TitleCard title={t('pages.server.startup.form.dockerImage', {})} icon={<FontAwesomeIcon icon={faImage} />}>
           <Select
             withAsterisk
-            label={t('pages.server.startup.form.dockerImage', {})}
             value={dockerImage}
             onChange={(value) => setDockerImage(value ?? '')}
             data={Object.entries(server.egg.dockerImages).map(([key, value]) => ({
@@ -143,13 +146,13 @@ export default function ServerStartup() {
             searchable
             disabled={!useServerCan('startup.docker-image') || !settings.server.allowOverwritingCustomDockerImage}
           />
-          <p className='text-gray-400 mt-2'>
+          <p className='text-gray-400 text-sm mt-4'>
             {Object.values(server.egg.dockerImages).includes(server.image) ||
             settings.server.allowOverwritingCustomDockerImage
               ? t('pages.server.startup.dockerImageDescription', {})
               : t('pages.server.startup.dockerImageDescriptionCustom', {})}
           </p>
-        </Card>
+        </TitleCard>
       </div>
 
       <Group justify='space-between' my='md'>
