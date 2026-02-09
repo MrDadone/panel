@@ -17,7 +17,7 @@ export const adminServerCreateSchema = z.object({
   pinnedCpus: z.array(z.number()),
   startup: z.string().min(1).max(8192),
   image: z.string().min(2).max(255),
-  timezone: z.string().min(3).max(255),
+  timezone: z.string().nullable(),
   hugepagesPassthroughEnabled: z.boolean(),
   kvmPassthroughEnabled: z.boolean(),
   featureLimits: z.object({
@@ -58,7 +58,7 @@ export const adminServerUpdateSchema = z.object({
   pinnedCpus: z.array(z.number()),
   startup: z.string().min(1).max(8192),
   image: z.string().min(2).max(255),
-  timezone: z.string().min(3).max(255),
+  timezone: z.string().nullable(),
   hugepagesPassthroughEnabled: z.boolean(),
   kvmPassthroughEnabled: z.boolean(),
   featureLimits: z.object({

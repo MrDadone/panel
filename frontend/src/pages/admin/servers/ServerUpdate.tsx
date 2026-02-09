@@ -337,14 +337,10 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                   <Select
                     withAsterisk
                     label='Timezone'
-                    placeholder='Europe/Amsterdam'
-                    data={[
-                      {
-                        label: 'System',
-                        value: '',
-                      },
-                      ...timezones,
-                    ]}
+                    placeholder='System'
+                    data={timezones}
+                    allowDeselect
+                    clearable
                     searchable
                     {...form.getInputProps('timezone')}
                   />
