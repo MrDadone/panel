@@ -944,7 +944,8 @@ impl UpdatableModel for User {
             .set("name_first", options.name_first.as_ref())
             .set("name_last", options.name_last.as_ref())
             .set("admin", options.admin)
-            .set("language", options.language.as_ref());
+            .set("language", options.language.as_ref())
+            .where_eq("uuid", self.uuid);
 
         if let Some(role) = role {
             self.role = role;
