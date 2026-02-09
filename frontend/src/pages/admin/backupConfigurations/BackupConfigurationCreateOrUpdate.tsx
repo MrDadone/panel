@@ -49,6 +49,7 @@ export default function BackupConfigurationCreateOrUpdate({
       secretKey: '',
       bucket: '',
       region: '',
+      publicUrl: '',
       endpoint: '',
       pathStyle: true,
       partSize: 1024 * 1024 * 1024,
@@ -75,13 +76,19 @@ export default function BackupConfigurationCreateOrUpdate({
     createFn: () =>
       createBackupConfiguration({
         ...form.values,
-        backupConfigs: { s3: backupConfigS3Form.values, restic: backupConfigResticForm.values },
+        backupConfigs: {
+          s3: backupConfigS3Form.isDirty() ? backupConfigS3Form.values : null,
+          restic: backupConfigResticForm.isDirty() ? backupConfigResticForm.values : null,
+        },
       }),
     updateFn: contextBackupConfiguration
       ? () =>
           updateBackupConfiguration(contextBackupConfiguration.uuid, {
             ...form.values,
-            backupConfigs: { s3: backupConfigS3Form.values, restic: backupConfigResticForm.values },
+            backupConfigs: {
+              s3: backupConfigS3Form.isDirty() ? backupConfigS3Form.values : null,
+              restic: backupConfigResticForm.isDirty() ? backupConfigResticForm.values : null,
+            },
           })
       : undefined,
     deleteFn: contextBackupConfiguration ? () => deleteBackupConfiguration(contextBackupConfiguration.uuid) : undefined,
@@ -98,8 +105,12 @@ export default function BackupConfigurationCreateOrUpdate({
         maintenanceEnabled: contextBackupConfiguration.maintenanceEnabled,
         backupDisk: contextBackupConfiguration.backupDisk,
       });
-      backupConfigS3Form.setValues(contextBackupConfiguration.backupConfigs.s3);
-      backupConfigResticForm.setValues(contextBackupConfiguration.backupConfigs.restic);
+      if (contextBackupConfiguration.backupConfigs.s3) {
+        backupConfigS3Form.setValues(contextBackupConfiguration.backupConfigs.s3);
+      }
+      if (contextBackupConfiguration.backupConfigs.restic) {
+        backupConfigResticForm.setValues(contextBackupConfiguration.backupConfigs.restic);
+      }
     }
   }, [contextBackupConfiguration]);
 
@@ -179,10 +190,12 @@ export default function BackupConfigurationCreateOrUpdate({
               </AdminCan>
             )}
           </Group>
-          {(form.values.backupDisk === 's3' || backupConfigS3Form.isDirty()) && <BackupS3 form={backupConfigS3Form} />}
-          {(form.values.backupDisk === 'restic' || backupConfigResticForm.isDirty()) && (
-            <BackupRestic form={backupConfigResticForm} />
+          {(form.values.backupDisk === 's3' || backupConfigS3Form.isDirty() || backupConfigS3Form.isTouched()) && (
+            <BackupS3 form={backupConfigS3Form} />
           )}
+          {(form.values.backupDisk === 'restic' ||
+            backupConfigResticForm.isDirty() ||
+            backupConfigResticForm.isTouched()) && <BackupRestic form={backupConfigResticForm} />}
         </Stack>
       </form>
     </AdminContentContainer>

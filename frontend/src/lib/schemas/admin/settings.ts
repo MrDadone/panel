@@ -100,11 +100,11 @@ export const adminSettingsStorageFilesystemSchema = z.object({
 
 export const adminSettingsStorageS3Schema = z.object({
   type: z.literal('s3'),
-  publicUrl: z.string(),
   accessKey: z.string(),
   secretKey: z.string(),
   bucket: z.string(),
   region: z.string(),
+  publicUrl: z.string(),
   endpoint: z.string(),
   pathStyle: z.boolean(),
 });
