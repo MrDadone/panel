@@ -49,7 +49,6 @@ export default function BackupConfigurationCreateOrUpdate({
       secretKey: '',
       bucket: '',
       region: '',
-      publicUrl: '',
       endpoint: '',
       pathStyle: true,
       partSize: 1024 * 1024 * 1024,
