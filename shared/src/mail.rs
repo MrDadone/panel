@@ -1,6 +1,7 @@
 use lettre::AsyncTransport;
 use std::sync::Arc;
 
+pub const MAIL_CONNECTION_TEST: &str = include_str!("../mails/connection_test.html");
 pub const MAIL_PASSWORD_RESET: &str = include_str!("../mails/password_reset.html");
 pub const MAIL_ACCOUNT_CREATED: &str = include_str!("../mails/account_created.html");
 

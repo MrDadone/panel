@@ -785,8 +785,8 @@ pub struct CreateUserOptions {
     #[schema(min_length = 3, max_length = 15)]
     #[schema(pattern = "^[a-zA-Z0-9_]+$")]
     pub username: compact_str::CompactString,
-    #[validate(email)]
-    #[schema(format = "email")]
+    #[validate(email, length(max = 255))]
+    #[schema(format = "email", max_length = 255)]
     pub email: String,
     #[validate(length(min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
@@ -888,8 +888,8 @@ pub struct UpdateUserOptions {
     #[schema(min_length = 3, max_length = 15)]
     #[schema(pattern = "^[a-zA-Z0-9_]+$")]
     pub username: Option<compact_str::CompactString>,
-    #[validate(email)]
-    #[schema(format = "email")]
+    #[validate(email, length(max = 255))]
+    #[schema(format = "email", max_length = 255)]
     pub email: Option<String>,
     #[validate(length(min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]

@@ -75,6 +75,10 @@ export const adminSettingsEmailSchema = z.discriminatedUnion('type', [
   adminSettingsEmailFilesystemSchema,
 ]);
 
+export const adminSettingsEmailTestSchema = z.object({
+  email: z.email(),
+});
+
 export const adminSettingsServerSchema = z.object({
   maxFileManagerViewSize: z.number().min(0),
   maxFileManagerContentSearchSize: z.number().min(0),

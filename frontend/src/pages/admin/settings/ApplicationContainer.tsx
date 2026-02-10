@@ -168,14 +168,14 @@ export default function ApplicationContainer() {
 
         <Group mt='md'>
           <AdminCan action='settings.update' cantSave>
-            <>
-              <Button type='submit' disabled={!form.isValid()} loading={loading}>
-                Save
-              </Button>
-              <Button variant='outline' loading={loading} onClick={doPreviewTelemetry}>
-                Telemetry Preview
-              </Button>
-            </>
+            <Button type='submit' disabled={!form.isValid()} loading={loading}>
+              Save
+            </Button>
+          </AdminCan>
+          <AdminCan action='stats.read'>
+            <Button variant='outline' loading={loading} onClick={doPreviewTelemetry}>
+              Telemetry Preview
+            </Button>
           </AdminCan>
         </Group>
       </form>

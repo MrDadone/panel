@@ -49,6 +49,19 @@ impl shared::extensions::commands::CliCommand<ResetPasswordArgs> for ResetPasswo
                     }
                 };
 
+                let user = if let Ok(uuid) = user.parse() {
+                    shared::models::user::User::by_uuid_optional(&state.database, uuid).await
+                } else if user.contains('@') {
+                    shared::models::user::User::by_email(&state.database, &user).await
+                } else {
+                    shared::models::user::User::by_username(&state.database, &user).await
+                }?;
+
+                let Some(user) = user else {
+                    eprintln!("{}", "user not found".red());
+                    std::process::exit(1);
+                };
+
                 let password = match args.password {
                     Some(password) => password,
                     None => {
@@ -62,19 +75,6 @@ impl shared::extensions::commands::CliCommand<ResetPasswordArgs> for ResetPasswo
                             std::process::exit(1);
                         }
                     }
-                };
-
-                let user = if let Ok(uuid) = user.parse() {
-                    shared::models::user::User::by_uuid_optional(&state.database, uuid).await
-                } else if user.contains('@') {
-                    shared::models::user::User::by_email(&state.database, &user).await
-                } else {
-                    shared::models::user::User::by_username(&state.database, &user).await
-                }?;
-
-                let Some(user) = user else {
-                    eprintln!("{}", "user not found".red());
-                    std::process::exit(1);
                 };
 
                 user.update_password(&state.database, &password).await?;

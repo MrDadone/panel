@@ -17,8 +17,8 @@ mod post {
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(email)]
-        #[schema(format = "email")]
+        #[validate(email, length(max = 255))]
+        #[schema(format = "email", max_length = 255)]
         email: String,
 
         captcha: Option<String>,
