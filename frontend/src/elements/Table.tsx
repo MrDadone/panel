@@ -12,7 +12,7 @@ import {
   TableTrProps,
   Text,
 } from '@mantine/core';
-import { forwardRef, ReactNode, useEffect } from 'react';
+import { forwardRef, ReactNode, startTransition, useEffect } from 'react';
 import Spinner from '@/elements/Spinner.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
@@ -67,7 +67,9 @@ export function Pagination<T>({ data, onPageSelect, ...props }: PaginationProps<
       return;
     }
 
-    onPageSelect(page);
+    startTransition(() => {
+      onPageSelect(page);
+    });
   };
 
   useEffect(() => {

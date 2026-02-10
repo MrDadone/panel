@@ -1,7 +1,7 @@
 import { faArchive, faArrowRightLong, faChartBar, faCrow, faStethoscope } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Text, Title } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import getBackupStats, { type BackupStats } from '@/api/admin/stats/getBackupStats.ts';
 import getGeneralStats, { type GeneralStats } from '@/api/admin/stats/getGeneralStats.ts';
 import getAdminSystemOverview, { AdminSystemOverview } from '@/api/admin/system/getAdminSystemOverview.ts';
@@ -30,9 +30,11 @@ export default function AdminOverview() {
 
     Promise.all([getAdminSystemOverview(), getGeneralStats(), getBackupStats()])
       .then(([system, general, backup]) => {
-        setSystemOverview(system);
-        setGeneralStats(general);
-        setBackupStats(backup);
+        startTransition(() => {
+          setSystemOverview(system);
+          setGeneralStats(general);
+          setBackupStats(backup);
+        });
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');

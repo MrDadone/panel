@@ -11,7 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Badge, Collapse, Menu } from '@mantine/core';
-import { ComponentProps, memo, useState } from 'react';
+import { ComponentProps, memo, startTransition, useState } from 'react';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import deleteServerGroup from '@/api/me/servers/groups/deleteServerGroup.ts';
 import getServerGroupServers from '@/api/me/servers/groups/getServerGroupServers.ts';
@@ -227,7 +227,9 @@ export default function ServerGroupItem({
                       (servers.page - 1) * servers.perPage,
                     );
 
-                    setServers({ ...servers, data: items });
+                    startTransition(() => {
+                      setServers({ ...servers, data: items });
+                    });
 
                     await updateServerGroup(serverGroup.uuid, { serverOrder }).catch((err) => {
                       addToast(httpErrorToHuman(err), 'error');

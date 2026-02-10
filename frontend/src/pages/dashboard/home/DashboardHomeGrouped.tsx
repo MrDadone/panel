@@ -1,6 +1,6 @@
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, startTransition, useEffect, useMemo, useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getServerGroups from '@/api/me/servers/groups/getServerGroups.ts';
 import updateServerGroupsOrder from '@/api/me/servers/groups/updateServerGroupsOrder.ts';
@@ -62,7 +62,10 @@ export default function DashboardHome() {
           callbacks={{
             onDragEnd: async (items) => {
               const reorderedGroups = items.map((g, i) => ({ ...g, order: i }));
-              setServerGroups(reorderedGroups);
+
+              startTransition(() => {
+                setServerGroups(reorderedGroups);
+              });
 
               await updateServerGroupsOrder(items.map((g) => g.uuid)).catch((err) => {
                 addToast(httpErrorToHuman(err), 'error');

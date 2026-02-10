@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Alert, Center, Divider, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useEffect, useRef, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import checkpointLogin from '@/api/auth/checkpointLogin.ts';
 import getOAuthProviders from '@/api/auth/getOAuthProviders.ts';
@@ -83,9 +83,11 @@ export default function Login() {
         if (keys.options.publicKey?.allowCredentials?.length === 0) {
           setStep('password');
         } else {
-          setPasskeyUuid(keys.uuid);
-          setPasskeyOptions(keys.options);
-          setStep('passkey');
+          startTransition(() => {
+            setPasskeyUuid(keys.uuid);
+            setPasskeyOptions(keys.options);
+            setStep('passkey');
+          });
         }
       })
       .catch((err) => {
@@ -160,8 +162,10 @@ export default function Login() {
       })
         .then((response) => {
           if (response.type === 'two_factor_required') {
-            setTwoFactorToken(response.token!);
-            setStep('totp');
+            startTransition(() => {
+              setTwoFactorToken(response.token!);
+              setStep('totp');
+            });
             return;
           }
 

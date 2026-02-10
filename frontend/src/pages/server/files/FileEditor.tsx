@@ -1,7 +1,7 @@
 import { Title } from '@mantine/core';
 import { type OnMount } from '@monaco-editor/react';
 import { join } from 'pathe';
-import { useEffect, useRef, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 import { createSearchParams, useNavigate, useParams, useSearchParams } from 'react-router';
 import getFileContent from '@/api/server/files/getFileContent.ts';
 import saveFileContent from '@/api/server/files/saveFileContent.ts';
@@ -46,8 +46,10 @@ export default function FileEditor() {
 
     setLoading(true);
     getFileContent(server.uuid, join(browsingDirectory, fileName)).then((content) => {
-      setContent(content);
-      setLoading(false);
+      startTransition(() => {
+        setContent(content);
+        setLoading(false);
+      });
     });
   }, [fileName]);
 
@@ -62,8 +64,10 @@ export default function FileEditor() {
     setSaving(true);
 
     saveFileContent(server.uuid, join(browsingDirectory!, name ?? fileName), currentContent).then(() => {
-      setSaving(false);
-      setNameModalOpen(false);
+      startTransition(() => {
+        setSaving(false);
+        setNameModalOpen(false);
+      });
 
       addToast(`${name ?? fileName} was saved.`);
 

@@ -1,4 +1,4 @@
-import { ReactNode, useContext, useEffect, useState } from 'react';
+import { ReactNode, startTransition, useContext, useEffect, useState } from 'react';
 import Markdown from 'react-markdown';
 import { GetPlaceholders, getTranslationMapping, TranslationContext, TranslationItemRecord } from 'shared';
 import { z } from 'zod';
@@ -43,45 +43,47 @@ const TranslationProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    if (language === 'en-US') {
-      setLanguageData(null);
-    } else {
-      axiosInstance
-        .get(`/translations/${language}.json`)
-        .then(({ data }) => {
-          const dataSpace = import.meta.env.DEV ? data : data[''];
+    startTransition(() => {
+      if (language === 'en-US') {
+        setLanguageData(null);
+      } else {
+        axiosInstance
+          .get(`/translations/${language}.json`)
+          .then(({ data }) => {
+            const dataSpace = import.meta.env.DEV ? data : data[''];
 
-          const result: LanguageData = {
-            items: dataSpace.items,
-            translations: dataSpace.translations,
-          };
+            const result: LanguageData = {
+              items: dataSpace.items,
+              translations: dataSpace.translations,
+            };
 
-          for (const key in data) {
-            if (key === '') continue;
+            for (const key in data) {
+              if (key === '') continue;
 
-            for (const item in data.items) {
-              result.items[`${key}.${item}`] = data.items[item];
+              for (const item in data.items) {
+                result.items[`${key}.${item}`] = data.items[item];
+              }
+              for (const translation in data.translation) {
+                result.items[`${key}.${translation}`] = data.translations[translation];
+              }
             }
-            for (const translation in data.translation) {
-              result.items[`${key}.${translation}`] = data.translations[translation];
+
+            result.translations = getTranslationMapping(result.translations);
+
+            if (import.meta.env.DEV) {
+              console.debug('Loaded language data', language, result);
             }
-          }
 
-          result.translations = getTranslationMapping(result.translations);
+            setLanguageData(result);
+          })
+          .catch((err) => {
+            setLanguage('en-US');
+            console.error(err);
+          });
+      }
 
-          if (import.meta.env.DEV) {
-            console.debug('Loaded language data', language, result);
-          }
-
-          setLanguageData(result);
-        })
-        .catch((err) => {
-          setLanguage('en-US');
-          console.error(err);
-        });
-    }
-
-    loadZod(language);
+      loadZod(language);
+    });
   }, [language]);
 
   const t = (key: string, values: Record<string, string | number>): string => {

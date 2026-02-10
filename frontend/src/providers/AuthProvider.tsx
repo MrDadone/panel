@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, startTransition, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getMe from '@/api/me/getMe.ts';
@@ -18,8 +18,10 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (user) {
-      setToastPosition(user.toastPosition);
-      setLanguage(user.language);
+      startTransition(() => {
+        setToastPosition(user.toastPosition);
+        setLanguage(user.language);
+      });
     }
   }, [user, setToastPosition, setLanguage]);
 

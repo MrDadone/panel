@@ -4,7 +4,7 @@ import { ActionIcon } from '@mantine/core';
 import { AnsiUp } from 'ansi_up';
 import classNames from 'classnames';
 import DOMPurify from 'dompurify';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -207,15 +207,17 @@ export default function Terminal() {
         html = PRELUDE_HTML + html;
       }
 
-      setLines((prev) => {
-        const newLine: TerminalLine = {
-          id: lineIdCounter.current++,
-          html,
-          content: processed,
-        };
+      startTransition(() => {
+        setLines((prev) => {
+          const newLine: TerminalLine = {
+            id: lineIdCounter.current++,
+            html,
+            content: processed,
+          };
 
-        const updated = [...prev, newLine];
-        return updated.length > MAX_LINES ? updated.slice(-MAX_LINES) : updated;
+          const updated = [...prev, newLine];
+          return updated.length > MAX_LINES ? updated.slice(-MAX_LINES) : updated;
+        });
       });
 
       if (isInitialLoad.current) {

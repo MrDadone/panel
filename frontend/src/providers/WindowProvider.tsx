@@ -1,7 +1,7 @@
 import { faX, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Title } from '@mantine/core';
-import { FC, ReactNode, useCallback, useMemo, useState } from 'react';
+import { FC, ReactNode, startTransition, useCallback, useMemo, useState } from 'react';
 import { Rnd } from 'react-rnd';
 import Card from '@/elements/Card.tsx';
 import { CurrentWindowProvider } from '@/providers/CurrentWindowProvider.tsx';
@@ -28,8 +28,11 @@ const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const addWindow = useCallback(
     (icon: IconDefinition | undefined, title: string | undefined, component: ReactNode) => {
       const id = windowId++;
-      setMaxZIndex((prev) => prev + 1);
-      setWindows((prev) => [...prev, { id, icon, title, component, zIndex: maxZIndex + 1 }]);
+
+      startTransition(() => {
+        setMaxZIndex((prev) => prev + 1);
+        setWindows((prev) => [...prev, { id, icon, title, component, zIndex: maxZIndex + 1 }]);
+      });
 
       return id;
     },
@@ -42,19 +45,19 @@ const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const bringToFront = useCallback(
     (id: number) => {
-      setWindows((prev) => {
-        const window = prev.find((w) => w.id === id);
-        if (!window) return prev;
+      startTransition(() => {
+        setWindows((prev) => {
+          const window = prev.find((w) => w.id === id);
+          if (!window) return prev;
 
-        // Check if already on top
-        const isOnTop = prev.every((w) => w.id === id || w.zIndex < window.zIndex);
-        if (isOnTop) return prev;
+          const isOnTop = prev.every((w) => w.id === id || w.zIndex < window.zIndex);
+          if (isOnTop) return prev;
 
-        // Bring to front
-        const newZIndex = maxZIndex + 1;
-        setMaxZIndex(newZIndex);
+          const newZIndex = maxZIndex + 1;
+          setMaxZIndex(newZIndex);
 
-        return prev.map((w) => (w.id === id ? { ...w, zIndex: newZIndex } : w));
+          return prev.map((w) => (w.id === id ? { ...w, zIndex: newZIndex } : w));
+        });
       });
     },
     [maxZIndex],

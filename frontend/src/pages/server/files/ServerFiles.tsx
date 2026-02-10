@@ -2,7 +2,15 @@ import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Alert, Group, Title } from '@mantine/core';
-import { MouseEvent as ReactMouseEvent, type Ref, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  MouseEvent as ReactMouseEvent,
+  type Ref,
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useSearchParams } from 'react-router';
 import type { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -173,8 +181,10 @@ export default function ServerFiles() {
   };
 
   const onSelected = (selected: DirectoryEntry[]) => {
-    const previousFiles = browsingEntries.data.filter((entry) => selectedFilesPrevious.has(entry.name));
-    setSelectedFiles([...previousFiles, ...selected]);
+    startTransition(() => {
+      const previousFiles = browsingEntries.data.filter((entry) => selectedFilesPrevious.has(entry.name));
+      setSelectedFiles([...previousFiles, ...selected]);
+    });
   };
 
   useEffect(() => {
@@ -337,18 +347,24 @@ export default function ServerFiles() {
               onDragStart={(event) => {
                 const data = event.active.data.current;
                 if (data?.type === 'file') {
-                  setActiveDragFile(data.file);
-                  setActiveDragCount(data.files?.length || 1);
+                  startTransition(() => {
+                    setActiveDragFile(data.file);
+                    setActiveDragCount(data.files?.length || 1);
+                  });
                 }
               }}
               onDragEnd={(event) => {
-                handleDragEnd(event);
-                setActiveDragFile(null);
-                setActiveDragCount(0);
+                startTransition(() => {
+                  handleDragEnd(event);
+                  setActiveDragFile(null);
+                  setActiveDragCount(0);
+                });
               }}
               onDragCancel={() => {
-                setActiveDragFile(null);
-                setActiveDragCount(0);
+                startTransition(() => {
+                  setActiveDragFile(null);
+                  setActiveDragCount(0);
+                });
               }}
             >
               <SelectionArea

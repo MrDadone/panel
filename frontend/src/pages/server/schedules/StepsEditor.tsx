@@ -1,7 +1,7 @@
 import { faGear, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Paper, Stack, Text, ThemeIcon, Title } from '@mantine/core';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, startTransition, useCallback, useMemo, useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updateScheduleStepsOrder from '@/api/server/schedules/steps/updateScheduleStepsOrder.ts';
 import Button from '@/elements/Button.tsx';
@@ -59,7 +59,10 @@ export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) 
         ...step,
         order: index + 1,
       }));
-      setScheduleSteps(stepsWithNewOrder);
+
+      startTransition(() => {
+        setScheduleSteps(stepsWithNewOrder);
+      });
 
       await updateScheduleStepsOrder(
         server.uuid,

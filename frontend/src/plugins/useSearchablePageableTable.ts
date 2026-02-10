@@ -1,5 +1,5 @@
 import debounce from 'debounce';
-import { useCallback, useEffect, useState } from 'react';
+import { startTransition, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -39,7 +39,9 @@ export function useSearchablePaginatedTable<T>({
       setLoading(true);
       fetcher(p, s)
         .then((res) => {
-          setStoreData(res);
+          startTransition(() => {
+            setStoreData(res);
+          });
         })
         .catch((err) => {
           addToast(httpErrorToHuman(err), 'error');

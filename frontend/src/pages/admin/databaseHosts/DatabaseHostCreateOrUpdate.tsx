@@ -165,9 +165,9 @@ export default function DatabaseHostCreateOrUpdate({
             </AdminCan>
             {contextDatabaseHost && (
               <>
-                <AdminCan action='database-hosts.test'>
+                <AdminCan action='database-hosts.read'>
                   <Button variant='outline' onClick={doTest} loading={loading}>
-                    Test
+                    Test Connection
                   </Button>
                 </AdminCan>
                 <AdminCan action='database-hosts.delete' cantDelete>

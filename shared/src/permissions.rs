@@ -419,7 +419,6 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                         ("read", "Allows to view database hosts for the panel."),
                         ("update", "Allows to modify database hosts."),
                         ("delete", "Allows to delete database hosts from the panel."),
-                        ("test", "Allows testing the database hosts' connection."),
                     ]),
                 },
             ),

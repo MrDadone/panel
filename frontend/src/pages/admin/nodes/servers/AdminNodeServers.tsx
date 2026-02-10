@@ -1,5 +1,5 @@
 import { Group } from '@mantine/core';
-import { Ref, useEffect, useState } from 'react';
+import { Ref, startTransition, useEffect, useState } from 'react';
 import getNodeServers from '@/api/admin/nodes/servers/getNodeServers.ts';
 import sendNodeServersPowerAction from '@/api/admin/nodes/servers/sendNodeServersPowerAction.ts';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
@@ -35,7 +35,9 @@ export default function AdminNodeServers({ node }: { node: Node }) {
   };
 
   const onSelected = (selected: string[]) => {
-    setSelectedServers(new Set([...selectedServersPrevious, ...selected]));
+    startTransition(() => {
+      setSelectedServers(new Set([...selectedServersPrevious, ...selected]));
+    });
   };
 
   useEffect(() => {

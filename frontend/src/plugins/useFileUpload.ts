@@ -1,4 +1,4 @@
-import { ChangeEvent, RefObject, useCallback, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, RefObject, startTransition, useCallback, useMemo, useRef, useState } from 'react';
 import { axiosInstance } from '@/api/axios.ts';
 import getFileUploadUrl from '@/api/server/files/getFileUploadUrl.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -53,25 +53,27 @@ export function useFileUpload(serverUuid: string, directory: string, onUploadCom
       activeBatchCount.current++;
 
       try {
-        setUploadBatches((prev) => {
-          const updated = new Map(prev);
-          const info = updated.get(batchId);
-          if (info && info.status === 'pending') {
-            updated.set(batchId, { ...info, status: 'uploading' });
-          }
-          return updated;
-        });
-
-        setUploadingFiles((prev) => {
-          const updated = new Map(prev);
-          batch.indices.forEach((idx) => {
-            const key = `file-${idx}`;
-            const file = updated.get(key);
-            if (file && file.status === 'pending') {
-              updated.set(key, { ...file, status: 'uploading' });
+        startTransition(() => {
+          setUploadBatches((prev) => {
+            const updated = new Map(prev);
+            const info = updated.get(batchId);
+            if (info && info.status === 'pending') {
+              updated.set(batchId, { ...info, status: 'uploading' });
             }
+            return updated;
           });
-          return updated;
+
+          setUploadingFiles((prev) => {
+            const updated = new Map(prev);
+            batch.indices.forEach((idx) => {
+              const key = `file-${idx}`;
+              const file = updated.get(key);
+              if (file && file.status === 'pending') {
+                updated.set(key, { ...file, status: 'uploading' });
+              }
+            });
+            return updated;
+          });
         });
 
         const { url } = await getFileUploadUrl(serverUuid, directory);
@@ -121,56 +123,19 @@ export function useFileUpload(serverUuid: string, directory: string, onUploadCom
           },
         });
 
-        setUploadingFiles((prev) => {
-          const updated = new Map(prev);
-          batch.indices.forEach((index) => {
-            const fileKey = `file-${index}`;
-            const fileProgress = updated.get(fileKey);
-            if (fileProgress && fileProgress.status === 'uploading') {
-              updated.set(fileKey, {
-                ...fileProgress,
-                progress: 100,
-                uploaded: fileProgress.size,
-                status: 'completed',
-              });
-
-              const timeout = setTimeout(() => {
-                setUploadingFiles((prev) => {
-                  const updated = new Map(prev);
-                  updated.delete(fileKey);
-                  return updated;
-                });
-                cleanupTimeouts.current.delete(fileKey);
-              }, CLEANUP_DELAY);
-
-              cleanupTimeouts.current.set(fileKey, timeout);
-            }
-          });
-          return updated;
-        });
-
-        setUploadBatches((prev) => {
-          const updated = new Map(prev);
-          const info = updated.get(batchId);
-          if (info) {
-            updated.set(batchId, { ...info, status: 'completed' });
-          }
-          return updated;
-        });
-      } catch (error) {
-        if (
-          error &&
-          typeof error === 'object' &&
-          'code' in error &&
-          (error.code === 'CanceledError' || error.code === 'ERR_CANCELED')
-        ) {
+        startTransition(() => {
           setUploadingFiles((prev) => {
             const updated = new Map(prev);
             batch.indices.forEach((index) => {
               const fileKey = `file-${index}`;
               const fileProgress = updated.get(fileKey);
-              if (fileProgress && fileProgress.status !== 'completed') {
-                updated.set(fileKey, { ...fileProgress, status: 'cancelled' });
+              if (fileProgress && fileProgress.status === 'uploading') {
+                updated.set(fileKey, {
+                  ...fileProgress,
+                  progress: 100,
+                  uploaded: fileProgress.size,
+                  status: 'completed',
+                });
 
                 const timeout = setTimeout(() => {
                   setUploadingFiles((prev) => {
@@ -191,32 +156,75 @@ export function useFileUpload(serverUuid: string, directory: string, onUploadCom
             const updated = new Map(prev);
             const info = updated.get(batchId);
             if (info) {
-              updated.set(batchId, { ...info, status: 'cancelled' });
+              updated.set(batchId, { ...info, status: 'completed' });
             }
             return updated;
+          });
+        });
+      } catch (error) {
+        if (
+          error &&
+          typeof error === 'object' &&
+          'code' in error &&
+          (error.code === 'CanceledError' || error.code === 'ERR_CANCELED')
+        ) {
+          startTransition(() => {
+            setUploadingFiles((prev) => {
+              const updated = new Map(prev);
+              batch.indices.forEach((index) => {
+                const fileKey = `file-${index}`;
+                const fileProgress = updated.get(fileKey);
+                if (fileProgress && fileProgress.status !== 'completed') {
+                  updated.set(fileKey, { ...fileProgress, status: 'cancelled' });
+
+                  const timeout = setTimeout(() => {
+                    setUploadingFiles((prev) => {
+                      const updated = new Map(prev);
+                      updated.delete(fileKey);
+                      return updated;
+                    });
+                    cleanupTimeouts.current.delete(fileKey);
+                  }, CLEANUP_DELAY);
+
+                  cleanupTimeouts.current.set(fileKey, timeout);
+                }
+              });
+              return updated;
+            });
+
+            setUploadBatches((prev) => {
+              const updated = new Map(prev);
+              const info = updated.get(batchId);
+              if (info) {
+                updated.set(batchId, { ...info, status: 'cancelled' });
+              }
+              return updated;
+            });
           });
         } else {
           console.error('Upload error:', error);
 
-          setUploadingFiles((prev) => {
-            const updated = new Map(prev);
-            batch.indices.forEach((index) => {
-              const fileKey = `file-${index}`;
-              const fileProgress = updated.get(fileKey);
-              if (fileProgress && fileProgress.status !== 'completed') {
-                updated.set(fileKey, { ...fileProgress, status: 'error' });
-              }
+          startTransition(() => {
+            setUploadingFiles((prev) => {
+              const updated = new Map(prev);
+              batch.indices.forEach((index) => {
+                const fileKey = `file-${index}`;
+                const fileProgress = updated.get(fileKey);
+                if (fileProgress && fileProgress.status !== 'completed') {
+                  updated.set(fileKey, { ...fileProgress, status: 'error' });
+                }
+              });
+              return updated;
             });
-            return updated;
-          });
 
-          setUploadBatches((prev) => {
-            const updated = new Map(prev);
-            const info = updated.get(batchId);
-            if (info) {
-              updated.set(batchId, { ...info, status: 'error' });
-            }
-            return updated;
+            setUploadBatches((prev) => {
+              const updated = new Map(prev);
+              const info = updated.get(batchId);
+              if (info) {
+                updated.set(batchId, { ...info, status: 'error' });
+              }
+              return updated;
+            });
           });
 
           addToast(

@@ -174,7 +174,7 @@ export default function ApplicationContainer() {
           </AdminCan>
           <AdminCan action='stats.read'>
             <Button variant='outline' loading={loading} onClick={doPreviewTelemetry}>
-              Telemetry Preview
+              Preview Telemetry
             </Button>
           </AdminCan>
         </Group>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 import { closestUnit, formatUnitBytes, mbToBytes, UNITS, unitToBytes } from '@/lib/size.ts';
 import NumberInput from './NumberInput.tsx';
 import Select from './Select.tsx';
@@ -35,13 +35,15 @@ export default function SizeInput({ mode, min, value, onChange, ...rest }: SizeI
     } else {
       const bytes = mode === 'b' ? value : mbToBytes(value);
 
-      if (!isInternalChange.current) {
-        const newUnit = getAppropriateUnit(bytes);
-        setUnit(newUnit);
-        setDisplayValue(formatUnitBytes(newUnit, bytes));
-      } else {
-        setDisplayValue(formatUnitBytes(unit, bytes));
-      }
+      startTransition(() => {
+        if (!isInternalChange.current) {
+          const newUnit = getAppropriateUnit(bytes);
+          setUnit(newUnit);
+          setDisplayValue(formatUnitBytes(newUnit, bytes));
+        } else {
+          setDisplayValue(formatUnitBytes(unit, bytes));
+        }
+      });
     }
     isInternalChange.current = false;
   }, [value, mode]);
@@ -52,8 +54,11 @@ export default function SizeInput({ mode, min, value, onChange, ...rest }: SizeI
     const newBytes = unitToBytes(newUnit as never, displayValue);
 
     isInternalChange.current = true;
-    setUnit(newUnit as never);
-    onChange(mode === 'b' ? newBytes : newBytes / (1024 * 1024));
+
+    startTransition(() => {
+      setUnit(newUnit as never);
+      onChange(mode === 'b' ? newBytes : newBytes / (1024 * 1024));
+    });
   };
 
   const handleValueChange = (v: number | string) => {

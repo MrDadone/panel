@@ -1,7 +1,7 @@
 import { rectSortingStrategy } from '@dnd-kit/sortable';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, startTransition, useEffect, useMemo, useState } from 'react';
 import getEggVariables from '@/api/admin/nests/eggs/variables/getEggVariables.ts';
 import updateEggVariableOrder from '@/api/admin/nests/eggs/variables/updateEggVariableOrder.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -89,7 +89,10 @@ export default function AdminEggVariables({
                 ...step,
                 order: index + 1,
               }));
-              setEggVariables(variablesWithNewOrder);
+
+              startTransition(() => {
+                setEggVariables(variablesWithNewOrder);
+              });
 
               await updateEggVariableOrder(
                 contextNest.uuid,
