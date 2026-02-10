@@ -46,39 +46,58 @@ export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = 
       return { ...state, serverResourceUsage: state.serverResourceUsage };
     }),
   getServerResourceUsage: (uuid, nodeUuid) => {
-    const usage = get().serverResourceUsage.get(uuid);
-    if (!usage && !get().serverResourceUsagePendingNodes.has(nodeUuid)) {
-      set((state) => {
-        state.serverResourceUsagePendingNodes.add(nodeUuid);
-        return { ...state, serverResourceUsagePendingNodes: state.serverResourceUsagePendingNodes };
-      });
+    const state = get();
+    const usage = state.serverResourceUsage.get(uuid);
 
+    if (usage) return usage;
+    if (state.serverResourceUsagePendingNodes.has(nodeUuid)) return undefined;
+
+    let shouldFetch = false;
+
+    set((state) => {
+      if (state.serverResourceUsagePendingNodes.has(nodeUuid)) {
+        return state;
+      }
+
+      shouldFetch = true;
+
+      const newPending = new Set(state.serverResourceUsagePendingNodes);
+      newPending.add(nodeUuid);
+
+      return { ...state, serverResourceUsagePendingNodes: newPending };
+    });
+
+    if (shouldFetch) {
       getNodeResources(nodeUuid)
         .then((usages) => {
           set((state) => {
             for (const [serverId, resources] of Object.entries(usages)) {
               state.serverResourceUsage.set(serverId, resources);
             }
-            state.serverResourceUsagePendingNodes.delete(nodeUuid);
+
+            const newPending = new Set(state.serverResourceUsagePendingNodes);
+            newPending.delete(nodeUuid);
+
             return {
               ...state,
               serverResourceUsage: state.serverResourceUsage,
-              serverResourceUsagePendingNodes: state.serverResourceUsagePendingNodes,
+              serverResourceUsagePendingNodes: newPending,
             };
           });
         })
         .catch((err) => {
-          console.error(`Failed to fetch resource usage for server ${uuid}:`, err);
+          console.error(`Failed to fetch resources for node ${nodeUuid}:`, err);
 
           setTimeout(() => {
             set((state) => {
-              state.serverResourceUsagePendingNodes.delete(nodeUuid);
-              return { ...state, serverResourceUsagePendingNodes: new Set(state.serverResourceUsagePendingNodes) };
+              const newPending = new Set(state.serverResourceUsagePendingNodes);
+              newPending.delete(nodeUuid);
+              return { ...state, serverResourceUsagePendingNodes: newPending };
             });
           }, 30000);
         });
     }
 
-    return usage;
+    return undefined;
   },
 });
