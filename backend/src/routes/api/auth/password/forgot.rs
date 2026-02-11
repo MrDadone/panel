@@ -104,6 +104,7 @@ mod post {
                 &state,
                 shared::models::user_activity::CreateUserActivityOptions {
                     user_uuid: user.uuid,
+                    impersonator_uuid: None,
                     api_key_uuid: None,
                     event: "email:password-reset".into(),
                     ip: Some(ip.0.into()),

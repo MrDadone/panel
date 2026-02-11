@@ -9,7 +9,7 @@ use shared::{
     GetState,
     models::{
         admin_activity::AdminActivityLogger,
-        user::{AuthMethod, GetAuthMethod, GetUser},
+        user::{AuthMethod, GetAuthMethod, GetUser, GetUserImpersonator},
     },
     response::ApiResponse,
 };
@@ -37,6 +37,7 @@ pub async fn auth(
     state: GetState,
     ip: shared::GetIp,
     user: GetUser,
+    user_impersonator: GetUserImpersonator,
     auth: GetAuthMethod,
     mut req: Request,
     next: Next,
@@ -55,6 +56,7 @@ pub async fn auth(
     req.extensions_mut().insert(AdminActivityLogger {
         state: Arc::clone(&state),
         user_uuid: user.uuid,
+        impersonator_uuid: user_impersonator.as_ref().map(|i| i.uuid),
         api_key_uuid: match &*auth {
             AuthMethod::ApiKey(api_key) => Some(api_key.uuid),
             AuthMethod::Session(_) => None,
@@ -62,6 +64,7 @@ pub async fn auth(
         ip: ip.0,
     });
     req.extensions_mut().insert(user.0);
+    req.extensions_mut().insert(user_impersonator.0);
     req.extensions_mut().insert(auth.0);
 
     Ok(next.run(req).await)

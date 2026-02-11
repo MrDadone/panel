@@ -50,10 +50,12 @@ export default function ServerActivity() {
 
             <TableData>
               {activity.user
-                ? `${activity.user.username} (${activity.isApi ? 'API' : 'Web'})`
+                ? `${activity.user.username} (${activity.isApi ? t('common.api', {}) : t('common.web', {})})`
                 : activity.isSchedule
                   ? t('common.schedule', {})
                   : t('common.system', {})}
+              {activity.impersonator &&
+                ` (${t('common.impersonatedBy', { username: activity.impersonator.username })})`}
             </TableData>
 
             <TableData>

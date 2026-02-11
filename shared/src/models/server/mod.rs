@@ -27,6 +27,7 @@ pub struct ServerActivityLogger {
     pub state: State,
     pub server_uuid: uuid::Uuid,
     pub user_uuid: uuid::Uuid,
+    pub impersonator_uuid: Option<uuid::Uuid>,
     pub user_admin: bool,
     pub user_owner: bool,
     pub user_subuser: bool,
@@ -53,6 +54,7 @@ impl ServerActivityLogger {
         let options = super::server_activity::CreateServerActivityOptions {
             server_uuid: self.server_uuid,
             user_uuid: Some(self.user_uuid),
+            impersonator_uuid: self.impersonator_uuid,
             api_key_uuid: self.api_key_uuid,
             schedule_uuid: None,
             event: event.into(),
@@ -125,6 +127,7 @@ pub struct Server {
     pub description: Option<compact_str::CompactString>,
 
     pub memory: i64,
+    pub memory_overhead: i64,
     pub swap: i64,
     pub disk: i64,
     pub io_weight: Option<i16>,
@@ -202,6 +205,10 @@ impl BaseModel for Server {
             (
                 "servers.memory",
                 compact_str::format_compact!("{prefix}memory"),
+            ),
+            (
+                "servers.memory_overhead",
+                compact_str::format_compact!("{prefix}memory_overhead"),
             ),
             ("servers.swap", compact_str::format_compact!("{prefix}swap")),
             ("servers.disk", compact_str::format_compact!("{prefix}disk")),
@@ -322,6 +329,8 @@ impl BaseModel for Server {
             description: row
                 .try_get(compact_str::format_compact!("{prefix}description").as_str())?,
             memory: row.try_get(compact_str::format_compact!("{prefix}memory").as_str())?,
+            memory_overhead: row
+                .try_get(compact_str::format_compact!("{prefix}memory_overhead").as_str())?,
             swap: row.try_get(compact_str::format_compact!("{prefix}swap").as_str())?,
             disk: row.try_get(compact_str::format_compact!("{prefix}disk").as_str())?,
             io_weight: row.try_get(compact_str::format_compact!("{prefix}io_weight").as_str())?,
@@ -1314,6 +1323,7 @@ impl Server {
                 },
                 build: wings_api::ServerConfigurationBuild {
                     memory_limit: self.memory,
+                    overhead_memory: self.memory_overhead,
                     swap: self.swap,
                     io_weight: self.io_weight.map(|w| w as u32),
                     cpu_limit: self.cpu as i64,
@@ -1415,9 +1425,10 @@ impl Server {
             suspended: self.suspended,
             name: self.name,
             description: self.description,
-            limits: ApiServerLimits {
+            limits: AdminApiServerLimits {
                 cpu: self.cpu,
                 memory: self.memory,
+                memory_overhead: self.memory_overhead,
                 swap: self.swap,
                 disk: self.disk,
                 io_weight: self.io_weight,
@@ -1481,7 +1492,6 @@ impl Server {
                 memory: self.memory,
                 swap: self.swap,
                 disk: self.disk,
-                io_weight: self.io_weight,
             },
             feature_limits: ApiServerFeatureLimits {
                 allocations: self.allocation_limit,
@@ -1551,7 +1561,7 @@ pub struct CreateServerOptions {
     pub description: Option<compact_str::CompactString>,
 
     #[validate(nested)]
-    pub limits: ApiServerLimits,
+    pub limits: AdminApiServerLimits,
     pub pinned_cpus: Vec<i16>,
 
     #[validate(length(min = 1, max = 8192))]
@@ -1646,6 +1656,7 @@ impl CreatableModel for Server {
                     },
                 )
                 .set("memory", options.limits.memory)
+                .set("memory_overhead", options.limits.memory_overhead)
                 .set("swap", options.limits.swap)
                 .set("disk", options.limits.disk)
                 .set("io_weight", options.limits.io_weight)
@@ -1797,7 +1808,7 @@ pub struct UpdateServerOptions {
     pub description: Option<Option<compact_str::CompactString>>,
 
     #[validate(nested)]
-    pub limits: Option<ApiServerLimits>,
+    pub limits: Option<AdminApiServerLimits>,
     pub pinned_cpus: Option<Vec<i16>>,
 
     #[validate(length(min = 1, max = 8192))]
@@ -1935,6 +1946,7 @@ impl UpdatableModel for Server {
             query_builder
                 .set("cpu", Some(limits.cpu))
                 .set("memory", Some(limits.memory))
+                .set("memory_overhead", Some(limits.memory_overhead))
                 .set("swap", Some(limits.swap))
                 .set("disk", Some(limits.disk))
                 .set("io_weight", Some(limits.io_weight));
@@ -1976,6 +1988,7 @@ impl UpdatableModel for Server {
         if let Some(limits) = options.limits {
             self.cpu = limits.cpu;
             self.memory = limits.memory;
+            self.memory_overhead = limits.memory_overhead;
             self.swap = limits.swap;
             self.disk = limits.disk;
             self.io_weight = limits.io_weight;
@@ -2095,6 +2108,28 @@ pub struct RemoteApiServer {
 }
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone, Copy)]
+pub struct AdminApiServerLimits {
+    #[validate(range(min = 0))]
+    #[schema(minimum = 0)]
+    pub cpu: i32,
+    #[validate(range(min = 0))]
+    #[schema(minimum = 0)]
+    pub memory: i64,
+    #[validate(range(min = 0))]
+    #[schema(minimum = 0)]
+    pub memory_overhead: i64,
+    #[validate(range(min = -1))]
+    #[schema(minimum = -1)]
+    pub swap: i64,
+    #[validate(range(min = 0))]
+    #[schema(minimum = 0)]
+    pub disk: i64,
+    #[validate(range(min = 0, max = 1000))]
+    #[schema(minimum = 0, maximum = 1000)]
+    pub io_weight: Option<i16>,
+}
+
+#[derive(ToSchema, Validate, Serialize, Deserialize, Clone, Copy)]
 pub struct ApiServerLimits {
     #[validate(range(min = 0))]
     #[schema(minimum = 0)]
@@ -2108,9 +2143,6 @@ pub struct ApiServerLimits {
     #[validate(range(min = 0))]
     #[schema(minimum = 0)]
     pub disk: i64,
-    #[validate(range(min = 0, max = 1000))]
-    #[schema(minimum = 0, maximum = 1000)]
-    pub io_weight: Option<i16>,
 }
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone, Copy)]
@@ -2149,7 +2181,7 @@ pub struct AdminApiServer {
     pub description: Option<compact_str::CompactString>,
 
     #[schema(inline)]
-    pub limits: ApiServerLimits,
+    pub limits: AdminApiServerLimits,
     pub pinned_cpus: Vec<i16>,
     #[schema(inline)]
     pub feature_limits: ApiServerFeatureLimits,

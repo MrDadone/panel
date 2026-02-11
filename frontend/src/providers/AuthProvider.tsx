@@ -7,14 +7,17 @@ import Spinner from '@/elements/Spinner.tsx';
 import { AuthContext } from '@/providers/contexts/authContext.ts';
 import { useToast } from './ToastProvider.tsx';
 import { useTranslations } from './TranslationProvider.tsx';
+import { useWindows } from './WindowProvider.tsx';
 
 const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const navigate = useNavigate();
   const { setToastPosition, addToast } = useToast();
   const { setLanguage } = useTranslations();
+  const { closeAllWindows } = useWindows();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [impersonating, setImpersonating] = useState(window.localStorage.getItem('impersonatedUser') !== null);
 
   useEffect(() => {
     if (user) {
@@ -34,6 +37,15 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       .finally(() => setLoading(false));
   }, []);
 
+  const doImpersonate = (user: User) => {
+    localStorage.setItem('impersonatedUser', user.uuid);
+
+    navigate('/');
+    closeAllWindows();
+    setUser(user);
+    setImpersonating(true);
+  };
+
   const doLogin = (user: User, doNavigate: boolean = true) => {
     setUser(user);
     if (doNavigate) {
@@ -42,6 +54,25 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const doLogout = () => {
+    if (localStorage.getItem('impersonatedUser')) {
+      localStorage.removeItem('impersonatedUser');
+
+      navigate('/');
+      setLoading(true);
+      getMe()
+        .then((user) => {
+          setUser(user);
+          setImpersonating(false);
+        })
+        .catch(() => {
+          setUser(null);
+          setImpersonating(false);
+        })
+        .finally(() => setLoading(false));
+
+      return;
+    }
+
     logout()
       .then(() => {
         setUser(null);
@@ -52,7 +83,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, doLogin, doLogout }}>
+    <AuthContext.Provider value={{ user, impersonating, setUser, doImpersonate, doLogin, doLogout }}>
       {loading ? <Spinner.Centered /> : children}
     </AuthContext.Provider>
   );

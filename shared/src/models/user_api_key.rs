@@ -367,6 +367,28 @@ impl UpdatableModel for UserApiKey {
 }
 
 #[async_trait::async_trait]
+impl ByUuid for UserApiKey {
+    async fn by_uuid(
+        database: &crate::database::Database,
+        uuid: uuid::Uuid,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        let row = sqlx::query(&format!(
+            r#"
+            SELECT {}
+            FROM user_api_keys
+            WHERE user_api_keys.uuid = $1 AND (user_api_keys.expires IS NULL OR user_api_keys.expires > NOW())
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(uuid)
+        .fetch_one(database.read())
+        .await?;
+
+        Self::map(None, &row)
+    }
+}
+
+#[async_trait::async_trait]
 impl DeletableModel for UserApiKey {
     type DeleteOptions = ();
 

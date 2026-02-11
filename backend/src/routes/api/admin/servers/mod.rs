@@ -123,7 +123,7 @@ mod post {
         description: Option<compact_str::CompactString>,
 
         #[validate(nested)]
-        limits: shared::models::server::ApiServerLimits,
+        limits: shared::models::server::AdminApiServerLimits,
         pinned_cpus: Vec<i16>,
 
         #[validate(length(min = 1, max = 8192))]

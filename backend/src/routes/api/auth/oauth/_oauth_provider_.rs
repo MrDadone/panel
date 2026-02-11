@@ -222,6 +222,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                     &state,
                     shared::models::user_activity::CreateUserActivityOptions {
                         user_uuid: user.uuid,
+                        impersonator_uuid: None,
                         api_key_uuid: None,
                         event: "account:oauth-links.create".into(),
                         ip: Some(ip.0.into()),
@@ -314,6 +315,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                             &state,
                             shared::models::user_activity::CreateUserActivityOptions {
                                 user_uuid: user.uuid,
+                                impersonator_uuid: None,
                                 api_key_uuid: None,
                                 event: "auth:success".into(),
                                 ip: Some(ip.0.into()),

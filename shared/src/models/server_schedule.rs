@@ -105,25 +105,6 @@ impl BaseModel for ServerSchedule {
 }
 
 impl ServerSchedule {
-    pub async fn by_uuid(
-        database: &crate::database::Database,
-        uuid: uuid::Uuid,
-    ) -> Result<Option<Self>, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            SELECT {}
-            FROM server_schedules
-            WHERE server_schedules.uuid = $1
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(uuid)
-        .fetch_optional(database.read())
-        .await?;
-
-        row.try_map(|row| Self::map(None, &row))
-    }
-
     pub async fn by_server_uuid_uuid(
         database: &crate::database::Database,
         server_uuid: uuid::Uuid,
@@ -371,6 +352,28 @@ impl UpdatableModel for ServerSchedule {
         transaction.commit().await?;
 
         Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl ByUuid for ServerSchedule {
+    async fn by_uuid(
+        database: &crate::database::Database,
+        uuid: uuid::Uuid,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        let row = sqlx::query(&format!(
+            r#"
+            SELECT {}
+            FROM server_schedules
+            WHERE server_schedules.uuid = $1
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(uuid)
+        .fetch_one(database.read())
+        .await?;
+
+        Self::map(None, &row)
     }
 }
 

@@ -52,6 +52,7 @@ mod post {
             let options = shared::models::server_activity::CreateServerActivityOptions {
                 server_uuid: activity.server,
                 user_uuid: activity.user,
+                impersonator_uuid: None,
                 api_key_uuid: None,
                 schedule_uuid: activity.schedule,
                 event: activity.event,

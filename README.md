@@ -31,3 +31,7 @@ cd calagopus
 docker compose pull
 docker compose up -d
 ```
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=calagopus/panel&type=date&legend=top-left)](https://www.star-history.com/#calagopus/panel&type=date&legend=top-left)

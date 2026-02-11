@@ -265,6 +265,7 @@ impl CreatableModel for ServerSubuser {
                             state,
                             super::user_activity::CreateUserActivityOptions {
                                 user_uuid: user.uuid,
+                                impersonator_uuid: None,
                                 api_key_uuid: None,
                                 event: "email:account-created".into(),
                                 ip: None,

@@ -116,6 +116,7 @@ mod put {
             shared::models::server_activity::CreateServerActivityOptions {
                 server_uuid: server.uuid,
                 user_uuid: None,
+                impersonator_uuid: None,
                 api_key_uuid: None,
                 schedule_uuid: data.schedule_uuid,
                 event: "server:startup.variables".into(),

@@ -253,6 +253,7 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                             "oauth-links",
                             "Allows to view and manage a users' oauth links.",
                         ),
+                        ("impersonate", "Allows impersonating other users."),
                     ]),
                 },
             ),

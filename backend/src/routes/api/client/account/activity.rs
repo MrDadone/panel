@@ -62,17 +62,14 @@ mod get {
         )
         .await?;
 
+        let storage_url_retriever = state.storage.retrieve_urls().await?;
+
         ApiResponse::new_serialized(Response {
-            activities: Pagination {
-                total: activities.total,
-                per_page: activities.per_page,
-                page: activities.page,
-                data: activities
-                    .data
-                    .into_iter()
-                    .map(|activity| activity.into_api_object())
-                    .collect(),
-            },
+            activities: activities
+                .try_async_map(|activity| {
+                    activity.into_api_object(&state.database, &storage_url_retriever)
+                })
+                .await?,
         })
         .ok()
     }

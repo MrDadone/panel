@@ -5,6 +5,7 @@ import Select from './Select.tsx';
 
 interface SizeInputProps {
   label?: string;
+  description?: string;
   withAsterisk?: boolean;
   mode: 'b' | 'mb';
   min: number;

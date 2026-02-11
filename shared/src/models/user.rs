@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type};
 use std::{
     collections::BTreeMap,
+    ops::{Deref, DerefMut},
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
@@ -25,7 +26,25 @@ pub enum AuthMethod {
     ApiKey(super::user_api_key::UserApiKey),
 }
 
+#[derive(Clone)]
+pub struct UserImpersonator(pub User);
+
+impl Deref for UserImpersonator {
+    type Target = User;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for UserImpersonator {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 pub type GetUser = crate::extract::ConsumingExtension<User>;
+pub type GetUserImpersonator = crate::extract::ConsumingExtension<Option<UserImpersonator>>;
 pub type GetAuthMethod = crate::extract::ConsumingExtension<AuthMethod>;
 pub type GetPermissionManager = axum::extract::Extension<PermissionManager>;
 

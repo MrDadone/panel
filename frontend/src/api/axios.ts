@@ -7,6 +7,12 @@ export const axiosInstance: AxiosInstance = axios.create({
   },
 });
 
+axiosInstance.interceptors.request.use((request) => {
+  request.headers.set('Calagopus-User', localStorage.getItem('impersonatedUser'));
+
+  return request;
+});
+
 // Auto transform all data to camel case keys
 axiosInstance.interceptors.response.use(
   (response) => {

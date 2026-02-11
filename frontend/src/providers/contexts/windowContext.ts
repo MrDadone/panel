@@ -5,6 +5,7 @@ interface WindowContextType {
   addWindow: (icon: IconDefinition | undefined, title: string | undefined, component: ReactNode) => number;
   updateWindow: (id: number, title: string | undefined) => void;
   closeWindow: (id: number) => void;
+  closeAllWindows: () => void;
 }
 
 export const WindowContext = createContext<WindowContextType | undefined>(undefined);

@@ -9,7 +9,7 @@ use shared::{
     GetState,
     models::{
         server::{Server, ServerActivityLogger, ServerStatus},
-        user::{GetAuthMethod, GetPermissionManager, GetUser},
+        user::{GetAuthMethod, GetPermissionManager, GetUser, GetUserImpersonator},
     },
     response::ApiResponse,
 };
@@ -35,6 +35,7 @@ mod websocket;
 pub async fn auth(
     state: GetState,
     user: GetUser,
+    user_impersonator: GetUserImpersonator,
     permissions: GetPermissionManager,
     auth: GetAuthMethod,
     ip: shared::GetIp,
@@ -94,6 +95,7 @@ pub async fn auth(
         state: Arc::clone(&state),
         server_uuid: server.uuid,
         user_uuid: user.uuid,
+        impersonator_uuid: user_impersonator.as_ref().map(|i| i.uuid),
         user_admin: user.admin,
         user_owner: user.uuid == server.owner.uuid,
         user_subuser: server.subuser_permissions.is_some(),
@@ -104,6 +106,7 @@ pub async fn auth(
         ip: ip.0,
     });
     req.extensions_mut().insert(user.0);
+    req.extensions_mut().insert(user_impersonator.0);
     req.extensions_mut().insert(server);
 
     Ok(next.run(req).await)

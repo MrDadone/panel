@@ -172,7 +172,7 @@ function Footer() {
             )}
             <Menu.Divider />
             <Menu.Item leftSection={<FontAwesomeIcon icon={faArrowRightFromBracket} />} color='red' onClick={doLogout}>
-              {t('common.button.logout', {}) || 'Logout'}
+              {t('common.button.logout', {})}
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>

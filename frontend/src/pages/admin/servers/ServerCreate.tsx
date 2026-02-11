@@ -73,6 +73,7 @@ export default function ServerCreate() {
       limits: {
         cpu: 100,
         memory: 1024,
+        memoryOverhead: 0,
         swap: 0,
         disk: 10240,
         ioWeight: null,
@@ -318,17 +319,40 @@ export default function ServerCreate() {
                   <NumberInput
                     withAsterisk
                     label='CPU Limit (%)'
+                    description='The CPU Limit in % that the server can use, 1 thread = 100%'
                     placeholder='100'
                     min={0}
                     {...form.getInputProps('limits.cpu')}
                   />
                   <SizeInput
                     withAsterisk
+                    label='Swap'
+                    description='The amount of swap to give this server, -1 will not set a limit'
+                    mode='mb'
+                    min={-1}
+                    value={form.values.limits.swap}
+                    onChange={(value) => form.setFieldValue('limits.swap', value)}
+                  />
+                </Group>
+
+                <Group grow>
+                  <SizeInput
+                    withAsterisk
                     label='Memory'
+                    description='The Memory limit of the server container, 0 will not set a limit'
                     mode='mb'
                     min={0}
                     value={form.values.limits.memory}
                     onChange={(value) => form.setFieldValue('limits.memory', value)}
+                  />
+                  <SizeInput
+                    withAsterisk
+                    label='Memory Overhead'
+                    description='Hidden Memory that will be added to the container'
+                    mode='mb'
+                    min={0}
+                    value={form.values.limits.memoryOverhead}
+                    onChange={(value) => form.setFieldValue('limits.memoryOverhead', value)}
                   />
                 </Group>
 
@@ -336,20 +360,17 @@ export default function ServerCreate() {
                   <SizeInput
                     withAsterisk
                     label='Disk Space'
+                    description='The disk limit of the server, this is a soft-limit unless disk limiter configured on wings'
                     mode='mb'
                     min={0}
                     value={form.values.limits.disk}
                     onChange={(value) => form.setFieldValue('limits.disk', value)}
                   />
-                  <SizeInput
-                    withAsterisk
-                    label='Swap'
-                    mode='mb'
-                    min={-1}
-                    value={form.values.limits.swap}
-                    onChange={(value) => form.setFieldValue('limits.swap', value)}
+                  <NumberInput
+                    label='IO Weight'
+                    description='The relative IO Weight of the server container compared to other containers, 0-1000, may not work on all systems'
+                    {...form.getInputProps('limits.ioWeight')}
                   />
-                  <NumberInput label='IO Weight' {...form.getInputProps('limits.ioWeight')} />
                 </Group>
               </Stack>
             </TitleCard>

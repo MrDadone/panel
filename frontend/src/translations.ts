@@ -114,8 +114,11 @@ const baseTranslations = defineTranslations({
       na: 'N/A',
       yes: 'Yes',
       no: 'No',
+      web: 'Web',
+      api: 'API',
       system: 'System',
       schedule: 'Schedule',
+      impersonatedBy: 'Impersonated by {username}',
     },
     pages: {
       oobe: {

@@ -5,7 +5,7 @@ mod post {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::server_schedule::ServerSchedule,
+        models::{ByUuid, server_schedule::ServerSchedule},
         response::{ApiResponse, ApiResponseResult},
     };
     use std::collections::HashMap;
@@ -37,11 +37,15 @@ mod post {
         shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         for schedule_status in data.data {
-            let schedule =
-                match ServerSchedule::by_uuid(&state.database, schedule_status.uuid).await? {
-                    Some(schedule) => schedule,
-                    None => continue,
-                };
+            let schedule = match ServerSchedule::by_uuid_optional_cached(
+                &state.database,
+                schedule_status.uuid,
+            )
+            .await?
+            {
+                Some(schedule) => schedule,
+                None => continue,
+            };
 
             let mut futures = Vec::new();
             futures.reserve_exact(2 + schedule_status.errors.len());

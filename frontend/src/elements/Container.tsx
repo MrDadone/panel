@@ -1,5 +1,7 @@
 import { ReactNode, useRef } from 'react';
+import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
+import Alert from './Alert.tsx';
 import Tooltip from './Tooltip.tsx';
 
 interface LayoutProps {
@@ -8,6 +10,7 @@ interface LayoutProps {
 }
 
 export default function Container({ children, isNormal }: LayoutProps) {
+  const { impersonating } = useAuth();
   const { settings } = useGlobalStore();
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -19,7 +22,16 @@ export default function Container({ children, isNormal }: LayoutProps) {
           : 'flex flex-col justify-between h-full overflow-auto p-4'
       }
     >
-      <div ref={bodyRef}>{children}</div>
+      <div ref={bodyRef}>
+        {impersonating && (
+          <Alert color='yellow' className='mt-2 mx-2'>
+            You are currently impersonating a user. Please be aware that your actions may affect the impersonated user's
+            account. To exit impersonation mode, click the "Logout" button in the bottom left corner.
+          </Alert>
+        )}
+
+        {children}
+      </div>
       <div className='my-2 text-xs transition-all text-gray-400 mr-12'>
         <span className='flex flex-row justify-end gap-2'>
           <Tooltip label={settings.version}>

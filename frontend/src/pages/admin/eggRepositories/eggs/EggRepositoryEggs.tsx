@@ -5,6 +5,7 @@ import AdminSubContentContainer from '@/elements/containers/AdminSubContentConta
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
 import { eggRepositoryEggTableColumns } from '@/lib/tableColumns.ts';
+import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import EggActionBar from './EggActionBar.tsx';
 import EggRepositoryEggRow from './EggRepositoryEggRow.tsx';
@@ -45,6 +46,22 @@ export default function EggRepositoryEggs({ contextEggRepository }: { contextEgg
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getEggRepositoryEggs(contextEggRepository.uuid, page, search),
     setStoreData: setEggRepositoryEggs,
+  });
+
+  useKeyboardShortcuts({
+    shortcuts: [
+      {
+        key: 'a',
+        modifiers: ['ctrlOrMeta'],
+        callback: () => setSelectedEggs(new Set(eggRepositoryEggs.data.map((egg) => egg.uuid))),
+      },
+      {
+        key: 'Escape',
+        modifiers: ['ctrlOrMeta'],
+        callback: () => setSelectedEggs(new Set()),
+      },
+    ],
+    deps: [eggRepositoryEggs.data],
   });
 
   return (

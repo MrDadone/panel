@@ -73,6 +73,7 @@ mod post {
             shared::models::server_activity::CreateServerActivityOptions {
                 server_uuid,
                 user_uuid: None,
+                impersonator_uuid: None,
                 api_key_uuid: None,
                 schedule_uuid: None,
                 event: if data.successful {

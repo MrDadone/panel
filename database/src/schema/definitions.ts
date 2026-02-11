@@ -45,6 +45,10 @@ export const adminActivitiesTable = new DatabaseTable('admin_activities')
     uuid().references(() => usersTable.join().uuid, { onDelete: 'set null' }),
   )
   .addColumn(
+    'impersonator_uuid',
+    uuid().references(() => usersTable.join().uuid, { onDelete: 'set null' }),
+  )
+  .addColumn(
     'api_key_uuid',
     uuid().references(() => userApiKeysTable.join().uuid, { onDelete: 'set null' }),
   )
@@ -54,6 +58,7 @@ export const adminActivitiesTable = new DatabaseTable('admin_activities')
   .addColumn('created', timestamp().defaultNow().notNull())
   .addConfigBuilder((cols) => [
     index('admin_activities_user_uuid_idx').on(cols.user_uuid),
+    index('admin_activities_impersonator_uuid_idx').on(cols.impersonator_uuid),
     index('admin_activities_event_idx').on(cols.event),
     index('admin_activities_user_uuid_event_idx').on(cols.user_uuid, cols.event),
   ]);
@@ -93,6 +98,10 @@ export const userActivitiesTable = new DatabaseTable('user_activities')
       .notNull(),
   )
   .addColumn(
+    'impersonator_uuid',
+    uuid().references(() => usersTable.join().uuid, { onDelete: 'set null' }),
+  )
+  .addColumn(
     'api_key_uuid',
     uuid().references(() => userApiKeysTable.join().uuid, { onDelete: 'set null' }),
   )
@@ -101,8 +110,9 @@ export const userActivitiesTable = new DatabaseTable('user_activities')
   .addColumn('data', jsonb().notNull())
   .addColumn('created', timestamp().defaultNow().notNull())
   .addConfigBuilder((cols) => [
-    index('user_activities_user_id_idx').on(cols.user_uuid),
-    index('user_activities_user_id_event_idx').on(cols.user_uuid, cols.event),
+    index('user_activities_user_uuid_idx').on(cols.user_uuid),
+    index('user_activities_impersonator_uuid_idx').on(cols.impersonator_uuid),
+    index('user_activities_user_uuid_event_idx').on(cols.user_uuid, cols.event),
   ]);
 
 export const userSessionsTable = new DatabaseTable('user_sessions')
@@ -120,7 +130,7 @@ export const userSessionsTable = new DatabaseTable('user_sessions')
   .addColumn('last_used', timestamp().defaultNow().notNull())
   .addColumn('created', timestamp().defaultNow().notNull())
   .addConfigBuilder((cols) => [
-    index('user_sessions_user_id_idx').on(cols.user_uuid),
+    index('user_sessions_user_uuid_idx').on(cols.user_uuid),
     uniqueIndex('user_sessions_key_idx').on(cols.key),
   ]);
 
@@ -592,6 +602,7 @@ export const serversTable = new DatabaseTable('servers')
   .addColumn('status', serverStatusEnum.intoDrizzleEnum()())
   .addColumn('suspended', boolean().default(false).notNull())
   .addColumn('memory', bigint({ mode: 'number' }).notNull())
+  .addColumn('memory_overhead', bigint({ mode: 'number' }).default(0).notNull())
   .addColumn('swap', bigint({ mode: 'number' }).notNull())
   .addColumn('disk', bigint({ mode: 'number' }).notNull())
   .addColumn('io_weight', smallint())
@@ -674,6 +685,10 @@ export const serverActivitiesTable = new DatabaseTable('server_activities')
     uuid().references(() => usersTable.join().uuid, { onDelete: 'set null' }),
   )
   .addColumn(
+    'impersonator_uuid',
+    uuid().references(() => usersTable.join().uuid, { onDelete: 'set null' }),
+  )
+  .addColumn(
     'api_key_uuid',
     uuid().references(() => userApiKeysTable.join().uuid, { onDelete: 'set null' }),
   )
@@ -688,6 +703,7 @@ export const serverActivitiesTable = new DatabaseTable('server_activities')
   .addConfigBuilder((cols) => [
     index('server_activities_server_uuid_idx').on(cols.server_uuid),
     index('server_activities_user_uuid_idx').on(cols.user_uuid),
+    index('server_activities_impersonator_uuid_idx').on(cols.impersonator_uuid),
     index('server_activities_server_uuid_event_idx').on(cols.server_uuid, cols.event),
     index('server_activities_user_uuid_event_idx').on(cols.user_uuid, cols.event),
   ]);

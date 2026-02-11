@@ -25,6 +25,10 @@ const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setWindows((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const closeAllWindows = useCallback(() => {
+    setWindows([]);
+  }, []);
+
   const addWindow = useCallback(
     (icon: IconDefinition | undefined, title: string | undefined, component: ReactNode) => {
       const id = windowId++;
@@ -68,8 +72,9 @@ const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
       addWindow,
       updateWindow,
       closeWindow,
+      closeAllWindows,
     }),
-    [addWindow, updateWindow, closeWindow],
+    [addWindow, updateWindow, closeWindow, closeAllWindows],
   );
 
   return (

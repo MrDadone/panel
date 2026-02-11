@@ -9,6 +9,7 @@ export const adminServerCreateSchema = z.object({
   limits: z.object({
     cpu: z.number().min(0),
     memory: z.number().min(0),
+    memoryOverhead: z.number().min(0),
     swap: z.number().min(-1),
     disk: z.number().min(0),
     ioWeight: z.number().min(0).max(1000).nullable(),
@@ -49,6 +50,7 @@ export const adminServerUpdateSchema = z.object({
   limits: z.object({
     cpu: z.number().min(0),
     memory: z.number().min(0),
+    memoryOverhead: z.number().min(0),
     swap: z.number().min(-1),
     disk: z.number().min(0),
     ioWeight: z.number().min(0).max(1000).nullable(),

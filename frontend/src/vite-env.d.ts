@@ -13,6 +13,7 @@ declare global {
 
   interface AdminActivity {
     user?: User;
+    impersonator?: User;
     event: string;
     ip: string | null;
     data: object | null;
@@ -257,7 +258,7 @@ declare global {
     suspended: boolean;
     name: string;
     description: string | null;
-    limits: ServerLimits;
+    limits: AdminServerLimits;
     pinnedCpus: number[];
     featureLimits: ServerFeatureLimits;
     startup: string;
@@ -364,6 +365,7 @@ declare global {
 
   interface ServerActivity {
     user?: User;
+    impersonator?: User;
     event: string;
     ip: string | null;
     data: object | null;
@@ -452,12 +454,20 @@ declare global {
     schedules: number;
   }
 
+  interface AdminServerLimits {
+    cpu: number;
+    memory: number;
+    memoryOverhead: number;
+    swap: number;
+    disk: number;
+    ioWeight: number;
+  }
+
   interface ServerLimits {
     cpu: number;
     memory: number;
     swap: number;
     disk: number;
-    ioWeight: number;
   }
 
   interface ServerMount {
@@ -942,6 +952,7 @@ declare global {
   }
 
   interface UserActivity {
+    impersonator?: User;
     event: string;
     ip: string;
     data: object | null;

@@ -140,6 +140,7 @@ mod post {
                     &state,
                     shared::models::user_activity::CreateUserActivityOptions {
                         user_uuid: user.uuid,
+                        impersonator_uuid: None,
                         api_key_uuid: None,
                         event: "auth:success".into(),
                         ip: Some(ip.0.into()),
@@ -176,6 +177,7 @@ mod post {
                         &state,
                         shared::models::user_activity::CreateUserActivityOptions {
                             user_uuid: user.uuid,
+                            impersonator_uuid: None,
                             api_key_uuid: None,
                             event: "auth:success".into(),
                             ip: Some(ip.0.into()),

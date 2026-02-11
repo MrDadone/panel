@@ -20,10 +20,12 @@ import { adminUserSchema } from '@/lib/schemas/admin/users.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
+import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 
 export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User }) {
+  const { doImpersonate } = useAuth();
   const { settings, languages } = useGlobalStore();
   const { addToast } = useToast();
   const canReadRoles = useAdminCan('roles.read');
@@ -184,6 +186,11 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
                   disabled={!contextUser.totpEnabled}
                 >
                   Disable Two Factor
+                </Button>
+              </AdminCan>
+              <AdminCan action='users.impersonate'>
+                <Button variant='outline' onClick={() => doImpersonate(contextUser)}>
+                  Impersonate
                 </Button>
               </AdminCan>
               <AdminCan action='users.delete' cantDelete>
