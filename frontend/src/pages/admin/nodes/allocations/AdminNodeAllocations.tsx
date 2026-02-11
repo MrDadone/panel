@@ -62,15 +62,21 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
     refetch();
   }, [ipFilter, portFilter]);
 
-  const onSelectedStart = (event: ReactMouseEvent | MouseEvent) => {
-    setSelectedNodeAllocationsPrevious(event.shiftKey ? selectedNodeAllocations : []);
-  };
+  const onSelectedStart = useCallback(
+    (event: ReactMouseEvent | MouseEvent) => {
+      setSelectedNodeAllocationsPrevious(event.shiftKey ? selectedNodeAllocations : []);
+    },
+    [selectedNodeAllocations],
+  );
 
-  const onSelected = (selected: NodeAllocation[]) => {
-    startTransition(() => {
-      setSelectedNodeAllocations([...selectedNodeAllocationsPrevious, ...selected]);
-    });
-  };
+  const onSelected = useCallback(
+    (selected: NodeAllocation[]) => {
+      startTransition(() => {
+        setSelectedNodeAllocations([...selectedNodeAllocationsPrevious, ...selected]);
+      });
+    },
+    [selectedNodeAllocationsPrevious],
+  );
 
   useEffect(() => {
     setSelectedNodeAllocations([]);
@@ -114,13 +120,13 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
     deps: [nodeAllocations.data],
   });
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     setSelectedNodeAllocations(nodeAllocations.data);
-  };
+  }, [nodeAllocations.data]);
 
-  const handleClearSelection = () => {
+  const handleClearSelection = useCallback(() => {
     setSelectedNodeAllocations([]);
-  };
+  }, []);
 
   return (
     <AdminSubContentContainer

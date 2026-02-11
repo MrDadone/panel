@@ -22,6 +22,7 @@ interface SelectionAreaProps<T> {
   children: ReactNode;
   onSelectedStart?: (event: ReactMouseEvent | MouseEvent) => void;
   onSelected?: (items: T[]) => void;
+  onSelectedEnd?: () => void;
   className?: string;
   style?: CSSProperties;
   disabled?: boolean;
@@ -217,6 +218,7 @@ class SelectionArea<T> extends Component<SelectionAreaProps<T>, SelectionAreaSta
       selectionBoxStyle: { display: 'none' },
     });
     this.mouseDown = false;
+    this.props.onSelectedEnd?.();
   };
 
   private doIntersect(rect1: DOMRect, rect2: DOMRect): boolean {

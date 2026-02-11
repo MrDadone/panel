@@ -1,5 +1,5 @@
 import { Group } from '@mantine/core';
-import { Ref, startTransition, useEffect, useState } from 'react';
+import { Ref, startTransition, useCallback, useEffect, useState } from 'react';
 import getNodeServers from '@/api/admin/nodes/servers/getNodeServers.ts';
 import sendNodeServersPowerAction from '@/api/admin/nodes/servers/sendNodeServersPowerAction.ts';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
@@ -30,15 +30,21 @@ export default function AdminNodeServers({ node }: { node: Node }) {
     setStoreData: setNodeServers,
   });
 
-  const onSelectedStart = (event: React.MouseEvent | MouseEvent) => {
-    setSelectedServersPrevious(event.shiftKey ? selectedServers : new Set());
-  };
+  const onSelectedStart = useCallback(
+    (event: React.MouseEvent | MouseEvent) => {
+      setSelectedServersPrevious(event.shiftKey ? selectedServers : new Set());
+    },
+    [selectedServers],
+  );
 
-  const onSelected = (selected: string[]) => {
-    startTransition(() => {
-      setSelectedServers(new Set([...selectedServersPrevious, ...selected]));
-    });
-  };
+  const onSelected = useCallback(
+    (selected: string[]) => {
+      startTransition(() => {
+        setSelectedServers(new Set([...selectedServersPrevious, ...selected]));
+      });
+    },
+    [selectedServersPrevious],
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -59,13 +59,7 @@ mod post {
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update egg: {:?}", err);
-
-                return ApiResponse::error("failed to update egg")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

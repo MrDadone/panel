@@ -14,7 +14,7 @@ env:
 jobs:
   build-frontend:
     name: Build Frontend
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout sources
@@ -77,19 +77,19 @@ jobs:
           - x86_64-windows
         include:
           - build: x86_64-linux
-            os: blacksmith-2vcpu-ubuntu-2404
+            os: ubuntu-24.04
             target: x86_64-unknown-linux-musl
             binary_suffix: ""
           - build: aarch64-linux
-            os: blacksmith-2vcpu-ubuntu-2404
+            os: ubuntu-24.04
             target: aarch64-unknown-linux-musl
             binary_suffix: ""
           - build: riscv64-linux
-            os: blacksmith-2vcpu-ubuntu-2404
+            os: ubuntu-24.04
             target: riscv64gc-unknown-linux-gnu
             binary_suffix: ""
           - build: ppc64le-linux
-            os: blacksmith-2vcpu-ubuntu-2404
+            os: ubuntu-24.04
             target: powerpc64le-unknown-linux-gnu
             binary_suffix: ""
           - build: x86_64-macos
@@ -176,7 +176,7 @@ jobs:
   publish:
     name: Publish
     needs: [dist]
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
 
@@ -207,7 +207,7 @@ jobs:
   create-multiarch-image:
     name: Create multi-arch Docker image
     needs: [dist]
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -250,25 +250,29 @@ jobs:
 
       - name: Build & push multi-arch image (main)
         if: github.ref == 'refs/heads/main'
-        uses: useblacksmith/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/riscv64,linux/ppc64le
           push: true
           tags: ghcr.io/${{ env.REPO_NAME }}:latest,ghcr.io/${{ env.REPO_NAME }}:nightly,ghcr.io/${{ env.REPO_NAME }}:${{ steps.version.outputs.val }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build & push multi-arch image (nightly)
         if: github.ref == 'refs/heads/nightly'
-        uses: useblacksmith/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/riscv64,linux/ppc64le
           push: true
           tags: ghcr.io/${{ env.REPO_NAME }}:nightly
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build & push multi-arch heavy image (main)
         if: github.ref == 'refs/heads/main'
-        uses: useblacksmith/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile.heavy
@@ -276,10 +280,12 @@ jobs:
           #,linux/riscv64,linux/ppc64le
           push: true
           tags: ghcr.io/${{ env.REPO_NAME }}:heavy,ghcr.io/${{ env.REPO_NAME }}:nightly-heavy,ghcr.io/${{ env.REPO_NAME }}:${{ steps.version.outputs.val }}-heavy
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build & push multi-arch heavy image (nightly)
         if: github.ref == 'refs/heads/nightly'
-        uses: useblacksmith/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile.heavy
@@ -287,3 +293,5 @@ jobs:
           #,linux/riscv64,linux/ppc64le
           push: true
           tags: ghcr.io/${{ env.REPO_NAME }}:nightly-heavy
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

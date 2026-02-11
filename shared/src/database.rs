@@ -318,6 +318,16 @@ impl DatabaseError {
             _ => false,
         }
     }
+
+    #[inline]
+    pub const fn is_validation_error(&self) -> bool {
+        matches!(self, Self::Validation(_))
+    }
+
+    #[inline]
+    pub const fn is_invalid_relation(&self) -> bool {
+        matches!(self, Self::InvalidRelation(_))
+    }
 }
 
 impl std::error::Error for DatabaseError {}

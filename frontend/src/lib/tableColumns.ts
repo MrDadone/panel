@@ -42,7 +42,7 @@ export const serverAllocationTableColumns = ['', 'ID', 'IP', 'IP Alias', 'Port',
 
 export const userTableColumns = ['', 'ID', 'Username', 'Role', 'Created'];
 
-export const eggRepositoryEggTableColumns = ['Path', 'Name', 'Author', 'Description', ''];
+export const eggRepositoryEggTableColumns = ['', 'Path', 'Name', 'Author', 'Description', ''];
 
 export const adminOAuthProviderUsersTableColumns = ['ID', 'User', 'Identifier', 'Last Used', 'Created'];
 
