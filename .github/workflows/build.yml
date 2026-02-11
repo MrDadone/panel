@@ -126,6 +126,7 @@ jobs:
         with:
           toolchain: stable
           target: ${{ matrix.target }}
+          cache-key: ${{ matrix.target }}
 
       - name: Install cross
         if: contains(matrix.target, 'linux')
