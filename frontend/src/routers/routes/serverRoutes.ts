@@ -16,6 +16,7 @@ import ServerActivity from '@/pages/server/activity/ServerActivity.tsx';
 import ServerBackups from '@/pages/server/backups/ServerBackups.tsx';
 import ServerDatabases from '@/pages/server/databases/ServerDatabases.tsx';
 import ServerFiles from '@/pages/server/files/ServerFiles.tsx';
+import ServerFilesNew from '@/pages/server/filesnew/ServerFiles.tsx';
 import ServerNetwork from '@/pages/server/network/ServerNetwork.tsx';
 import ScheduleView from '@/pages/server/schedules/ScheduleView.tsx';
 import ServerSchedules from '@/pages/server/schedules/ServerSchedules.tsx';
@@ -47,6 +48,13 @@ const routes: ServerRouteDefinition[] = [
     name: undefined,
     path: '/files/:action',
     element: FileEditor,
+    permission: 'files.read',
+  },
+  {
+    name: 'Files New',
+    icon: faFolderOpen,
+    path: '/files-new',
+    element: ServerFilesNew,
     permission: 'files.read',
   },
   {
