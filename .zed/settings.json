@@ -8,9 +8,9 @@
 				}
 			},
 			"code_actions_on_format": {
-        "source.fixAll.biome": true,
-        "source.organizeImports.biome": true
-      }
+				"source.fixAll.biome": true,
+				"source.organizeImports.biome": true
+			}
 		},
 		"TSX": {
 			"language_servers": ["tsgo", "biome"],
@@ -20,9 +20,9 @@
 				}
 			},
 			"code_actions_on_format": {
-        "source.fixAll.biome": true,
-        "source.organizeImports.biome": true
-      }
+				"source.fixAll.biome": true,
+				"source.organizeImports.biome": true
+			}
 		}
 	},
 	"lsp": {
