@@ -1,3 +1,5 @@
+use tokio::io::AsyncWriteExt;
+
 use crate::settings::SettingsReadGuard;
 use std::{path::Path, sync::Arc};
 
@@ -135,7 +137,7 @@ impl Storage {
     pub async fn store(
         &self,
         path: &str,
-        data: Vec<u8>,
+        mut data: impl tokio::io::AsyncRead + Unpin,
         content_type: &str,
     ) -> Result<(), anyhow::Error> {
         if path.is_empty() || path.contains("..") || path.starts_with("/") {
@@ -144,7 +146,7 @@ impl Storage {
 
         let settings = self.settings.get().await?;
 
-        tracing::debug!(path, "storing file: {} bytes", data.len());
+        tracing::debug!(path, content_type, "storing file");
 
         match &settings.storage_driver {
             super::settings::StorageDriver::Filesystem { path: base_path } => {
@@ -155,7 +157,10 @@ impl Storage {
                     base_filesystem.async_create_dir_all(parent).await?;
                 }
 
-                base_filesystem.async_write(path, data).await?;
+                let mut file = base_filesystem.async_create(path).await?;
+                tokio::io::copy(&mut data, &mut file).await?;
+
+                file.shutdown().await?;
             }
             super::settings::StorageDriver::S3 {
                 access_key,
@@ -176,7 +181,7 @@ impl Storage {
                 )?;
 
                 s3_client
-                    .put_object_with_content_type(path, &data, content_type)
+                    .put_object_stream_with_content_type(&mut data, path, content_type)
                     .await?;
             }
         }

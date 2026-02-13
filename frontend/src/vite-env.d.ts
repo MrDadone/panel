@@ -948,6 +948,7 @@ declare global {
     requireTwoFactor: boolean;
     toastPosition: UserToastPosition;
     startOnGroupedServers: boolean;
+    hasPassword: boolean;
     created: Date;
   }
 

@@ -249,10 +249,10 @@ impl OAuthProvider {
             match serde_json_path::JsonPath::parse(match &self.email_path {
                 Some(path) => path,
                 None => {
-                    return Err(crate::response::DisplayError::new(
-                        "no email path defined, unable to register",
-                    )
-                    .into());
+                    return Ok(format!(
+                        "{}@oauth.c7s.rs",
+                        rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 10)
+                    ));
                 }
             })?
             .query(value)

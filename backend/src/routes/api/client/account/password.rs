@@ -35,7 +35,7 @@ mod put {
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
-        user: GetUser,
+        mut user: GetUser,
         activity_logger: GetUserActivityLogger,
         shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
@@ -56,7 +56,7 @@ mod put {
                 .ok();
         }
 
-        user.update_password(&state.database, &data.new_password)
+        user.update_password(&state.database, Some(&data.new_password))
             .await?;
 
         activity_logger

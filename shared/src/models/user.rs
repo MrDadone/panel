@@ -228,6 +228,8 @@ pub struct User {
     pub toast_position: UserToastPosition,
     pub start_on_grouped_servers: bool,
 
+    pub has_password: bool,
+
     pub created: chrono::NaiveDateTime,
 }
 
@@ -287,6 +289,10 @@ impl BaseModel for User {
                 compact_str::format_compact!("{prefix}start_on_grouped_servers"),
             ),
             (
+                "(users.password IS NOT NULL)",
+                compact_str::format_compact!("{prefix}has_password"),
+            ),
+            (
                 "users.created",
                 compact_str::format_compact!("{prefix}created"),
             ),
@@ -333,6 +339,8 @@ impl BaseModel for User {
             start_on_grouped_servers: row.try_get(
                 compact_str::format_compact!("{prefix}start_on_grouped_servers").as_str(),
             )?,
+            has_password: row
+                .try_get(compact_str::format_compact!("{prefix}has_password").as_str())?,
             created: row.try_get(compact_str::format_compact!("{prefix}created").as_str())?,
         })
     }
@@ -523,7 +531,7 @@ impl User {
             SELECT {}
             FROM users
             LEFT JOIN roles ON roles.uuid = users.role_uuid
-            WHERE lower(users.email) = lower($1) AND users.password = crypt($2, users.password)
+            WHERE lower(users.email) = lower($1) AND users.password IS NOT NULL AND users.password = crypt($2, users.password)
             "#,
             Self::columns_sql(None)
         ))
@@ -565,7 +573,7 @@ impl User {
             SELECT {}
             FROM users
             LEFT JOIN roles ON roles.uuid = users.role_uuid
-            WHERE lower(users.username) = lower($1) AND users.password = crypt($2, users.password)
+            WHERE lower(users.username) = lower($1) AND users.password IS NOT NULL AND users.password = crypt($2, users.password)
             "#,
             Self::columns_sql(None)
         ))
@@ -699,6 +707,10 @@ impl User {
         database: &crate::database::Database,
         password: &str,
     ) -> Result<bool, crate::database::DatabaseError> {
+        if !self.has_password {
+            return Ok(true);
+        }
+
         let row = sqlx::query(
             r#"
             SELECT 1
@@ -714,22 +726,41 @@ impl User {
         Ok(row.is_some())
     }
 
+    /// Update the User password, if `None` will disallow password login and not require one when changing
     pub async fn update_password(
-        &self,
+        &mut self,
         database: &crate::database::Database,
-        password: &str,
+        password: Option<&str>,
     ) -> Result<(), crate::database::DatabaseError> {
-        sqlx::query(
-            r#"
-            UPDATE users
-            SET password = crypt($2, gen_salt('bf'))
-            WHERE users.uuid = $1
-            "#,
-        )
-        .bind(self.uuid)
-        .bind(password)
-        .execute(database.write())
-        .await?;
+        if let Some(password) = password {
+            sqlx::query(
+                r#"
+		            UPDATE users
+		            SET password = crypt($2, gen_salt('bf'))
+		            WHERE users.uuid = $1
+		            "#,
+            )
+            .bind(self.uuid)
+            .bind(password)
+            .execute(database.write())
+            .await?;
+
+            self.has_password = true;
+        } else {
+            sqlx::query(
+                r#"
+		            UPDATE users
+		            SET password = NULL
+		            WHERE users.uuid = $1
+		            "#,
+            )
+            .bind(self.uuid)
+            .bind(password)
+            .execute(database.write())
+            .await?;
+
+            self.has_password = false;
+        }
 
         Ok(())
     }
@@ -787,6 +818,7 @@ impl User {
             language: self.language,
             toast_position: self.toast_position,
             start_on_grouped_servers: self.start_on_grouped_servers,
+            has_password: self.has_password,
             created: self.created.and_utc(),
         }
     }
@@ -815,7 +847,7 @@ pub struct CreateUserOptions {
     pub name_last: compact_str::CompactString,
     #[validate(length(min = 1, max = 512))]
     #[schema(min_length = 1, max_length = 512)]
-    pub password: String,
+    pub password: Option<String>,
 
     pub admin: bool,
 
@@ -864,12 +896,13 @@ impl CreatableModel for User {
             .set("username", &options.username)
             .set("email", &options.email)
             .set("name_first", &options.name_first)
-            .set("name_last", &options.name_last)
-            .set_expr(
-                "password",
-                "crypt($1, gen_salt('bf', 8))",
-                vec![&options.password],
-            )
+            .set("name_last", &options.name_last);
+
+        if let Some(password) = &options.password {
+            query_builder.set_expr("password", "crypt($1, gen_salt('bf', 8))", vec![password]);
+        }
+
+        query_builder
             .set("admin", options.admin)
             .set("language", &options.language);
 
@@ -918,7 +951,7 @@ pub struct UpdateUserOptions {
     pub name_last: Option<compact_str::CompactString>,
     #[validate(length(min = 8, max = 512))]
     #[schema(min_length = 8, max_length = 512)]
-    pub password: Option<compact_str::CompactString>,
+    pub password: Option<Option<compact_str::CompactString>>,
 
     pub admin: Option<bool>,
 
@@ -1001,7 +1034,8 @@ impl UpdatableModel for User {
             self.email = email.into();
         }
         if let Some(password) = options.password {
-            self.update_password(&state.database, &password).await?;
+            self.update_password(&state.database, password.as_deref())
+                .await?;
         }
         if let Some(name_first) = options.name_first {
             self.name_first = name_first;
@@ -1120,6 +1154,8 @@ pub struct ApiFullUser {
     pub language: compact_str::CompactString,
     pub toast_position: UserToastPosition,
     pub start_on_grouped_servers: bool,
+
+    pub has_password: bool,
 
     pub created: chrono::DateTime<chrono::Utc>,
 }

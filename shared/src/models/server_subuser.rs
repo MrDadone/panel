@@ -216,7 +216,6 @@ impl CreatableModel for ServerSubuser {
                     "{username}_{}",
                     rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 4)
                 );
-                let password = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 32);
 
                 let app_settings = state.settings.get().await?;
 
@@ -227,7 +226,7 @@ impl CreatableModel for ServerSubuser {
                     email: options.email.clone(),
                     name_first: "Server".into(),
                     name_last: "Subuser".into(),
-                    password,
+                    password: None,
                     admin: false,
                     language: app_settings.app.language.clone(),
                 };

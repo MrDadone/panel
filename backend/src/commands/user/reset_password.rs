@@ -57,7 +57,7 @@ impl shared::extensions::commands::CliCommand<ResetPasswordArgs> for ResetPasswo
                     shared::models::user::User::by_username(&state.database, &user).await
                 }?;
 
-                let Some(user) = user else {
+                let Some(mut user) = user else {
                     eprintln!("{}", "user not found".red());
                     std::process::exit(1);
                 };
@@ -77,7 +77,8 @@ impl shared::extensions::commands::CliCommand<ResetPasswordArgs> for ResetPasswo
                     }
                 };
 
-                user.update_password(&state.database, &password).await?;
+                user.update_password(&state.database, Some(&password))
+                    .await?;
 
                 eprintln!(
                     "password has been reset for the user {}",

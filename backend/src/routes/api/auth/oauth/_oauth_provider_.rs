@@ -10,7 +10,6 @@ use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, ClientSecret, HttpRequest, HttpResponse, RedirectUrl,
     TokenResponse, TokenUrl, basic::BasicClient,
 };
-use rand::distr::SampleString;
 use rustis::commands::StringCommands;
 use serde::Deserialize;
 use shared::{
@@ -194,14 +193,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                     .json()
                     .await?;
 
-                let identifier = match oauth_provider.extract_identifier(&info) {
-                    Ok(identifier) => identifier,
-                    Err(err) => {
-                        return ApiResponse::error(&err.to_string())
-                            .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                            .ok();
-                    }
-                };
+                let identifier = oauth_provider.extract_identifier(&info)?;
 
                 let options = shared::models::user_oauth_link::CreateUserOAuthLinkOptions {
                     user_uuid: user.uuid,
@@ -267,14 +259,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                     .json()
                     .await?;
 
-                let identifier = match oauth_provider.extract_identifier(&info) {
-                    Ok(identifier) => identifier,
-                    Err(err) => {
-                        return ApiResponse::error(&err.to_string())
-                            .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                            .ok();
-                    }
-                };
+                let identifier = oauth_provider.extract_identifier(&info)?;
 
                 match UserOAuthLink::by_oauth_provider_uuid_identifier(&state.database, oauth_provider.uuid, &identifier).await? {
                     Some(oauth_link) => {
@@ -365,38 +350,10 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                         }
                         let secure = settings.app.url.starts_with("https://");
 
-                        let username = match oauth_provider.extract_username(&info) {
-                            Ok(username) => username.into(),
-                            Err(err) => {
-                                return ApiResponse::error(&err.to_string())
-                                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                                    .ok();
-                            }
-                        };
-                        let email = match oauth_provider.extract_email(&info) {
-                            Ok(email) => email,
-                            Err(err) => {
-                                return ApiResponse::error(&err.to_string())
-                                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                                    .ok();
-                            }
-                        };
-                        let name_first = match oauth_provider.extract_name_first(&info) {
-                            Ok(name_first) => name_first.into(),
-                            Err(err) => {
-                                return ApiResponse::error(&err.to_string())
-                                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                                    .ok();
-                            }
-                        };
-                        let name_last = match oauth_provider.extract_name_last(&info) {
-                            Ok(name_last) => name_last.into(),
-                            Err(err) => {
-                                return ApiResponse::error(&err.to_string())
-                                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                                    .ok();
-                            }
-                        };
+                        let username = oauth_provider.extract_username(&info)?.into();
+                        let email = oauth_provider.extract_email(&info)?;
+                        let name_first = oauth_provider.extract_name_first(&info)?.into();
+                        let name_last = oauth_provider.extract_name_last(&info)?.into();
 
                         let options = shared::models::user::CreateUserOptions {
                             role_uuid: None,
@@ -405,7 +362,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                             email,
                             name_first,
                             name_last,
-                            password: rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 16),
+                            password: None,
                             admin: false,
                             language: settings.app.language.clone(),
                         };

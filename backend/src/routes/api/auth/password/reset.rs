@@ -43,14 +43,15 @@ mod post {
                 .ok();
         }
 
-        let token = match UserPasswordReset::delete_by_token(&state.database, &data.token).await? {
-            Some(token) => token,
-            None => {
-                return ApiResponse::error("invalid or expired token")
-                    .with_status(StatusCode::BAD_REQUEST)
-                    .ok();
-            }
-        };
+        let mut token =
+            match UserPasswordReset::delete_by_token(&state.database, &data.token).await? {
+                Some(token) => token,
+                None => {
+                    return ApiResponse::error("invalid or expired token")
+                        .with_status(StatusCode::BAD_REQUEST)
+                        .ok();
+                }
+            };
 
         if let Err(err) = UserActivity::create(
             &state,
@@ -80,7 +81,7 @@ mod post {
 
         token
             .user
-            .update_password(&state.database, &data.new_password)
+            .update_password(&state.database, Some(&data.new_password))
             .await?;
 
         ApiResponse::new_serialized(Response {}).ok()

@@ -11,6 +11,7 @@ import Button from '@/elements/Button.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import { dashboardPasswordSchema } from '@/lib/schemas/dashboard.ts';
+import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { AccountCardProps } from './DashboardAccount.tsx';
@@ -18,6 +19,7 @@ import { AccountCardProps } from './DashboardAccount.tsx';
 export default function PasswordContainer({ blurred }: AccountCardProps) {
   const { t } = useTranslations();
   const { addToast } = useToast();
+  const { user, setUser } = useAuth();
 
   const [loading, setLoading] = useState(false);
 
@@ -35,10 +37,14 @@ export default function PasswordContainer({ blurred }: AccountCardProps) {
     setLoading(true);
 
     updatePassword({
-      password: form.values.currentPassword,
+      password: user.hasPassword ? form.values.currentPassword : 'aaa',
       newPassword: form.values.newPassword,
     })
       .then(() => {
+        if (!user.hasPassword) {
+          setUser({ ...user!, hasPassword: true });
+        }
+
         addToast(t('pages.account.account.containers.password.toast.updated', {}), 'success');
         form.reset();
       })
@@ -57,13 +63,15 @@ export default function PasswordContainer({ blurred }: AccountCardProps) {
       >
         <form onSubmit={form.onSubmit(() => doUpdate())}>
           <Stack>
-            <PasswordInput
-              withAsterisk
-              label={t('pages.account.account.containers.password.form.currentPassword', {})}
-              placeholder={t('pages.account.account.containers.password.form.currentPassword', {})}
-              autoComplete='current-password'
-              {...form.getInputProps('currentPassword')}
-            />
+            {user.hasPassword && (
+              <PasswordInput
+                withAsterisk
+                label={t('pages.account.account.containers.password.form.currentPassword', {})}
+                placeholder={t('pages.account.account.containers.password.form.currentPassword', {})}
+                autoComplete='current-password'
+                {...form.getInputProps('currentPassword')}
+              />
+            )}
             <PasswordInput
               withAsterisk
               label={t('pages.account.account.containers.password.form.newPassword', {})}

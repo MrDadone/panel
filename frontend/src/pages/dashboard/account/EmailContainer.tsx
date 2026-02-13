@@ -42,7 +42,10 @@ export default function EmailContainer({ blurred }: AccountCardProps) {
   const doUpdate = () => {
     setLoading(true);
 
-    updateEmail(form.values)
+    updateEmail({
+      password: user.hasPassword ? form.values.password : 'aaa',
+      email: form.values.email,
+    })
       .then(() => {
         addToast(t('pages.account.account.containers.email.toast.updated', {}), 'success');
 
@@ -71,13 +74,15 @@ export default function EmailContainer({ blurred }: AccountCardProps) {
               autoComplete='email'
               {...form.getInputProps('email')}
             />
-            <PasswordInput
-              withAsterisk
-              label={t('pages.account.account.containers.email.form.currentPassword', {})}
-              placeholder={t('pages.account.account.containers.email.form.currentPassword', {})}
-              autoComplete='current-password'
-              {...form.getInputProps('password')}
-            />
+            {user.hasPassword && (
+              <PasswordInput
+                withAsterisk
+                label={t('pages.account.account.containers.email.form.currentPassword', {})}
+                placeholder={t('pages.account.account.containers.email.form.currentPassword', {})}
+                autoComplete='current-password'
+                {...form.getInputProps('password')}
+              />
+            )}
           </Stack>
           <Group className='mt-auto pt-4'>
             <Button type='submit' disabled={!form.isValid()} loading={loading}>
