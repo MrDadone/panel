@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
-import { serverScheduleUpdateSchema } from '@/lib/schemas/server/schedule.ts';
+import { serverScheduleUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import { transformKeysToSnakeCase } from '@/lib/transformers.ts';
 
 export default async (

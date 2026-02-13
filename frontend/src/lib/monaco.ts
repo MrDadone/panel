@@ -1,6 +1,8 @@
 import { type Monaco } from '@monaco-editor/react';
 
 type IMonarchLanguageRule = import('monaco-editor').languages.IMonarchLanguageRule;
+type ITextModel = import('monaco-editor').editor.ITextModel;
+type IPosition = import('monaco-editor').IPosition;
 
 export function registerHoconLanguage(monaco: Monaco) {
   monaco.languages.register({ id: 'hocon', extensions: ['.conf', '.hocon'], aliases: ['HOCON', 'hocon'] });
@@ -131,7 +133,7 @@ export function registerHoconLanguage(monaco: Monaco) {
 
   // Auto-completion for HOCON
   monaco.languages.registerCompletionItemProvider('hocon', {
-    provideCompletionItems: (model, position) => {
+    provideCompletionItems: (model: ITextModel, position: IPosition) => {
       const word = model.getWordUntilPosition(position);
       const range = {
         startLineNumber: position.lineNumber,
@@ -610,7 +612,7 @@ export function registerTomlLanguage(monaco: Monaco) {
 
   // --- Auto-completion for TOML ---
   monaco.languages.registerCompletionItemProvider('toml', {
-    provideCompletionItems: (model, position) => {
+    provideCompletionItems: (model: ITextModel, position: IPosition) => {
       const range = {
         startLineNumber: position.lineNumber,
         endLineNumber: position.lineNumber,

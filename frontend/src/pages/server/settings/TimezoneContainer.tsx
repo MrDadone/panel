@@ -33,7 +33,7 @@ export default function TimezoneContainer() {
 
   const form = useForm<z.infer<typeof serverSettingsTimezoneSchema>>({
     initialValues: {
-      timezone: server.timezone ?? '',
+      timezone: server.timezone ?? null,
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(serverSettingsTimezoneSchema),
@@ -76,13 +76,10 @@ export default function TimezoneContainer() {
               <Select
                 withAsterisk
                 label={t('pages.server.settings.timezone.form.timezone', {})}
-                data={[
-                  {
-                    label: t('pages.server.settings.timezone.form.system', {}),
-                    value: '',
-                  },
-                  ...timezones,
-                ]}
+                placeholder={t('pages.server.settings.timezone.form.system', {})}
+                data={timezones}
+                allowDeselect
+                clearable
                 searchable
                 {...form.getInputProps('timezone')}
               />
