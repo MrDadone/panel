@@ -39,7 +39,7 @@ function ServerFilesComponent() {
       <FileModals />
 
       <div className='bg-[#282828] border border-[#424242] rounded-lg mb-2 p-4'>
-        <FileBreadcrumbs path={decodeURIComponent(browsingDirectory)} />
+        <FileBreadcrumbs browsingBackup={false} path={decodeURIComponent(browsingDirectory)} />
       </div>
 
       {!data || isLoading ? (
