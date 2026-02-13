@@ -58,6 +58,12 @@ const routes: ServerRouteDefinition[] = [
     permission: 'files.read',
   },
   {
+    name: undefined,
+    path: '/files/:action',
+    element: FileEditorNew,
+    permission: 'files.read',
+  },
+  {
     name: () => getTranslations().t('pages.server.databases.title', {}),
     icon: faDatabase,
     path: '/databases',

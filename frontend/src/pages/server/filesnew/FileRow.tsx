@@ -44,7 +44,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({
         if (!canOpenFile) return;
 
         navigate(
-          `/server/${server.uuidShort}/files/edit?${createSearchParams({
+          `/server/${server.uuidShort}/files-new/edit?${createSearchParams({
             directory: browsingDirectory,
             file: file.name,
           })}`,
