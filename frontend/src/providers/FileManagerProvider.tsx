@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { FileManagerContext } from '@/providers/contexts/fileManagerContext.ts';
+import { FileManagerContext, ModalType } from '@/providers/contexts/fileManagerContext.ts';
 
 const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [searchParams, _] = useSearchParams();
@@ -10,6 +10,9 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [browsingEntries, setBrowsingEntries] = useState<DirectoryEntry[]>([]);
   const [page, setPage] = useState(1);
   const [browsingFastDirectory, setBrowsingFastDirectory] = useState(true);
+
+  const [openModal, setOpenModal] = useState<ModalType>(null);
+  const [modalDirectoryEntry, setModalDirectoryEntry] = useState<DirectoryEntry | null>(null);
 
   const setSelectedFiles = (files: string[]) => setSelectedFileNames(new Set(files));
 
@@ -29,6 +32,16 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const doOpenModal = (modal: ModalType, entry: DirectoryEntry) => {
+    setOpenModal(modal);
+    setModalDirectoryEntry(entry);
+  };
+
+  const doCloseModal = () => {
+    setOpenModal(null);
+    setModalDirectoryEntry(null);
+  };
+
   useEffect(() => {
     setBrowsingDirectory(searchParams.get('directory') || '/');
     setPage(Number(searchParams.get('page')) || 1);
@@ -46,6 +59,8 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         browsingEntries,
         page,
         browsingFastDirectory,
+        openModal,
+        modalDirectoryEntry,
         setSelectedFiles,
         addSelectedFile,
         removeSelectedFile,
@@ -53,6 +68,9 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         setBrowsingEntries,
         setPage,
         setBrowsingFastDirectory,
+        doOpenModal,
+        doCloseModal,
+        setModalDirectoryEntry,
       }}
     >
       {children}

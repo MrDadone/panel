@@ -40,6 +40,7 @@ export default function FileDeleteModal({ files, opened, onClose }: Props) {
       })
       .finally(() => setLoading(false));
   };
+
   return (
     <Modal title='Delete File' onClose={onClose} opened={opened}>
       {files.length === 1 ? (

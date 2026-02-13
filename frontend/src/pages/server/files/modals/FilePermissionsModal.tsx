@@ -13,7 +13,7 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  file: DirectoryEntry;
+  file: DirectoryEntry | null;
 };
 
 type PermissionKey = 'owner' | 'group' | 'other';
@@ -31,7 +31,7 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (file.mode) {
+    if (file?.mode) {
       const octalValue = permissionStringToNumber(file.mode);
       const octalString = octalValue.toString().padStart(3, '0');
 
@@ -56,7 +56,7 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
         },
       });
     }
-  }, [file.mode]);
+  }, [file?.mode]);
 
   const togglePermission = (category: PermissionKey, type: PermissionType) => {
     setPermissions((prev) => ({
@@ -120,6 +120,8 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
   );
 
   const doChmod = () => {
+    if (!file) return;
+
     const newPermissions = getOctalValue();
 
     setLoading(true);

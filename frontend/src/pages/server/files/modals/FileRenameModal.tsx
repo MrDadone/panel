@@ -1,7 +1,7 @@
 import { ModalProps } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import renameFiles from '@/api/server/files/renameFiles.ts';
@@ -13,7 +13,7 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  file: DirectoryEntry;
+  file: DirectoryEntry | null;
 };
 
 export default function FileRenameModal({ file, opened, onClose }: Props) {
@@ -24,13 +24,23 @@ export default function FileRenameModal({ file, opened, onClose }: Props) {
 
   const form = useForm<z.infer<typeof serverFilesNameSchema>>({
     initialValues: {
-      name: file.name,
+      name: '',
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(serverFilesNameSchema),
   });
 
+  useEffect(() => {
+    if (file) {
+      form.setValues({
+        name: file.name,
+      });
+    }
+  }, [file]);
+
   const doRename = () => {
+    if (!file) return;
+
     setLoading(true);
 
     renameFiles({

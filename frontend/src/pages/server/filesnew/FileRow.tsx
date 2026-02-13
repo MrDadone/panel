@@ -85,54 +85,61 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({
   };
 
   return (
-    // <FileRowContextMenu file={file}>
-    //   {({ items, openMenu }) => (
-    <TableRow
-      ref={ref}
-      className={
-        canOpenFile &&
-        ((isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) ||
-          file.directory ||
-          (isViewableArchive(file) && browsingFastDirectory))
-          ? 'cursor-pointer select-none'
-          : 'select-none'
-      }
-      bg={getBgColor()}
-      onClick={handleClick}
-    >
-      {canOpenActionBar ? (
-        <td className='pl-4 relative cursor-pointer w-10 text-center py-2'>
-          <Checkbox
-            id={file.name}
-            checked={isSelected}
-            classNames={{ input: 'cursor-pointer!' }}
-            onChange={toggleSelected}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </td>
-      ) : (
-        <td className='w-0'></td>
+    <FileRowContextMenu file={file}>
+      {({ items, openMenu }) => (
+        <TableRow
+          ref={ref}
+          className={
+            canOpenFile &&
+            ((isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) ||
+              file.directory ||
+              (isViewableArchive(file) && browsingFastDirectory))
+              ? 'cursor-pointer select-none'
+              : 'select-none'
+          }
+          bg={getBgColor()}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            openMenu(e.clientX, e.clientY);
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            handleClick();
+          }}
+        >
+          {canOpenActionBar ? (
+            <td className='pl-4 relative cursor-pointer w-10 text-center py-2'>
+              <Checkbox
+                id={file.name}
+                checked={isSelected}
+                classNames={{ input: 'cursor-pointer!' }}
+                onChange={toggleSelected}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </td>
+          ) : (
+            <td className='w-0'></td>
+          )}
+
+          <TableData>
+            <span className='flex items-center gap-4 leading-[100%]'>
+              <FontAwesomeIcon className='text-gray-400' icon={file.file ? faFile : faFolder} />
+              {file.name}
+            </span>
+          </TableData>
+
+          <TableData>
+            <span className='flex items-center gap-4 leading-[100%]'>{bytesToString(file.size)}</span>
+          </TableData>
+
+          <TableData>
+            <FormattedTimestamp timestamp={file.modified} />
+          </TableData>
+
+          <ContextMenuToggle items={items} openMenu={openMenu} />
+        </TableRow>
       )}
-
-      <TableData>
-        <span className='flex items-center gap-4 leading-[100%]'>
-          <FontAwesomeIcon className='text-gray-400' icon={file.file ? faFile : faFolder} />
-          {file.name}
-        </span>
-      </TableData>
-
-      <TableData>
-        <span className='flex items-center gap-4 leading-[100%]'>{bytesToString(file.size)}</span>
-      </TableData>
-
-      <TableData>
-        <FormattedTimestamp timestamp={file.modified} />
-      </TableData>
-
-      {/*<ContextMenuToggle items={items} openMenu={openMenu} />*/}
-    </TableRow>
-    // )}
-    // </FileRowContextMenu>
+    </FileRowContextMenu>
   );
 });
 

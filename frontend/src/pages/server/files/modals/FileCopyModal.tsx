@@ -2,7 +2,7 @@ import { ModalProps } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { join } from 'pathe';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import copyFile from '@/api/server/files/copyFile.ts';
@@ -15,7 +15,7 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  file: DirectoryEntry;
+  file: DirectoryEntry | null;
 };
 
 export default function FileCopyModal({ file, opened, onClose }: Props) {
@@ -32,7 +32,17 @@ export default function FileCopyModal({ file, opened, onClose }: Props) {
     validate: zod4Resolver(serverFilesCopySchema),
   });
 
+  useEffect(() => {
+    if (file) {
+      form.setValues({
+        name: file.name,
+      });
+    }
+  }, [file]);
+
   const generateNewName = () => {
+    if (!file) return '';
+
     const lastDotIndex = file.name.lastIndexOf('.');
     let extension = lastDotIndex > -1 ? file.name.slice(lastDotIndex) : '';
     let baseName = lastDotIndex > -1 ? file.name.slice(0, lastDotIndex) : file.name;
@@ -74,6 +84,8 @@ export default function FileCopyModal({ file, opened, onClose }: Props) {
   };
 
   const doCopy = () => {
+    if (!file) return;
+
     setLoading(true);
 
     copyFile(server.uuid, join(browsingDirectory!, file.name), form.values.name || null)

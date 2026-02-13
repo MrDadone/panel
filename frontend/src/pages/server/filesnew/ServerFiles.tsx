@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { MouseEvent as ReactMouseEvent, type Ref, startTransition, useCallback, useEffect, useState } from 'react';
+import { type Ref, useEffect } from 'react';
 import { useSearchParams } from 'react-router';
 import loadDirectory from '@/api/server/files/loadDirectory.ts';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
@@ -8,6 +8,7 @@ import SelectionArea from '@/elements/SelectionArea.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Table from '@/elements/Table.tsx';
 import FileBreadcrumbs from '@/pages/server/filesnew/FileBreadcrumbs.tsx';
+import FileModals from '@/pages/server/filesnew/FileModals.tsx';
 import FileRow from '@/pages/server/filesnew/FileRow.tsx';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { FileManagerProvider } from '@/providers/FileManagerProvider.tsx';
@@ -35,6 +36,8 @@ function ServerFilesComponent() {
 
   return (
     <div className='h-fit relative'>
+      <FileModals />
+
       <div className='bg-[#282828] border border-[#424242] rounded-lg mb-2 p-4'>
         <FileBreadcrumbs path={decodeURIComponent(browsingDirectory)} />
       </div>
