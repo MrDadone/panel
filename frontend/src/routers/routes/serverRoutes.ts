@@ -59,7 +59,7 @@ const routes: ServerRouteDefinition[] = [
   },
   {
     name: undefined,
-    path: '/files/:action',
+    path: '/files-new/:action',
     element: FileEditorNew,
     permission: 'files.read',
   },

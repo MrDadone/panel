@@ -39,7 +39,7 @@ export default function FileBreadcrumbs({
           ? `/server/${server?.uuidShort}/files-new?${createSearchParams({
               directory: `/.backups/${browsingBackup.uuid}`,
             })}`
-          : `/server/${server?.uuidShort}/files`
+          : `/server/${server?.uuidShort}/files-new`
       }
       className=' text-blue-300 hover:text-blue-200'
     >

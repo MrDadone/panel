@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { type Ref, useEffect } from 'react';
+import { type Ref, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import loadDirectory from '@/api/server/files/loadDirectory.ts';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
@@ -30,9 +30,17 @@ function ServerFilesComponent() {
     setBrowsingEntries(data.entries.data);
   }, [data]);
 
-  const onPageSelect = (page: number) => setSearchParams({ directory: browsingDirectory, page: page.toString() });
+  const previousSelected = useRef<string[]>([]);
 
-  const onSelected = (selected: DirectoryEntry[]) => setSelectedFiles(selected.map((entry) => entry.name));
+  const onSelectedStart = (event: React.MouseEvent | MouseEvent) => {
+    previousSelected.current = event.shiftKey ? [...selectedFileNames] : [];
+  };
+
+  const onSelected = (selected: DirectoryEntry[]) => {
+    setSelectedFiles([...previousSelected.current, ...selected.map((entry) => entry.name)]);
+  };
+
+  const onPageSelect = (page: number) => setSearchParams({ directory: browsingDirectory, page: page.toString() });
 
   return (
     <div className='h-fit relative'>
@@ -45,7 +53,7 @@ function ServerFilesComponent() {
       {!data || isLoading ? (
         <Spinner.Centered />
       ) : (
-        <SelectionArea onSelected={onSelected} className='h-full'>
+        <SelectionArea onSelectedStart={onSelectedStart} onSelected={onSelected} className='h-full'>
           <ContextMenuProvider>
             <Table
               columns={['', 'Name', 'Size', 'Modified', '']}
