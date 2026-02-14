@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { type Ref, useCallback, useEffect, useRef } from 'react';
+import { type Ref, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import loadDirectory from '@/api/server/files/loadDirectory.ts';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
@@ -53,7 +53,7 @@ function ServerFilesComponent() {
       {!data || isLoading ? (
         <Spinner.Centered />
       ) : (
-        <SelectionArea onSelectedStart={onSelectedStart} onSelected={onSelected} className='h-full'>
+        <SelectionArea onSelectedStart={onSelectedStart} onSelected={onSelected} fireEvents={false} className='h-full'>
           <ContextMenuProvider>
             <Table
               columns={['', 'Name', 'Size', 'Modified', '']}
