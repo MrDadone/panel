@@ -11,6 +11,7 @@ import AdminSubContentContainer from '@/elements/containers/AdminSubContentConta
 import Select from '@/elements/input/Select.tsx';
 import { captchaProviderTypeLabelMapping } from '@/lib/enums.ts';
 import {
+  adminSettingsCaptchaProviderFriendlyCaptchaSchema,
   adminSettingsCaptchaProviderHcaptchaSchema,
   adminSettingsCaptchaProviderRecaptchaSchema,
   adminSettingsCaptchaProviderSchema,
@@ -18,6 +19,7 @@ import {
 } from '@/lib/schemas/admin/settings.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
+import CaptchaFriendlyCaptcha from './forms/CaptchaFriendlyCaptcha.tsx';
 import CaptchaHcaptcha from './forms/CaptchaHcaptcha.tsx';
 import CaptchaRecaptcha from './forms/CaptchaRecaptcha.tsx';
 import CaptchaTurnstile from './forms/CaptchaTurnstile.tsx';
@@ -78,6 +80,10 @@ export default function CaptchaContainer() {
         ) : form.values.type === 'hcaptcha' ? (
           <CaptchaHcaptcha
             form={form as UseFormReturnType<z.infer<typeof adminSettingsCaptchaProviderHcaptchaSchema>>}
+          />
+        ) : form.values.type === 'friendly_captcha' ? (
+          <CaptchaFriendlyCaptcha
+            form={form as UseFormReturnType<z.infer<typeof adminSettingsCaptchaProviderFriendlyCaptchaSchema>>}
           />
         ) : null}
 

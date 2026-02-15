@@ -1032,11 +1032,18 @@ declare global {
     secretKey: string;
   }
 
+  interface CaptchaProviderFriendlyCaptcha {
+    type: 'friendly_captcha';
+    siteKey: string;
+    apiKey: string;
+  }
+
   type CaptchaProvider =
     | CaptchaProviderNone
     | CaptchaProviderTurnstile
     | CaptchaProviderRecaptcha
-    | CaptchaProviderHcaptcha;
+    | CaptchaProviderHcaptcha
+    | CaptchaProviderFriendlyCaptcha;
 
   type CompressionLevel = 'best_speed' | 'good_speed' | 'good_compression' | 'best_compression';
 
@@ -1180,11 +1187,17 @@ declare global {
     siteKey: string;
   }
 
+  interface PublicCaptchaProviderFriendlyCaptcha {
+    type: 'friendly_captcha';
+    siteKey: string;
+  }
+
   type PublicCaptchaProvider =
     | PublicCaptchaProviderNone
     | PublicCaptchaProviderTurnstile
     | PublicCaptchaProviderRecaptcha
-    | PublicCaptchaProviderHcaptcha;
+    | PublicCaptchaProviderHcaptcha
+    | PublicCaptchaProviderFriendlyCaptcha;
 
   interface PublicSettings {
     version: string;

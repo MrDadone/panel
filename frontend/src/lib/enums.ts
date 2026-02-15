@@ -48,6 +48,7 @@ export const captchaProviderTypeLabelMapping: Record<CaptchaProvider['type'], st
   turnstile: 'Turnstile',
   recaptcha: 'reCAPTCHA',
   hcaptcha: 'hCaptcha',
+  friendly_captcha: 'Friendly Captcha',
 };
 
 export const compressionLevelLabelMapping: Record<CompressionLevel, string> = {

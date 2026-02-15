@@ -33,11 +33,18 @@ export const adminSettingsCaptchaProviderHcaptchaSchema = z.object({
   secretKey: z.string(),
 });
 
+export const adminSettingsCaptchaProviderFriendlyCaptchaSchema = z.object({
+  type: z.literal('friendly_captcha'),
+  siteKey: z.string(),
+  apiKey: z.string(),
+});
+
 export const adminSettingsCaptchaProviderSchema = z.discriminatedUnion('type', [
   adminSettingsCaptchaProviderNoneSchema,
   adminSettingsCaptchaProviderTurnstileSchema,
   adminSettingsCaptchaProviderRecaptchaSchema,
   adminSettingsCaptchaProviderHcaptchaSchema,
+  adminSettingsCaptchaProviderFriendlyCaptchaSchema,
 ]);
 
 export const adminSettingsEmailNoneSchema = z.object({

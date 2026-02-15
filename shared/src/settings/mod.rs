@@ -99,6 +99,10 @@ pub enum CaptchaProvider {
         site_key: compact_str::CompactString,
         secret_key: compact_str::CompactString,
     },
+    FriendlyCaptcha {
+        site_key: compact_str::CompactString,
+        api_key: compact_str::CompactString,
+    },
 }
 
 impl CaptchaProvider {
@@ -115,6 +119,11 @@ impl CaptchaProvider {
             CaptchaProvider::Hcaptcha { site_key, .. } => PublicCaptchaProvider::Hcaptcha {
                 site_key: site_key.as_str(),
             },
+            CaptchaProvider::FriendlyCaptcha { site_key, .. } => {
+                PublicCaptchaProvider::FriendlyCaptcha {
+                    site_key: site_key.as_str(),
+                }
+            }
         }
     }
 
@@ -126,6 +135,7 @@ impl CaptchaProvider {
                 "https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/"
             }
             CaptchaProvider::Hcaptcha { .. } => "https://hcaptcha.com https://*.hcaptcha.com",
+            CaptchaProvider::FriendlyCaptcha { .. } => "",
         }
     }
 
@@ -137,6 +147,7 @@ impl CaptchaProvider {
                 "https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/"
             }
             CaptchaProvider::Hcaptcha { .. } => "https://hcaptcha.com https://*.hcaptcha.com",
+            CaptchaProvider::FriendlyCaptcha { .. } => "https://*.frcapi.com",
         }
     }
 
@@ -146,6 +157,7 @@ impl CaptchaProvider {
             CaptchaProvider::Turnstile { .. } => "",
             CaptchaProvider::Recaptcha { .. } => "",
             CaptchaProvider::Hcaptcha { .. } => "https://hcaptcha.com https://*.hcaptcha.com",
+            CaptchaProvider::FriendlyCaptcha { .. } => "",
         }
     }
 }
@@ -157,6 +169,7 @@ pub enum PublicCaptchaProvider<'a> {
     Turnstile { site_key: &'a str },
     Recaptcha { v3: bool, site_key: &'a str },
     Hcaptcha { site_key: &'a str },
+    FriendlyCaptcha { site_key: &'a str },
 }
 
 #[derive(ToSchema, Serialize, Deserialize)]
@@ -402,6 +415,12 @@ impl SettingsSerializeExt for AppSettings {
                     .write_raw_setting("hcaptcha_site_key", &**site_key)
                     .write_raw_setting("hcaptcha_secret_key", &**secret_key);
             }
+            CaptchaProvider::FriendlyCaptcha { site_key, api_key } => {
+                serializer = serializer
+                    .write_raw_setting("captcha_provider", "friendlycaptcha")
+                    .write_raw_setting("friendlycaptcha_site_key", &**site_key)
+                    .write_raw_setting("friendlycaptcha_api_key", &**api_key);
+            }
         }
 
         serializer = serializer
@@ -620,6 +639,14 @@ impl SettingsDeserializeExt for AppSettingsDeserializer {
                         .unwrap_or_default(),
                     secret_key: deserializer
                         .take_raw_setting("hcaptcha_secret_key")
+                        .unwrap_or_default(),
+                },
+                Some("friendlycaptcha") => CaptchaProvider::FriendlyCaptcha {
+                    site_key: deserializer
+                        .take_raw_setting("friendlycaptcha_site_key")
+                        .unwrap_or_default(),
+                    api_key: deserializer
+                        .take_raw_setting("friendlycaptcha_api_key")
                         .unwrap_or_default(),
                 },
                 _ => CaptchaProvider::None,
