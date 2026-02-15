@@ -228,7 +228,20 @@ impl Storage {
         match &settings.storage_driver {
             super::settings::StorageDriver::Filesystem { path: base_path } => {
                 let base_filesystem =
-                    crate::cap::CapFilesystem::async_new(Path::new(base_path).join(path)).await?;
+                    match crate::cap::CapFilesystem::async_new(Path::new(base_path).join(path))
+                        .await
+                    {
+                        Ok(base_filesystem) => base_filesystem,
+                        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+                            return Ok(crate::models::Pagination {
+                                total: 0,
+                                per_page: per_page as i64,
+                                page: page as i64,
+                                data: Vec::new(),
+                            });
+                        }
+                        Err(err) => return Err(err.into()),
+                    };
                 drop(settings);
 
                 let mut directory_reader = base_filesystem.async_walk_dir("").await?;
