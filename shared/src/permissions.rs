@@ -71,18 +71,15 @@ pub(crate) static BASE_USER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permiss
                 PermissionGroup {
                     description: "Permissions that control the ability to change account settings.",
                     permissions: IndexMap::from([
-                        (
-                            "email",
-                            "Allows to change the email address of the account.",
-                        ),
-                        ("password", "Allows to change the password of the account."),
+                        ("email", "Allows changing the account's email address."),
+                        ("password", "Allows changing the account's password."),
                         (
                             "two-factor",
-                            "Allows to add and remove two-factor authentication.",
+                            "Allows adding and removing two-factor authentication.",
                         ),
                         (
                             "avatar",
-                            "Allows to update and remove the avatar of the account.",
+                            "Allows updating and removing the account's avatar.",
                         ),
                     ]),
                 },
@@ -92,31 +89,22 @@ pub(crate) static BASE_USER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permiss
                 PermissionGroup {
                     description: "Permissions that control the ability to list servers and manage server groups.",
                     permissions: IndexMap::from([
-                        (
-                            "create",
-                            "Allows to create new server groups for the account.",
-                        ),
-                        (
-                            "read",
-                            "Allows to view servers and server groups for the account.",
-                        ),
-                        ("update", "Allows to modify server groups."),
-                        ("delete", "Allows to delete server groups from the account."),
+                        ("create", "Allows creating new server groups."),
+                        ("read", "Allows viewing servers and server groups."),
+                        ("update", "Allows modifying server groups."),
+                        ("delete", "Allows deleting server groups."),
                     ]),
                 },
             ),
             (
                 "api-keys",
                 PermissionGroup {
-                    description: "Permissions that control the ability to manage api keys on an account. API Keys will never be able to edit themselves, or assign permissions they do not have themselves.",
+                    description: "Permissions that control the ability to manage API keys on an account. API keys can never edit themselves or assign permissions they do not have.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create new keys for the account."),
-                        (
-                            "read",
-                            "Allows to view keys and their permissions for the account.",
-                        ),
-                        ("update", "Allows to modify other keys."),
-                        ("delete", "Allows to delete keys from the account."),
+                        ("create", "Allows creating new API keys."),
+                        ("read", "Allows viewing API keys and their permissions."),
+                        ("update", "Allows modifying other API keys."),
+                        ("delete", "Allows deleting API keys."),
                     ]),
                 },
             ),
@@ -125,42 +113,33 @@ pub(crate) static BASE_USER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permiss
                 PermissionGroup {
                     description: "Permissions that control the ability to manage security keys on an account.",
                     permissions: IndexMap::from([
-                        (
-                            "create",
-                            "Allows to create new security keys for the account.",
-                        ),
-                        ("read", "Allows to view security keys for the account."),
-                        ("update", "Allows to modify security keys."),
-                        ("delete", "Allows to delete security keys from the account."),
+                        ("create", "Allows creating new security keys."),
+                        ("read", "Allows viewing security keys."),
+                        ("update", "Allows modifying security keys."),
+                        ("delete", "Allows deleting security keys."),
                     ]),
                 },
             ),
             (
                 "ssh-keys",
                 PermissionGroup {
-                    description: "Permissions that control the ability to manage ssh keys on an account.",
+                    description: "Permissions that control the ability to manage SSH keys on an account.",
                     permissions: IndexMap::from([
-                        (
-                            "create",
-                            "Allows to create or import new ssh keys for the account.",
-                        ),
-                        ("read", "Allows to view ssh keys for the account."),
-                        ("update", "Allows to modify other ssh keys."),
-                        ("delete", "Allows to delete ssh keys from the account."),
+                        ("create", "Allows creating or importing new SSH keys."),
+                        ("read", "Allows viewing SSH keys."),
+                        ("update", "Allows modifying other SSH keys."),
+                        ("delete", "Allows deleting SSH keys."),
                     ]),
                 },
             ),
             (
                 "oauth-links",
                 PermissionGroup {
-                    description: "Permissions that control the ability to manage oauth links on an account.",
+                    description: "Permissions that control the ability to manage OAuth links on an account.",
                     permissions: IndexMap::from([
-                        (
-                            "create",
-                            "Allows to create new oauth links for the account.",
-                        ),
-                        ("read", "Allows to view oauth links for the account."),
-                        ("delete", "Allows to delete oauth links from the account."),
+                        ("create", "Allows creating new OAuth links."),
+                        ("read", "Allows viewing OAuth links."),
+                        ("delete", "Allows deleting OAuth links."),
                     ]),
                 },
             ),
@@ -169,11 +148,8 @@ pub(crate) static BASE_USER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permiss
                 PermissionGroup {
                     description: "Permissions that control the ability to manage sessions on an account.",
                     permissions: IndexMap::from([
-                        (
-                            "read",
-                            "Allows to view sessions and their ip's for the account.",
-                        ),
-                        ("delete", "Allows to delete sessions from the account."),
+                        ("read", "Allows viewing sessions and their IP addresses."),
+                        ("delete", "Allows deleting sessions."),
                     ]),
                 },
             ),
@@ -183,7 +159,7 @@ pub(crate) static BASE_USER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permiss
                     description: "Permissions that control the ability to view the activity log on an account.",
                     permissions: IndexMap::from([(
                         "read",
-                        "Allows to view the activity logs for the account.",
+                        "Allows viewing the account's activity logs.",
                     )]),
                 },
             ),
@@ -212,7 +188,7 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 "stats",
                 PermissionGroup {
                     description: "Permissions that control the ability to view stats for the panel.",
-                    permissions: IndexMap::from([("read", "Allows to view stats for the panel.")]),
+                    permissions: IndexMap::from([("read", "Allows viewing panel statistics.")]),
                 },
             ),
             (
@@ -220,8 +196,8 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage settings for the panel.",
                     permissions: IndexMap::from([
-                        ("read", "Allows to view settings and secrets for the panel."),
-                        ("update", "Allows to modify settings and secrets."),
+                        ("read", "Allows viewing panel settings and secrets."),
+                        ("update", "Allows modifying panel settings and secrets."),
                     ]),
                 },
             ),
@@ -230,10 +206,10 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage extensions for the panel.",
                     permissions: IndexMap::from([
-                        ("read", "Allows to view extensions for the panel."),
+                        ("read", "Allows viewing panel extensions."),
                         (
                             "manage",
-                            "Allows to install, update, and remove extensions for the panel.",
+                            "Allows installing, updating, and removing panel extensions.",
                         ),
                     ]),
                 },
@@ -243,9 +219,9 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage assets for the panel.",
                     permissions: IndexMap::from([
-                        ("read", "Allows to view assets for the panel."),
-                        ("upload", "Allows to create and modify assets."),
-                        ("delete", "Allows to delete assets for the panel."),
+                        ("read", "Allows viewing panel assets."),
+                        ("upload", "Allows creating and modifying assets."),
+                        ("delete", "Allows deleting panel assets."),
                     ]),
                 },
             ),
@@ -254,15 +230,18 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage users for the panel.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create new users for the panel."),
-                        ("read", "Allows to view users for the panel."),
-                        ("update", "Allows to modify users."),
-                        ("disable-two-factor", "Allows to remove users' two-factor."),
-                        ("delete", "Allows to delete users from the panel."),
-                        ("activity", "Allows to view a users' activity log."),
+                        ("create", "Allows creating new users."),
+                        ("read", "Allows viewing users."),
+                        ("update", "Allows modifying users."),
+                        (
+                            "disable-two-factor",
+                            "Allows removing two-factor authentication from users.",
+                        ),
+                        ("delete", "Allows deleting users."),
+                        ("activity", "Allows viewing a user's activity log."),
                         (
                             "oauth-links",
-                            "Allows to view and manage a users' oauth links.",
+                            "Allows viewing and managing a user's OAuth links.",
                         ),
                         ("impersonate", "Allows impersonating other users."),
                     ]),
@@ -273,10 +252,10 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage roles for the panel.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create new roles for the panel."),
-                        ("read", "Allows to view roles for the panel."),
-                        ("update", "Allows to modify roles."),
-                        ("delete", "Allows to delete roles from the panel."),
+                        ("create", "Allows creating new roles."),
+                        ("read", "Allows viewing roles."),
+                        ("update", "Allows modifying roles."),
+                        ("delete", "Allows deleting roles."),
                     ]),
                 },
             ),
@@ -285,13 +264,13 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage locations for the panel.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create new locations for the panel."),
-                        ("read", "Allows to view locations for the panel."),
-                        ("update", "Allows to modify locations."),
-                        ("delete", "Allows to delete locations from the panel."),
+                        ("create", "Allows creating new locations."),
+                        ("read", "Allows viewing locations."),
+                        ("update", "Allows modifying locations."),
+                        ("delete", "Allows deleting locations."),
                         (
                             "database-hosts",
-                            "Allows to view and manage a locations' database hosts.",
+                            "Allows viewing and managing a location's database hosts.",
                         ),
                     ]),
                 },
@@ -301,25 +280,19 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage backup configurations for the panel.",
                     permissions: IndexMap::from([
-                        (
-                            "create",
-                            "Allows to create new backup configurations for the panel.",
-                        ),
+                        ("create", "Allows creating new backup configurations."),
                         (
                             "read",
-                            "Allows to view backup configurations and their passwords for the panel.",
+                            "Allows viewing backup configurations and their passwords.",
                         ),
                         (
                             "update",
-                            "Allows to modify backup configurations and their passwords.",
+                            "Allows modifying backup configurations and their passwords.",
                         ),
-                        (
-                            "delete",
-                            "Allows to delete backup configurations from the panel.",
-                        ),
+                        ("delete", "Allows deleting backup configurations."),
                         (
                             "backups",
-                            "Allows to view a backup configurations' backups.",
+                            "Allows viewing backups associated with a backup configuration.",
                         ),
                     ]),
                 },
@@ -329,21 +302,18 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage nodes for the panel.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create new nodes for the panel."),
-                        (
-                            "read",
-                            "Allows to view nodes and their token for the panel.",
-                        ),
-                        ("update", "Allows to modify nodes."),
-                        ("delete", "Allows to delete nodes from the panel."),
-                        ("reset-token", "Allows to reset a nodes' token."),
+                        ("create", "Allows creating new nodes."),
+                        ("read", "Allows viewing nodes and their tokens."),
+                        ("update", "Allows modifying nodes."),
+                        ("delete", "Allows deleting nodes."),
+                        ("reset-token", "Allows resetting a node's token."),
                         (
                             "allocations",
-                            "Allows to view and manage a nodes' allocations.",
+                            "Allows viewing and managing a node's allocations.",
                         ),
-                        ("mounts", "Allows to view and manage a nodes' mounts."),
-                        ("backups", "Allows to view and manage a nodes' backups."),
-                        ("power", "Allows to execute mass-power actions on nodes."),
+                        ("mounts", "Allows viewing and managing a node's mounts."),
+                        ("backups", "Allows viewing and managing a node's backups."),
+                        ("power", "Allows executing mass-power actions on nodes."),
                     ]),
                 },
             ),
@@ -352,20 +322,20 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage servers for the panel.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create new servers for the panel."),
-                        ("read", "Allows to view servers for the panel."),
-                        ("update", "Allows to modify servers."),
-                        ("delete", "Allows to delete servers from the panel."),
-                        ("transfer", "Allows to transfer servers to other nodes."),
+                        ("create", "Allows creating new servers."),
+                        ("read", "Allows viewing servers."),
+                        ("update", "Allows modifying servers."),
+                        ("delete", "Allows deleting servers."),
+                        ("transfer", "Allows transferring servers to other nodes."),
                         (
                             "allocations",
-                            "Allows to view and manage a servers' allocations.",
+                            "Allows viewing and managing a server's allocations.",
                         ),
                         (
                             "variables",
-                            "Allows to view and manage a servers' variables.",
+                            "Allows viewing and managing a server's variables.",
                         ),
-                        ("mounts", "Allows to view and manage a servers' mounts."),
+                        ("mounts", "Allows viewing and managing a server's mounts."),
                     ]),
                 },
             ),
@@ -374,10 +344,10 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage nests for the panel.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create new nests for the panel."),
-                        ("read", "Allows to view nests for the panel."),
-                        ("update", "Allows to modify nests."),
-                        ("delete", "Allows to delete nests from the panel."),
+                        ("create", "Allows creating new nests."),
+                        ("read", "Allows viewing nests."),
+                        ("update", "Allows modifying nests."),
+                        ("delete", "Allows deleting nests."),
                     ]),
                 },
             ),
@@ -386,14 +356,11 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage eggs for the panel.",
                     permissions: IndexMap::from([
-                        (
-                            "create",
-                            "Allows to create and import new eggs for the panel.",
-                        ),
-                        ("read", "Allows to view eggs for the panel."),
-                        ("update", "Allows to modify eggs."),
-                        ("delete", "Allows to delete eggs from the panel."),
-                        ("mounts", "Allows to view and manage an eggs' mounts."),
+                        ("create", "Allows creating and importing new eggs."),
+                        ("read", "Allows viewing eggs."),
+                        ("update", "Allows modifying eggs."),
+                        ("delete", "Allows deleting eggs."),
+                        ("mounts", "Allows viewing and managing an egg's mounts."),
                     ]),
                 },
             ),
@@ -402,19 +369,13 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage egg repositories for the panel.",
                     permissions: IndexMap::from([
-                        (
-                            "create",
-                            "Allows to create new egg repositories for the panel.",
-                        ),
-                        ("read", "Allows to view egg repositories for the panel."),
-                        ("update", "Allows to modify egg repositories."),
-                        (
-                            "delete",
-                            "Allows to delete egg repositories from the panel.",
-                        ),
+                        ("create", "Allows creating new egg repositories."),
+                        ("read", "Allows viewing egg repositories."),
+                        ("update", "Allows modifying egg repositories."),
+                        ("delete", "Allows deleting egg repositories."),
                         (
                             "sync",
-                            "Allows to sync egg repositories with their repositories.",
+                            "Allows synchronizing egg repositories with their remote sources.",
                         ),
                     ]),
                 },
@@ -424,28 +385,22 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage database hosts for the panel.",
                     permissions: IndexMap::from([
-                        (
-                            "create",
-                            "Allows to create new database hosts for the panel.",
-                        ),
-                        ("read", "Allows to view database hosts for the panel."),
-                        ("update", "Allows to modify database hosts."),
-                        ("delete", "Allows to delete database hosts from the panel."),
+                        ("create", "Allows creating new database hosts."),
+                        ("read", "Allows viewing database hosts."),
+                        ("update", "Allows modifying database hosts."),
+                        ("delete", "Allows deleting database hosts."),
                     ]),
                 },
             ),
             (
                 "oauth-providers",
                 PermissionGroup {
-                    description: "Permissions that control the ability to manage oauth providers for the panel.",
+                    description: "Permissions that control the ability to manage OAuth providers for the panel.",
                     permissions: IndexMap::from([
-                        (
-                            "create",
-                            "Allows to create new oauth providers for the panel.",
-                        ),
-                        ("read", "Allows to view oauth providers for the panel."),
-                        ("update", "Allows to modify oauth providers."),
-                        ("delete", "Allows to delete oauth providers from the panel."),
+                        ("create", "Allows creating new OAuth providers."),
+                        ("read", "Allows viewing OAuth providers."),
+                        ("update", "Allows modifying OAuth providers."),
+                        ("delete", "Allows deleting OAuth providers."),
                     ]),
                 },
             ),
@@ -454,10 +409,10 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 PermissionGroup {
                     description: "Permissions that control the ability to manage mounts for the panel.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create new mounts for the panel."),
-                        ("read", "Allows to view mounts for the panel."),
-                        ("update", "Allows to modify mounts."),
-                        ("delete", "Allows to delete mounts from the panel."),
+                        ("create", "Allows creating new mounts."),
+                        ("read", "Allows viewing mounts."),
+                        ("update", "Allows modifying mounts."),
+                        ("delete", "Allows deleting mounts."),
                     ]),
                 },
             ),
@@ -467,7 +422,7 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                     description: "Permissions that control the ability to view the activity log for all admin operations.",
                     permissions: IndexMap::from([(
                         "read",
-                        "Allows to view the activity logs for all admin operation.",
+                        "Allows viewing the activity logs for all admin operations.",
                     )]),
                 },
             ),
@@ -497,16 +452,16 @@ pub(crate) static BASE_SERVER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permi
                 PermissionGroup {
                     description: "Permissions that control the ability to control the power state of a server, read the console, or send commands.",
                     permissions: IndexMap::from([
-                        ("read-console", "Allows to read the server console logs."),
+                        ("read-console", "Allows reading the server console logs."),
                         (
                             "console",
-                            "Allows to send commands to the server instance via the console.",
+                            "Allows sending commands to the server instance via the console.",
                         ),
-                        ("start", "Allows to start the server if it is stopped."),
-                        ("stop", "Allows to stop a server if it is running."),
+                        ("start", "Allows starting the server if it is stopped."),
+                        ("stop", "Allows stopping the server if it is running."),
                         (
                             "restart",
-                            "Allows to perform a server restart. This allows them to start the server if it is offline, but not put the server in a completely stopped state.",
+                            "Allows restarting the server. This permits starting the server if it is offline, but not placing it in a completely stopped state.",
                         ),
                     ]),
                 },
@@ -514,15 +469,12 @@ pub(crate) static BASE_SERVER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permi
             (
                 "subusers",
                 PermissionGroup {
-                    description: "Permissions that control the ability to manage api keys of a server. Users will never be able to edit their own account, or assign permissions they do not have themselves.",
+                    description: "Permissions that control the ability to manage subusers of a server. Users can never edit their own account or assign permissions they do not have.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create new subusers for the server."),
-                        (
-                            "read",
-                            "Allows to view subusers and their permissions for the server.",
-                        ),
-                        ("update", "Allows to modify other subusers."),
-                        ("delete", "Allows to delete a subuser from the server."),
+                        ("create", "Allows creating new subusers for the server."),
+                        ("read", "Allows viewing subusers and their permissions."),
+                        ("update", "Allows modifying other subusers."),
+                        ("delete", "Allows deleting subusers from the server."),
                     ]),
                 },
             ),
@@ -533,23 +485,23 @@ pub(crate) static BASE_SERVER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permi
                     permissions: IndexMap::from([
                         (
                             "create",
-                            "Allows to create additional files and folders via the Panel or direct upload.",
+                            "Allows creating additional files and folders via the panel or direct upload.",
                         ),
                         (
                             "read",
-                            "Allows to view the contents of a directory, but not view the contents of or download files.",
+                            "Allows viewing the contents of a directory, but not reading or downloading individual files.",
                         ),
                         (
                             "read-content",
-                            "Allows to view the contents of a given file. This will also allow the user to download files.",
+                            "Allows viewing the contents of a specific file. This also permits downloading files.",
                         ),
                         (
                             "update",
-                            "Allows to update the contents of an existing file or directory.",
+                            "Allows updating the contents of an existing file or directory.",
                         ),
-                        ("delete", "Allows to delete files or directories."),
-                        ("archive", "Allows to archive the contents of a directory."),
-                        ("sftp", "Allows a user to connect via SFTP to manage files."),
+                        ("delete", "Allows deleting files or directories."),
+                        ("archive", "Allows archiving the contents of a directory."),
+                        ("sftp", "Allows connecting via SFTP to manage files."),
                     ]),
                 },
             ),
@@ -558,15 +510,12 @@ pub(crate) static BASE_SERVER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permi
                 PermissionGroup {
                     description: "Permissions that control the ability to manage server backups.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create a new backup for the server."),
-                        ("read", "Allows to view existing backups for the server."),
-                        ("download", "Allows to download a backup for the server."),
-                        ("restore", "Allows to restore a backup for the server."),
-                        (
-                            "update",
-                            "Allows to update an existing backup for the server.",
-                        ),
-                        ("delete", "Allows to delete a backup for the server."),
+                        ("create", "Allows creating new backups for the server."),
+                        ("read", "Allows viewing existing backups."),
+                        ("download", "Allows downloading backups."),
+                        ("restore", "Allows restoring backups."),
+                        ("update", "Allows updating existing backups."),
+                        ("delete", "Allows deleting backups."),
                     ]),
                 },
             ),
@@ -575,13 +524,10 @@ pub(crate) static BASE_SERVER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permi
                 PermissionGroup {
                     description: "Permissions that control the ability to manage server schedules.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create a new schedule for the server."),
-                        ("read", "Allows to view existing schedules for the server."),
-                        (
-                            "update",
-                            "Allows to update an existing schedule for the server.",
-                        ),
-                        ("delete", "Allows to delete a schedule for the server."),
+                        ("create", "Allows creating new schedules."),
+                        ("read", "Allows viewing existing schedules."),
+                        ("update", "Allows updating existing schedules."),
+                        ("delete", "Allows deleting schedules."),
                     ]),
                 },
             ),
@@ -592,37 +538,37 @@ pub(crate) static BASE_SERVER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permi
                     permissions: IndexMap::from([
                         (
                             "read",
-                            "Allows to view all allocations currently assigned to this server. Users with any level of access to this server can always view the primary allocation.",
+                            "Allows viewing all allocations currently assigned to this server. Users with any level of access can always view the primary allocation.",
                         ),
                         (
                             "create",
-                            "Allows to assign additional allocations to the server.",
+                            "Allows assigning additional allocations to the server.",
                         ),
                         (
                             "update",
-                            "Allows to change the primary server allocation and attach notes to each allocation.",
+                            "Allows changing the primary server allocation and attaching notes to allocations.",
                         ),
-                        ("delete", "Allows to delete an allocation from the server."),
+                        ("delete", "Allows deleting allocations from the server."),
                     ]),
                 },
             ),
             (
                 "startup",
                 PermissionGroup {
-                    description: "Permissions that control the ability to view this server's startup parameters.",
+                    description: "Permissions that control the ability to view and modify this server's startup parameters.",
                     permissions: IndexMap::from([
-                        ("read", "Allows to view the startup variables for a server."),
                         (
-                            "update",
-                            "Allows to modify the startup variables for the server.",
+                            "read",
+                            "Allows viewing the startup variables for the server.",
                         ),
+                        ("update", "Allows modifying the startup variables."),
                         (
                             "command",
-                            "Allows to modify the command used to start the server.",
+                            "Allows modifying the command used to start the server.",
                         ),
                         (
                             "docker-image",
-                            "Allows to modify the Docker image used when running the server.",
+                            "Allows modifying the Docker image used when running the server.",
                         ),
                     ]),
                 },
@@ -632,22 +578,22 @@ pub(crate) static BASE_SERVER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permi
                 PermissionGroup {
                     description: "Permissions that control the ability to manage databases on this server.",
                     permissions: IndexMap::from([
-                        ("create", "Allows to create a new database for this server."),
+                        ("create", "Allows creating new databases."),
                         (
                             "read",
-                            "Allows to view the database associated with this server.",
+                            "Allows viewing databases associated with this server.",
                         ),
                         (
                             "read-password",
-                            "Allows to view the password associated with a database instance for this server.",
+                            "Allows viewing the password associated with a database instance.",
                         ),
                         (
                             "update",
-                            "Allows to rotate the password on a database instance. If the user does not have the view_password permission they will not see the updated password.",
+                            "Allows rotating the password on a database instance. Users without the read-password permission will not see the updated password.",
                         ),
                         (
                             "delete",
-                            "Allows to remove a database instance from this server.",
+                            "Allows removing database instances from this server.",
                         ),
                     ]),
                 },
@@ -657,9 +603,9 @@ pub(crate) static BASE_SERVER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permi
                 PermissionGroup {
                     description: "Permissions that control the ability to manage server mounts.",
                     permissions: IndexMap::from([
-                        ("attach", "Allows to attach a new mount to the server."),
-                        ("read", "Allows to view existing mounts for the server."),
-                        ("detach", "Allows to detach a mount from the server."),
+                        ("attach", "Allows attaching new mounts to the server."),
+                        ("read", "Allows viewing existing mounts."),
+                        ("detach", "Allows detaching mounts from the server."),
                     ]),
                 },
             ),
@@ -670,21 +616,21 @@ pub(crate) static BASE_SERVER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permi
                     permissions: IndexMap::from([
                         (
                             "rename",
-                            "Allows to rename this server and change the description of it.",
+                            "Allows renaming the server and changing its description.",
                         ),
-                        ("timezone", "Allows to change the timezone for this server."),
+                        ("timezone", "Allows changing the server's timezone."),
                         (
                             "auto-kill",
-                            "Allows to change the auto-kill settings for this server.",
+                            "Allows changing the server's auto-kill settings.",
                         ),
                         (
                             "auto-start",
-                            "Allows to change the auto-start settings for this server.",
+                            "Allows changing the server's auto-start settings.",
                         ),
-                        ("install", "Allows triggering a reinstall of this server."),
+                        ("install", "Allows triggering a reinstall of the server."),
                         (
                             "cancel-install",
-                            "Allows cancelling the install process of this server.",
+                            "Allows canceling the server's installation process.",
                         ),
                     ]),
                 },
@@ -695,7 +641,7 @@ pub(crate) static BASE_SERVER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permi
                     description: "Permissions that control the ability to view the activity log on this server.",
                     permissions: IndexMap::from([(
                         "read",
-                        "Allows to view the activity logs for the server.",
+                        "Allows viewing the server's activity logs.",
                     )]),
                 },
             ),
