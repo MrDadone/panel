@@ -239,6 +239,17 @@ pub(crate) static BASE_ADMIN_PERMISSIONS: LazyLock<IndexMap<&'static str, Permis
                 },
             ),
             (
+                "assets",
+                PermissionGroup {
+                    description: "Permissions that control the ability to manage assets for the panel.",
+                    permissions: IndexMap::from([
+                        ("read", "Allows to view assets for the panel."),
+                        ("upload", "Allows to create and modify assets."),
+                        ("delete", "Allows to delete assets for the panel."),
+                    ]),
+                },
+            ),
+            (
                 "users",
                 PermissionGroup {
                     description: "Permissions that control the ability to manage users for the panel.",

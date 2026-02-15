@@ -1,7 +1,17 @@
-use tokio::io::AsyncWriteExt;
-
 use crate::settings::SettingsReadGuard;
+use compact_str::ToCompactString;
+use serde::{Deserialize, Serialize};
 use std::{path::Path, sync::Arc};
+use tokio::io::AsyncWriteExt;
+use utoipa::ToSchema;
+
+#[derive(ToSchema, Deserialize, Serialize)]
+pub struct StorageAsset {
+    pub name: compact_str::CompactString,
+    pub url: String,
+    pub size: u64,
+    pub created: chrono::DateTime<chrono::Utc>,
+}
 
 fn get_s3_client(
     access_key: &str,
@@ -40,13 +50,17 @@ impl<'a> StorageUrlRetriever<'a> {
         &self.settings
     }
 
-    pub fn get_url(&self, path: &str) -> String {
+    pub fn get_url(&self, path: impl AsRef<str>) -> String {
         match &self.settings.storage_driver {
             super::settings::StorageDriver::Filesystem { .. } => {
-                format!("{}/{}", self.settings.app.url.trim_end_matches('/'), path)
+                format!(
+                    "{}/{}",
+                    self.settings.app.url.trim_end_matches('/'),
+                    path.as_ref()
+                )
             }
             super::settings::StorageDriver::S3 { public_url, .. } => {
-                format!("{}/{}", public_url.trim_end_matches('/'), path)
+                format!("{}/{}", public_url.trim_end_matches('/'), path.as_ref())
             }
         }
     }
@@ -67,11 +81,12 @@ impl Storage {
         Ok(StorageUrlRetriever::new(settings))
     }
 
-    pub async fn remove(&self, path: Option<&str>) -> Result<(), anyhow::Error> {
+    pub async fn remove(&self, path: Option<impl AsRef<str>>) -> Result<(), anyhow::Error> {
         let path = match path {
             Some(path) => path,
             None => return Ok(()),
         };
+        let path = path.as_ref();
 
         if path.is_empty() || path.contains("..") || path.starts_with("/") {
             return Err(anyhow::anyhow!("invalid path"));
@@ -85,6 +100,7 @@ impl Storage {
             super::settings::StorageDriver::Filesystem { path: base_path } => {
                 let base_filesystem =
                     crate::cap::CapFilesystem::async_new(base_path.into()).await?;
+                drop(settings);
 
                 if let Err(err) = base_filesystem.async_remove_file(&path).await
                     && err
@@ -126,6 +142,7 @@ impl Storage {
                     endpoint,
                     *path_style,
                 )?;
+                drop(settings);
 
                 s3_client.delete_object(path).await?;
             }
@@ -136,10 +153,13 @@ impl Storage {
 
     pub async fn store(
         &self,
-        path: &str,
+        path: impl AsRef<str>,
         mut data: impl tokio::io::AsyncRead + Unpin,
-        content_type: &str,
-    ) -> Result<(), anyhow::Error> {
+        content_type: impl AsRef<str>,
+    ) -> Result<u64, anyhow::Error> {
+        let path = path.as_ref();
+        let content_type = content_type.as_ref();
+
         if path.is_empty() || path.contains("..") || path.starts_with("/") {
             return Err(anyhow::anyhow!("invalid path"));
         }
@@ -152,15 +172,17 @@ impl Storage {
             super::settings::StorageDriver::Filesystem { path: base_path } => {
                 let base_filesystem =
                     crate::cap::CapFilesystem::async_new(base_path.into()).await?;
+                drop(settings);
 
                 if let Some(parent) = Path::new(path).parent() {
                     base_filesystem.async_create_dir_all(parent).await?;
                 }
 
                 let mut file = base_filesystem.async_create(path).await?;
-                tokio::io::copy(&mut data, &mut file).await?;
+                let bytes = tokio::io::copy(&mut data, &mut file).await?;
 
                 file.shutdown().await?;
+                Ok(bytes)
             }
             super::settings::StorageDriver::S3 {
                 access_key,
@@ -179,13 +201,125 @@ impl Storage {
                     endpoint,
                     *path_style,
                 )?;
+                drop(settings);
 
-                s3_client
+                let response = s3_client
                     .put_object_stream_with_content_type(&mut data, path, content_type)
                     .await?;
+                Ok(response.uploaded_bytes() as u64)
             }
         }
+    }
 
-        Ok(())
+    pub async fn list(
+        &self,
+        path: impl AsRef<str>,
+        page: usize,
+        per_page: usize,
+    ) -> Result<crate::models::Pagination<StorageAsset>, anyhow::Error> {
+        let path = path.as_ref();
+
+        if path.is_empty() || path.contains("..") || path.starts_with("/") {
+            return Err(anyhow::anyhow!("invalid path"));
+        }
+
+        let settings = self.settings.get().await?;
+
+        match &settings.storage_driver {
+            super::settings::StorageDriver::Filesystem { path: base_path } => {
+                let base_filesystem =
+                    crate::cap::CapFilesystem::async_new(Path::new(base_path).join(path)).await?;
+                drop(settings);
+
+                let mut directory_reader = base_filesystem.async_walk_dir("").await?;
+                let mut raw_entries = Vec::new();
+
+                while let Some(Ok((is_dir, entry))) = directory_reader.next_entry().await {
+                    if is_dir {
+                        continue;
+                    }
+
+                    raw_entries.push(entry);
+                }
+
+                raw_entries.sort_unstable();
+
+                let total_entries = raw_entries.len();
+                let mut entries = Vec::new();
+                let start = (page - 1) * per_page;
+
+                let storage_url_retriever = self.retrieve_urls().await?;
+
+                for entry in raw_entries.into_iter().skip(start).take(per_page) {
+                    let metadata = match base_filesystem.async_metadata(&entry).await {
+                        Ok(metadata) => metadata,
+                        Err(_) => continue,
+                    };
+
+                    let entry_name = entry.to_string_lossy().to_compact_string();
+
+                    entries.push(StorageAsset {
+                        url: storage_url_retriever.get_url(format!("assets/{entry_name}")),
+                        name: entry_name,
+                        size: metadata.len(),
+                        created: metadata
+                            .created()
+                            .or_else(|_| metadata.modified())?
+                            .into_std()
+                            .into(),
+                    });
+                }
+
+                Ok(crate::models::Pagination {
+                    total: total_entries as i64,
+                    per_page: per_page as i64,
+                    page: page as i64,
+                    data: entries,
+                })
+            }
+            super::settings::StorageDriver::S3 {
+                access_key,
+                secret_key,
+                bucket,
+                region,
+                endpoint,
+                path_style,
+                ..
+            } => {
+                let s3_client = get_s3_client(
+                    access_key,
+                    secret_key,
+                    bucket,
+                    region,
+                    endpoint,
+                    *path_style,
+                )?;
+                drop(settings);
+
+                let entries = s3_client.list(path.into(), None).await?;
+                let start = (page - 1) * per_page;
+
+                let storage_url_retriever = self.retrieve_urls().await?;
+
+                Ok(crate::models::Pagination {
+                    total: entries.len() as i64,
+                    per_page: per_page as i64,
+                    page: page as i64,
+                    data: entries
+                        .into_iter()
+                        .skip(start)
+                        .take(per_page)
+                        .filter_map(|e| {
+                            Some(StorageAsset {
+                                url: storage_url_retriever.get_url(format!("assets/{}", e.name)),
+                                name: e.name.into(),
+                                size: e.contents.iter().fold(0, |p, n| p + n.size),
+                                created: e.contents.last()?.last_modified.parse().ok()?,
+                            })
+                        })
+                        .collect(),
+                })
+            }
+        }
     }
 }

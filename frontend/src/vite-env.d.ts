@@ -21,6 +21,13 @@ declare global {
     created: Date;
   }
 
+  interface StorageAsset {
+    name: string;
+    url: string;
+    size: number;
+    created: Date;
+  }
+
   interface BackupConfiguration {
     name: string;
     description?: string;
@@ -1186,6 +1193,7 @@ declare global {
     captchaProvider: PublicCaptchaProvider;
     app: {
       url: string;
+      icon: string;
       name: string;
       language: string;
       registrationEnabled: boolean;
@@ -1209,6 +1217,7 @@ declare global {
     captchaProvider: CaptchaProvider;
     app: {
       name: string;
+      icon: string;
       url: string;
       language: string;
       twoFactorRequirement: TwoFactorRequirement;

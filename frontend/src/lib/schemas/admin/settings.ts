@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const adminSettingsApplicationSchema = z.object({
   name: z.string().min(1).max(64),
+  icon: z.string().min(1).max(255),
   url: z.url(),
   language: z.string(),
   twoFactorRequirement: z.enum(['admins', 'all_users', 'none']),

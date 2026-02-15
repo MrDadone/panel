@@ -2,7 +2,7 @@ import { faFile, faFolder } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { forwardRef, memo, useRef } from 'react';
 import { createSearchParams, useNavigate, useSearchParams } from 'react-router';
-import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
+import { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';

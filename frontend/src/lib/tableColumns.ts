@@ -1,3 +1,5 @@
+export const assetTableColumns = ['', 'Name', 'Size', 'Created'];
+
 export const backupConfigurationTableColumns = ['ID', 'Name', 'Disk', 'Created'];
 
 export const databaseHostTableColumns = ['ID', 'Name', 'Type', 'Address', 'Created'];

@@ -17,6 +17,7 @@ pub enum TwoFactorRequirement {
 #[derive(Clone, ToSchema, Serialize, Deserialize)]
 pub struct AppSettingsApp {
     pub name: compact_str::CompactString,
+    pub icon: compact_str::CompactString,
     pub url: compact_str::CompactString,
     pub language: compact_str::CompactString,
     pub two_factor_requirement: TwoFactorRequirement,
@@ -33,6 +34,7 @@ impl SettingsSerializeExt for AppSettingsApp {
     ) -> Result<SettingsSerializer, anyhow::Error> {
         Ok(serializer
             .write_raw_setting("name", &*self.name)
+            .write_raw_setting("icon", &*self.icon)
             .write_raw_setting("url", &*self.url)
             .write_raw_setting("language", &*self.language)
             .write_raw_setting(
@@ -66,6 +68,9 @@ impl SettingsDeserializeExt for AppSettingsAppDeserializer {
             name: deserializer
                 .take_raw_setting("name")
                 .unwrap_or_else(|| "Calagopus".into()),
+            icon: deserializer
+                .take_raw_setting("icon")
+                .unwrap_or_else(|| "/icon.svg".into()),
             url: deserializer
                 .take_raw_setting("url")
                 .unwrap_or_else(|| "http://localhost:8000".into()),

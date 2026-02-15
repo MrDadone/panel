@@ -19,7 +19,6 @@ import ContextMenu, { ContextMenuItem } from '@/elements/ContextMenu.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
 import { isArchiveType, isEditableFile, isViewableArchive } from '@/lib/files.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
-import { ModalType } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/contexts/toastContext.ts';
 import { useWindows } from '@/providers/contexts/windowContext.ts';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';

@@ -637,7 +637,7 @@ async fn main() {
                     None => (true, FRONTEND_ASSETS.get_entry("index.html").unwrap()),
                 };
 
-                if entry.as_file().is_none() && path.starts_with("assets") {
+                if (entry.as_file().is_none() || is_index) && path.starts_with("assets") {
                     let settings = state.settings.get().await?;
 
                     let base_filesystem = match settings.storage_driver.get_cap_filesystem().await {

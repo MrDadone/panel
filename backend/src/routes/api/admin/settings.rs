@@ -46,6 +46,8 @@ mod put {
     pub struct PayloadApp {
         #[validate(length(min = 1, max = 64))]
         name: Option<compact_str::CompactString>,
+        #[validate(length(min = 1, max = 255))]
+        icon: Option<compact_str::CompactString>,
         #[validate(url)]
         url: Option<compact_str::CompactString>,
         #[validate(
@@ -155,6 +157,9 @@ mod put {
         if let Some(app) = data.app {
             if let Some(name) = app.name {
                 settings.app.name = name;
+            }
+            if let Some(icon) = app.icon {
+                settings.app.icon = icon;
             }
             if let Some(url) = app.url {
                 settings.app.url = url;

@@ -9,7 +9,6 @@ import updateCommand from '@/api/server/startup/updateCommand.ts';
 import updateDockerImage from '@/api/server/startup/updateDockerImage.ts';
 import updateVariables from '@/api/server/startup/updateVariables.ts';
 import Button from '@/elements/Button.tsx';
-import Card from '@/elements/Card.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
