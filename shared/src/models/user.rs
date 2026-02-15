@@ -1033,10 +1033,6 @@ impl UpdatableModel for User {
         if let Some(email) = options.email {
             self.email = email.into();
         }
-        if let Some(password) = options.password {
-            self.update_password(&state.database, password.as_deref())
-                .await?;
-        }
         if let Some(name_first) = options.name_first {
             self.name_first = name_first;
         }
@@ -1051,6 +1047,11 @@ impl UpdatableModel for User {
         }
 
         transaction.commit().await?;
+
+        if let Some(password) = options.password {
+            self.update_password(&state.database, password.as_deref())
+                .await?;
+        }
 
         Ok(())
     }
