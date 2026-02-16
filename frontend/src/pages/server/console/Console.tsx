@@ -10,7 +10,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon } from '@mantine/core';
 import { FitAddon } from '@xterm/addon-fit';
 import { SearchAddon } from '@xterm/addon-search';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal as XTerm } from '@xterm/xterm';
 import classNames from 'classnames';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -25,7 +27,6 @@ import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import CommandHistoryDrawer from './drawers/CommandHistoryDrawer.tsx';
 import FeatureProvider from './features/FeatureProvider.tsx';
-
 import '@xterm/xterm/css/xterm.css';
 import './xterm.css';
 import Popover from '@/elements/Popover.tsx';
@@ -101,6 +102,7 @@ export default function Terminal() {
       disableStdin: true,
       convertEol: true,
       smoothScrollDuration: 250,
+      allowProposedApi: true,
     });
 
     const fitAddon = new FitAddon();
@@ -108,6 +110,8 @@ export default function Terminal() {
 
     term.loadAddon(fitAddon);
     term.loadAddon(new WebLinksAddon());
+    term.loadAddon(new WebglAddon());
+    term.loadAddon(new Unicode11Addon());
     term.loadAddon(searchAddon);
 
     term.open(terminalRef.current);
