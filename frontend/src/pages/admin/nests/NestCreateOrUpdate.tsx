@@ -50,7 +50,11 @@ export default function NestCreateOrUpdate({ contextNest }: { contextNest?: Admi
   }, [contextNest]);
 
   return (
-    <AdminContentContainer title={`${contextNest ? 'Update' : 'Create'} Nest`} fullscreen={!!contextNest} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextNest ? 'Update' : 'Create'} Nest`}
+      fullscreen={!!contextNest}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
