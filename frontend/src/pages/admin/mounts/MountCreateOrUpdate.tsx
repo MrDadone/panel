@@ -57,7 +57,11 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: M
   }, [contextMount]);
 
   return (
-    <AdminContentContainer title={`${contextMount ? 'Update' : 'Create'} Mount`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextMount ? 'Update' : 'Create'} Mount`}
+      fullscreen={!!contextMount}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}

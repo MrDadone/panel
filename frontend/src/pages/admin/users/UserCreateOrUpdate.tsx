@@ -90,7 +90,11 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
   };
 
   return (
-    <AdminContentContainer title={`${contextUser ? 'Update' : 'Create'} User`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextUser ? 'Update' : 'Create'} User`}
+      fullscreen={!!contextUser}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}

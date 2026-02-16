@@ -91,7 +91,11 @@ export default function DatabaseHostCreateOrUpdate({
   };
 
   return (
-    <AdminContentContainer title={`${contextDatabaseHost ? 'Update' : 'Create'} Database Host`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextDatabaseHost ? 'Update' : 'Create'} Database Host`}
+      fullscreen={!!contextDatabaseHost}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}

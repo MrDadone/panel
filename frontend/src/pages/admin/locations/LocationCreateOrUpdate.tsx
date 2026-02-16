@@ -62,7 +62,11 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
   });
 
   return (
-    <AdminContentContainer title={`${contextLocation ? 'Update' : 'Create'} Location`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextLocation ? 'Update' : 'Create'} Location`}
+      fullscreen={!!contextLocation}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}

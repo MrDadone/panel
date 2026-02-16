@@ -114,7 +114,11 @@ export default function BackupConfigurationCreateOrUpdate({
   }, [contextBackupConfiguration]);
 
   return (
-    <AdminContentContainer title={`${contextBackupConfiguration ? 'Update' : 'Create'} Backup Config`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextBackupConfiguration ? 'Update' : 'Create'} Backup Config`}
+      fullscreen={!!contextBackupConfiguration}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
