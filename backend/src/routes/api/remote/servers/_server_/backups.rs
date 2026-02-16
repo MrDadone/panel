@@ -73,16 +73,9 @@ mod post {
             )
             .await?;
 
-        let name = data.name.unwrap_or_else(|| {
-            compact_str::format_compact!(
-                "Backup {}",
-                chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
-            )
-        });
-
         let options = shared::models::server_backup::CreateServerBackupOptions {
             server: &server,
-            name,
+            name: data.name.unwrap_or_else(ServerBackup::default_name),
             ignored_files: data.ignored_files,
         };
         let backup = match ServerBackup::create_raw(&state, options).await {

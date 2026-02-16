@@ -3,6 +3,8 @@ use crate::{
     prelude::*,
     storage::StorageUrlRetriever,
 };
+use chrono::{Datelike, Timelike};
+use compact_str::ToCompactString;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type};
@@ -578,6 +580,13 @@ impl ServerBackup {
         } else {
             Err(sqlx::Error::RowNotFound.into())
         }
+    }
+
+    #[inline]
+    pub fn default_name() -> compact_str::CompactString {
+        let now = chrono::Local::now();
+
+        now.format("%Y-%m-%d %H:%M:%S %z").to_compact_string()
     }
 
     #[inline]

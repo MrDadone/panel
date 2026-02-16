@@ -105,7 +105,7 @@ mod post {
     pub struct Payload {
         #[validate(length(min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
-        name: compact_str::CompactString,
+        name: Option<compact_str::CompactString>,
 
         ignored_files: Vec<compact_str::CompactString>,
     }
@@ -160,7 +160,7 @@ mod post {
 
         let options = shared::models::server_backup::CreateServerBackupOptions {
             server: &server,
-            name: data.name,
+            name: data.name.unwrap_or_else(ServerBackup::default_name),
             ignored_files: data.ignored_files,
         };
         let backup = ServerBackup::create(&state, options).await?;
