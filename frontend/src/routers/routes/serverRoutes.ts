@@ -15,6 +15,7 @@ import type { ServerRouteDefinition } from 'shared';
 import ServerActivity from '@/pages/server/activity/ServerActivity.tsx';
 import ServerBackups from '@/pages/server/backups/ServerBackups.tsx';
 import ServerDatabases from '@/pages/server/databases/ServerDatabases.tsx';
+import ServerFilesEditor from '@/pages/server/files/FileEditor.tsx';
 import ServerFiles from '@/pages/server/files/ServerFiles.tsx';
 import ServerFilesNew from '@/pages/server/filesnew/ServerFiles.tsx';
 import ServerNetwork from '@/pages/server/network/ServerNetwork.tsx';
@@ -26,7 +27,6 @@ import ServerSubusers from '@/pages/server/subusers/ServerSubusers.tsx';
 import { getTranslations } from '@/providers/TranslationProvider.tsx';
 
 const ServerConsole = lazy(() => import('@/pages/server/console/ServerConsole.tsx'));
-const FileEditor = lazy(() => import('@/pages/server/files/FileEditor.tsx'));
 
 const routes: ServerRouteDefinition[] = [
   {
@@ -47,7 +47,7 @@ const routes: ServerRouteDefinition[] = [
   {
     name: undefined,
     path: '/files/:action',
-    element: FileEditor,
+    element: ServerFilesEditor,
     permission: 'files.read',
   },
   {

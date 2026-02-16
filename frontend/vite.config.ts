@@ -134,8 +134,6 @@ export default defineConfig({
             return 'zod-locale';
           }
           if (
-            id.includes('src/providers/') ||
-            id.includes('src/plugins/') ||
             id.includes('src/stores/') ||
             id.includes('src/lib/')
           ) {
