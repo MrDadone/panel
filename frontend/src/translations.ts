@@ -641,6 +641,7 @@ const baseTranslations = defineTranslations({
             layer: 'Layer',
           },
           tooltip: {
+            search: 'Search',
             commandHistory: 'Command History',
             decreaseFontSize: 'Decrease Font Size',
             increaseFontSize: 'Increase Font Size',

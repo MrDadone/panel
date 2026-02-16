@@ -1,7 +1,15 @@
-import { faArrowDown, faClockRotateLeft, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowDown,
+  faArrowUp,
+  faClockRotateLeft,
+  faMagnifyingGlass,
+  faMinus,
+  faPlus,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon } from '@mantine/core';
 import { FitAddon } from '@xterm/addon-fit';
+import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { Terminal as XTerm } from '@xterm/xterm';
 import classNames from 'classnames';
@@ -20,6 +28,8 @@ import FeatureProvider from './features/FeatureProvider.tsx';
 
 import '@xterm/xterm/css/xterm.css';
 import './xterm.css';
+import Popover from '@/elements/Popover.tsx';
+import { useKeyboardShortcut } from '@/plugins/useKeyboardShortcuts.ts';
 
 const RAW_PRELUDE = '\u001b[1m\u001b[33mcontainer@calagopus~ \u001b[0m';
 
@@ -29,14 +39,16 @@ export default function Terminal() {
 
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [searchText, setSearchText] = useState('');
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [websocketPing, setWebsocketPing] = useState(0);
   const [consoleFontSize, setConsoleFontSize] = useState(14);
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [openModal, setOpenModal] = useState<'search' | 'commandHistory' | null>(null);
 
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermInstance = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const searchAddonRef = useRef<SearchAddon | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const HISTORY_STORAGE_KEY = `terminal_command_history_${server.uuid}`;
@@ -82,7 +94,7 @@ export default function Terminal() {
         cursor: '#00000000',
         cursorAccent: '#00000000',
         selectionBackground: '#FFFFFF4D',
-        selectionInactiveBackground: '#FFFFFF26',
+        selectionInactiveBackground: '#FFFFFF80',
       },
       allowTransparency: true,
       cursorBlink: false,
@@ -92,8 +104,11 @@ export default function Terminal() {
     });
 
     const fitAddon = new FitAddon();
+    const searchAddon = new SearchAddon();
+
     term.loadAddon(fitAddon);
     term.loadAddon(new WebLinksAddon());
+    term.loadAddon(searchAddon);
 
     term.open(terminalRef.current);
     fitAddon.fit();
@@ -103,6 +118,7 @@ export default function Terminal() {
 
     xtermInstance.current = term;
     fitAddonRef.current = fitAddon;
+    searchAddonRef.current = searchAddon;
 
     const resizeObserver = new ResizeObserver(() => {
       fitAddon.fit();
@@ -113,11 +129,19 @@ export default function Terminal() {
       setIsAtBottom(term.buffer.active.viewportY === term.buffer.active.baseY);
     });
 
+    term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        return false;
+      }
+      return true;
+    });
+
     return () => {
       resizeObserver.disconnect();
       term.dispose();
       xtermInstance.current = null;
       fitAddonRef.current = null;
+      searchAddonRef.current = null;
     };
   }, []);
 
@@ -249,6 +273,20 @@ export default function Terminal() {
     [history, historyIndex, socketInstance],
   );
 
+  useKeyboardShortcut(
+    'f',
+    () => {
+      if (openModal) return;
+
+      setOpenModal('search');
+    },
+    {
+      modifiers: ['ctrlOrMeta'],
+      allowWhenInputFocused: true,
+      deps: [openModal],
+    },
+  );
+
   return (
     <>
       <FeatureProvider />
@@ -277,8 +315,56 @@ export default function Terminal() {
                 <Component key={idx} />
               ),
             )}
+            <Popover
+              trapFocus
+              opened={openModal === 'search'}
+              onChange={(opened) => setOpenModal(opened ? 'search' : null)}
+            >
+              <Popover.Target>
+                <Tooltip label={t('pages.server.console.tooltip.search', {})}>
+                  <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setOpenModal('search')}>
+                    <FontAwesomeIcon icon={faMagnifyingGlass} />
+                  </ActionIcon>
+                </Tooltip>
+              </Popover.Target>
+              <Popover.Dropdown className='flex flex-row space-x-2'>
+                <TextInput
+                  placeholder={t('common.input.search', {})}
+                  value={searchText}
+                  onChange={(e) => {
+                    setSearchText(e.currentTarget.value);
+                    searchAddonRef.current?.findNext(e.currentTarget.value, { incremental: true });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (e.shiftKey) {
+                        searchAddonRef.current?.findPrevious(searchText);
+                      } else {
+                        searchAddonRef.current?.findNext(searchText);
+                      }
+                    }
+                  }}
+                />
+                <ActionIcon
+                  size='input-sm'
+                  variant='light'
+                  color='gray'
+                  onClick={() => searchAddonRef.current?.findPrevious(searchText)}
+                >
+                  <FontAwesomeIcon icon={faArrowUp} />
+                </ActionIcon>
+                <ActionIcon
+                  size='input-sm'
+                  variant='light'
+                  color='gray'
+                  onClick={() => searchAddonRef.current?.findNext(searchText)}
+                >
+                  <FontAwesomeIcon icon={faArrowDown} />
+                </ActionIcon>
+              </Popover.Dropdown>
+            </Popover>
             <Tooltip label={t('pages.server.console.tooltip.commandHistory', {})}>
-              <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setHistoryModalOpen(true)}>
+              <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setOpenModal('commandHistory')}>
                 <FontAwesomeIcon icon={faClockRotateLeft} />
               </ActionIcon>
             </Tooltip>
@@ -362,7 +448,7 @@ export default function Terminal() {
         </div>
       </Card>
 
-      <CommandHistoryDrawer opened={historyModalOpen} onClose={() => setHistoryModalOpen(false)} />
+      <CommandHistoryDrawer opened={openModal === 'commandHistory'} onClose={() => setOpenModal(null)} />
     </>
   );
 }
