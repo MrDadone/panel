@@ -3,6 +3,8 @@ import { memo, useMemo } from 'react';
 import CloseButton from '@/elements/CloseButton.tsx';
 import Progress from '@/elements/Progress.tsx';
 import RingProgress from '@/elements/RingProgress.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
+import { bytesToString } from '@/lib/size.ts';
 
 interface FileUploadInfo {
   fileName: string;
@@ -100,7 +102,12 @@ const FileOperationsProgress = memo(function FileOperationsProgress({
             <div key={folderName} className='flex flex-row items-center mb-3'>
               <div className='flex flex-col grow'>
                 <p className='break-all mb-1'>{statusText}</p>
-                <Progress value={progress} />
+                <Tooltip
+                  label={`${bytesToString(info.uploadedSize)} / ${bytesToString(info.totalSize)}`}
+                  innerClassName='w-full'
+                >
+                  <Progress value={progress} />
+                </Tooltip>
               </div>
               <CloseButton className='ml-3' onClick={() => onCancelFolderUpload(folderName)} />
             </div>
@@ -119,7 +126,12 @@ const FileOperationsProgress = memo(function FileOperationsProgress({
                   {file.status === 'pending' ? 'Waiting: ' : 'Uploading: '}
                   {file.fileName}
                 </p>
-                <Progress value={file.progress} />
+                <Tooltip
+                  label={`${bytesToString(file.uploaded)} / ${bytesToString(file.size)}`}
+                  innerClassName='w-full'
+                >
+                  <Progress value={file.progress} />
+                </Tooltip>
               </div>
               <CloseButton className='ml-3' onClick={() => onCancelFileUpload(key)} />
             </div>
@@ -149,7 +161,12 @@ const FileOperationsProgress = memo(function FileOperationsProgress({
                                 : `Sending ${operation.files.length} files to remote server`
                               : null}
                 </p>
-                <Progress value={progress} />
+                <Tooltip
+                  label={`${bytesToString(operation.progress)} / ${bytesToString(operation.total)}`}
+                  innerClassName='w-full'
+                >
+                  <Progress value={progress} />
+                </Tooltip>
               </div>
               <CloseButton className='ml-3' onClick={() => onCancelOperation(uuid)} />
             </div>

@@ -12,7 +12,10 @@ type HljsCodeProps = CodeProps & {
   language: () => Promise<LanguageFn>;
 };
 
-function HljsCode({ children, languageName, language, ...props }: HljsCodeProps, ref: React.Ref<HTMLPreElement>) {
+export default forwardRef<HTMLPreElement, HljsCodeProps>(function HljsCode(
+  { children, languageName, language, ...props }: HljsCodeProps,
+  ref: React.Ref<HTMLPreElement>,
+) {
   const codeContent = typeof children === 'string' ? children : 'Code content is not a string.';
   const [languageLoaded, setLanguageLoaded] = useState(registeredLanguages.has(languageName));
 
@@ -20,6 +23,7 @@ function HljsCode({ children, languageName, language, ...props }: HljsCodeProps,
     if (!registeredLanguages.has(languageName)) {
       return hljs.highlightAuto(codeContent).value;
     }
+
     return hljs.highlight(codeContent, { language: languageName }).value;
   }, [codeContent, languageName, languageLoaded]);
 
@@ -45,6 +49,4 @@ function HljsCode({ children, languageName, language, ...props }: HljsCodeProps,
       {...props}
     />
   );
-}
-
-export default forwardRef<HTMLPreElement, HljsCodeProps>(HljsCode);
+});

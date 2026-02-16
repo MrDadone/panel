@@ -1,15 +1,9 @@
-import { faArrowUpRightFromSquare, faCancel, faGraduationCap, faServer } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowUpRightFromSquare, faGraduationCap, faServer } from '@fortawesome/free-solid-svg-icons';
 import { Suspense, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useParams } from 'react-router';
-import { httpErrorToHuman } from '@/api/axios.ts';
 import getServer from '@/api/server/getServer.ts';
-import cancelServerInstall from '@/api/server/settings/cancelServerInstall.ts';
-import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
 import Container from '@/elements/Container.tsx';
-import Notification from '@/elements/Notification.tsx';
-import Progress from '@/elements/Progress.tsx';
 import ServerStatusIndicator from '@/elements/ServerStatusIndicator.tsx';
 import ServerSwitcher from '@/elements/ServerSwitcher.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
@@ -20,7 +14,6 @@ import NotFound from '@/pages/NotFound.tsx';
 import WebsocketHandler from '@/pages/server/WebsocketHandler.tsx';
 import WebsocketListener from '@/pages/server/WebsocketListener.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
-import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import ServerPermissionGuard from '@/routers/guards/ServerPermissionGuard.tsx';
 import serverRoutes from '@/routers/routes/serverRoutes.ts';
@@ -30,14 +23,12 @@ import { useServerStore } from '@/stores/server.ts';
 export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
   const { t } = useTranslations();
   const { settings } = useGlobalStore();
-  const { addToast } = useToast();
   const { user } = useAuth();
 
   const params = useParams<'id'>();
   const [loading, setLoading] = useState(true);
-  const [abortLoading, setAbortLoading] = useState(false);
 
-  const { server, updateServer, backupRestoreProgress, setSocketInstance } = useServerStore();
+  const { server, setSocketInstance } = useServerStore();
   const resetState = useServerStore((state) => state.reset);
   const setServer = useServerStore((state) => state.setServer);
 
@@ -46,13 +37,6 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
       resetState();
     };
   }, []);
-
-  useEffect(() => {
-    if (!server?.status && abortLoading) {
-      addToast(t('pages.server.console.toast.installCancelled', {}), 'success');
-      setAbortLoading(false);
-    }
-  }, [abortLoading, server?.status]);
 
   useEffect(() => {
     if (params.id) {
@@ -65,18 +49,6 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
         .finally(() => setLoading(false));
     }
   }, [params.id]);
-
-  const doAbortInstall = () => {
-    setAbortLoading(true);
-
-    cancelServerInstall(server.uuid)
-      .then((instantCancel) => {
-        if (instantCancel) {
-          updateServer({ status: null });
-        }
-      })
-      .catch((err) => addToast(httpErrorToHuman(err), 'error'));
-  };
 
   return (
     <div className='lg:flex h-full'>
@@ -149,31 +121,6 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
               {window.extensionContext.extensionRegistry.pages.server.prependedComponents.map((Component, i) => (
                 <Component key={`server-prepended-component-${i}`} />
               ))}
-              {server.status === 'restoring_backup' ? (
-                <div className='pt-2 px-12'>
-                  <Notification loading>
-                    {t('pages.server.console.notification.restoringBackup', {})}
-                    <Progress value={backupRestoreProgress} />
-                  </Notification>
-                </div>
-              ) : server.status === 'installing' ? (
-                <div className='pt-2 px-12'>
-                  <Notification loading>
-                    {t('pages.server.console.notification.installing', {})}
-                    <ServerCan action='settings.cancel-install'>
-                      <Button
-                        className='ml-2'
-                        leftSection={<FontAwesomeIcon icon={faCancel} />}
-                        variant='subtle'
-                        loading={abortLoading}
-                        onClick={doAbortInstall}
-                      >
-                        {t('common.button.cancel', {})}
-                      </Button>
-                    </ServerCan>
-                  </Notification>
-                </div>
-              ) : null}
 
               <Suspense fallback={<Spinner.Centered />}>
                 <Routes>

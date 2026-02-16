@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { Registry } from 'shared';
 
-export class ContainerRegistry implements Registry {
+export class ContainerRegistry<Props = {}> implements Registry {
   public mergeFrom(other: this): this {
     this.prependedComponents.push(...other.prependedComponents);
     this.prependedContentComponents.push(...other.prependedContentComponents);
@@ -10,26 +10,26 @@ export class ContainerRegistry implements Registry {
     return this;
   }
 
-  public prependedComponents: FC[] = [];
-  public prependedContentComponents: FC[] = [];
-  public appendedContentComponents: FC[] = [];
+  public prependedComponents: FC<Props>[] = [];
+  public prependedContentComponents: FC<Props>[] = [];
+  public appendedContentComponents: FC<Props>[] = [];
 
   // Adds a component to be rendered before everything else
-  public prependComponent(component: FC): this {
+  public prependComponent(component: FC<Props>): this {
     this.prependedComponents.push(component);
 
     return this;
   }
 
   // Adds a component to be rendered before the main content but after the title/search area
-  public prependContentComponent(component: FC): this {
+  public prependContentComponent(component: FC<Props>): this {
     this.prependedContentComponents.push(component);
 
     return this;
   }
 
   // Adds a component to be rendered after the main content
-  public appendContentComponent(component: FC): this {
+  public appendContentComponent(component: FC<Props>): this {
     this.appendedContentComponents.push(component);
 
     return this;

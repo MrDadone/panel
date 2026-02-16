@@ -117,7 +117,7 @@ export default function WebsocketListener() {
       return;
     }
 
-    setBackupRestoreProgress((wsData.progress / wsData.total) * 100);
+    setBackupRestoreProgress(wsData.progress, wsData.total);
   });
 
   useWebsocketEvent(SocketEvent.BACKUP_RESTORE_COMPLETED, () => {
