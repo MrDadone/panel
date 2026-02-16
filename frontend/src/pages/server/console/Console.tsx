@@ -114,6 +114,8 @@ export default function Terminal() {
     term.loadAddon(new Unicode11Addon());
     term.loadAddon(searchAddon);
 
+    term.unicode.activeVersion = '11';
+
     term.open(terminalRef.current);
     fitAddon.fit();
 
