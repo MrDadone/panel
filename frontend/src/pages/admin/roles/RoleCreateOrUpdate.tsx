@@ -68,7 +68,7 @@ export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role
   }, []);
 
   return (
-    <AdminContentContainer title={`${contextRole ? 'Update' : 'Create'} Role`} titleOrder={2}>
+    <AdminContentContainer title={`${contextRole ? 'Update' : 'Create'} Role`} fullscreen={!!contextRole} titleOrder={2}>
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}

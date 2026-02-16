@@ -148,7 +148,7 @@ export default function OAuthProviderCreateOrUpdate({
   };
 
   return (
-    <AdminContentContainer title={`${contextOAuthProvider ? 'Update' : 'Create'} OAuth Provider`} titleOrder={2}>
+    <AdminContentContainer title={`${contextOAuthProvider ? 'Update' : 'Create'} OAuth Provider`} fullscreen={!!contextOAuthProvider} titleOrder={2}>
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}

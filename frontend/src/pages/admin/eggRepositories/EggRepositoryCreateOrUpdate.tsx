@@ -74,7 +74,7 @@ export default function EggRepositoryCreateOrUpdate({
   };
 
   return (
-    <AdminContentContainer title={`${contextEggRepository ? 'Update' : 'Create'} Egg Repository`}>
+    <AdminContentContainer title={`${contextEggRepository ? 'Update' : 'Create'} Egg Repository`} fullscreen={!!contextEggRepository}>
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}

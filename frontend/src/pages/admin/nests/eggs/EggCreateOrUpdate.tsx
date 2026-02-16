@@ -247,7 +247,7 @@ export default function EggCreateOrUpdate({
   };
 
   return (
-    <AdminContentContainer title={`${contextEgg ? 'Update' : 'Create'} Egg`} hideTitleComponent>
+    <AdminContentContainer title={`${contextEgg ? 'Update' : 'Create'} Egg`} fullscreen={!!contextEgg} hideTitleComponent>
       {contextEgg && (
         <EggMoveModal
           opened={openModal === 'move'}
