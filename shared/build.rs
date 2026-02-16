@@ -21,6 +21,8 @@ fn main() {
                 "cargo:rustc-env=CARGO_GIT_BRANCH={}",
                 head_ref.rsplit('/').next().unwrap_or("unknown")
             );
+        } else {
+            println!("cargo:rustc-env=CARGO_GIT_BRANCH=unknown");
         }
 
         println!("cargo:rerun-if-changed=../.git/index");
