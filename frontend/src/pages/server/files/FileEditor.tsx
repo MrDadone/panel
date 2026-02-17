@@ -120,11 +120,7 @@ function FileEditorComponent() {
           />
 
           <div className='flex justify-between w-full py-4'>
-            <FileBreadcrumbs
-              inFileEditor
-              path={join(decodeURIComponent(browsingDirectory!), fileName)}
-              browsingBackup={browsingBackup}
-            />
+            <FileBreadcrumbs inFileEditor path={join(decodeURIComponent(browsingDirectory!), fileName)} />
           </div>
           <div className='relative'>
             <div className='flex h-[calc(100vh-185px)] lg:h-[calc(100vh-119px)] max-w-full w-full z-1 absolute'>

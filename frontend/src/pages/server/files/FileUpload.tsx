@@ -7,8 +7,7 @@ import { useServerStore } from '@/stores/server.ts';
 export default function FileUpload() {
   const { fileUploader } = useFileManager();
   const { uploadFiles, handleFileSelect, handleFolderSelect } = fileUploader;
-  const { fileInputRef, folderInputRef } = useFileManager();
-  const browsingBackup = false;
+  const { browsingBackup, fileInputRef, folderInputRef } = useFileManager();
 
   const { isDragging } = useFileDragAndDrop({
     onDrop: uploadFiles,

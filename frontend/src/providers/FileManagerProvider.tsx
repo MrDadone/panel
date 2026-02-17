@@ -13,6 +13,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFileNames, setSelectedFileNames] = useState(new Set<string>());
+  const [browsingBackup, setBrowsingBackup] = useState<ServerBackup | null>(null);
   const [browsingDirectory, setBrowsingDirectory] = useState('');
   const [browsingEntries, setBrowsingEntries] = useState<DirectoryEntry[]>([]);
   const [page, setPage] = useState(1);
@@ -68,6 +69,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         fileInputRef,
         folderInputRef,
         selectedFileNames,
+        browsingBackup,
         browsingDirectory,
         browsingEntries,
         page,
@@ -78,6 +80,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         setSelectedFiles,
         addSelectedFile,
         removeSelectedFile,
+        setBrowsingBackup,
         setBrowsingDirectory,
         setBrowsingEntries,
         setPage,

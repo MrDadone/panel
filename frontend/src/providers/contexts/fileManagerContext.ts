@@ -17,6 +17,7 @@ export interface FileManagerContextType {
   folderInputRef: RefObject<HTMLInputElement | null>;
 
   selectedFileNames: Set<string>;
+  browsingBackup: ServerBackup | null;
   browsingDirectory: string;
   browsingEntries: DirectoryEntry[];
   page: number;
@@ -28,6 +29,7 @@ export interface FileManagerContextType {
   setSelectedFiles: (files: string[]) => void;
   addSelectedFile: (file: DirectoryEntry) => void;
   removeSelectedFile: (file: DirectoryEntry) => void;
+  setBrowsingBackup: (backup: ServerBackup | null) => void;
   setBrowsingDirectory: (directory: string) => void;
   setBrowsingEntries: (entries: DirectoryEntry[]) => void;
   setPage: (page: number) => void;

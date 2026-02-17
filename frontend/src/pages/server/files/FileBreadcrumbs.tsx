@@ -10,17 +10,15 @@ import { useServerStore } from '@/stores/server.ts';
 
 export default function FileBreadcrumbs({
   path,
-  browsingBackup,
   inFileEditor,
   onSearchClick,
 }: {
   path: string;
-  browsingBackup: ServerBackup | null;
   inFileEditor?: boolean;
   onSearchClick?: () => void;
 }) {
   const { server, setBrowsingDirectory, actingFileNames } = useServerStore();
-  const { selectedFileNames, browsingEntries, setSelectedFiles } = useFileManager();
+  const { selectedFileNames, browsingBackup, browsingEntries, setSelectedFiles } = useFileManager();
 
   const splittedPath = path.split('/').filter(Boolean);
   const pathItems = splittedPath.map((item, index) => {
