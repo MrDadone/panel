@@ -1,3 +1,6 @@
+import DirectoryNameModal from '@/pages/server/files/modals/DirectoryNameModal.tsx';
+import PullFileModal from '@/pages/server/files/modals/PullFileModal.tsx';
+import SftpDetailsModal from '@/pages/server/files/modals/SftpDetailsModal.tsx';
 import ArchiveCreateModal from '@/pages/server/filesnew/modals/ArchiveCreateModal.tsx';
 import FileCopyModal from '@/pages/server/filesnew/modals/FileCopyModal.tsx';
 import FileDeleteModal from '@/pages/server/filesnew/modals/FileDeleteModal.tsx';
@@ -23,6 +26,10 @@ export default function FileModals() {
         opened={openModal === 'delete'}
         onClose={doCloseModal}
       />
+
+      <SftpDetailsModal opened={openModal === 'sftpDetails'} onClose={doCloseModal} />
+      <DirectoryNameModal opened={openModal === 'nameDirectory'} onClose={doCloseModal} />
+      <PullFileModal opened={openModal === 'pullFile'} onClose={doCloseModal} />
     </>
   );
 }

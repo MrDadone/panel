@@ -1,18 +1,27 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
+import { useFileDragAndDrop } from '@/pages/server/filesnew/hooks/useFileDragAndDrop.ts';
+import { useFileUpload } from '@/plugins/useFileUpload.ts';
 import { FileManagerContext, ModalType } from '@/providers/contexts/fileManagerContext.ts';
+import { useServerStore } from '@/stores/server.ts';
 
 const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [searchParams, _] = useSearchParams();
+  const { server } = useServerStore();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFileNames, setSelectedFileNames] = useState(new Set<string>());
   const [browsingDirectory, setBrowsingDirectory] = useState('');
   const [browsingEntries, setBrowsingEntries] = useState<DirectoryEntry[]>([]);
   const [page, setPage] = useState(1);
+  const [browsingWritableDirectory, setBrowsingWritableDirectory] = useState(true);
   const [browsingFastDirectory, setBrowsingFastDirectory] = useState(true);
-
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const [modalDirectoryEntry, setModalDirectoryEntry] = useState<DirectoryEntry | null>(null);
+
+  const fileUploader = useFileUpload(server.uuid, browsingDirectory!, () => console.log('done'));
 
   const setSelectedFiles = (files: string[]) => setSelectedFileNames(new Set(files));
 
@@ -32,9 +41,11 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const doOpenModal = (modal: ModalType, entry: DirectoryEntry) => {
+  const doOpenModal = (modal: ModalType, entry?: DirectoryEntry) => {
     setOpenModal(modal);
-    setModalDirectoryEntry(entry);
+    if (entry) {
+      setModalDirectoryEntry(entry);
+    }
   };
 
   const doCloseModal = () => {
@@ -54,10 +65,13 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   return (
     <FileManagerContext.Provider
       value={{
+        fileInputRef,
+        folderInputRef,
         selectedFileNames,
         browsingDirectory,
         browsingEntries,
         page,
+        browsingWritableDirectory,
         browsingFastDirectory,
         openModal,
         modalDirectoryEntry,
@@ -67,10 +81,12 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         setBrowsingDirectory,
         setBrowsingEntries,
         setPage,
+        setBrowsingWritableDirectory,
         setBrowsingFastDirectory,
         doOpenModal,
         doCloseModal,
         setModalDirectoryEntry,
+        fileUploader,
       }}
     >
       {children}

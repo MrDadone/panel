@@ -1,3 +1,4 @@
+import { Group, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { type Ref, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
@@ -9,14 +10,25 @@ import Spinner from '@/elements/Spinner.tsx';
 import Table from '@/elements/Table.tsx';
 import FileBreadcrumbs from '@/pages/server/filesnew/FileBreadcrumbs.tsx';
 import FileModals from '@/pages/server/filesnew/FileModals.tsx';
+import FileOperationsProgress from '@/pages/server/filesnew/FileOperationsProgress.tsx';
 import FileRow from '@/pages/server/filesnew/FileRow.tsx';
+import FileToolbar from '@/pages/server/filesnew/FileToolbar.tsx';
+import FileUpload from '@/pages/server/filesnew/FileUpload.tsx';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { FileManagerProvider } from '@/providers/FileManagerProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 function ServerFilesComponent() {
   const { server } = useServerStore();
-  const { selectedFileNames, browsingDirectory, page, setSelectedFiles, setBrowsingEntries } = useFileManager();
+  const {
+    selectedFileNames,
+    browsingDirectory,
+    page,
+    setSelectedFiles,
+    setBrowsingEntries,
+    setBrowsingWritableDirectory,
+    setBrowsingFastDirectory,
+  } = useFileManager();
   const [_, setSearchParams] = useSearchParams();
 
   const { data, isLoading } = useQuery({
@@ -28,6 +40,8 @@ function ServerFilesComponent() {
     if (!data) return;
 
     setBrowsingEntries(data.entries.data);
+    setBrowsingWritableDirectory(data.isFilesystemWritable);
+    setBrowsingFastDirectory(data.isFilesystemFast);
   }, [data]);
 
   const previousSelected = useRef<string[]>([]);
@@ -45,9 +59,20 @@ function ServerFilesComponent() {
   return (
     <div className='h-fit relative'>
       <FileModals />
+      <FileUpload />
+
+      <Group justify='space-between' align='center' mb='md'>
+        <Title order={1} c='white'>
+          Files
+        </Title>
+        <Group>
+          <FileOperationsProgress />
+          <FileToolbar />
+        </Group>
+      </Group>
 
       <div className='bg-[#282828] border border-[#424242] rounded-lg mb-2 p-4'>
-        <FileBreadcrumbs browsingBackup={false} path={decodeURIComponent(browsingDirectory)} />
+        <FileBreadcrumbs browsingBackup={null} path={decodeURIComponent(browsingDirectory)} />
       </div>
 
       {!data || isLoading ? (

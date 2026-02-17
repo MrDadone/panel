@@ -19,11 +19,35 @@ interface BatchInfo {
   files: File[];
 }
 
+interface AggregatedUploadProgress {
+  totalSize: number;
+  uploadedSize: number;
+  fileCount: number;
+  completedCount: number;
+  pendingCount: number;
+}
+
+export interface FileUploader {
+  uploadingFiles: Map<string, FileUploadProgress>;
+  uploadFiles: (files: File[]) => Promise<void>;
+  cancelFileUpload: (fileKey: string) => void;
+  cancelFolderUpload: (folderName: string) => void;
+  aggregatedUploadProgress: Map<string, AggregatedUploadProgress>;
+  handleFileSelect: (
+    event: ChangeEvent<HTMLInputElement, Element>,
+    inputRef: RefObject<HTMLInputElement | null>,
+  ) => void;
+  handleFolderSelect: (
+    event: ChangeEvent<HTMLInputElement, Element>,
+    inputRef: RefObject<HTMLInputElement | null>,
+  ) => void;
+}
+
 const MAX_CONCURRENT_BATCHES = 4;
 const BATCH_SIZE = 2;
 const CLEANUP_DELAY = 2000;
 
-export function useFileUpload(serverUuid: string, directory: string, onUploadComplete: () => void) {
+export function useFileUpload(serverUuid: string, directory: string, onUploadComplete: () => void): FileUploader {
   const { addToast } = useToast();
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, FileUploadProgress>>(new Map());
   const [uploadBatches, setUploadBatches] = useState<Map<string, BatchInfo>>(new Map());
@@ -455,16 +479,7 @@ export function useFileUpload(serverUuid: string, directory: string, onUploadCom
   );
 
   const aggregatedUploadProgress = useMemo(() => {
-    const folderMap = new Map<
-      string,
-      {
-        totalSize: number;
-        uploadedSize: number;
-        fileCount: number;
-        completedCount: number;
-        pendingCount: number;
-      }
-    >();
+    const folderMap = new Map<string, AggregatedUploadProgress>();
 
     uploadingFiles.forEach((file) => {
       const pathParts = file.fileName.split('/');
