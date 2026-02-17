@@ -1,7 +1,7 @@
 import { faDoorOpen, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Breadcrumbs } from '@mantine/core';
-import { ReactNode, useMemo } from 'react';
+import { ReactNode } from 'react';
 import { createSearchParams, NavLink } from 'react-router';
 import Button from '@/elements/Button.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';

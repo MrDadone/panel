@@ -155,7 +155,7 @@ mod delete {
                 .ok();
         }
 
-        if let Err(err) = backup.delete(&state, ()).await {
+        if let Err(err) = backup.delete(&state, Default::default()).await {
             tracing::error!(server = %server.uuid, backup = %backup.uuid, "failed to delete backup: {:?}", err);
 
             return ApiResponse::error("failed to delete backup")

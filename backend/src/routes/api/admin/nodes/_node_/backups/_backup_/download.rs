@@ -7,10 +7,9 @@ mod get {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        jwt::BasePayload,
         models::{
+            admin_activity::GetAdminActivityLogger,
             node::GetNode,
-            server_backup::BackupDisk,
             user::{GetPermissionManager, GetUser},
         },
         response::{ApiResponse, ApiResponseResult},
@@ -48,6 +47,7 @@ mod get {
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
+        activity_logger: GetAdminActivityLogger,
         user: GetUser,
         node: GetNode,
         backup: GetServerBackup,
@@ -61,93 +61,23 @@ mod get {
                 .ok();
         }
 
-        let backup_configuration = match &backup.backup_configuration {
-            Some(backup_configuration) => {
-                backup_configuration.fetch_cached(&state.database).await?
-            }
-            None => {
-                return ApiResponse::error("backup does not have a backup configuration assigned")
-                    .with_status(StatusCode::EXPECTATION_FAILED)
-                    .ok();
-            }
-        };
+        let url = backup
+            .download_url(&state, &user, &node, params.archive_format)
+            .await?;
 
-        if backup_configuration.maintenance_enabled {
-            return ApiResponse::error(
-                "cannot download backup while backup configuration is in maintenance mode",
+        activity_logger
+            .log(
+                "node:backup.download",
+                serde_json::json!({
+                    "uuid": backup.uuid,
+                    "node_uuid": node.uuid,
+
+                    "name": backup.name,
+                }),
             )
-            .with_status(StatusCode::EXPECTATION_FAILED)
-            .ok();
-        }
+            .await;
 
-        if matches!(backup.disk, BackupDisk::S3)
-            && let Some(mut s3_configuration) = backup_configuration.backup_configs.s3
-        {
-            s3_configuration.decrypt(&state.database).await?;
-
-            let client = match s3_configuration.into_client() {
-                Ok(client) => client,
-                Err(err) => {
-                    tracing::error!("Failed to create S3 client: {:?}", err);
-
-                    return ApiResponse::error("failed to download s3 backup")
-                        .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                        .ok();
-                }
-            };
-            let file_path = match &backup.upload_path {
-                Some(path) => path,
-                None => {
-                    return ApiResponse::error("upload path not found")
-                        .with_status(StatusCode::EXPECTATION_FAILED)
-                        .ok();
-                }
-            };
-
-            let url = client.presign_get(file_path, 15 * 60, None).await?;
-
-            return ApiResponse::new_serialized(Response { url }).ok();
-        }
-
-        #[derive(Serialize)]
-        struct BackupDownloadJwt {
-            #[serde(flatten)]
-            base: BasePayload,
-
-            backup_uuid: uuid::Uuid,
-            unique_id: uuid::Uuid,
-        }
-
-        let token = node.create_jwt(
-            &state.database,
-            &state.jwt,
-            &BackupDownloadJwt {
-                base: BasePayload {
-                    issuer: "panel".into(),
-                    subject: None,
-                    audience: Vec::new(),
-                    expiration_time: Some(chrono::Utc::now().timestamp() + 900),
-                    not_before: None,
-                    issued_at: Some(chrono::Utc::now().timestamp()),
-                    jwt_id: user.uuid.to_string(),
-                },
-                backup_uuid: backup.uuid,
-                unique_id: uuid::Uuid::new_v4(),
-            },
-        )?;
-
-        let mut url = node.public_url();
-        url.set_path("/download/backup");
-        url.set_query(Some(&format!(
-            "token={}&archive_format={}",
-            urlencoding::encode(&token),
-            params.archive_format
-        )));
-
-        ApiResponse::new_serialized(Response {
-            url: url.to_string(),
-        })
-        .ok()
+        ApiResponse::new_serialized(Response { url }).ok()
     }
 }
 

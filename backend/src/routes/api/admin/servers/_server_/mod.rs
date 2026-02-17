@@ -152,7 +152,7 @@ mod delete {
             for backup in backups {
                 let backup_uuid = backup.uuid;
 
-                if let Err(err) = backup.delete(&state, ()).await {
+                if let Err(err) = backup.delete(&state, Default::default()).await {
                     tracing::error!(server = %server.uuid, backup = %backup_uuid, "failed to delete backup: {:?}", err);
 
                     if !data.force {
