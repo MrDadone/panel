@@ -51,6 +51,7 @@ export default function Terminal() {
   const fitAddonRef = useRef<FitAddon | null>(null);
   const searchAddonRef = useRef<SearchAddon | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isFirstLine = useRef(true);
 
   const HISTORY_STORAGE_KEY = `terminal_command_history_${server.uuid}`;
   const CONSOLE_FONT_SIZE_KEY = 'terminal_console_font_size';
@@ -98,11 +99,13 @@ export default function Terminal() {
         selectionInactiveBackground: '#FFFFFF80',
       },
       allowTransparency: true,
-      cursorBlink: false,
+      lineHeight: 1.2,
       disableStdin: true,
       convertEol: true,
       smoothScrollDuration: 250,
       allowProposedApi: true,
+      fontWeightBold: '500',
+      rescaleOverlappingGlyphs: true,
     });
 
     const fitAddon = new FitAddon();
@@ -121,6 +124,12 @@ export default function Terminal() {
 
     // prevent cursor
     term.write('\x1b[?25l');
+
+    document.fonts.ready.then(() => {
+      if (fitAddonRef.current) {
+        fitAddonRef.current.fit();
+      }
+    });
 
     xtermInstance.current = term;
     fitAddonRef.current = fitAddon;
@@ -193,7 +202,8 @@ export default function Terminal() {
   const addLine = useCallback((text: string, prelude = false) => {
     if (!xtermInstance.current) return;
 
-    let processed = text;
+    let processed = text.replaceAll('\x1b[?25h', '');
+
     if (processed.includes('container@pterodactyl~')) {
       processed = processed.replace('container@pterodactyl~', 'container@calagopus~');
     }
@@ -202,7 +212,12 @@ export default function Terminal() {
       processed = RAW_PRELUDE + processed;
     }
 
-    xtermInstance.current.writeln(processed);
+    if (isFirstLine.current) {
+      xtermInstance.current.write(processed);
+      isFirstLine.current = false;
+    } else {
+      xtermInstance.current.write('\n'.concat(processed));
+    }
   }, []);
 
   useEffect(() => {
@@ -210,6 +225,7 @@ export default function Terminal() {
 
     xtermInstance.current.clear();
     setIsAtBottom(true);
+    isFirstLine.current = true;
 
     const listeners: Record<string, (msg: string) => void> = {
       [SocketEvent.STATUS]: (s) =>
@@ -282,9 +298,9 @@ export default function Terminal() {
   useKeyboardShortcut(
     'f',
     () => {
-      if (openModal) return;
+      if (openModal && openModal !== 'search') return;
 
-      setOpenModal('search');
+      setOpenModal(openModal ? null : 'search');
     },
     {
       modifiers: ['ctrlOrMeta'],
@@ -307,7 +323,9 @@ export default function Terminal() {
               )}
             />
             {socketConnected && socketInstance
-              ? t('pages.server.console.socketConnected', { ping: websocketPing })
+              ? t('pages.server.console.socketConnected', {
+                  ping: websocketPing,
+                })
               : t('pages.server.console.socketDisconnected', {})}
             {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderLeftComponents.map(
               (Component, idx) => (
@@ -339,7 +357,9 @@ export default function Terminal() {
                   value={searchText}
                   onChange={(e) => {
                     setSearchText(e.currentTarget.value);
-                    searchAddonRef.current?.findNext(e.currentTarget.value, { incremental: true });
+                    searchAddonRef.current?.findNext(e.currentTarget.value, {
+                      incremental: true,
+                    });
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
