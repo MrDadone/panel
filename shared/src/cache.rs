@@ -143,7 +143,7 @@ impl Cache {
             .await?;
 
         if limit_used >= limit {
-            return Err(ApiResponse::error(&format!(
+            return Err(ApiResponse::error(format!(
                 "you are ratelimited, retry in {}s",
                 expiry - now
             ))

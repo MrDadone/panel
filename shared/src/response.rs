@@ -11,6 +11,7 @@ pub type ApiResponseResult = Result<ApiResponse, ApiResponse>;
 
 tokio::task_local! {
     pub static ACCEPT_HEADER: Option<Accept>;
+    pub static APP_DEBUG: bool;
 }
 
 pub fn accept_from_headers(headers: &axum::http::HeaderMap) -> Option<Accept> {
@@ -113,8 +114,8 @@ impl ApiResponse {
     }
 
     #[inline]
-    pub fn error(err: &str) -> Self {
-        Self::new_serialized(ApiError::new_value(&[err]))
+    pub fn error(err: impl AsRef<str>) -> Self {
+        Self::new_serialized(ApiError::new_value(&[err.as_ref()]))
             .with_status(axum::http::StatusCode::BAD_REQUEST)
     }
 
@@ -174,15 +175,21 @@ where
         } else if let Some(DatabaseError::InvalidRelation(error)) =
             err.downcast_ref::<DatabaseError>()
         {
-            return ApiResponse::error(&error.to_string())
+            return ApiResponse::error(error.to_string())
                 .with_status(axum::http::StatusCode::BAD_REQUEST);
         }
 
         tracing::error!("a request error occurred: {:?}", err);
         sentry_anyhow::capture_anyhow(&err);
 
-        ApiResponse::error("internal server error")
-            .with_status(axum::http::StatusCode::INTERNAL_SERVER_ERROR)
+        let debug = APP_DEBUG.try_get().unwrap_or_default();
+
+        ApiResponse::error(if debug {
+            Cow::Owned(err.to_string())
+        } else {
+            "internal server error".into()
+        })
+        .with_status(axum::http::StatusCode::INTERNAL_SERVER_ERROR)
     }
 }
 

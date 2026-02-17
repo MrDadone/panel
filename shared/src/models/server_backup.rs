@@ -1005,19 +1005,20 @@ impl DeletableModel for ServerBackup {
                 let backup_disk = self.disk;
 
                 return tokio::spawn(async move {
-                    if let Err(err) = node
-                        .api_client(&database)
-                        .delete_backups_backup(
-                            backup_uuid,
-                            &wings_api::backups_backup::delete::RequestBody {
-                                adapter: backup_disk.to_wings_adapter(),
-                            },
-                        )
-                        .await
-                        && !matches!(
-                            err,
-                            wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, _)
-                        )
+                    if backup_disk != BackupDisk::S3
+                        && let Err(err) = node
+                            .api_client(&database)
+                            .delete_backups_backup(
+                                backup_uuid,
+                                &wings_api::backups_backup::delete::RequestBody {
+                                    adapter: backup_disk.to_wings_adapter(),
+                                },
+                            )
+                            .await
+                            && !matches!(
+                                err,
+                                wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, _)
+                            )
                     {
                         tracing::error!(node = %node.uuid, backup = %backup_uuid, "unable to delete backup on node: {:?}", err)
                     }

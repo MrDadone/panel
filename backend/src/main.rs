@@ -55,11 +55,15 @@ async fn handle_request(
         .bright_cyan()
     );
 
-    Ok(shared::response::ACCEPT_HEADER
-        .scope(
-            shared::response::accept_from_headers(req.headers()),
-            async { next.run(req).await },
-        )
+    Ok(shared::response::APP_DEBUG
+        .scope(state.env.app_debug, async {
+            shared::response::ACCEPT_HEADER
+                .scope(
+                    shared::response::accept_from_headers(req.headers()),
+                    async { next.run(req).await },
+                )
+                .await
+        })
         .await)
 }
 

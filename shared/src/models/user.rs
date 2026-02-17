@@ -102,7 +102,7 @@ impl PermissionManager {
             if permissions.iter().any(|p| p == permission) {
                 return Ok(());
             } else {
-                return Err(ApiResponse::error(&format!(
+                return Err(ApiResponse::error(format!(
                     "you do not have permission to perform this action: {permission}"
                 ))
                 .with_status(StatusCode::FORBIDDEN));
@@ -122,7 +122,7 @@ impl PermissionManager {
         };
 
         if !has_role_permission {
-            return Err(ApiResponse::error(&format!(
+            return Err(ApiResponse::error(format!(
                 "you do not have permission to perform this action: {permission}"
             ))
             .with_status(StatusCode::FORBIDDEN));
@@ -131,7 +131,7 @@ impl PermissionManager {
         if let Some(permissions) = &self.api_key_admin_permissions
             && !permissions.iter().any(|p| p == permission)
         {
-            return Err(ApiResponse::error(&format!(
+            return Err(ApiResponse::error(format!(
                 "you do not have permission to perform this action: {permission}"
             ))
             .with_status(StatusCode::FORBIDDEN));
@@ -148,7 +148,7 @@ impl PermissionManager {
             if let Some(api_key_permissions) = &self.api_key_server_permissions
                 && api_key_permissions.iter().all(|p| p != permission)
             {
-                return Err(ApiResponse::error(&format!(
+                return Err(ApiResponse::error(format!(
                     "you do not have permission to perform this action: {permission}"
                 ))
                 .with_status(StatusCode::FORBIDDEN));
@@ -174,7 +174,7 @@ impl PermissionManager {
         let has_base_permission = has_role_permission || has_subuser_permission;
 
         if !has_base_permission {
-            return Err(ApiResponse::error(&format!(
+            return Err(ApiResponse::error(format!(
                 "you do not have permission to perform this action: {permission}"
             ))
             .with_status(StatusCode::FORBIDDEN));
@@ -183,7 +183,7 @@ impl PermissionManager {
         if let Some(api_key_permissions) = &self.api_key_server_permissions
             && !api_key_permissions.iter().any(|p| p == permission)
         {
-            return Err(ApiResponse::error(&format!(
+            return Err(ApiResponse::error(format!(
                 "you do not have permission to perform this action: {permission}"
             ))
             .with_status(StatusCode::FORBIDDEN));

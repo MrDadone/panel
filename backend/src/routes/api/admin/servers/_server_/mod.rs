@@ -143,7 +143,7 @@ mod delete {
         {
             tracing::error!("failed to delete server: {:?}", err);
 
-            return ApiResponse::error(&format!("failed to delete server: {err}"))
+            return ApiResponse::error(format!("failed to delete server: {err}"))
                 .with_status(StatusCode::EXPECTATION_FAILED)
                 .ok();
         }
@@ -156,7 +156,7 @@ mod delete {
                     tracing::error!(server = %server.uuid, backup = %backup_uuid, "failed to delete backup: {:?}", err);
 
                     if !data.force {
-                        return ApiResponse::error(&format!("failed to delete backup: {err}"))
+                        return ApiResponse::error(format!("failed to delete backup: {err}"))
                             .with_status(StatusCode::EXPECTATION_FAILED)
                             .ok();
                     }
