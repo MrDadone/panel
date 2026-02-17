@@ -50,6 +50,7 @@ export interface FileManagerContextType {
   setSearchInfo: (info: SearchInfo | null) => void;
 
   fileUploader: FileUploader;
+  invalidateFilemanager: () => void;
 }
 
 export const FileManagerContext = createContext<FileManagerContextType | undefined>(undefined);

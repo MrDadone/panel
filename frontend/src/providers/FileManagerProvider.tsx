@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
@@ -8,6 +9,7 @@ import { useServerStore } from '@/stores/server.ts';
 const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [searchParams, _] = useSearchParams();
   const { server } = useServerStore();
+  const queryClient = useQueryClient();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -23,7 +25,16 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [modalDirectoryEntry, setModalDirectoryEntry] = useState<DirectoryEntry | null>(null);
   const [searchInfo, setSearchInfo] = useState<SearchInfo | null>(null);
 
-  const fileUploader = useFileUpload(server.uuid, browsingDirectory!, () => alert('Implement file manager reloading'));
+  const invalidateFilemanager = () => {
+    console.log('hi');
+    queryClient
+      .invalidateQueries({
+        queryKey: ['server', server.uuid, 'files'],
+      })
+      .catch((e) => console.error(e));
+  };
+
+  const fileUploader = useFileUpload(server.uuid, browsingDirectory!, invalidateFilemanager);
 
   const setSelectedFiles = (files: string[]) => setSelectedFileNames(new Set(files));
 
@@ -93,6 +104,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         setModalDirectoryEntry,
         setSearchInfo,
         fileUploader,
+        invalidateFilemanager,
       }}
     >
       {children}

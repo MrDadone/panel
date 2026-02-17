@@ -40,7 +40,7 @@ function ServerFilesComponent() {
   const [_, setSearchParams] = useSearchParams();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['server', server.uuid, 'files', 'directory', browsingDirectory, page],
+    queryKey: ['server', server.uuid, 'files', { browsingDirectory, page }],
     queryFn: () => loadDirectory(server.uuid, browsingDirectory, page),
   });
 

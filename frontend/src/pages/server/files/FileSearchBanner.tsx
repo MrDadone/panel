@@ -5,7 +5,12 @@ import { bytesToString } from '@/lib/size.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 
 export default function FileSearchBanner() {
-  const { browsingEntries, searchInfo } = useFileManager();
+  const { browsingEntries, searchInfo, setSearchInfo, invalidateFilemanager } = useFileManager();
+
+  const closeSearch = async () => {
+    setSearchInfo(null);
+    invalidateFilemanager();
+  };
 
   if (!searchInfo) return null;
 
@@ -14,7 +19,7 @@ export default function FileSearchBanner() {
       icon={<FontAwesomeIcon icon={faSearch} />}
       color='blue'
       title={`Search Results (${browsingEntries.total} files found)`}
-      onClose={() => alert('Implement file manager reloading')}
+      onClose={closeSearch}
       withCloseButton
       mb='md'
     >
