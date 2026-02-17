@@ -17,8 +17,8 @@ import ServerBackups from '@/pages/server/backups/ServerBackups.tsx';
 import ServerDatabases from '@/pages/server/databases/ServerDatabases.tsx';
 import ServerFilesEditor from '@/pages/server/files/FileEditor.tsx';
 import ServerFiles from '@/pages/server/files/ServerFiles.tsx';
-import ServerFilesEditorNew from '@/pages/server/filesnew/FileEditor.tsx';
-import ServerFilesNew from '@/pages/server/filesnew/ServerFiles.tsx';
+import ServerFilesEditorOld from '@/pages/server/filesold/FileEditor.tsx';
+import ServerFilesOld from '@/pages/server/filesold/ServerFiles.tsx';
 import ServerNetwork from '@/pages/server/network/ServerNetwork.tsx';
 import ScheduleView from '@/pages/server/schedules/ScheduleView.tsx';
 import ServerSchedules from '@/pages/server/schedules/ServerSchedules.tsx';
@@ -52,16 +52,16 @@ const routes: ServerRouteDefinition[] = [
     permission: 'files.read',
   },
   {
-    name: 'Files New',
+    name: 'Files Old',
     icon: faFolderOpen,
-    path: '/files-new',
-    element: ServerFilesNew,
+    path: '/files-old',
+    element: ServerFilesOld,
     permission: 'files.read',
   },
   {
     name: undefined,
-    path: '/files-new/:action',
-    element: ServerFilesEditorNew,
+    path: '/files-old/:action',
+    element: ServerFilesEditorOld,
     permission: 'files.read',
   },
   {

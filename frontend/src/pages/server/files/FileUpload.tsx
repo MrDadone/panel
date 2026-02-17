@@ -1,5 +1,5 @@
-import FileUploadOverlay from '@/pages/server/filesnew/FileUploadOverlay.tsx';
-import { useFileDragAndDrop } from '@/pages/server/filesnew/hooks/useFileDragAndDrop.ts';
+import FileUploadOverlay from '@/pages/server/files/FileUploadOverlay.tsx';
+import { useFileDragAndDrop } from '@/pages/server/files/hooks/useFileDragAndDrop.ts';
 import { useFileUpload } from '@/plugins/useFileUpload.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useServerStore } from '@/stores/server.ts';

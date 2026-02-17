@@ -9,39 +9,26 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group } from '@mantine/core';
-import { memo } from 'react';
 import { createSearchParams, useNavigate } from 'react-router';
 import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
+import { useFileManager } from '@/providers/FileManagerProvider.tsx';
+import { useServerStore } from '@/stores/server.ts';
 
-interface FileToolbarProps {
-  serverUuidShort: string;
-  browsingDirectory: string;
-  browsingWritableDirectory: boolean;
-  onSftpDetailsClick: () => void;
-  onNewDirectoryClick: () => void;
-  onPullFileClick: () => void;
-  onFileUploadClick: () => void;
-  onFolderUploadClick: () => void;
-}
-
-const FileToolbar = memo(function FileToolbar({
-  serverUuidShort,
-  browsingDirectory,
-  browsingWritableDirectory,
-  onSftpDetailsClick,
-  onNewDirectoryClick,
-  onPullFileClick,
-  onFileUploadClick,
-  onFolderUploadClick,
-}: FileToolbarProps) {
+export default function FileToolbar() {
   const navigate = useNavigate();
+  const { server } = useServerStore();
+  const { fileInputRef, folderInputRef, browsingDirectory, browsingWritableDirectory, doOpenModal } = useFileManager();
 
   return (
     <Group>
       <ServerCan action='files.sftp'>
-        <Button variant='outline' leftSection={<FontAwesomeIcon icon={faServer} />} onClick={onSftpDetailsClick}>
+        <Button
+          variant='outline'
+          leftSection={<FontAwesomeIcon icon={faServer} />}
+          onClick={() => doOpenModal('sftpDetails')}
+        >
           SFTP Details
         </Button>
       </ServerCan>
@@ -55,32 +42,32 @@ const FileToolbar = memo(function FileToolbar({
                   label: 'File from Editor',
                   onClick: () =>
                     navigate(
-                      `/server/${serverUuidShort}/files/new?${createSearchParams({ directory: browsingDirectory })}`,
+                      `/server/${server.uuidShort}/files/new?${createSearchParams({ directory: browsingDirectory })}`,
                     ),
                   color: 'gray',
                 },
                 {
                   icon: faFolderPlus,
                   label: 'Directory',
-                  onClick: onNewDirectoryClick,
+                  onClick: () => doOpenModal('nameDirectory'),
                   color: 'gray',
                 },
                 {
                   icon: faDownload,
                   label: 'File from Pull',
-                  onClick: onPullFileClick,
+                  onClick: () => doOpenModal('pullFile'),
                   color: 'gray',
                 },
                 {
                   icon: faFileUpload,
                   label: 'File from Upload',
-                  onClick: onFileUploadClick,
+                  onClick: () => fileInputRef.current?.click(),
                   color: 'gray',
                 },
                 {
                   icon: faFolderOpen,
                   label: 'Directory from Upload',
-                  onClick: onFolderUploadClick,
+                  onClick: () => folderInputRef.current?.click(),
                   color: 'gray',
                 },
               ]}
@@ -104,6 +91,4 @@ const FileToolbar = memo(function FileToolbar({
       )}
     </Group>
   );
-});
-
-export default FileToolbar;
+}

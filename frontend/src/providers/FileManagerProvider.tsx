@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useFileDragAndDrop } from '@/pages/server/filesnew/hooks/useFileDragAndDrop.ts';
+import { useFileDragAndDrop } from '@/pages/server/files/hooks/useFileDragAndDrop.ts';
 import { useFileUpload } from '@/plugins/useFileUpload.ts';
 import { FileManagerContext, ModalType } from '@/providers/contexts/fileManagerContext.ts';
 import { useServerStore } from '@/stores/server.ts';

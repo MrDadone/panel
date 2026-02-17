@@ -6,7 +6,7 @@ interface FileUploadOverlayProps {
   visible: boolean;
 }
 
-function FileUploadOverlay({ visible }: FileUploadOverlayProps) {
+const FileUploadOverlay = memo(function FileUploadOverlay({ visible }: FileUploadOverlayProps) {
   if (!visible) return null;
 
   return (
@@ -22,6 +22,6 @@ function FileUploadOverlay({ visible }: FileUploadOverlayProps) {
       </div>
     </div>
   );
-}
+});
 
-export default memo(FileUploadOverlay);
+export default FileUploadOverlay;

@@ -100,7 +100,7 @@ export const FileTableRow = memo(
             if (!canOpenFile) return;
 
             navigate(
-              `/server/${server.uuidShort}/files/edit?${createSearchParams({
+              `/server/${server.uuidShort}/files-old/edit?${createSearchParams({
                 directory: browsingDirectory,
                 file: file.name,
               })}`,

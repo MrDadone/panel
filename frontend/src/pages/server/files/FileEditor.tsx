@@ -12,12 +12,13 @@ import MonacoEditor from '@/elements/MonacoEditor.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { registerHoconLanguage, registerTomlLanguage } from '@/lib/monaco.ts';
 import NotFound from '@/pages/NotFound.tsx';
+import { FileManagerProvider } from '@/providers/FileManagerProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import FileBreadcrumbs from './FileBreadcrumbs.tsx';
 import FileNameModal from './modals/FileNameModal.tsx';
 
-export default function FileEditor() {
+function FileEditorComponent() {
   const params = useParams<'action'>();
 
   const [searchParams, _] = useSearchParams();
@@ -165,5 +166,13 @@ export default function FileEditor() {
         </div>
       )}
     </ServerContentContainer>
+  );
+}
+
+export default function FileEditor() {
+  return (
+    <FileManagerProvider>
+      <FileEditorComponent />
+    </FileManagerProvider>
   );
 }
