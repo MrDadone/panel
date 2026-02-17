@@ -8,17 +8,9 @@ import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
-export default function FileBreadcrumbs({
-  path,
-  inFileEditor,
-  onSearchClick,
-}: {
-  path: string;
-  inFileEditor?: boolean;
-  onSearchClick?: () => void;
-}) {
+export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; inFileEditor?: boolean }) {
   const { server, setBrowsingDirectory, actingFileNames } = useServerStore();
-  const { selectedFileNames, browsingBackup, browsingEntries, setSelectedFiles } = useFileManager();
+  const { selectedFileNames, browsingBackup, browsingEntries, setSelectedFiles, doOpenModal } = useFileManager();
 
   const splittedPath = path.split('/').filter(Boolean);
   const pathItems = splittedPath.map((item, index) => {
@@ -64,16 +56,16 @@ export default function FileBreadcrumbs({
       <Breadcrumbs separatorMargin='xs'>
         <Checkbox
           disabled={actingFileNames.size > 0}
-          checked={!inFileEditor && selectedFileNames.size > 0 && selectedFileNames.size >= browsingEntries.length}
-          indeterminate={selectedFileNames.size > 0 && selectedFileNames.size < browsingEntries.length}
+          checked={!inFileEditor && selectedFileNames.size > 0 && selectedFileNames.size >= browsingEntries.data.length}
+          indeterminate={selectedFileNames.size > 0 && selectedFileNames.size < browsingEntries.data.length}
           className='mr-2'
           classNames={{ input: 'cursor-pointer!' }}
           hidden={inFileEditor}
           onChange={() => {
-            if (selectedFileNames.size >= browsingEntries.length) {
+            if (selectedFileNames.size >= browsingEntries.data.length) {
               setSelectedFiles([]);
             } else {
-              setSelectedFiles(browsingEntries.map((entry) => entry.name));
+              setSelectedFiles(browsingEntries.data.map((entry) => entry.name));
             }
           }}
         />
@@ -86,7 +78,7 @@ export default function FileBreadcrumbs({
         </Button>
       </NavLink>
       <span hidden={!!browsingBackup || inFileEditor}>
-        <Button variant='light' leftSection={<FontAwesomeIcon icon={faSearch} />} onClick={onSearchClick}>
+        <Button variant='light' leftSection={<FontAwesomeIcon icon={faSearch} />} onClick={() => doOpenModal('search')}>
           Search
         </Button>
       </span>

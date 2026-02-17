@@ -1,8 +1,8 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useFileDragAndDrop } from '@/pages/server/files/hooks/useFileDragAndDrop.ts';
+import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { useFileUpload } from '@/plugins/useFileUpload.ts';
-import { FileManagerContext, ModalType } from '@/providers/contexts/fileManagerContext.ts';
+import { FileManagerContext, ModalType, SearchInfo } from '@/providers/contexts/fileManagerContext.ts';
 import { useServerStore } from '@/stores/server.ts';
 
 const FileManagerProvider = ({ children }: { children: ReactNode }) => {
@@ -15,14 +15,15 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [selectedFileNames, setSelectedFileNames] = useState(new Set<string>());
   const [browsingBackup, setBrowsingBackup] = useState<ServerBackup | null>(null);
   const [browsingDirectory, setBrowsingDirectory] = useState('');
-  const [browsingEntries, setBrowsingEntries] = useState<DirectoryEntry[]>([]);
+  const [browsingEntries, setBrowsingEntries] = useState<ResponseMeta<DirectoryEntry>>(getEmptyPaginationSet());
   const [page, setPage] = useState(1);
   const [browsingWritableDirectory, setBrowsingWritableDirectory] = useState(true);
   const [browsingFastDirectory, setBrowsingFastDirectory] = useState(true);
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const [modalDirectoryEntry, setModalDirectoryEntry] = useState<DirectoryEntry | null>(null);
+  const [searchInfo, setSearchInfo] = useState<SearchInfo | null>(null);
 
-  const fileUploader = useFileUpload(server.uuid, browsingDirectory!, () => console.log('done'));
+  const fileUploader = useFileUpload(server.uuid, browsingDirectory!, () => alert('Implement file manager reloading'));
 
   const setSelectedFiles = (files: string[]) => setSelectedFileNames(new Set(files));
 
@@ -77,6 +78,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         browsingFastDirectory,
         openModal,
         modalDirectoryEntry,
+        searchInfo,
         setSelectedFiles,
         addSelectedFile,
         removeSelectedFile,
@@ -89,6 +91,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         doOpenModal,
         doCloseModal,
         setModalDirectoryEntry,
+        setSearchInfo,
         fileUploader,
       }}
     >

@@ -14,6 +14,7 @@ import FileBreadcrumbs from '@/pages/server/files/FileBreadcrumbs.tsx';
 import FileModals from '@/pages/server/files/FileModals.tsx';
 import FileOperationsProgress from '@/pages/server/files/FileOperationsProgress.tsx';
 import FileRow from '@/pages/server/files/FileRow.tsx';
+import FileSearchBanner from '@/pages/server/files/FileSearchBanner.tsx';
 import FileToolbar from '@/pages/server/files/FileToolbar.tsx';
 import FileUpload from '@/pages/server/files/FileUpload.tsx';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
@@ -28,6 +29,7 @@ function ServerFilesComponent() {
     selectedFileNames,
     browsingBackup,
     browsingDirectory,
+    browsingEntries,
     page,
     setSelectedFiles,
     setBrowsingBackup,
@@ -45,7 +47,7 @@ function ServerFilesComponent() {
   useEffect(() => {
     if (!data) return;
 
-    setBrowsingEntries(data.entries.data);
+    setBrowsingEntries(data.entries);
     setBrowsingWritableDirectory(data.isFilesystemWritable);
     setBrowsingFastDirectory(data.isFilesystemFast);
   }, [data]);
@@ -100,6 +102,8 @@ function ServerFilesComponent() {
         <FileBreadcrumbs path={decodeURIComponent(browsingDirectory)} />
       </div>
 
+      <FileSearchBanner />
+
       {!data || isLoading ? (
         <Spinner.Centered />
       ) : (
@@ -107,11 +111,11 @@ function ServerFilesComponent() {
           <ContextMenuProvider>
             <Table
               columns={['', 'Name', 'Size', 'Modified', '']}
-              pagination={data.entries}
+              pagination={browsingEntries}
               onPageSelect={onPageSelect}
               allowSelect={false}
             >
-              {data.entries.data.map((entry) => (
+              {browsingEntries.data.map((entry) => (
                 <SelectionArea.Selectable key={entry.name} item={entry}>
                   {(innerRef: Ref<HTMLElement>) => (
                     <FileRow
