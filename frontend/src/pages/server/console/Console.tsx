@@ -112,10 +112,10 @@ export default function Terminal() {
     const searchAddon = new SearchAddon();
 
     term.loadAddon(fitAddon);
+    term.loadAddon(searchAddon);
     term.loadAddon(new WebLinksAddon());
     term.loadAddon(new WebglAddon());
     term.loadAddon(new Unicode11Addon());
-    term.loadAddon(searchAddon);
 
     term.unicode.activeVersion = '11';
 
@@ -212,14 +212,14 @@ export default function Terminal() {
   const addLine = useCallback((text: string, prelude = false) => {
     if (!xtermInstance.current) return;
 
-    let processed = text.replaceAll('\x1b[?25h', '');
+    let processed = text.replaceAll('\x1b[?25h', '').replaceAll('\x1b[?25l', '');
 
     if (processed.includes('container@pterodactyl~')) {
       processed = processed.replace('container@pterodactyl~', 'container@calagopus~');
     }
 
     if (prelude && !processed.includes('\u001b[1m\u001b[41m')) {
-      processed = RAW_PRELUDE + processed;
+      processed = RAW_PRELUDE.concat(processed);
     }
 
     if (isFirstLine.current) {

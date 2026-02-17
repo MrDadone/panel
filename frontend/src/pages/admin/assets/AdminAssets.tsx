@@ -1,15 +1,6 @@
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  ChangeEvent,
-  MouseEvent as ReactMouseEvent,
-  Ref,
-  startTransition,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { ChangeEvent, MouseEvent as ReactMouseEvent, Ref, useCallback, useEffect, useRef } from 'react';
 import getAssets from '@/api/admin/assets/getAssets.ts';
 import uploadAssets from '@/api/admin/assets/uploadAssets.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -30,7 +21,7 @@ export default function AdminAssets() {
   const { assets, setAssets, addAssets, selectedAssets, setSelectedAssets } = useAdminStore();
   const { addToast } = useToast();
 
-  const [selectedAssetsPrevious, setSelectedAssetsPrevious] = useState(selectedAssets);
+  const selectedAssetsPreviousRef = useRef(selectedAssets);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { loading, setPage } = useSearchablePaginatedTable({
@@ -61,19 +52,14 @@ export default function AdminAssets() {
 
   const onSelectedStart = useCallback(
     (event: ReactMouseEvent | MouseEvent) => {
-      setSelectedAssetsPrevious(event.shiftKey ? selectedAssets : []);
+      selectedAssetsPreviousRef.current = event.shiftKey ? selectedAssets : [];
     },
     [selectedAssets],
   );
 
-  const onSelected = useCallback(
-    (selected: string[]) => {
-      startTransition(() => {
-        setSelectedAssets([...selectedAssetsPrevious, ...selected]);
-      });
-    },
-    [selectedAssetsPrevious],
-  );
+  const onSelected = useCallback((selected: string[]) => {
+    setSelectedAssets([...selectedAssetsPreviousRef.current, ...selected]);
+  }, []);
 
   useEffect(() => {
     setSelectedAssets([]);

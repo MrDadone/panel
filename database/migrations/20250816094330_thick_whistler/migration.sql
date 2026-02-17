@@ -415,4 +415,4 @@ CREATE INDEX "users_external_id_idx" ON "users" USING btree ("external_id");
 CREATE UNIQUE INDEX "users_username_idx" ON "users" USING btree ("username");
 CREATE UNIQUE INDEX "users_email_idx" ON "users" USING btree ("email");
 
-CREATE EXTENSION pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;

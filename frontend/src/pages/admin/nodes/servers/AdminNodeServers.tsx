@@ -1,5 +1,5 @@
 import { Group } from '@mantine/core';
-import { Ref, startTransition, useCallback, useEffect, useState } from 'react';
+import { Ref, useCallback, useEffect, useRef, useState } from 'react';
 import getNodeServers from '@/api/admin/nodes/servers/getNodeServers.ts';
 import sendNodeServersPowerAction from '@/api/admin/nodes/servers/sendNodeServersPowerAction.ts';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
@@ -20,7 +20,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
   const { addToast } = useToast();
   const [nodeServers, setNodeServers] = useState<ResponseMeta<AdminServer>>(getEmptyPaginationSet());
   const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set());
-  const [selectedServersPrevious, setSelectedServersPrevious] = useState<Set<string>>(new Set());
+  const selectedServersPreviousRef = useRef<Set<string>>(new Set());
   const [sKeyPressed, setSKeyPressed] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState<ServerPowerAction | null>(null);
   const [allActionLoading, setAllActionLoading] = useState<ServerPowerAction | null>(null);
@@ -32,19 +32,14 @@ export default function AdminNodeServers({ node }: { node: Node }) {
 
   const onSelectedStart = useCallback(
     (event: React.MouseEvent | MouseEvent) => {
-      setSelectedServersPrevious(event.shiftKey ? selectedServers : new Set());
+      selectedServersPreviousRef.current = event.shiftKey ? selectedServers : new Set();
     },
     [selectedServers],
   );
 
-  const onSelected = useCallback(
-    (selected: string[]) => {
-      startTransition(() => {
-        setSelectedServers(new Set([...selectedServersPrevious, ...selected]));
-      });
-    },
-    [selectedServersPrevious],
-  );
+  const onSelected = useCallback((selected: string[]) => {
+    setSelectedServers(new Set([...selectedServersPreviousRef.current, ...selected]));
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

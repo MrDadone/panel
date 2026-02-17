@@ -1,7 +1,7 @@
 import { faCheckDouble, faPlus, faX } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group } from '@mantine/core';
-import { MouseEvent as ReactMouseEvent, Ref, startTransition, useCallback, useEffect, useMemo, useState } from 'react';
+import { MouseEvent as ReactMouseEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import getNodeAllocations from '@/api/admin/nodes/allocations/getNodeAllocations.ts';
 import Button from '@/elements/Button.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
@@ -21,9 +21,9 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
   const { nodeAllocations, setNodeAllocations, selectedNodeAllocations, setSelectedNodeAllocations } = useAdminStore();
 
   const [openModal, setOpenModal] = useState<'create' | null>(null);
-  const [selectedNodeAllocationsPrevious, setSelectedNodeAllocationsPrevious] = useState(selectedNodeAllocations);
   const [ipFilter, setIpFilter] = useState('');
   const [portFilter, setPortFilter] = useState('');
+  const selectedNodeAllocationsPreviousRef = useRef(selectedNodeAllocations);
 
   const uniqueIps = useMemo(() => {
     const ips = new Set<string>();
@@ -64,19 +64,14 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
 
   const onSelectedStart = useCallback(
     (event: ReactMouseEvent | MouseEvent) => {
-      setSelectedNodeAllocationsPrevious(event.shiftKey ? selectedNodeAllocations : []);
+      selectedNodeAllocationsPreviousRef.current = event.shiftKey ? selectedNodeAllocations : [];
     },
     [selectedNodeAllocations],
   );
 
-  const onSelected = useCallback(
-    (selected: NodeAllocation[]) => {
-      startTransition(() => {
-        setSelectedNodeAllocations([...selectedNodeAllocationsPrevious, ...selected]);
-      });
-    },
-    [selectedNodeAllocationsPrevious],
-  );
+  const onSelected = useCallback((selected: NodeAllocation[]) => {
+    setSelectedNodeAllocations([...selectedNodeAllocationsPreviousRef.current, ...selected]);
+  }, []);
 
   useEffect(() => {
     setSelectedNodeAllocations([]);
