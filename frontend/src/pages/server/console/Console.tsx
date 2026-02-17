@@ -145,9 +145,19 @@ export default function Terminal() {
     });
 
     term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        if (term.hasSelection()) {
+          navigator.clipboard.writeText(term.getSelection());
+          term.clearSelection();
+
+          return false;
+        }
+      }
+
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
         return false;
       }
+
       return true;
     });
 
@@ -261,6 +271,12 @@ export default function Terminal() {
       Object.entries(listeners).forEach(([k, fn]) => socketInstance.removeListener(k, fn));
     };
   }, [socketConnected, socketInstance]);
+
+  useEffect(() => {
+    if (!openModal) {
+      searchAddonRef.current?.clearDecorations();
+    }
+  }, [openModal]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
