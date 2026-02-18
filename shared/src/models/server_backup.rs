@@ -862,8 +862,8 @@ impl CreatableModel for ServerBackup {
 
                     if let Err(err) = sqlx::query!(
                         "UPDATE server_backups
-				                SET successful = false, completed = NOW()
-				                WHERE server_backups.uuid = $1",
+                        SET successful = false, completed = NOW()
+                        WHERE server_backups.uuid = $1",
                         backup_uuid
                     )
                     .execute(database.write())
