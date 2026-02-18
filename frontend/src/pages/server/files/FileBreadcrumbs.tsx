@@ -1,16 +1,21 @@
 import { faDoorOpen, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Breadcrumbs } from "@mantine/core";
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from "react";
 import { createSearchParams, NavLink } from 'react-router';
 import Button from '@/elements/Button.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
+import getBackup from "@/api/server/backups/getBackup.ts";
+import { useToast } from "@/providers/ToastProvider.tsx";
+import { httpErrorToHuman } from "@/api/axios.ts";
+import { join } from "pathe";
 
 export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; inFileEditor?: boolean }) {
+  const { addToast } = useToast();
   const { server, setBrowsingDirectory, actingFileNames } = useServerStore();
-  const { selectedFileNames, browsingBackup, browsingEntries, setSelectedFiles, doOpenModal } = useFileManager();
+  const { selectedFileNames, browsingBackup, browsingEntries, setSelectedFiles, setBrowsingBackup, doOpenModal } = useFileManager();
 
   const splittedPath = path.split('/').filter(Boolean);
   const pathItems = splittedPath.map((item, index) => {
@@ -19,6 +24,25 @@ export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; 
       path: splittedPath.slice(0, index + 1).join('/'),
     };
   });
+
+  useEffect(() => {
+    if (path.startsWith('/.backups/') && !browsingBackup) {
+      let backupUuid = path.slice('/.backups/'.length);
+      if (backupUuid.includes('/')) {
+        backupUuid = backupUuid.slice(0, backupUuid.indexOf('/'));
+      }
+
+      getBackup(server.uuid, backupUuid)
+        .then((data) => {
+          setBrowsingBackup(data);
+        })
+        .catch((msg) => {
+          addToast(httpErrorToHuman(msg), 'error');
+        });
+    } else if (!path.startsWith('/.backups/') && browsingBackup) {
+      setBrowsingBackup(null);
+    }
+  }, [path, browsingBackup]);
 
   const items: ReactNode[] = [
     browsingBackup ? 'backups' : 'home',
@@ -41,7 +65,7 @@ export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; 
       ) : (
         <NavLink
           key={item.path}
-          to={`/server/${server?.uuidShort}/files?${createSearchParams({ directory: item.path })}`}
+          to={`/server/${server?.uuidShort}/files?${createSearchParams({ directory: join('/', item.path) })}`}
           className=' text-blue-300 hover:text-blue-200'
           onClick={() => setBrowsingDirectory(item.path)}
         >

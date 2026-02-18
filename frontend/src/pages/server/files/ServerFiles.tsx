@@ -2,8 +2,6 @@ import { Group, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { type Ref, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
-import { httpErrorToHuman } from '@/api/axios.ts';
-import getBackup from '@/api/server/backups/getBackup.ts';
 import loadDirectory from '@/api/server/files/loadDirectory.ts';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
@@ -19,21 +17,17 @@ import FileToolbar from '@/pages/server/files/FileToolbar.tsx';
 import FileUpload from '@/pages/server/files/FileUpload.tsx';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { FileManagerProvider } from '@/providers/FileManagerProvider.tsx';
-import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import FileSettings from "@/pages/server/files/FileSettings.tsx";
 
 function ServerFilesComponent() {
-  const { addToast } = useToast();
   const { server } = useServerStore();
   const {
     selectedFileNames,
-    browsingBackup,
     browsingDirectory,
     browsingEntries,
     page,
     setSelectedFiles,
-    setBrowsingBackup,
     setBrowsingEntries,
     setBrowsingWritableDirectory,
     setBrowsingFastDirectory,
@@ -52,25 +46,6 @@ function ServerFilesComponent() {
     setBrowsingWritableDirectory(data.isFilesystemWritable);
     setBrowsingFastDirectory(data.isFilesystemFast);
   }, [data]);
-
-  useEffect(() => {
-    if (browsingDirectory?.startsWith('/.backups/') && !browsingBackup && !isLoading) {
-      let backupUuid = browsingDirectory.slice('/.backups/'.length);
-      if (backupUuid.includes('/')) {
-        backupUuid = backupUuid.slice(0, backupUuid.indexOf('/'));
-      }
-
-      getBackup(server.uuid, backupUuid)
-        .then((data) => {
-          setBrowsingBackup(data);
-        })
-        .catch((msg) => {
-          addToast(httpErrorToHuman(msg), 'error');
-        });
-    } else if (!browsingDirectory?.startsWith('/.backups/') && browsingBackup) {
-      setBrowsingBackup(null);
-    }
-  }, [browsingDirectory, browsingBackup, isLoading]);
 
   const previousSelected = useRef<string[]>([]);
 
