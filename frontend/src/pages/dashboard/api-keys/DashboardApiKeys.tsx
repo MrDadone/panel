@@ -1,4 +1,4 @@
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faCode, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Title } from '@mantine/core';
 import { useState } from 'react';
@@ -40,6 +40,11 @@ export default function DashboardApiKeys() {
             onChange={(e) => setSearch(e.target.value)}
             w={250}
           />
+          <a href='/api' target='_blank'>
+            <Button variant='light' color='gray' leftSection={<FontAwesomeIcon icon={faCode} />}>
+              {t('pages.account.apiKeys.button.apiDocumentation', {})}
+            </Button>
+          </a>
           <Button onClick={() => setOpenModal('create')} color='blue' leftSection={<FontAwesomeIcon icon={faPlus} />}>
             {t('common.button.create', {})}
           </Button>

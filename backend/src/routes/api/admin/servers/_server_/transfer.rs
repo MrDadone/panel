@@ -146,6 +146,7 @@ mod post {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .post_servers_server_transfer(
                 server.uuid,
                 &wings_api::servers_server_transfer::post::RequestBody {

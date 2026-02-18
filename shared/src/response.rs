@@ -38,6 +38,18 @@ impl ApiResponse {
         }
     }
 
+    #[inline]
+    pub fn new_stream(stream: impl tokio::io::AsyncRead + Send + 'static) -> Self {
+        Self {
+            body: axum::body::Body::from_stream(tokio_util::io::ReaderStream::with_capacity(
+                stream,
+                crate::BUFFER_SIZE,
+            )),
+            status: axum::http::StatusCode::OK,
+            headers: axum::http::HeaderMap::new(),
+        }
+    }
+
     /// Create a new API response with content negotiation based on the `Accept` header.
     pub fn new_serialized(body: impl serde::Serialize) -> Self {
         let accept_header = ACCEPT_HEADER.try_with(|h| h.clone()).ok().flatten();

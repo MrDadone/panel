@@ -333,7 +333,11 @@ impl Node {
             .cached(
                 &format!("node::{}::configuration", self.uuid),
                 120,
-                || async { self.api_client(database).get_system_config().await },
+                || async {
+                    Ok::<_, anyhow::Error>(
+                        self.api_client(database).await?.get_system_config().await?,
+                    )
+                },
             )
             .await
     }
@@ -351,7 +355,7 @@ impl Node {
                 &format!("node::{}::server_resources", self.uuid),
                 15,
                 || async {
-                    let servers = self.api_client(database).get_servers().await?;
+                    let servers = self.api_client(database).await?.get_servers().await?;
 
                     Ok::<_, anyhow::Error>(
                         servers
@@ -402,14 +406,14 @@ impl Node {
     }
 
     #[inline]
-    pub fn api_client(
+    pub async fn api_client(
         &self,
         database: &crate::database::Database,
-    ) -> wings_api::client::WingsClient {
-        wings_api::client::WingsClient::new(
+    ) -> Result<wings_api::client::WingsClient, anyhow::Error> {
+        Ok(wings_api::client::WingsClient::new(
             self.url.to_string(),
-            database.blocking_decrypt(&self.token).unwrap().into(),
-        )
+            database.decrypt(self.token.to_vec()).await?.into(),
+        ))
     }
 
     #[inline]

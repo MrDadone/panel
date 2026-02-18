@@ -39,15 +39,26 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_user_permission("servers.read")?;
 
-        let server_uuids = if user.admin
-            || user
-                .role
-                .as_ref()
-                .is_some_and(|r| r.admin_permissions.iter().any(|p| p == "servers.read"))
-        {
+        let server_uuids = if permissions.has_admin_permission("servers.read").is_ok() {
             None
         } else {
-            Some(Server::all_uuids_by_node_uuid_user_uuid(&state.database, node, user.uuid).await?)
+            Some(
+                state
+                    .cache
+                    .cached(
+                        &format!("user::{}::servers::{}", user.uuid, node),
+                        15,
+                        || async {
+                            Server::all_uuids_by_node_uuid_user_uuid(
+                                &state.database,
+                                node,
+                                user.uuid,
+                            )
+                            .await
+                        },
+                    )
+                    .await?,
+            )
         };
 
         if server_uuids.as_ref().is_some_and(|s| s.is_empty()) {

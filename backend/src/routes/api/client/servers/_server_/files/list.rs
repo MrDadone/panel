@@ -86,6 +86,7 @@ mod get {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .get_servers_server_files_list(
                 server.uuid,
                 &params.directory,

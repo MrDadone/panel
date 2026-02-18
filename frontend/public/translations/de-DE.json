@@ -546,6 +546,9 @@
         },
         "apiKeys": {
           "title": "API-Schlüssel",
+          "button": {
+            "apiDocumentation": "API Dokumentation"
+          },
           "table": {
             "columns": {
               "key": "Schlüssel",

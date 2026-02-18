@@ -611,6 +611,7 @@ impl ServerBackup {
             .fetch_cached(database)
             .await?
             .api_client(database)
+            .await?
             .post_servers_server_backup_backup_restore(
                 server.uuid,
                 self.uuid,
@@ -854,8 +855,28 @@ impl CreatableModel for ServerBackup {
                 }
             };
 
-            if let Err(err) = node
-                .api_client(&database)
+            let api_client = match node.api_client(&database).await {
+                Ok(api_client) => api_client,
+                Err(err) => {
+                    tracing::error!(backup = %backup_uuid, "failed to create server backup: {:?}", err);
+
+                    if let Err(err) = sqlx::query!(
+                        "UPDATE server_backups
+				                SET successful = false, completed = NOW()
+				                WHERE server_backups.uuid = $1",
+                        backup_uuid
+                    )
+                    .execute(database.write())
+                    .await
+                    {
+                        tracing::error!(backup = %backup_uuid, "failed to update server backup status: {:?}", err);
+                    }
+
+                    return;
+                }
+            };
+
+            if let Err(err) = api_client
                 .post_servers_server_backup(
                     server.uuid,
                     &wings_api::servers_server_backup::post::RequestBody {
@@ -1008,6 +1029,7 @@ impl DeletableModel for ServerBackup {
                     if backup_disk != BackupDisk::S3
                         && let Err(err) = node
                             .api_client(&database)
+                            .await?
                             .delete_backups_backup(
                                 backup_uuid,
                                 &wings_api::backups_backup::delete::RequestBody {
@@ -1097,6 +1119,7 @@ impl DeletableModel for ServerBackup {
                 _ => {
                     if let Err(err) = node
                         .api_client(&database)
+                        .await?
                         .delete_backups_backup(
                             backup_uuid,
                             &wings_api::backups_backup::delete::RequestBody {

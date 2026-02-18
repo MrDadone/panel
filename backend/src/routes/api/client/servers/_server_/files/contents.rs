@@ -57,6 +57,7 @@ mod get {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .get_servers_server_files_contents(
                 server.uuid,
                 &params.file,
@@ -88,7 +89,7 @@ mod get {
             )
             .await;
 
-        ApiResponse::new(axum::body::Body::from(contents))
+        ApiResponse::new_stream(contents)
             .with_header("Content-Type", "text/plain")
             .ok()
     }

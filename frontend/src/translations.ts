@@ -574,6 +574,9 @@ const baseTranslations = defineTranslations({
         },
         apiKeys: {
           title: 'API Keys',
+          button: {
+            apiDocumentation: 'API Documentation',
+          },
           table: {
             columns: {
               key: 'Key',

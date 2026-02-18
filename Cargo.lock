@@ -3457,6 +3457,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
 
 [[package]]
+name = "minijinja"
+version = "2.15.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b479616bb6f0779fb0f3964246beda02d4b01144e1b0d5519616e012ccc2a245"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4096,6 +4105,7 @@ dependencies = [
  "include_dir",
  "indexmap 2.13.0",
  "infer",
+ "minijinja",
  "oauth2",
  "openssl",
  "rand 0.9.2",
@@ -4876,7 +4886,7 @@ dependencies = [
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
- "wasm-streams",
+ "wasm-streams 0.4.2",
  "web-sys",
  "webpki-roots 1.0.6",
 ]
@@ -4891,6 +4901,7 @@ dependencies = [
  "bytes",
  "encoding_rs",
  "futures-core",
+ "futures-util",
  "h2",
  "http 1.4.0",
  "http-body",
@@ -4913,12 +4924,14 @@ dependencies = [
  "sync_wrapper",
  "tokio",
  "tokio-rustls",
+ "tokio-util",
  "tower",
  "tower-http",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "wasm-streams 0.5.0",
  "web-sys",
 ]
 
@@ -5890,6 +5903,7 @@ dependencies = [
  "jwt",
  "lettre",
  "mime",
+ "minijinja",
  "moka",
  "nestify",
  "rand 0.9.2",
@@ -5915,6 +5929,7 @@ dependencies = [
  "sysinfo 0.38.2",
  "tempfile",
  "tokio",
+ "tokio-util",
  "toml",
  "tracing",
  "tracing-appender",
@@ -7331,6 +7346,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-streams"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d1ec4f6517c9e11ae630e200b2b65d193279042e28edd4a2cda233e46670bbb"
+dependencies = [
+ "futures-util",
+ "js-sys",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "wasmparser"
 version = "0.244.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8030,6 +8058,7 @@ dependencies = [
  "chrono",
  "compact_str",
  "cron",
+ "futures-util",
  "indexmap 2.13.0",
  "nestify",
  "regex",
@@ -8038,6 +8067,8 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_regex",
+ "tokio",
+ "tokio-util",
  "urlencoding",
  "utoipa",
  "uuid",

@@ -960,6 +960,7 @@ impl Server {
             .fetch_cached(database)
             .await?
             .api_client(database)
+            .await?
             .post_servers_server_sync(
                 self.uuid,
                 &wings_api::servers_server_sync::post::RequestBody {
@@ -1006,6 +1007,7 @@ impl Server {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .post_servers_server_reinstall(
                 self.uuid,
                 &wings_api::servers_server_reinstall::post::RequestBody {
@@ -1743,6 +1745,7 @@ impl CreatableModel for Server {
 
                     if let Err(err) = node
                         .api_client(&state.database)
+                        .await?
                         .post_servers(&wings_api::servers::post::RequestBody {
                             uuid: server_uuid,
                             start_on_completion: options.start_on_completion,
@@ -2077,6 +2080,7 @@ impl DeletableModel for Server {
 
             match node
                 .api_client(&state.database)
+                .await?
                 .delete_servers_server(server_uuid)
                 .await
             {

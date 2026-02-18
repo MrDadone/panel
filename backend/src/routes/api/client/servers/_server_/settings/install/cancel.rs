@@ -48,6 +48,7 @@ mod post {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .post_servers_server_install_abort(server.uuid)
             .await
         {

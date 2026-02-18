@@ -84,7 +84,12 @@ impl TelemetryData {
             }
 
             for node in nodes.data {
-                let overview = match node.api_client(&state.database).get_system_overview().await {
+                let overview = match node
+                    .api_client(&state.database)
+                    .await?
+                    .get_system_overview()
+                    .await
+                {
                     Ok(overview) => overview,
                     Err(_) => continue,
                 };

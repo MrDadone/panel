@@ -1,6 +1,8 @@
 use lettre::AsyncTransport;
 use std::sync::Arc;
 
+use crate::settings::SettingsReadGuard;
+
 pub const MAIL_CONNECTION_TEST: &str = include_str!("../mails/connection_test.html");
 pub const MAIL_PASSWORD_RESET: &str = include_str!("../mails/password_reset.html");
 pub const MAIL_ACCOUNT_CREATED: &str = include_str!("../mails/account_created.html");
@@ -34,11 +36,11 @@ impl Mail {
         Self { settings }
     }
 
-    async fn get_transport(&self) -> Result<Transport, anyhow::Error> {
+    async fn get_transport(&self) -> Result<(SettingsReadGuard<'_>, Transport), anyhow::Error> {
         let settings = self.settings.get().await?;
 
-        match &settings.mail_mode {
-            super::settings::MailMode::None => Ok(Transport::None),
+        let transport = match &settings.mail_mode {
+            super::settings::MailMode::None => Transport::None,
             super::settings::MailMode::Smtp {
                 host,
                 port,
@@ -74,11 +76,11 @@ impl Mail {
                     );
                 }
 
-                Ok(Transport::Smtp {
+                Transport::Smtp {
                     transport: transport.build(),
                     from_address: from_address.clone(),
                     from_name: from_name.clone(),
-                })
+                }
             }
             super::settings::MailMode::Sendmail {
                 command,
@@ -90,11 +92,11 @@ impl Mail {
                         command,
                     );
 
-                Ok(Transport::Sendmail {
+                Transport::Sendmail {
                     transport,
                     from_address: from_address.clone(),
                     from_name: from_name.clone(),
-                })
+                }
             }
             super::settings::MailMode::Filesystem {
                 path,
@@ -103,25 +105,48 @@ impl Mail {
             } => {
                 let transport = lettre::AsyncFileTransport::<lettre::Tokio1Executor>::new(path);
 
-                Ok(Transport::Filesystem {
+                Transport::Filesystem {
                     transport,
                     from_address: from_address.clone(),
                     from_name: from_name.clone(),
-                })
+                }
             }
-        }
+        };
+
+        Ok((settings, transport))
     }
 
     pub async fn send(
         &self,
         destination: compact_str::CompactString,
         subject: compact_str::CompactString,
-        body: String,
+        body: impl AsRef<str>,
+        context: minijinja::Value,
     ) {
-        let transport = match self.get_transport().await {
-            Ok(transport) => transport,
+        let (settings, transport) = match self.get_transport().await {
+            Ok((settings, transport)) => (settings, transport),
             Err(err) => {
                 tracing::error!("failed to get mail transport: {:#?}", err);
+                return;
+            }
+        };
+
+        let mut environment = minijinja::Environment::new();
+        environment.set_auto_escape_callback(|_| minijinja::AutoEscape::Html);
+        environment.add_global("settings", minijinja::Value::from_serialize(&*settings));
+        drop(settings);
+
+        let rendered_body = match environment.render_str(body.as_ref(), context) {
+            Ok(body) => body,
+            Err(err) => {
+                tracing::error!(
+                    transport = ?transport,
+                    destination = ?destination,
+                    subject = ?subject,
+                    "error while rendering email template: {:?}",
+                    err
+                );
+
                 return;
             }
         };
@@ -152,7 +177,7 @@ impl Mail {
                                         from_address.parse()?,
                                     ))
                                     .header(lettre::message::header::ContentType::TEXT_HTML)
-                                    .body(body)?,
+                                    .body(rendered_body)?,
                             )
                             .await?;
                     }
@@ -171,7 +196,7 @@ impl Mail {
                                         from_address.parse()?,
                                     ))
                                     .header(lettre::message::header::ContentType::TEXT_HTML)
-                                    .body(body)?,
+                                    .body(rendered_body)?,
                             )
                             .await?;
                     }
@@ -190,7 +215,7 @@ impl Mail {
                                         from_address.parse()?,
                                     ))
                                     .header(lettre::message::header::ContentType::TEXT_HTML)
-                                    .body(body)?,
+                                    .body(rendered_body)?,
                             )
                             .await?;
                     }

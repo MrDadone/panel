@@ -44,6 +44,8 @@ pub const GIT_COMMIT: &str = env!("CARGO_GIT_COMMIT");
 pub const GIT_BRANCH: &str = env!("CARGO_GIT_BRANCH");
 pub const TARGET: &str = env!("CARGO_TARGET");
 
+pub const BUFFER_SIZE: usize = 32 * 1024;
+
 pub type GetIp = axum::extract::Extension<std::net::IpAddr>;
 
 #[derive(ToSchema, Serialize)]

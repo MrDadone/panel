@@ -248,18 +248,6 @@ impl CreatableModel for ServerSubuser {
                     Ok(token) => {
                         let settings = state.settings.get().await?;
 
-                        let mail_content = crate::mail::MAIL_ACCOUNT_CREATED
-                            .replace("{{app_name}}", &settings.app.name)
-                            .replace("{{user_username}}", &user.username)
-                            .replace(
-                                "{{reset_link}}",
-                                &format!(
-                                    "{}/auth/reset-password?token={}",
-                                    settings.app.url,
-                                    urlencoding::encode(&token),
-                                ),
-                            );
-
                         super::user_activity::UserActivity::create(
                             state,
                             super::user_activity::CreateUserActivityOptions {
@@ -279,7 +267,15 @@ impl CreatableModel for ServerSubuser {
                             .send(
                                 user.email.clone(),
                                 format!("{} - Account Created", settings.app.name).into(),
-                                mail_content,
+                                crate::mail::MAIL_ACCOUNT_CREATED,
+                                minijinja::context! {
+                                    user => user,
+                                    reset_link => format!(
+                                        "{}/auth/reset-password?token={}",
+                                        settings.app.url,
+                                        urlencoding::encode(&token),
+                                    )
+                                },
                             )
                             .await;
                     }
