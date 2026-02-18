@@ -1,6 +1,6 @@
-import { faDoorOpen, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faDoorOpen, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Breadcrumbs } from '@mantine/core';
+import { Breadcrumbs } from "@mantine/core";
 import { ReactNode } from 'react';
 import { createSearchParams, NavLink } from 'react-router';
 import Button from '@/elements/Button.tsx';

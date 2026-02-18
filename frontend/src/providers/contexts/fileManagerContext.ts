@@ -49,6 +49,7 @@ export interface FileManagerContextType {
   setModalDirectoryEntry: (directoryEntry: DirectoryEntry) => void;
   setSearchInfo: (info: SearchInfo | null) => void;
 
+  doClickOnce: RefObject<boolean>;
   fileUploader: FileUploader;
   invalidateFilemanager: () => void;
 }

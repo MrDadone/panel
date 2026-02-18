@@ -17,20 +17,21 @@ import { useServerStore } from '@/stores/server.ts';
 interface FileRowProps {
   file: DirectoryEntry;
   isSelected: boolean;
+  multipleSelected: boolean;
 }
 
-const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({ file, isSelected }, ref) {
+const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({ file, isSelected, multipleSelected }, ref) {
   const navigate = useNavigate();
   const [_, setSearchParams] = useSearchParams();
   const canOpenActionBar = useServerCan(['files.read-content', 'files.archive', 'files.update', 'files.delete'], true);
   const { server } = useServerStore();
-  const { browsingDirectory, browsingFastDirectory, addSelectedFile, removeSelectedFile } = useFileManager();
+  const { browsingDirectory, browsingFastDirectory, setSelectedFiles, addSelectedFile, removeSelectedFile, doClickOnce } = useFileManager();
   const { settings } = useGlobalStore();
   const canOpenFile = useServerCan('files.read-content');
 
   const toggleSelected = () => (isSelected ? removeSelectedFile(file) : addSelectedFile(file));
 
-  const handleDoubleClick = () => {
+  const handleOpen = () => {
     if (
       (isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) ||
       file.directory ||
@@ -61,11 +62,19 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({
 
     if (clickTimer.current) return;
 
-    toggleSelected();
+    if (isSelected) {
+      if (multipleSelected) {
+        setSelectedFiles([file.name]);
+      } else {
+        removeSelectedFile(file);
+      }
+    } else {
+      setSelectedFiles([file.name]);
+    }
 
     clickTimer.current = setTimeout(() => {
       if (clickCount.current >= 2) {
-        handleDoubleClick();
+        handleOpen();
       }
 
       clickCount.current = 0;
@@ -90,6 +99,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({
         <TableRow
           ref={ref}
           className={
+            doClickOnce.current &&
             canOpenFile &&
             ((isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) ||
               file.directory ||
@@ -104,7 +114,11 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({
           }}
           onClick={(e) => {
             e.preventDefault();
-            handleClick();
+            if (doClickOnce.current) {
+              handleOpen();
+            } else {
+              handleClick();
+            }
           }}
         >
           {canOpenActionBar ? (

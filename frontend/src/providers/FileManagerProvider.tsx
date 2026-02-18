@@ -25,8 +25,9 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [modalDirectoryEntry, setModalDirectoryEntry] = useState<DirectoryEntry | null>(null);
   const [searchInfo, setSearchInfo] = useState<SearchInfo | null>(null);
 
+  const doClickOnce = useRef(localStorage.getItem("file_click_once") === "true");
+
   const invalidateFilemanager = () => {
-    console.log('hi');
     queryClient
       .invalidateQueries({
         queryKey: ['server', server.uuid, 'files'],
@@ -103,6 +104,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         doCloseModal,
         setModalDirectoryEntry,
         setSearchInfo,
+        doClickOnce,
         fileUploader,
         invalidateFilemanager,
       }}

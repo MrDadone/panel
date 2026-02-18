@@ -21,6 +21,7 @@ import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { FileManagerProvider } from '@/providers/FileManagerProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
+import FileSettings from "@/pages/server/files/FileSettings.tsx";
 
 function ServerFilesComponent() {
   const { addToast } = useToast();
@@ -89,9 +90,13 @@ function ServerFilesComponent() {
       <FileUpload />
 
       <Group justify='space-between' align='center' mb='md'>
-        <Title order={1} c='white'>
-          Files
-        </Title>
+        <Group>
+          <Title order={1} c='white'>
+            Files
+          </Title>
+
+          <FileSettings />
+        </Group>
         <Group>
           <FileOperationsProgress />
           <FileToolbar />
@@ -122,6 +127,7 @@ function ServerFilesComponent() {
                       ref={innerRef as Ref<HTMLTableRowElement>}
                       file={entry}
                       isSelected={selectedFileNames.has(entry.name)}
+                      multipleSelected={selectedFileNames.size > 1}
                     />
                   )}
                 </SelectionArea.Selectable>
