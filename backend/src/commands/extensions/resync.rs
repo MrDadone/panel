@@ -25,7 +25,7 @@ impl shared::extensions::commands::CliCommand<ResyncArgs> for ResyncCommand {
                         ".sqlx".bright_red(),
                         "directory, make sure you are in the panel root.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 if let Err(err) = tokio::task::spawn_blocking(|| {
@@ -38,7 +38,7 @@ impl shared::extensions::commands::CliCommand<ResyncArgs> for ResyncCommand {
                         "failed to resync internal extension list:".red(),
                         err.to_string().red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 println!(
@@ -46,7 +46,7 @@ impl shared::extensions::commands::CliCommand<ResyncArgs> for ResyncCommand {
                     "successfully resynced internal extension list.".green()
                 );
 
-                Ok(())
+                Ok(0)
             })
         })
     }

@@ -36,7 +36,7 @@ impl shared::extensions::commands::CliCommand<ListArgs> for ListCommand {
                         ".sqlx".bright_red(),
                         "directory, make sure you are in the panel root.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let installed_extensions = tokio::task::spawn_blocking(move || {
@@ -127,7 +127,7 @@ impl shared::extensions::commands::CliCommand<ListArgs> for ListCommand {
                     }
                 }
 
-                Ok(())
+                Ok(0)
             })
         })
     }

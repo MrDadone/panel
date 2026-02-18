@@ -45,7 +45,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             "please setup the new panel environment before importing.".red()
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
 
@@ -56,7 +56,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                         err
                     );
 
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let source_app_url = match std::env::var("APP_URL") {
@@ -68,7 +68,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             err
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 let source_app_key = match std::env::var("APP_KEY")
@@ -82,7 +82,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             err
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                     Err(err) => {
                         eprintln!(
@@ -91,7 +91,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             err
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 let source_database_host = match std::env::var("DB_HOST") {
@@ -103,7 +103,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             err
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 let source_database_port = match std::env::var("DB_PORT").map(|v| v.parse::<u16>())
@@ -116,7 +116,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             err
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                     Err(err) => {
                         eprintln!(
@@ -125,7 +125,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             err
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 let source_database_database = match std::env::var("DB_DATABASE") {
@@ -137,7 +137,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             err
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 let source_database_username = match std::env::var("DB_USERNAME") {
@@ -149,7 +149,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             err
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 let source_database_password = match std::env::var("DB_PASSWORD") {
@@ -161,7 +161,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             err
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
 
@@ -183,7 +183,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                             err
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
 
@@ -247,7 +247,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process settings table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let user_mappings = match process_table(
@@ -315,7 +315,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     Ok(user_mappings) => Arc::new(user_mappings),
                     Err(err) => {
                         tracing::error!("failed to process users table: {:?}", err);
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
 
@@ -404,7 +404,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process ssh keys table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }
                 /*if let Err(err) = process_table(
                     &source_database,
@@ -453,7 +453,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }*/
 
                 let backup_configuration_uuid: uuid::Uuid = {
@@ -522,7 +522,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     Ok(location_mappings) => Arc::new(location_mappings),
                     Err(err) => {
                         tracing::error!("failed to process locations table: {:?}", err);
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 let node_mappings = match process_table(
@@ -611,7 +611,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     Ok(node_mappings) => node_mappings,
                     Err(err) => {
                         tracing::error!("failed to process nodes table: {:?}", err);
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 drop(location_mappings);
@@ -659,7 +659,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     Ok(nest_mappings) => nest_mappings,
                     Err(err) => {
                         tracing::error!("failed to process nests table: {:?}", err);
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 let egg_mappings = match process_table(
@@ -784,7 +784,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     Ok(egg_mappings) => egg_mappings,
                     Err(err) => {
                         tracing::error!("failed to process eggs table: {:?}", err);
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 drop(nest_mappings);
@@ -850,7 +850,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     Ok(egg_variable_mappings) => egg_variable_mappings,
                     Err(err) => {
                         tracing::error!("failed to process egg_variables table: {:?}", err);
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
 
@@ -906,7 +906,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     Ok(nest_mappings) => nest_mappings,
                     Err(err) => {
                         tracing::error!("failed to process nests table: {:?}", err);
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
 
@@ -1026,7 +1026,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     Ok(nest_mappings) => nest_mappings,
                     Err(err) => {
                         tracing::error!("failed to process servers table: {:?}", err);
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 if let Err(err) = process_table(
@@ -1093,7 +1093,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process databases table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }
                 if let Err(err) = process_table(
                     &source_database,
@@ -1143,7 +1143,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process databases table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }
                 if let Err(err) = process_table(
                     &source_database,
@@ -1225,7 +1225,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process backups table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }
                 if let Err(err) = process_table(
                     &source_database,
@@ -1335,7 +1335,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process subusers table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }
                 drop(user_mappings);
 
@@ -1385,7 +1385,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     Ok(mount_mappings) => mount_mappings,
                     Err(err) => {
                         tracing::error!("failed to process mounts table: {:?}", err);
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 if let Err(err) = process_table(
@@ -1429,7 +1429,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process egg mounts table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }
                 if let Err(err) = process_table(
                     &source_database,
@@ -1472,7 +1472,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process node mounts table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }
                 if let Err(err) = process_table(
                     &source_database,
@@ -1515,7 +1515,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process server mounts table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }
                 drop(mount_mappings);
 
@@ -1598,7 +1598,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     Ok(schedule_mappings) => schedule_mappings,
                     Err(err) => {
                         tracing::error!("failed to process schedules table: {:?}", err);
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 if let Err(err) = process_table(
@@ -1692,7 +1692,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process schedule tasks table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }
                 drop(schedule_mappings);
 
@@ -1788,7 +1788,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 .await
                 {
                     tracing::error!("failed to process allocations table: {:?}", err);
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 tracing::info!(
@@ -1796,7 +1796,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     start_time.elapsed().as_secs_f32()
                 );
 
-                Ok(())
+                Ok(0)
             })
         })
     }

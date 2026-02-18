@@ -160,8 +160,9 @@ async fn main() {
         Some((command, arg_matches)) => {
             if let Some((func, arg_matches)) = cli.match_command(command, arg_matches) {
                 match func(env.as_ref().ok().map(|e| e.0.clone()), arg_matches).await {
-                    Ok(()) => {
-                        std::process::exit(0);
+                    Ok(exit_code) => {
+                        drop(env);
+                        std::process::exit(exit_code);
                     }
                     Err(err) => {
                         if let Some(shared::database::DatabaseError::Validation(error)) =
@@ -323,12 +324,7 @@ async fn main() {
             Ok(_) => shared::AppContainerType::Unknown,
             Err(_) => shared::AppContainerType::None,
         },
-        version: format!(
-            "{}:{}@{}",
-            shared::VERSION,
-            shared::GIT_COMMIT,
-            shared::GIT_BRANCH
-        ),
+        version: shared::full_version(),
 
         client: reqwest::ClientBuilder::new()
             .user_agent(format!("github.com/calagopus/panel {}", shared::VERSION))

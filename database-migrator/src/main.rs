@@ -15,8 +15,9 @@ async fn main() {
         Some((command, arg_matches)) => {
             if let Some((func, arg_matches)) = cli.match_command(command, arg_matches) {
                 match func(env.as_ref().ok().map(|e| e.0.clone()), arg_matches).await {
-                    Ok(()) => {
-                        std::process::exit(0);
+                    Ok(exit_code) => {
+                        drop(env);
+                        std::process::exit(exit_code);
                     }
                     Err(err) => {
                         eprintln!(

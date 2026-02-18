@@ -44,6 +44,14 @@ pub const GIT_COMMIT: &str = env!("CARGO_GIT_COMMIT");
 pub const GIT_BRANCH: &str = env!("CARGO_GIT_BRANCH");
 pub const TARGET: &str = env!("CARGO_TARGET");
 
+pub fn full_version() -> String {
+    if GIT_BRANCH == "unknown" {
+        VERSION.to_string()
+    } else {
+        format!("{VERSION}:{GIT_COMMIT}@{GIT_BRANCH}")
+    }
+}
+
 pub const BUFFER_SIZE: usize = 32 * 1024;
 
 pub type GetIp = axum::extract::Extension<std::net::IpAddr>;
@@ -143,7 +151,7 @@ impl AppState {
                 Ok(_) => AppContainerType::Unknown,
                 Err(_) => AppContainerType::None,
             },
-            version: format!("{}:{}@{}", VERSION, GIT_COMMIT, GIT_BRANCH),
+            version: full_version(),
 
             client: reqwest::ClientBuilder::new()
                 .user_agent(format!("github.com/calagopus/panel {}", VERSION))

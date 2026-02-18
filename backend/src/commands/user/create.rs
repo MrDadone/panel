@@ -50,7 +50,7 @@ impl shared::extensions::commands::CliCommand<CreateArgs> for CreateCommand {
                             username
                         } else {
                             eprintln!("{}", "username arg is required when not running in an interactive terminal".red());
-                            std::process::exit(1);
+                            return Ok(1);
                         }
                     }
                 };
@@ -69,7 +69,7 @@ impl shared::extensions::commands::CliCommand<CreateArgs> for CreateCommand {
                                 "email arg is required when not running in an interactive terminal"
                                     .red()
                             );
-                            std::process::exit(1);
+                            return Ok(1);
                         }
                     }
                 };
@@ -84,7 +84,7 @@ impl shared::extensions::commands::CliCommand<CreateArgs> for CreateCommand {
                             name_first
                         } else {
                             eprintln!("{}", "name-first arg is required when not running in an interactive terminal".red());
-                            std::process::exit(1);
+                            return Ok(1);
                         }
                     }
                 };
@@ -99,7 +99,7 @@ impl shared::extensions::commands::CliCommand<CreateArgs> for CreateCommand {
                             name_last
                         } else {
                             eprintln!("{}", "name-last arg is required when not running in an interactive terminal".red());
-                            std::process::exit(1);
+                            return Ok(1);
                         }
                     }
                 };
@@ -114,7 +114,7 @@ impl shared::extensions::commands::CliCommand<CreateArgs> for CreateCommand {
                             password
                         } else {
                             eprintln!("{}", "password arg is required when not running in an interactive terminal".red());
-                            std::process::exit(1);
+                            return Ok(1);
                         }
                     }
                 };
@@ -162,7 +162,7 @@ impl shared::extensions::commands::CliCommand<CreateArgs> for CreateCommand {
                     );
                 }
 
-                Ok(())
+                Ok(0)
             })
         })
     }

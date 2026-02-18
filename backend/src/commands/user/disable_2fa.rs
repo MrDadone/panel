@@ -41,7 +41,7 @@ impl shared::extensions::commands::CliCommand<Disable2FAArgs> for Disable2FAComm
                                 "user arg is required when not running in an interactive terminal"
                                     .red()
                             );
-                            std::process::exit(1);
+                            return Ok(1);
                         }
                     }
                 };
@@ -56,7 +56,7 @@ impl shared::extensions::commands::CliCommand<Disable2FAArgs> for Disable2FAComm
 
                 let Some(user) = user else {
                     eprintln!("{}", "user not found".red());
-                    std::process::exit(1);
+                    return Ok(1);
                 };
 
                 if !user.totp_enabled {
@@ -64,7 +64,7 @@ impl shared::extensions::commands::CliCommand<Disable2FAArgs> for Disable2FAComm
                         "{}",
                         "two-factor authentication is not enabled for this user".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 shared::models::user_recovery_code::UserRecoveryCode::delete_by_user_uuid(
@@ -87,7 +87,7 @@ impl shared::extensions::commands::CliCommand<Disable2FAArgs> for Disable2FAComm
                     user.uuid.to_compact_string().cyan()
                 );
 
-                Ok(())
+                Ok(0)
             })
         })
     }

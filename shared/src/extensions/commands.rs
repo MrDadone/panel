@@ -4,7 +4,7 @@ use std::{collections::HashMap, pin::Pin, sync::Arc};
 pub type ExecutorFunc = dyn Fn(
         Option<Arc<crate::env::Env>>,
         ArgMatches,
-    ) -> Pin<Box<dyn Future<Output = Result<(), anyhow::Error>>>>
+    ) -> Pin<Box<dyn Future<Output = Result<i32, anyhow::Error>>>>
     + Send;
 
 pub enum CommandMapEntry {
