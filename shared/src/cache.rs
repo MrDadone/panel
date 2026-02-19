@@ -171,7 +171,6 @@ impl Cache {
             Duration::from_millis(50)
         };
 
-        let key_owned = key.to_compact_string();
         let client = self.client.clone();
 
         self.cache_calls.fetch_add(1, Ordering::Relaxed);
@@ -179,10 +178,10 @@ impl Cache {
 
         let entry = self
             .local
-            .try_get_with(key_owned.clone(), async move {
+            .try_get_with(key.to_compact_string(), async move {
                 tracing::debug!("checking redis cache");
                 let cached_value: Option<BulkString> = client
-                    .get(&*key_owned)
+                    .get(key)
                     .await
                     .map_err(|err| {
                         tracing::error!("redis get error: {:?}", err);
@@ -211,12 +210,7 @@ impl Cache {
                 let serialized_arc = Arc::new(serialized);
 
                 let _ = client
-                    .set_with_options(
-                        &*key_owned,
-                        serialized_arc.as_slice(),
-                        None,
-                        SetExpiration::Ex(ttl),
-                    )
+                    .set_with_options(key, serialized_arc.as_slice(), None, SetExpiration::Ex(ttl))
                     .await;
 
                 Ok::<_, anyhow::Error>(InternalEntry {
