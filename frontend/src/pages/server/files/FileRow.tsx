@@ -20,12 +20,22 @@ interface FileRowProps {
   multipleSelected: boolean;
 }
 
-const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({ file, isSelected, multipleSelected }, ref) {
+const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
+  { file, isSelected, multipleSelected },
+  ref,
+) {
   const navigate = useNavigate();
   const [_, setSearchParams] = useSearchParams();
   const canOpenActionBar = useServerCan(['files.read-content', 'files.archive', 'files.update', 'files.delete'], true);
   const { server } = useServerStore();
-  const { browsingDirectory, browsingFastDirectory, setSelectedFiles, addSelectedFile, removeSelectedFile, doClickOnce } = useFileManager();
+  const {
+    browsingDirectory,
+    browsingFastDirectory,
+    setSelectedFiles,
+    addSelectedFile,
+    removeSelectedFile,
+    doClickOnce,
+  } = useFileManager();
   const { settings } = useGlobalStore();
   const canOpenFile = useServerCan('files.read-content');
 

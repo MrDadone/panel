@@ -13,12 +13,12 @@ import FileModals from '@/pages/server/files/FileModals.tsx';
 import FileOperationsProgress from '@/pages/server/files/FileOperationsProgress.tsx';
 import FileRow from '@/pages/server/files/FileRow.tsx';
 import FileSearchBanner from '@/pages/server/files/FileSearchBanner.tsx';
+import FileSettings from '@/pages/server/files/FileSettings.tsx';
 import FileToolbar from '@/pages/server/files/FileToolbar.tsx';
 import FileUpload from '@/pages/server/files/FileUpload.tsx';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { FileManagerProvider } from '@/providers/FileManagerProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
-import FileSettings from "@/pages/server/files/FileSettings.tsx";
 
 function ServerFilesComponent() {
   const { server } = useServerStore();

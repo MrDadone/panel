@@ -1,21 +1,22 @@
-import { faDoorOpen, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faDoorOpen, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Breadcrumbs } from "@mantine/core";
-import { ReactNode, useEffect } from "react";
+import { Breadcrumbs } from '@mantine/core';
+import { join } from 'pathe';
+import { ReactNode, useEffect } from 'react';
 import { createSearchParams, NavLink } from 'react-router';
+import { httpErrorToHuman } from '@/api/axios.ts';
+import getBackup from '@/api/server/backups/getBackup.ts';
 import Button from '@/elements/Button.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
+import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
-import getBackup from "@/api/server/backups/getBackup.ts";
-import { useToast } from "@/providers/ToastProvider.tsx";
-import { httpErrorToHuman } from "@/api/axios.ts";
-import { join } from "pathe";
 
 export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; inFileEditor?: boolean }) {
   const { addToast } = useToast();
   const { server, setBrowsingDirectory, actingFileNames } = useServerStore();
-  const { selectedFileNames, browsingBackup, browsingEntries, setSelectedFiles, setBrowsingBackup, doOpenModal } = useFileManager();
+  const { selectedFileNames, browsingBackup, browsingEntries, setSelectedFiles, setBrowsingBackup, doOpenModal } =
+    useFileManager();
 
   const splittedPath = path.split('/').filter(Boolean);
   const pathItems = splittedPath.map((item, index) => {
