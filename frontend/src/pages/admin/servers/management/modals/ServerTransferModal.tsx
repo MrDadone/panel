@@ -13,7 +13,7 @@ import NumberInput from '@/elements/input/NumberInput.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal } from '@/elements/modals/Modal.tsx';
 import { archiveFormatLabelMapping, compressionLevelLabelMapping } from '@/lib/enums.ts';
 import { formatAllocation } from '@/lib/server.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';

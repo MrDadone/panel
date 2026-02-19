@@ -7,7 +7,7 @@ import testSystemEmail from '@/api/admin/system/email/testSystemEmail.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { adminSettingsEmailTestSchema } from '@/lib/schemas/admin/settings.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -45,14 +45,14 @@ export default function EmailSendTestModal({ opened, onClose }: ModalProps) {
       <form onSubmit={form.onSubmit(() => doSendTestEmail())}>
         <TextInput withAsterisk label='Email' placeholder='Email' {...form.getInputProps('email')} />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading} disabled={!form.isValid()}>
             Send Test Email
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import restoreBackup from '@/api/server/backups/restoreBackup.ts';
 import Button from '@/elements/Button.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -48,14 +48,14 @@ export default function BackupRestoreModal({ backup, opened, onClose }: Props) {
         onChange={(e) => setTruncate(e.target.checked)}
       />
 
-      <Modal.Footer>
+      <ModalFooter>
         <Button color={truncate ? 'red' : undefined} onClick={doRestore} loading={loading}>
           {t('pages.server.backups.button.restore', {})}
         </Button>
         <Button variant='default' onClick={onClose}>
           {t('common.button.close', {})}
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

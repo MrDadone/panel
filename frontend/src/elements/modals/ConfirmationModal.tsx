@@ -35,14 +35,14 @@ export default function ConfirmationModal({
   return (
     <Modal {...props}>
       {children}
-      <Modal.Footer>
+      <ModalFooter>
         <Button color={confirmColor} loading={loading} onClick={onConfirmedAlt}>
           {confirm}
         </Button>
         <Button variant='default' onClick={props.onClose}>
           {t('common.button.cancel', {})}
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

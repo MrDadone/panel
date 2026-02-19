@@ -4,7 +4,7 @@ import deleteNodeBackup from '@/api/admin/nodes/backups/deleteNodeBackup.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Switch from '@/elements/input/Switch.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
@@ -48,14 +48,14 @@ export default function NodeBackupsDeleteModal({ node, backup, opened, onClose }
           />
         </Stack>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button color='red' loading={loading} onClick={doDelete}>
             Okay
           </Button>
           <Button variant='default' onClick={() => onClose()}>
             Cancel
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Modal>
     </>
   );

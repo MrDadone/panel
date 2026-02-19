@@ -10,7 +10,7 @@ import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
@@ -107,14 +107,14 @@ export default function ServerAllocationRow({
             onChange={(e) => setAllocationNote(e.target.value)}
           />
 
-          <Modal.Footer>
+          <ModalFooter>
             <Button onClick={doEdit} loading={loading}>
               Edit
             </Button>
             <Button variant='default' onClick={() => setOpenModal(null)}>
               Close
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Stack>
       </Modal>
 

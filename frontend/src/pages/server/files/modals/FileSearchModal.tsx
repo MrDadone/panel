@@ -19,7 +19,7 @@ import SizeInput from '@/elements/input/SizeInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -375,14 +375,14 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
           </Collapse>
         </Stack>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading}>
             Search
           </Button>
           <Button variant='default' onClick={onClose}>
             Cancel
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

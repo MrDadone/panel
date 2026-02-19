@@ -4,7 +4,7 @@ import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesNameSchema } from '@/lib/schemas/server/files.ts';
 
 type Props = ModalProps & {
@@ -25,14 +25,14 @@ export default function FileNameModal({ onFileName, opened, onClose }: Props) {
       <form onSubmit={form.onSubmit(() => onFileName(form.values.name))}>
         <TextInput withAsterisk label='File Name' placeholder='File Name' {...form.getInputProps('name')} />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' disabled={!form.isValid()}>
             Create
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

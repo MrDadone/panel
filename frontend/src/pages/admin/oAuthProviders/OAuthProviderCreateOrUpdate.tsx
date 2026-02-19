@@ -230,7 +230,6 @@ export default function OAuthProviderCreateOrUpdate({
               {...form.getInputProps('emailPath')}
             />
             <TextInput
-              withAsterisk
               label='Username Path'
               placeholder='Username Path'
               description='The Path to use to extract the username from the Info URL response (https://serdejsonpath.live)'

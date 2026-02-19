@@ -18,11 +18,11 @@ export default function ActivityInfoButton({ activity }: { activity: AdminActivi
           {JSON.stringify(activity.data, null, 2)}
         </HljsCode>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button variant='default' onClick={() => setOpenModal(null)}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Modal>
 
       <ActionIcon onClick={() => setOpenModal('view')}>

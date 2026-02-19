@@ -5,7 +5,7 @@ import updateServerGroup from '@/api/me/servers/groups/updateServerGroup.ts';
 import getServers from '@/api/server/getServers.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -73,14 +73,14 @@ export default function GroupAddServerModal({ serverGroup, opened, onClose, onSe
         onSearchChange={servers.setSearch}
       />
 
-      <Modal.Footer>
+      <ModalFooter>
         <Button onClick={doAdd} loading={loading} disabled={!selectedServer}>
           {t('common.button.add', {})}
         </Button>
         <Button variant='default' onClick={onClose}>
           {t('common.button.close', {})}
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

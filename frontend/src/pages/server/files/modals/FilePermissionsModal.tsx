@@ -7,7 +7,7 @@ import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { permissionStringToNumber } from '@/lib/files.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -185,14 +185,14 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
         </div>
       </Card>
 
-      <Modal.Footer>
+      <ModalFooter>
         <Button onClick={doChmod} loading={loading} disabled={!browsingWritableDirectory}>
           Save
         </Button>
         <Button variant='default' onClick={onClose}>
           Close
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

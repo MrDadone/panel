@@ -12,7 +12,7 @@ import Code from '@/elements/Code.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { dashboardTwoFactorEnableSchema } from '@/lib/schemas/dashboard.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
@@ -117,14 +117,14 @@ export default function TwoFactorSetupButton() {
               {...form.getInputProps('password')}
             />
 
-            <Modal.Footer>
+            <ModalFooter>
               <Button onClick={doEnable} loading={loading} disabled={!form.isValid()}>
                 {t('common.button.enable', {})}
               </Button>
               <Button variant='default' onClick={() => stageStack.closeAll()}>
                 {t('common.button.close', {})}
               </Button>
-            </Modal.Footer>
+            </ModalFooter>
           </Stack>
         </Modal>
         <Modal
@@ -147,7 +147,7 @@ export default function TwoFactorSetupButton() {
               </Code>
             </CopyOnClick>
 
-            <Modal.Footer>
+            <ModalFooter>
               <Button
                 variant='default'
                 onClick={() => {
@@ -157,7 +157,7 @@ export default function TwoFactorSetupButton() {
               >
                 {t('common.button.close', {})}
               </Button>
-            </Modal.Footer>
+            </ModalFooter>
           </Stack>
         </Modal>
       </MantineModal.Stack>

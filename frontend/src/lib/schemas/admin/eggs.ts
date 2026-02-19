@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { nullableString } from "@/lib/transformers.ts";
+import { nullableString } from '@/lib/transformers.ts';
 
 export const adminEggSchema = z.object({
   eggRepositoryEggUuid: z.uuid().nullable(),

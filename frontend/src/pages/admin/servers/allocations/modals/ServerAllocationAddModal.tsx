@@ -5,7 +5,7 @@ import createServerAllocation from '@/api/admin/servers/allocations/createServer
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import MultiSelect from '@/elements/input/MultiSelect.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { formatAllocation } from '@/lib/server.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -71,14 +71,14 @@ export default function ServerAllocationAddModal({ server, opened, onClose }: Mo
           onSearchChange={availableAllocations.setSearch}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doAdd} loading={loading} disabled={!selectedAllocationUuids.length}>
             Add {selectedAllocationUuids.length}
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

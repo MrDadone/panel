@@ -1,6 +1,6 @@
-import { ReactNode, startTransition, useContext, useEffect, useState } from 'react';
+import { ReactNode, RefObject, startTransition, useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
-import { GetPlaceholders, getTranslationMapping, TranslationContext, TranslationItemRecord } from 'shared';
+import { getTranslationMapping, TranslationContext, TranslationItemRecord } from 'shared';
 import { z } from 'zod';
 import { $ZodConfig } from 'zod/v4/core';
 import { axiosInstance } from '@/api/axios.ts';
@@ -24,9 +24,8 @@ String.prototype.md = function (): ReactNode {
   return <Markdown>{this.toString()}</Markdown>;
 };
 
-let globalTranslationHandle: never = null as never;
-
 const TranslationProvider = ({ children }: { children: ReactNode }) => {
+  const globalTranslationHandle: RefObject<never> = useRef(null as never);
   const [language, setLanguage] = useState('en-US');
   const [languageData, setLanguageData] = useState<LanguageData | null>(null);
 
@@ -113,40 +112,14 @@ const TranslationProvider = ({ children }: { children: ReactNode }) => {
     return translationItem[rules.select(count)].replaceAll('{count}', count.toString());
   };
 
-  globalTranslationHandle = { language, setLanguage, t, tItem } as never;
+  globalTranslationHandle.current = { language, setLanguage, t, tItem } as never;
 
   return (
-    <TranslationContext.Provider value={{ language, setLanguage, t, tItem }}>{children}</TranslationContext.Provider>
+    <TranslationContext.Provider value={{ globalTranslationHandle, language, setLanguage, t, tItem }}>
+      {children}
+    </TranslationContext.Provider>
   );
 };
 
 export default TranslationProvider;
-
-export const useTranslations = () => {
-  const context = useContext(TranslationContext);
-  if (!context) {
-    throw new Error('useTranslations must be used within a TranslationProvider');
-  }
-
-  return {
-    language: context.language,
-    setLanguage: context.setLanguage,
-    t<K extends (typeof baseTranslations)['paths']>(
-      key: K,
-      values: Record<GetPlaceholders<(typeof baseTranslations)['mapping'][K]>[number], string | number>,
-    ): string {
-      return context.t(key, values);
-    },
-    tItem(key: keyof (typeof baseTranslations)['items'], count: number): string {
-      return context.tItem(key as string, count);
-    },
-  };
-};
-
-export const getTranslations = (): ReturnType<typeof useTranslations> => {
-  if (!globalTranslationHandle) {
-    throw new Error('getTranslations called before TranslationProvider initialized');
-  }
-
-  return globalTranslationHandle;
-};
+export { getTranslations, useTranslations } from './contexts/translationContext.ts';

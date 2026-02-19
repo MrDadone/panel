@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { nullableNumber, nullableString } from "@/lib/transformers.ts";
+import { nullableNumber, nullableString } from '@/lib/transformers.ts';
 
 export const adminDatabaseHostCreateSchema = z.object({
   name: z.string().min(3).max(255),

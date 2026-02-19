@@ -10,7 +10,7 @@ import createDirectory from '@/api/server/files/createDirectory.ts';
 import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesDirectoryCreateSchema } from '@/lib/schemas/server/files.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -59,14 +59,14 @@ export default function DirectoryNameModal({ opened, onClose }: ModalProps) {
           </Code>
         </p>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading} disabled={!form.isValid()}>
             Create
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

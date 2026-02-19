@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { nullableString } from "@/lib/transformers.ts";
+import { nullableString } from '@/lib/transformers.ts';
 
 export const adminNestSchema = z.object({
   author: z.string().min(2).max(255),

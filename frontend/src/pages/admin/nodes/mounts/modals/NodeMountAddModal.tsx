@@ -5,7 +5,7 @@ import createNodeMount from '@/api/admin/nodes/mounts/createNodeMount.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
@@ -60,14 +60,14 @@ export default function NodeMountAddModal({ node, opened, onClose }: ModalProps 
           onSearchChange={mounts.setSearch}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doAdd} loading={loading} disabled={!selectedMount}>
             Add
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

@@ -5,7 +5,7 @@ import getNests from '@/api/admin/nests/getNests.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -66,14 +66,14 @@ export default function EggRepositoryEggInstallModal({
           onSearchChange={nests.setSearch}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doInstall} loading={loading} disabled={!selectedNest}>
             Install
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

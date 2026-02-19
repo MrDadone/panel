@@ -4,7 +4,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import updateServerGroup from '@/api/me/servers/groups/updateServerGroup.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -62,14 +62,14 @@ export default function ServerAddGroupModal({ server, opened, onClose }: Props) 
           }))}
       />
 
-      <Modal.Footer>
+      <ModalFooter>
         <Button onClick={doAdd} loading={loading} disabled={!selectedServerGroup}>
           {t('common.button.add', {})}
         </Button>
         <Button variant='default' onClick={onClose}>
           {t('common.button.close', {})}
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

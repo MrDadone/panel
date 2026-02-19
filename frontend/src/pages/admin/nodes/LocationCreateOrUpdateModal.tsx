@@ -11,7 +11,7 @@ import { AdminCan } from '@/elements/Can.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal } from '@/elements/modals/Modal.tsx';
 import { adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';

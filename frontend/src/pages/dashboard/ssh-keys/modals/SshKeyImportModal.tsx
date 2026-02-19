@@ -8,7 +8,7 @@ import importSshKeys from '@/api/me/ssh-keys/importSshKeys.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { sshKeyProviderLabelMapping } from '@/lib/enums.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -79,14 +79,14 @@ export default function SshKeyImportModal({ opened, onClose }: ModalProps) {
           />
         </div>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doImport} loading={loading} disabled={!form.isValid()}>
             {t('pages.account.sshKeys.button.import', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

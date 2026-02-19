@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { nullableString } from "@/lib/transformers.ts";
+import { nullableString } from '@/lib/transformers.ts';
 
 export const adminRoleSchema = z.object({
   name: z.string().min(3).max(255),

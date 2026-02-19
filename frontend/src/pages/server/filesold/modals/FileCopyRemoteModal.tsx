@@ -10,7 +10,7 @@ import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesCopyRemoteSchema } from '@/lib/schemas/server/files.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -100,14 +100,14 @@ export default function FileCopyModal({ files, opened, onClose }: Props) {
           </Code>
         </p>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading}>
             Copy
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

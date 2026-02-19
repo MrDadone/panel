@@ -10,7 +10,7 @@ import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { archiveFormatLabelMapping } from '@/lib/enums.ts';
 import { generateArchiveName } from '@/lib/files.ts';
 import { serverFilesArchiveCreateSchema } from '@/lib/schemas/server/files.ts';
@@ -89,14 +89,14 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
             </Code>
           </p>
 
-          <Modal.Footer>
+          <ModalFooter>
             <Button type='submit' loading={loading}>
               Create
             </Button>
             <Button variant='default' onClick={onClose}>
               Close
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Stack>
       </form>
     </Modal>

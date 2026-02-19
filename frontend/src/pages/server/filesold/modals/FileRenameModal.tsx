@@ -7,7 +7,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import renameFiles from '@/api/server/files/renameFiles.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesNameSchema } from '@/lib/schemas/server/files.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -79,14 +79,14 @@ export default function FileRenameModal({ file, opened, onClose }: Props) {
       <form onSubmit={form.onSubmit(() => doRename())}>
         <TextInput withAsterisk label='File Name' placeholder='File Name' {...form.getInputProps('name')} />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading}>
             Rename
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

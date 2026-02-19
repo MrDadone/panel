@@ -4,7 +4,7 @@ import updateNodeAllocations from '@/api/admin/nodes/allocations/updateNodeAlloc
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
@@ -117,14 +117,14 @@ export default function NodeAllocationsUpdateModal({
           onChange={(e) => setIpAlias(e.target.value)}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doUpdate} loading={loading} disabled={!ip}>
             Update
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

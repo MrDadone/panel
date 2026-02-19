@@ -10,7 +10,7 @@ import createSshKey from '@/api/me/ssh-keys/createSshKey.ts';
 import Button from '@/elements/Button.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -105,14 +105,14 @@ export default function SshKeyCreateModal({ opened, onClose }: ModalProps) {
           {t('pages.account.sshKeys.modal.createSshKey.button.uploadKeyFile', {})}
         </Button>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doCreate} loading={loading} disabled={!form.isValid()}>
             {t('common.button.create', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

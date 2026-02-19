@@ -8,7 +8,7 @@ import disableTwoFactor from '@/api/me/account/disableTwoFactor.ts';
 import Button from '@/elements/Button.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { dashboardTwoFactorDisableSchema } from '@/lib/schemas/dashboard.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -79,14 +79,14 @@ export default function TwoFactorDisableButton() {
             {...form.getInputProps('password')}
           />
 
-          <Modal.Footer>
+          <ModalFooter>
             <Button color='red' onClick={doDisable} loading={loading} disabled={!form.isValid()}>
               {t('common.button.disable', {})}
             </Button>
             <Button variant='default' onClick={() => setOpenModal(null)}>
               {t('common.button.close', {})}
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Stack>
       </Modal>
 

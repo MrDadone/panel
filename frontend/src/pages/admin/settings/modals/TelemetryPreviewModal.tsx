@@ -2,7 +2,7 @@ import { ModalProps } from '@mantine/core';
 import { useMemo } from 'react';
 import Button from '@/elements/Button.tsx';
 import HljsCode from '@/elements/HljsCode.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 
 export default function TelemetryPreviewModal({
   telemetry,
@@ -17,11 +17,11 @@ export default function TelemetryPreviewModal({
         {JSON.stringify(telemetry, null, 2)}
       </HljsCode>
 
-      <Modal.Footer>
+      <ModalFooter>
         <Button variant='default' onClick={onClose}>
           Close
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

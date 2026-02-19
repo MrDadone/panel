@@ -11,7 +11,7 @@ import queryFilePull from '@/api/server/files/queryFilePull.ts';
 import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesPullSchema } from '@/lib/schemas/server/files.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -109,14 +109,14 @@ export default function PullFileModal({ opened, onClose }: ModalProps) {
           </Code>
         </p>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading} disabled={!form.isValid()}>
             Pull{queryResult?.fileSize ? ` (${bytesToString(queryResult.fileSize)})` : ''}
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

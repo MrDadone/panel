@@ -5,7 +5,7 @@ import createLocationDatabaseHost from '@/api/admin/locations/database-hosts/cre
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -72,14 +72,14 @@ export default function LocationDatabaseHostCreateModal({
           onSearchChange={databaseHosts.setSearch}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doCreate} loading={loading} disabled={!databaseHost}>
             Create
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

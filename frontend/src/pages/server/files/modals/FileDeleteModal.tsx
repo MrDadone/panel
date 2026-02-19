@@ -4,7 +4,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteFiles from '@/api/server/files/deleteFiles.ts';
 import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -62,14 +62,14 @@ export default function FileDeleteModal({ files, opened, onClose }: Props) {
         </>
       )}
 
-      <Modal.Footer>
+      <ModalFooter>
         <Button color='red' onClick={doDelete} loading={loading}>
           Delete
         </Button>
         <Button variant='default' onClick={onClose}>
           Close
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

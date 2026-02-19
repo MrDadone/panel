@@ -10,7 +10,7 @@ import Divider from '@/elements/Divider.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { scheduleTriggerDefaultMapping, scheduleTriggerLabelMapping } from '@/lib/enums.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -142,14 +142,14 @@ export default function ScheduleCreateOrUpdateModal({ propSchedule, onScheduleUp
           </Button>
         </div>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doCreateOrUpdate} loading={loading} disabled={!name}>
             {propSchedule?.uuid ? 'Update' : 'Create'}
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );
