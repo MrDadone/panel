@@ -8,21 +8,24 @@ import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
-import { useAdminStore } from '@/stores/admin.tsx';
 
-export default function AssetActionBar() {
+export default function AssetActionBar({
+  selectedAssets,
+  invalidateAssets,
+}: {
+  selectedAssets: Set<string>;
+  invalidateAssets: () => void;
+}) {
   const { addToast } = useToast();
-  const { removeAssets, selectedAssets, setSelectedAssets } = useAdminStore();
 
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
   const doDelete = async () => {
-    await deleteAssets(selectedAssets)
+    await deleteAssets([...selectedAssets])
       .then(({ deleted }) => {
-        removeAssets(selectedAssets);
+        invalidateAssets();
 
         addToast(`${deleted} Asset${deleted === 1 ? '' : 's'} deleted.`, 'success');
-        setSelectedAssets([]);
         setOpenModal(null);
       })
       .catch((msg) => {
@@ -39,10 +42,10 @@ export default function AssetActionBar() {
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{selectedAssets.length}</Code> assets?
+        Are you sure you want to delete <Code>{selectedAssets.size}</Code> assets?
       </ConfirmationModal>
 
-      <ActionBar opened={selectedAssets.length > 0}>
+      <ActionBar opened={selectedAssets.size > 0}>
         <Button color='red' onClick={() => setOpenModal('delete')} className='col-span-2'>
           <FontAwesomeIcon icon={faTrash} className='mr-2' /> Delete
         </Button>

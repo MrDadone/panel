@@ -9,13 +9,13 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import updatePassword from '@/api/me/account/updatePassword.ts';
 import Button from '@/elements/Button.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
+import Spinner from '@/elements/Spinner.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import { dashboardPasswordSchema } from '@/lib/schemas/dashboard.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { AccountCardProps } from './DashboardAccount.tsx';
-import Spinner from "@/elements/Spinner.tsx";
 
 export default function PasswordContainer({ blurred }: AccountCardProps) {
   const { t } = useTranslations();
@@ -58,7 +58,7 @@ export default function PasswordContainer({ blurred }: AccountCardProps) {
   };
 
   if (!user) {
-    return <Spinner.Centered />
+    return <Spinner.Centered />;
   }
 
   return (

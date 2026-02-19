@@ -5,24 +5,26 @@ import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { bytesToString } from '@/lib/size.ts';
-import { useAdminStore } from '@/stores/admin.tsx';
 
 interface AssetRowProps {
   asset: StorageAsset;
+  isSelected: boolean;
+
+  addSelectedAsset: (name: string) => void;
+  removeSelectedAsset: (name: string) => void;
 }
 
 const AssetRow = memo(
-  forwardRef<HTMLTableRowElement, AssetRowProps>(function AssetRow({ asset }, ref) {
-    const { selectedAssets, addSelectedAsset, removeSelectedAsset } = useAdminStore();
-
-    const isAssetSelected = selectedAssets.some((a) => a === asset.name);
-
+  forwardRef<HTMLTableRowElement, AssetRowProps>(function AssetRow(
+    { asset, isSelected, addSelectedAsset, removeSelectedAsset },
+    ref,
+  ) {
     return (
       <TableRow
-        bg={isAssetSelected ? 'var(--mantine-color-blue-light)' : undefined}
+        bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}
         onClick={(e) => {
           if (e.ctrlKey || e.metaKey) {
-            addSelectedAsset(asset);
+            addSelectedAsset(asset.name);
             return true;
           }
 
@@ -33,12 +35,12 @@ const AssetRow = memo(
         <td className='pl-4 relative cursor-pointer w-10 text-center'>
           <Checkbox
             id={asset.name}
-            checked={isAssetSelected}
+            checked={isSelected}
             onChange={() => {
-              if (isAssetSelected) {
-                removeSelectedAsset(asset);
+              if (isSelected) {
+                removeSelectedAsset(asset.name);
               } else {
-                addSelectedAsset(asset);
+                addSelectedAsset(asset.name);
               }
             }}
             onClick={(e) => e.stopPropagation()}

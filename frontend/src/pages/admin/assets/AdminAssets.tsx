@@ -1,6 +1,7 @@
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ChangeEvent, MouseEvent as ReactMouseEvent, Ref, useCallback, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ChangeEvent, MouseEvent as ReactMouseEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
 import getAssets from '@/api/admin/assets/getAssets.ts';
 import uploadAssets from '@/api/admin/assets/uploadAssets.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -8,26 +9,36 @@ import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
+import Spinner from '@/elements/Spinner.tsx';
 import Table from '@/elements/Table.tsx';
 import { assetTableColumns } from '@/lib/tableColumns.ts';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
-import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
-import { useAdminStore } from '@/stores/admin.tsx';
 import AssetActionBar from './AssetActionBar.tsx';
 import AssetRow from './AssetRow.tsx';
 
 export default function AdminAssets() {
-  const { assets, setAssets, addAssets, selectedAssets, setSelectedAssets } = useAdminStore();
+  const queryClient = useQueryClient();
   const { addToast } = useToast();
 
-  const selectedAssetsPreviousRef = useRef(selectedAssets);
+  const selectedAssetsPreviousRef = useRef(new Set<string>());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { loading, setPage } = useSearchablePaginatedTable({
-    fetcher: getAssets,
-    setStoreData: setAssets,
+  const [selectedAssets, setSelectedAssets] = useState(new Set<string>());
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin', 'assets', { page }],
+    queryFn: () => getAssets(page),
   });
+
+  const invalidateAssets = () => {
+    queryClient
+      .invalidateQueries({
+        queryKey: ['admin', 'assets'],
+      })
+      .catch((e) => console.error(e));
+  };
 
   const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -42,7 +53,7 @@ export default function AdminAssets() {
 
     uploadAssets(form)
       .then((assets) => {
-        addAssets(assets);
+        invalidateAssets();
         addToast(`${assets.length} Asset${assets.length === 1 ? '' : 's'} uploaded.`, 'success');
       })
       .catch((msg) => {
@@ -52,17 +63,17 @@ export default function AdminAssets() {
 
   const onSelectedStart = useCallback(
     (event: ReactMouseEvent | MouseEvent) => {
-      selectedAssetsPreviousRef.current = event.shiftKey ? selectedAssets : [];
+      selectedAssetsPreviousRef.current = new Set(event.shiftKey ? selectedAssets : []);
     },
     [selectedAssets],
   );
 
   const onSelected = useCallback((selected: string[]) => {
-    setSelectedAssets([...selectedAssetsPreviousRef.current, ...selected]);
+    setSelectedAssets(new Set([...selectedAssetsPreviousRef.current, ...selected]));
   }, []);
 
   useEffect(() => {
-    setSelectedAssets([]);
+    setSelectedAssets(new Set([]));
   }, []);
 
   useKeyboardShortcuts({
@@ -70,15 +81,15 @@ export default function AdminAssets() {
       {
         key: 'a',
         modifiers: ['ctrlOrMeta'],
-        callback: () => setSelectedAssets(assets.data.map((a) => a.name)),
+        callback: () => setSelectedAssets(new Set(data?.data.map((a) => a.name) ?? [])),
       },
       {
         key: 'Escape',
         modifiers: ['ctrlOrMeta'],
-        callback: () => setSelectedAssets([]),
+        callback: () => setSelectedAssets(new Set([])),
       },
     ],
-    deps: [assets.data],
+    deps: [data],
   });
 
   return (
@@ -98,25 +109,42 @@ export default function AdminAssets() {
         </AdminCan>
       }
     >
-      <AssetActionBar />
+      <AssetActionBar
+        selectedAssets={selectedAssets}
+        invalidateAssets={() => {
+          setSelectedAssets(new Set());
+          invalidateAssets();
+        }}
+      />
 
-      <SelectionArea onSelectedStart={onSelectedStart} onSelected={onSelected}>
-        <Table
-          columns={assetTableColumns}
-          loading={loading}
-          pagination={assets}
-          onPageSelect={setPage}
-          allowSelect={false}
-        >
-          {assets.data.map((asset) => (
-            <SelectionArea.Selectable key={asset.name} item={asset.name}>
-              {(innerRef: Ref<HTMLElement>) => (
-                <AssetRow key={asset.name} asset={asset} ref={innerRef as Ref<HTMLTableRowElement>} />
-              )}
-            </SelectionArea.Selectable>
-          ))}
-        </Table>
-      </SelectionArea>
+      {!data || isLoading ? (
+        <Spinner.Centered />
+      ) : (
+        <SelectionArea onSelectedStart={onSelectedStart} onSelected={onSelected}>
+          <Table
+            columns={assetTableColumns}
+            loading={isLoading}
+            pagination={data}
+            onPageSelect={setPage}
+            allowSelect={false}
+          >
+            {data.data.map((asset) => (
+              <SelectionArea.Selectable key={asset.name} item={asset.name}>
+                {(innerRef: Ref<HTMLElement>) => (
+                  <AssetRow
+                    key={asset.name}
+                    asset={asset}
+                    isSelected={selectedAssets.has(asset.name)}
+                    addSelectedAsset={(assetName) => selectedAssets.add(assetName)}
+                    removeSelectedAsset={(assetName) => selectedAssets.delete(assetName)}
+                    ref={innerRef as Ref<HTMLTableRowElement>}
+                  />
+                )}
+              </SelectionArea.Selectable>
+            ))}
+          </Table>
+        </SelectionArea>
+      )}
     </AdminContentContainer>
   );
 }

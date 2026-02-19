@@ -10,13 +10,13 @@ import updateEmail from '@/api/me/account/updateEmail.ts';
 import Button from '@/elements/Button.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import Spinner from '@/elements/Spinner.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import { dashboardEmailSchema } from '@/lib/schemas/dashboard.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { AccountCardProps } from './DashboardAccount.tsx';
-import Spinner from "@/elements/Spinner.tsx";
 
 export default function EmailContainer({ blurred }: AccountCardProps) {
   const { t } = useTranslations();
@@ -64,7 +64,7 @@ export default function EmailContainer({ blurred }: AccountCardProps) {
   };
 
   if (!user) {
-    return <Spinner.Centered />
+    return <Spinner.Centered />;
   }
 
   return (
