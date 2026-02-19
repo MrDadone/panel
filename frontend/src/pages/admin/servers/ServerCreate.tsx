@@ -104,7 +104,7 @@ export default function ServerCreate() {
 
   const { loading, doCreateOrUpdate } = useResourceForm<z.infer<typeof adminServerCreateSchema>, AdminServer>({
     form,
-    createFn: () => createServer(form.values),
+    createFn: () => createServer(adminServerCreateSchema.parse(form.values)),
     doUpdate: false,
     basePath: '/admin/servers',
     resourceName: 'Server',

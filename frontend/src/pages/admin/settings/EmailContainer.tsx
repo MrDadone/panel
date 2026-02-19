@@ -46,7 +46,7 @@ export default function EmailContainer() {
 
   const doUpdate = () => {
     setLoading(true);
-    updateEmailSettings(form.values)
+    updateEmailSettings(adminSettingsEmailSchema.parse(form.values))
       .then(() => {
         addToast('Email settings updated.', 'success');
       })

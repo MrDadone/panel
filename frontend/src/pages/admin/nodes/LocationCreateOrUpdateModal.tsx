@@ -55,7 +55,7 @@ export default function LocationCreateOrUpdateModal({
 
     setLoading(true);
     try {
-      await createLocation(form.values);
+      await createLocation(adminLocationSchema.parse(form.values));
       addToast('Location created.', 'success');
       form.reset();
       onLocationCreated();

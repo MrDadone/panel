@@ -52,8 +52,8 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
 
   const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminNodeSchema>, Node>({
     form,
-    createFn: () => createNode(form.values),
-    updateFn: contextNode ? () => updateNode(contextNode.uuid, form.values) : undefined,
+    createFn: () => createNode(adminNodeSchema.parse(form.values)),
+    updateFn: contextNode ? () => updateNode(contextNode.uuid, adminNodeSchema.parse(form.values)) : undefined,
     deleteFn: contextNode ? () => deleteNode(contextNode.uuid) : undefined,
     doUpdate: !!contextNode,
     basePath: '/admin/nodes',

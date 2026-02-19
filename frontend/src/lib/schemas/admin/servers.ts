@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { nullableNumber, nullableString } from "@/lib/transformers.ts";
 
 export const adminServerCreateSchema = z.object({
-  externalId: z.string().max(255).nullable(),
+  externalId: z.preprocess(nullableString, z.string().max(255).nullable()),
   name: z.string().min(3).max(255),
-  description: z.string().max(1024).nullable(),
+  description: z.preprocess(nullableString, z.string().max(1024).nullable()),
   startOnCompletion: z.boolean(),
   skipInstaller: z.boolean(),
   limits: z.object({
@@ -12,7 +13,7 @@ export const adminServerCreateSchema = z.object({
     memoryOverhead: z.number().min(0),
     swap: z.number().min(-1),
     disk: z.number().min(0),
-    ioWeight: z.number().min(0).max(1000).nullable(),
+    ioWeight: z.preprocess(nullableNumber, z.number().min(0).max(1000).nullable()),
   }),
   pinnedCpus: z.array(z.number()),
   startup: z.string().min(1).max(8192),
@@ -44,21 +45,21 @@ export const adminServerUpdateSchema = z.object({
   ownerUuid: z.uuid(),
   eggUuid: z.uuid(),
   backupConfigurationUuid: z.uuid().nullable(),
-  externalId: z.string().max(255).nullable(),
+  externalId: z.preprocess(nullableString, z.string().max(255).nullable()),
   name: z.string().min(3).max(255),
-  description: z.string().max(1024).nullable(),
+  description: z.preprocess(nullableString, z.string().max(1024).nullable()),
   limits: z.object({
     cpu: z.number().min(0),
     memory: z.number().min(0),
     memoryOverhead: z.number().min(0),
     swap: z.number().min(-1),
     disk: z.number().min(0),
-    ioWeight: z.number().min(0).max(1000).nullable(),
+    ioWeight: z.preprocess(nullableNumber, z.number().min(0).max(1000).nullable()),
   }),
   pinnedCpus: z.array(z.number()),
   startup: z.string().min(1).max(8192),
   image: z.string().min(2).max(255),
-  timezone: z.string().nullable(),
+  timezone: z.preprocess(nullableString, z.string().nullable()),
   hugepagesPassthroughEnabled: z.boolean(),
   kvmPassthroughEnabled: z.boolean(),
   featureLimits: z.object({

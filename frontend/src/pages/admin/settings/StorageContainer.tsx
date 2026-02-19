@@ -43,7 +43,7 @@ export default function StorageContainer() {
 
   const doUpdate = () => {
     setLoading(true);
-    updateStorageSettings(form.values)
+    updateStorageSettings(adminSettingsStorageSchema.parse(form.values))
       .then(() => {
         addToast('Storage settings updated.', 'success');
       })

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { nullableNumber, nullableString } from "@/lib/transformers.ts";
 
 export const adminDatabaseHostCreateSchema = z.object({
   name: z.string().min(3).max(255),
@@ -8,8 +9,8 @@ export const adminDatabaseHostCreateSchema = z.object({
   port: z.number().min(0).max(65535),
   deploymentEnabled: z.boolean(),
   maintenanceEnabled: z.boolean(),
-  publicHost: z.string().min(3).max(255).nullable(),
-  publicPort: z.number().min(0).max(65535).nullable(),
+  publicHost: z.preprocess(nullableString, z.string().min(3).max(255).nullable()),
+  publicPort: z.preprocess(nullableNumber, z.number().min(0).max(65535).nullable()),
   type: z.enum(['mysql', 'postgres']),
 });
 
@@ -21,7 +22,7 @@ export const adminDatabaseHostUpdateSchema = z.object({
   port: z.number().min(0).max(65535),
   deploymentEnabled: z.boolean(),
   maintenanceEnabled: z.boolean(),
-  publicHost: z.string().max(255).nullable(),
-  publicPort: z.number().min(0).max(65535).nullable(),
+  publicHost: z.preprocess(nullableString, z.string().max(255).nullable()),
+  publicPort: z.preprocess(nullableNumber, z.number().min(0).max(65535).nullable()),
   type: z.enum(['mysql', 'postgres']),
 });

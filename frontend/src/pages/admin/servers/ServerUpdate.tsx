@@ -84,7 +84,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
 
   const { loading, doCreateOrUpdate } = useResourceForm<z.infer<typeof adminServerUpdateSchema>, AdminServer>({
     form,
-    updateFn: () => updateServer(contextServer.uuid, form.values),
+    updateFn: () => updateServer(contextServer.uuid, adminServerUpdateSchema.parse(form.values)),
     doUpdate: true,
     basePath: '/admin/servers',
     resourceName: 'Server',

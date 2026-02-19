@@ -47,7 +47,7 @@ export default function CaptchaContainer() {
   const doUpdate = () => {
     setLoading(true);
 
-    updateCaptchaSettings(form.values)
+    updateCaptchaSettings(adminSettingsCaptchaProviderSchema.parse(form.values))
       .then(() => {
         addToast('Captcha settings updated.', 'success');
       })

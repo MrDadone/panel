@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { nullableString } from '@/lib/transformers.ts';
 
 export const adminNodeAllocationsSchema = z.object({
   ip: z.string(),
@@ -12,10 +13,10 @@ export const adminNodeSchema = z.object({
   name: z.string().min(3).max(255),
   deploymentEnabled: z.boolean(),
   maintenanceEnabled: z.boolean(),
-  description: z.string().max(1024).nullable(),
-  publicUrl: z.url().min(3).max(255).nullable(),
+  description: z.preprocess(nullableString, z.string().max(1024).nullable()),
+  publicUrl: z.preprocess(nullableString, z.url().min(3).max(255).nullable()),
   url: z.url().min(3).max(255),
-  sftpHost: z.string().min(3).max(255).nullable(),
+  sftpHost: z.preprocess(nullableString, z.string().min(3).max(255).nullable()),
   sftpPort: z.number().min(0).max(65535),
   memory: z.number().min(0),
   disk: z.number().min(0),
