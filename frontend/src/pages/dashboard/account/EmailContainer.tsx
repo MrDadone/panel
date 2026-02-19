@@ -16,6 +16,7 @@ import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { AccountCardProps } from './DashboardAccount.tsx';
+import Spinner from "@/elements/Spinner.tsx";
 
 export default function EmailContainer({ blurred }: AccountCardProps) {
   const { t } = useTranslations();
@@ -34,12 +35,16 @@ export default function EmailContainer({ blurred }: AccountCardProps) {
   });
 
   useEffect(() => {
-    form.setValues({
-      email: user?.email,
-    });
+    if (user) {
+      form.setValues({
+        email: user.email,
+      });
+    }
   }, [user]);
 
   const doUpdate = () => {
+    if (!user) return;
+
     setLoading(true);
 
     updateEmail({
@@ -57,6 +62,10 @@ export default function EmailContainer({ blurred }: AccountCardProps) {
       })
       .finally(() => setLoading(false));
   };
+
+  if (!user) {
+    return <Spinner.Centered />
+  }
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>

@@ -15,6 +15,7 @@ import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { AccountCardProps } from './DashboardAccount.tsx';
+import Spinner from "@/elements/Spinner.tsx";
 
 export default function PasswordContainer({ blurred }: AccountCardProps) {
   const { t } = useTranslations();
@@ -34,6 +35,8 @@ export default function PasswordContainer({ blurred }: AccountCardProps) {
   });
 
   const doUpdate = () => {
+    if (!user) return;
+
     setLoading(true);
 
     updatePassword({
@@ -53,6 +56,10 @@ export default function PasswordContainer({ blurred }: AccountCardProps) {
       })
       .finally(() => setLoading(false));
   };
+
+  if (!user) {
+    return <Spinner.Centered />
+  }
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>

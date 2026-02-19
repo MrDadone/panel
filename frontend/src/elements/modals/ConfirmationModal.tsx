@@ -2,7 +2,7 @@ import { DefaultMantineColor, ModalProps } from '@mantine/core';
 import { MouseEvent as ReactMouseEvent, ReactNode, useState } from 'react';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import Button from '../Button.tsx';
-import Modal from './Modal.tsx';
+import { Modal, ModalFooter } from './Modal.tsx';
 
 type ConfirmationProps = Omit<ModalProps, 'children'> & {
   confirm?: string | undefined;
