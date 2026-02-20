@@ -11,7 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Badge, Collapse, Menu } from '@mantine/core';
-import { ComponentProps, memo, startTransition, useState } from 'react';
+import { ComponentProps, memo, startTransition, useEffect, useState } from 'react';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import deleteServerGroup from '@/api/me/servers/groups/deleteServerGroup.ts';
 import getServerGroupServers from '@/api/me/servers/groups/getServerGroupServers.ts';
@@ -60,7 +60,9 @@ export default function ServerGroupItem({
   const { updateServerGroup: updateStateServerGroup, removeServerGroup } = useUserStore();
   const { addToast } = useToast();
 
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(
+    localStorage.getItem(`server-group-expanded-${serverGroup.uuid}`) !== 'false',
+  );
   const [servers, setServers] = useState(getEmptyPaginationSet<Server>());
   const [openModal, setOpenModal] = useState<'edit' | 'delete' | 'add-server' | null>(null);
 
@@ -72,6 +74,10 @@ export default function ServerGroupItem({
     setStoreData: setServers,
     modifyParams: false,
   });
+
+  useEffect(() => {
+    localStorage.setItem(`server-group-expanded-${serverGroup.uuid}`, String(isExpanded));
+  }, [isExpanded, serverGroup.uuid]);
 
   const doDelete = async () => {
     await deleteServerGroup(serverGroup.uuid)

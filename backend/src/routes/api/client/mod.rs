@@ -50,7 +50,7 @@ pub async fn auth(
                 .into_response());
         }
 
-        let (auth_user, session) = match User::by_session(&state.database, session_id.value()).await
+        let (auth_user, session) = match User::by_session_cached(&state.database, session_id.value()).await
         {
             Ok(Some(data)) => data,
             Ok(None) => {
@@ -180,7 +180,7 @@ pub async fn auth(
             .to_str()
             .unwrap_or("")
             .trim_start_matches("Bearer ");
-        let (auth_user, api_key) = match User::by_api_key(&state.database, api_token).await {
+        let (auth_user, api_key) = match User::by_api_key_cached(&state.database, api_token).await {
             Ok(Some(data)) => data,
             Ok(None) => {
                 return Ok(ApiResponse::error("invalid api key")

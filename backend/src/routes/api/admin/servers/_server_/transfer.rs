@@ -96,11 +96,9 @@ mod post {
         };
 
         sqlx::query!(
-            r#"
-            UPDATE servers
+            "UPDATE servers
             SET destination_node_uuid = $2, destination_allocation_uuid = $3
-            WHERE servers.uuid = $1
-            "#,
+            WHERE servers.uuid = $1",
             server.uuid,
             destination_node.uuid,
             destination_allocation_uuid
@@ -110,11 +108,9 @@ mod post {
 
         if !data.allocation_uuids.is_empty() {
             sqlx::query!(
-                r#"
-                INSERT INTO server_allocations (server_uuid, allocation_uuid)
+                "INSERT INTO server_allocations (server_uuid, allocation_uuid)
                 SELECT $1, UNNEST($2::uuid[])
-                ON CONFLICT DO NOTHING
-                "#,
+                ON CONFLICT DO NOTHING",
                 server.uuid,
                 &data.allocation_uuids
             )

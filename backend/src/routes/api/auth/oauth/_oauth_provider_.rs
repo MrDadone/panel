@@ -123,7 +123,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                 }
 
                 let (user, session) =
-                    match User::by_session(&state.database, session_id.value()).await? {
+                    match User::by_session_cached(&state.database, session_id.value()).await? {
                         Some(data) => data,
                         None => {
                             return ApiResponse::error("invalid session")

@@ -52,14 +52,23 @@ mod get {
 
         permissions.has_admin_permission("servers.read")?;
 
-        let logs = server
+        let logs = match server
             .node
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
             .await?
             .get_servers_server_logs_install(server.uuid, params.lines)
-            .await?;
+            .await
+        {
+            Ok(logs) => logs,
+            Err(wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, _)) => {
+                return ApiResponse::error("no install log found")
+                    .with_status(StatusCode::NOT_FOUND)
+                    .ok();
+            }
+            Err(err) => return ApiResponse::from(err).ok(),
+        };
 
         ApiResponse::new_stream(logs)
             .with_header("Content-Type", "text/plain")
