@@ -6,7 +6,7 @@ import { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
-import { isEditableFile, isViewableArchive } from '@/lib/files.ts';
+import { isEditableFile, isViewableArchive, isViewableImage } from '@/lib/files.ts';
 import { bytesToString } from '@/lib/size.ts';
 import FileRowContextMenu from '@/pages/server/files/FileRowContextMenu.tsx';
 import { useServerCan } from '@/plugins/usePermissions.ts';
@@ -43,7 +43,8 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
 
   const handleOpen = () => {
     if (
-      (isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) ||
+      ((isEditableFile(file.mime) || isViewableImage(file.mime)) &&
+        file.size <= settings.server.maxFileManagerViewSize) ||
       file.directory ||
       (isViewableArchive(file) && browsingFastDirectory)
     ) {
@@ -55,7 +56,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
         if (!canOpenFile) return;
 
         navigate(
-          `/server/${server.uuidShort}/files/edit?${createSearchParams({
+          `/server/${server.uuidShort}/files/${isViewableImage(file.mime) ? 'image' : 'edit'}?${createSearchParams({
             directory: browsingDirectory,
             file: file.name,
           })}`,
@@ -111,7 +112,8 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
           className={
             doClickOnce.current &&
             canOpenFile &&
-            ((isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) ||
+            (((isEditableFile(file.mime) || isViewableImage(file.mime)) &&
+              file.size <= settings.server.maxFileManagerViewSize) ||
               file.directory ||
               (isViewableArchive(file) && browsingFastDirectory))
               ? 'cursor-pointer select-none'

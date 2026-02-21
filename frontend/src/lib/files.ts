@@ -25,6 +25,10 @@ export function isViewableArchive(file: DirectoryEntry) {
   );
 }
 
+export function isViewableImage(mimetype: string) {
+  return mimetype.startsWith('image/') && mimetype !== 'image/svg';
+}
+
 export function isEditableFile(mimetype: string) {
   const matches = [
     'application/jar',

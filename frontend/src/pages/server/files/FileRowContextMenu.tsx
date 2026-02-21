@@ -17,7 +17,7 @@ import decompressFile from '@/api/server/files/decompressFile.ts';
 import downloadFiles from '@/api/server/files/downloadFiles.ts';
 import ContextMenu, { ContextMenuItem } from '@/elements/ContextMenu.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
-import { isArchiveType, isEditableFile, isViewableArchive } from '@/lib/files.ts';
+import { isArchiveType, isEditableFile, isViewableArchive, isViewableImage } from '@/lib/files.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/contexts/toastContext.ts';
 import { useWindows } from '@/providers/contexts/windowContext.ts';
@@ -65,7 +65,11 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
           label: 'Open in new Window',
           hidden:
             !matchMedia('(pointer: fine)').matches ||
-            !((isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) || file.directory),
+            !(
+              ((isEditableFile(file.mime) || isViewableImage(file.mime)) &&
+                file.size <= settings.server.maxFileManagerViewSize) ||
+              file.directory
+            ),
           onClick: () =>
             addWindow(
               file.file ? faFile : faFolder,
@@ -76,10 +80,12 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
                     ? `/server/${server.uuidShort}/files?${createSearchParams({
                         directory: `${browsingDirectory}/${file.name}`.replace('//', '/'),
                       })}`
-                    : `/server/${server.uuidShort}/files/edit?${createSearchParams({
-                        directory: browsingDirectory,
-                        file: file.name,
-                      })}`,
+                    : `/server/${server.uuidShort}/files/${isViewableImage(file.mime) ? 'image' : 'edit'}?${createSearchParams(
+                        {
+                          directory: browsingDirectory,
+                          file: file.name,
+                        },
+                      )}`,
                 ]}
               >
                 <RouterRoutes isNormal={false} />
