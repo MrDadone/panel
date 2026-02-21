@@ -132,34 +132,15 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                         }
                     };
 
-                state
-                    .database
-                    .batch_action("update_user_session", session.uuid, {
-                        let state = state.clone();
-                        let user_agent = shared::utils::slice_up_to(
-                            headers
-                                .get("User-Agent")
-                                .and_then(|ua| ua.to_str().ok())
-                                .unwrap_or("unknown"),
-                            255,
-                        )
-                        .to_string();
-
-                        async move {
-                            sqlx::query!(
-                                "UPDATE user_sessions
-                                SET ip = $1, user_agent = $2, last_used = NOW()
-                                WHERE user_sessions.uuid = $3",
-                                sqlx::types::ipnetwork::IpNetwork::from(ip.0),
-                                user_agent,
-                                session.uuid,
-                            )
-                            .execute(state.database.write())
-                            .await?;
-
-                            Ok(())
-                        }
-                    })
+                session
+                    .update_last_used(
+                        &state.database,
+                        ip.0,
+                        headers
+	                          .get("User-Agent")
+		                        .and_then(|ua| ua.to_str().ok())
+		                        .unwrap_or("unknown")
+                    )
                     .await;
 
                 let settings = state.settings.get().await?;

@@ -56,7 +56,7 @@ async fn handle_request(
     );
 
     Ok(shared::response::APP_DEBUG
-        .scope(state.env.app_debug, async {
+        .scope(state.env.is_debug(), async {
             shared::response::ACCEPT_HEADER
                 .scope(
                     shared::response::accept_from_headers(req.headers()),
@@ -109,8 +109,12 @@ async fn handle_postprocessing(req: Request, next: Next) -> Result<Response, Sta
     }
 
     let (etag, mut response) = if let Some(etag) = response.headers().get("ETag") {
-        (etag.to_str().unwrap().to_string(), response)
-    } else {
+        (etag.to_str().map(|e| e.to_string()).ok(), response)
+    } else if response
+        .headers()
+        .get("Content-Type")
+        .is_some_and(|c| c.to_str().is_ok_and(|c| c != "text/plain"))
+    {
         let (mut parts, body) = response.into_parts();
         let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
 
@@ -120,10 +124,18 @@ async fn handle_postprocessing(req: Request, next: Next) -> Result<Response, Sta
 
         parts.headers.insert("ETag", hash.parse().unwrap());
 
-        (hash, Response::from_parts(parts, Body::from(body_bytes)))
+        (
+            Some(hash),
+            Response::from_parts(parts, Body::from(body_bytes)),
+        )
+    } else {
+        (None, response)
     };
 
-    if if_none_match == Some(etag) {
+    // we cant directly compare because if both are None, It'd return NOT_MODIFIED
+    if let Some(etag) = etag
+        && if_none_match == Some(etag)
+    {
         let mut cached_response = Response::builder()
             .status(StatusCode::NOT_MODIFIED)
             .body(Body::empty())
@@ -156,7 +168,15 @@ async fn main() {
         .init_cli(env.as_ref().ok().map(|e| &e.0), cli)
         .await;
 
-    match cli.get_matches().remove_subcommand() {
+    let mut matches = cli.get_matches();
+    let debug = *matches.get_one::<bool>("debug").unwrap();
+
+    if debug && let Ok((env, _)) = &env {
+        env.app_debug
+            .store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    match matches.remove_subcommand() {
         Some((command, arg_matches)) => {
             if let Some((func, arg_matches)) = cli.match_command(command, arg_matches) {
                 match func(env.as_ref().ok().map(|e| e.0.clone()), arg_matches).await {
@@ -165,6 +185,7 @@ async fn main() {
                         std::process::exit(exit_code);
                     }
                     Err(err) => {
+                        drop(env);
                         if let Some(shared::database::DatabaseError::Validation(error)) =
                             err.downcast_ref::<shared::database::DatabaseError>()
                         {

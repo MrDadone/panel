@@ -180,6 +180,31 @@ impl UserApiKey {
         .rows_affected())
     }
 
+    pub async fn update_last_used(&self, database: &Arc<crate::database::Database>) {
+        let uuid = self.uuid;
+        let now = chrono::Utc::now().naive_utc();
+
+        database
+            .batch_action("update_user_api_key", uuid, {
+                let database = database.clone();
+
+                async move {
+                    sqlx::query!(
+                        "UPDATE user_api_keys
+                        SET last_used = $2
+                        WHERE user_api_keys.uuid = $1",
+                        uuid,
+                        now
+                    )
+                    .execute(database.write())
+                    .await?;
+
+                    Ok(())
+                }
+            })
+            .await;
+    }
+
     #[inline]
     pub fn into_api_object(self) -> ApiUserApiKey {
         ApiUserApiKey {

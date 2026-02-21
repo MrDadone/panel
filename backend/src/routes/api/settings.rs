@@ -52,7 +52,7 @@ mod get {
         ApiResponse::new_serialized(Response {
             version: &state.version,
             oobe_step: settings.oobe_step.as_deref(),
-            app_debug: state.env.app_debug,
+            app_debug: state.env.is_debug(),
             captcha_provider: settings.captcha_provider.to_public_provider(),
             app: ResponseApp {
                 url: &settings.app.url,

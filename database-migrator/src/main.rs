@@ -11,7 +11,15 @@ async fn main() {
     );
     let mut cli = database_migrator::commands::commands(cli);
 
-    match cli.get_matches().remove_subcommand() {
+    let mut matches = cli.get_matches();
+    let debug = *matches.get_one::<bool>("debug").unwrap();
+
+    if debug && let Ok((env, _)) = &env {
+        env.app_debug
+            .store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    match matches.remove_subcommand() {
         Some((command, arg_matches)) => {
             if let Some((func, arg_matches)) = cli.match_command(command, arg_matches) {
                 match func(env.as_ref().ok().map(|e| e.0.clone()), arg_matches).await {
@@ -20,6 +28,7 @@ async fn main() {
                         std::process::exit(exit_code);
                     }
                     Err(err) => {
+                        drop(env);
                         eprintln!(
                             "{}: {:?}",
                             "an error occurred while running cli command".red(),

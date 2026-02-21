@@ -86,7 +86,7 @@ impl shared::extensions::commands::CliCommand<DiagnosticsArgs> for DiagnosticsCo
                     "timezone",
                     &format!("{}", chrono::Local::now().offset()),
                 );
-                write_line(&mut output, "debug mode", &env.app_debug.to_string());
+                write_line(&mut output, "debug mode", &env.is_debug().to_string());
 
                 write_header(&mut output, "latest panel-rs logs");
                 if let Some(app_log_directory) = &env.app_log_directory {
