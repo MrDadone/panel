@@ -24,8 +24,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const [modalDirectoryEntry, setModalDirectoryEntry] = useState<DirectoryEntry | null>(null);
   const [searchInfo, setSearchInfo] = useState<SearchInfo | null>(null);
-
-  const doClickOnce = useRef(localStorage.getItem('file_click_once') === 'true');
+  const [clickOnce, setClickOnce] = useState(localStorage.getItem('file_click_once') !== 'false');
 
   const invalidateFilemanager = () => {
     queryClient
@@ -91,6 +90,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         openModal,
         modalDirectoryEntry,
         searchInfo,
+        clickOnce,
         setSelectedFiles,
         addSelectedFile,
         removeSelectedFile,
@@ -104,7 +104,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         doCloseModal,
         setModalDirectoryEntry,
         setSearchInfo,
-        doClickOnce,
+        setClickOnce,
         fileUploader,
         invalidateFilemanager,
       }}

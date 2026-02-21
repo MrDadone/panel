@@ -105,7 +105,7 @@ const FileRow = memo(
               label: 'Open in new Window',
               hidden:
                 !matchMedia('(pointer: fine)').matches ||
-                !((isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) || file.directory),
+                !((isEditableFile(file) && file.size <= settings.server.maxFileManagerViewSize) || file.directory),
               onClick: () =>
                 addWindow(
                   file.file ? faFile : faFolder,
@@ -157,7 +157,7 @@ const FileRow = memo(
               color: 'gray',
               canAccess: useServerCan('files.update'),
             },
-            isArchiveType(file.mime) && !browsingBackup
+            isArchiveType(file) && !browsingBackup
               ? {
                   icon: faEnvelopesBulk,
                   label: 'Unarchive',

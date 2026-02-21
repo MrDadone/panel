@@ -28,14 +28,8 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
   const [_, setSearchParams] = useSearchParams();
   const canOpenActionBar = useServerCan(['files.read-content', 'files.archive', 'files.update', 'files.delete'], true);
   const { server } = useServerStore();
-  const {
-    browsingDirectory,
-    browsingFastDirectory,
-    setSelectedFiles,
-    addSelectedFile,
-    removeSelectedFile,
-    doClickOnce,
-  } = useFileManager();
+  const { browsingDirectory, browsingFastDirectory, setSelectedFiles, addSelectedFile, removeSelectedFile, clickOnce } =
+    useFileManager();
   const { settings } = useGlobalStore();
   const canOpenFile = useServerCan('files.read-content');
 
@@ -43,8 +37,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
 
   const handleOpen = () => {
     if (
-      ((isEditableFile(file.mime) || isViewableImage(file.mime)) &&
-        file.size <= settings.server.maxFileManagerViewSize) ||
+      ((isEditableFile(file) || isViewableImage(file)) && file.size <= settings.server.maxFileManagerViewSize) ||
       file.directory ||
       (isViewableArchive(file) && browsingFastDirectory)
     ) {
@@ -56,7 +49,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
         if (!canOpenFile) return;
 
         navigate(
-          `/server/${server.uuidShort}/files/${isViewableImage(file.mime) ? 'image' : 'edit'}?${createSearchParams({
+          `/server/${server.uuidShort}/files/${isViewableImage(file) ? 'image' : 'edit'}?${createSearchParams({
             directory: browsingDirectory,
             file: file.name,
           })}`,
@@ -110,10 +103,9 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
         <TableRow
           ref={ref}
           className={
-            doClickOnce.current &&
+            clickOnce &&
             canOpenFile &&
-            (((isEditableFile(file.mime) || isViewableImage(file.mime)) &&
-              file.size <= settings.server.maxFileManagerViewSize) ||
+            (((isEditableFile(file) || isViewableImage(file)) && file.size <= settings.server.maxFileManagerViewSize) ||
               file.directory ||
               (isViewableArchive(file) && browsingFastDirectory))
               ? 'cursor-pointer select-none'
@@ -126,7 +118,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
           }}
           onClick={(e) => {
             e.preventDefault();
-            if (doClickOnce.current) {
+            if (clickOnce) {
               handleOpen();
             } else {
               handleClick();

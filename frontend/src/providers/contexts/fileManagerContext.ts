@@ -34,6 +34,7 @@ export interface FileManagerContextType {
   openModal: ModalType;
   modalDirectoryEntry: DirectoryEntry | null;
   searchInfo: SearchInfo | null;
+  clickOnce: boolean;
 
   setSelectedFiles: (files: string[]) => void;
   addSelectedFile: (file: DirectoryEntry) => void;
@@ -48,8 +49,8 @@ export interface FileManagerContextType {
   doCloseModal: () => void;
   setModalDirectoryEntry: (directoryEntry: DirectoryEntry) => void;
   setSearchInfo: (info: SearchInfo | null) => void;
+  setClickOnce: (clickOnce: boolean) => void;
 
-  doClickOnce: RefObject<boolean>;
   fileUploader: FileUploader;
   invalidateFilemanager: () => void;
 }

@@ -88,7 +88,7 @@ export const FileTableRow = memo(
     const handleClick = useCallback(
       (e: React.MouseEvent<HTMLTableRowElement>) => {
         if (
-          (isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) ||
+          (isEditableFile(file) && file.size <= settings.server.maxFileManagerViewSize) ||
           file.directory ||
           (isViewableArchive(file) && browsingFastDirectory)
         ) {
@@ -140,7 +140,7 @@ export const FileTableRow = memo(
         ref={combinedRef}
         className={
           canOpenFile &&
-          ((isEditableFile(file.mime) && file.size <= settings.server.maxFileManagerViewSize) ||
+          ((isEditableFile(file) && file.size <= settings.server.maxFileManagerViewSize) ||
             file.directory ||
             (isViewableArchive(file) && browsingFastDirectory))
             ? 'cursor-pointer select-none'

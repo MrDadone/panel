@@ -66,7 +66,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
           hidden:
             !matchMedia('(pointer: fine)').matches ||
             !(
-              ((isEditableFile(file.mime) || isViewableImage(file.mime)) &&
+              ((isEditableFile(file) || isViewableImage(file)) &&
                 file.size <= settings.server.maxFileManagerViewSize) ||
               file.directory
             ),
@@ -80,7 +80,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
                     ? `/server/${server.uuidShort}/files?${createSearchParams({
                         directory: `${browsingDirectory}/${file.name}`.replace('//', '/'),
                       })}`
-                    : `/server/${server.uuidShort}/files/${isViewableImage(file.mime) ? 'image' : 'edit'}?${createSearchParams(
+                    : `/server/${server.uuidShort}/files/${isViewableImage(file) ? 'image' : 'edit'}?${createSearchParams(
                         {
                           directory: browsingDirectory,
                           file: file.name,
@@ -123,7 +123,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
           color: 'gray',
           canAccess: useServerCan('files.update'),
         },
-        isArchiveType(file.mime) && !browsingBackup
+        isArchiveType(file) && !browsingBackup
           ? {
               icon: faEnvelopesBulk,
               label: 'Unarchive',

@@ -45,12 +45,14 @@ export default function FileEditor() {
     if (params.action === 'new') return;
 
     setLoading(true);
-    getFileContent(server.uuid, join(browsingDirectory, fileName)).then((content) => {
-      startTransition(() => {
-        setContent(content);
-        setLoading(false);
+    getFileContent(server.uuid, join(browsingDirectory, fileName))
+      .then((c) => c.text())
+      .then((content) => {
+        startTransition(() => {
+          setContent(content);
+          setLoading(false);
+        });
       });
-    });
   }, [fileName]);
 
   useEffect(() => {

@@ -7,11 +7,11 @@ import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
 
 export default function FileSettings() {
-  const { doClickOnce } = useFileManager();
+  const { clickOnce, setClickOnce } = useFileManager();
 
   useEffect(() => {
-    localStorage.setItem('file_click_once', String(doClickOnce.current));
-  }, [doClickOnce.current]);
+    localStorage.setItem('file_click_once', String(clickOnce));
+  }, [clickOnce]);
 
   return (
     <Popover position='bottom' withArrow shadow='md'>
@@ -23,8 +23,8 @@ export default function FileSettings() {
       <Popover.Dropdown>
         <Checkbox
           label='Click once to open file or folder'
-          checked={doClickOnce.current}
-          onChange={(e) => (doClickOnce.current = e.target.checked)}
+          checked={clickOnce}
+          onChange={(e) => setClickOnce(e.target.checked)}
         />
       </Popover.Dropdown>
     </Popover>
