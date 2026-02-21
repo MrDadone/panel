@@ -755,7 +755,7 @@ async fn main() {
                                 style-src 'self' 'unsafe-inline' {style_csp}; \
                                 connect-src *; \
                                 font-src 'self' data:; \
-                                img-src *; \
+                                img-src * blob:; \
                                 media-src 'self'; \
                                 object-src 'none'; \
                                 base-uri 'self'; \
