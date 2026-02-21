@@ -89,9 +89,7 @@ mod get {
             )
             .await;
 
-        ApiResponse::new_stream(contents)
-            .with_header("Content-Type", "text/plain")
-            .ok()
+        ApiResponse::new_stream(contents).ok()
     }
 }
 

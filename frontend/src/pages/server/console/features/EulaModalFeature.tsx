@@ -30,7 +30,7 @@ export default function EulaModal() {
     try {
       let content: string;
       try {
-        content = await getFileContent(server.uuid, '/eula.txt');
+        content = await getFileContent(server.uuid, '/eula.txt').then((c) => c.text());
       } catch {
         content = 'eula=false';
       }
