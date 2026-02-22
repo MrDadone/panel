@@ -1,4 +1,4 @@
-import { ChangeEvent, forwardRef, memo, useEffect } from "react";
+import { forwardRef } from 'react';
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
@@ -34,12 +34,7 @@ const AssetRow = forwardRef<HTMLTableRowElement, AssetRowProps>(function AssetRo
       ref={ref}
     >
       <td className='pl-4 relative cursor-pointer w-10 text-center'>
-        <Checkbox
-          id={asset.name}
-          checked={isSelected}
-          onChange={toggleSelected}
-          onClick={(e) => e.stopPropagation()}
-        />
+        <Checkbox id={asset.name} checked={isSelected} onChange={toggleSelected} onClick={(e) => e.stopPropagation()} />
       </td>
 
       <TableData>
