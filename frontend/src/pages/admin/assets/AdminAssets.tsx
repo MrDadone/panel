@@ -76,6 +76,20 @@ export default function AdminAssets() {
     setSelectedAssets(new Set([]));
   }, []);
 
+  const addSelectedAsset = (assetName: string) =>
+    setSelectedAssets((prev) => {
+      const next = new Set(prev);
+      next.add(assetName);
+      return next;
+    });
+
+  const removeSelectedAsset = (assetName: string) =>
+    setSelectedAssets((prev) => {
+      const next = new Set(prev);
+      next.delete(assetName);
+      return next;
+    });
+
   useKeyboardShortcuts({
     shortcuts: [
       {
@@ -135,8 +149,8 @@ export default function AdminAssets() {
                     key={asset.name}
                     asset={asset}
                     isSelected={selectedAssets.has(asset.name)}
-                    addSelectedAsset={(assetName) => selectedAssets.add(assetName)}
-                    removeSelectedAsset={(assetName) => selectedAssets.delete(assetName)}
+                    addSelectedAsset={addSelectedAsset}
+                    removeSelectedAsset={removeSelectedAsset}
                     ref={innerRef as Ref<HTMLTableRowElement>}
                   />
                 )}

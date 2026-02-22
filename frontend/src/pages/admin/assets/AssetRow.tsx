@@ -1,4 +1,4 @@
-import { forwardRef, memo } from 'react';
+import { ChangeEvent, forwardRef, memo, useEffect } from "react";
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
@@ -14,53 +14,47 @@ interface AssetRowProps {
   removeSelectedAsset: (name: string) => void;
 }
 
-const AssetRow = memo(
-  forwardRef<HTMLTableRowElement, AssetRowProps>(function AssetRow(
-    { asset, isSelected, addSelectedAsset, removeSelectedAsset },
-    ref,
-  ) {
-    return (
-      <TableRow
-        bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}
-        onClick={(e) => {
-          if (e.ctrlKey || e.metaKey) {
-            addSelectedAsset(asset.name);
-            return true;
-          }
+const AssetRow = forwardRef<HTMLTableRowElement, AssetRowProps>(function AssetRow(
+  { asset, isSelected, addSelectedAsset, removeSelectedAsset },
+  ref,
+) {
+  const toggleSelected = () => (isSelected ? removeSelectedAsset(asset.name) : addSelectedAsset(asset.name));
 
-          return false;
-        }}
-        ref={ref}
-      >
-        <td className='pl-4 relative cursor-pointer w-10 text-center'>
-          <Checkbox
-            id={asset.name}
-            checked={isSelected}
-            onChange={() => {
-              if (isSelected) {
-                removeSelectedAsset(asset.name);
-              } else {
-                addSelectedAsset(asset.name);
-              }
-            }}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </td>
+  return (
+    <TableRow
+      bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}
+      onClick={(e) => {
+        if (e.ctrlKey || e.metaKey) {
+          addSelectedAsset(asset.name);
+          return true;
+        }
 
-        <TableData>
-          <NavLink to={asset.url} target='_blank' className='text-blue-400 hover:text-blue-200 hover:underline'>
-            <Code>{asset.name}</Code>
-          </NavLink>
-        </TableData>
+        return false;
+      }}
+      ref={ref}
+    >
+      <td className='pl-4 relative cursor-pointer w-10 text-center'>
+        <Checkbox
+          id={asset.name}
+          checked={isSelected}
+          onChange={toggleSelected}
+          onClick={(e) => e.stopPropagation()}
+        />
+      </td>
 
-        <TableData>{bytesToString(asset.size)}</TableData>
+      <TableData>
+        <NavLink to={asset.url} target='_blank' className='text-blue-400 hover:text-blue-200 hover:underline'>
+          <Code>{asset.name}</Code>
+        </NavLink>
+      </TableData>
 
-        <TableData>
-          <FormattedTimestamp timestamp={asset.created} />
-        </TableData>
-      </TableRow>
-    );
-  }),
-);
+      <TableData>{bytesToString(asset.size)}</TableData>
+
+      <TableData>
+        <FormattedTimestamp timestamp={asset.created} />
+      </TableData>
+    </TableRow>
+  );
+});
 
 export default AssetRow;
