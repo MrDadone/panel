@@ -187,7 +187,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                     }
                 };
 
-                let cache = Arc::new(shared::cache::Cache::new(&env).await);
+                let cache = shared::cache::Cache::new(&env).await;
                 let database = Arc::new(shared::database::Database::new(&env, cache.clone()).await);
                 let settings = Arc::new(
                     shared::settings::Settings::new(database.clone())

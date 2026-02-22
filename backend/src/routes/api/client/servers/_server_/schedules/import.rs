@@ -48,6 +48,15 @@ mod post {
 
         permissions.has_server_permission("schedules.create")?;
 
+        let schedules_lock = state
+            .cache
+            .lock(
+                format!("servers::{}::schedules", server.uuid),
+                Some(30),
+                Some(5),
+            )
+            .await?;
+
         let schedules = ServerSchedule::count_by_server_uuid(&state.database, server.uuid).await;
         if schedules >= server.schedule_limit as i64 {
             return ApiResponse::error("maximum number of schedules reached")
@@ -88,6 +97,7 @@ mod post {
         }
 
         drop(settings);
+        drop(schedules_lock);
 
         activity_logger
             .log(

@@ -36,7 +36,7 @@ impl shared::extensions::commands::CliCommand<StatusArgs> for StatusCommand {
                     }
                 };
 
-                let cache = Arc::new(shared::cache::Cache::new(&env).await);
+                let cache = shared::cache::Cache::new(&env).await;
                 let database = Arc::new(shared::database::Database::new(&env, cache.clone()).await);
 
                 crate::ensure_migrations_table(database.write()).await?;

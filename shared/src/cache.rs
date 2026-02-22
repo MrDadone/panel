@@ -4,7 +4,9 @@ use colored::Colorize;
 use compact_str::ToCompactString;
 use rustis::{
     client::Client,
-    commands::{GenericCommands, InfoSection, ServerCommands, SetExpiration, StringCommands},
+    commands::{
+        GenericCommands, InfoSection, ServerCommands, SetCondition, SetExpiration, StringCommands,
+    },
     resp::BulkString,
 };
 use serde::{Serialize, de::DeserializeOwned};
@@ -18,18 +20,23 @@ use std::{
 };
 
 #[derive(Clone, Debug)]
-struct InternalEntry {
+struct DataEntry {
     data: Arc<Vec<u8>>,
     intended_ttl: Duration,
 }
 
-struct DynamicExpiry;
+#[derive(Clone, Debug)]
+struct LockEntry {
+    semaphore: Arc<tokio::sync::Semaphore>,
+}
 
-impl moka::Expiry<compact_str::CompactString, InternalEntry> for DynamicExpiry {
+struct DataExpiry;
+
+impl moka::Expiry<compact_str::CompactString, DataEntry> for DataExpiry {
     fn expire_after_create(
         &self,
         _key: &compact_str::CompactString,
-        value: &InternalEntry,
+        value: &DataEntry,
         _created_at: Instant,
     ) -> Option<Duration> {
         Some(value.intended_ttl)
@@ -39,7 +46,8 @@ impl moka::Expiry<compact_str::CompactString, InternalEntry> for DynamicExpiry {
 pub struct Cache {
     pub client: Arc<Client>,
     use_internal_cache: bool,
-    local: moka::future::Cache<compact_str::CompactString, InternalEntry>,
+    local: moka::future::Cache<compact_str::CompactString, DataEntry>,
+    local_locks: moka::future::Cache<compact_str::CompactString, LockEntry>,
 
     cache_calls: AtomicU64,
     cache_latency_ns_total: AtomicU64,
@@ -48,7 +56,7 @@ pub struct Cache {
 }
 
 impl Cache {
-    pub async fn new(env: &crate::env::Env) -> Self {
+    pub async fn new(env: &crate::env::Env) -> Arc<Self> {
         let start = std::time::Instant::now();
 
         let client = Arc::new(match &env.redis_mode {
@@ -67,20 +75,23 @@ impl Cache {
             .unwrap(),
         });
 
-        let local_cache = moka::future::Cache::builder()
-            .max_capacity(65536)
-            .expire_after(DynamicExpiry)
+        let local = moka::future::Cache::builder()
+            .max_capacity(16_384)
+            .expire_after(DataExpiry)
             .build();
 
-        let instance = Self {
+        let local_locks = moka::future::Cache::builder().max_capacity(4_096).build();
+
+        let instance = Arc::new(Self {
             client,
             use_internal_cache: env.app_use_internal_cache,
-            local: local_cache,
+            local,
+            local_locks,
             cache_calls: AtomicU64::new(0),
             cache_latency_ns_total: AtomicU64::new(0),
             cache_latency_ns_max: AtomicU64::new(0),
             cache_misses: AtomicU64::new(0),
-        };
+        });
 
         let version = instance
             .version()
@@ -153,6 +164,92 @@ impl Cache {
         Ok(())
     }
 
+    #[tracing::instrument(skip(self))]
+    pub async fn lock(
+        &self,
+        lock_id: impl Into<compact_str::CompactString> + std::fmt::Debug,
+        ttl: Option<u64>,
+        timeout: Option<u64>,
+    ) -> Result<CacheLock, anyhow::Error> {
+        let lock_id = lock_id.into();
+        let redis_key = compact_str::format_compact!("lock::{}", lock_id);
+        let ttl_secs = ttl.unwrap_or(30);
+        let deadline = timeout.map(|ms| Instant::now() + Duration::from_secs(ms));
+
+        tracing::debug!("acquiring cache lock");
+
+        let entry = self
+            .local_locks
+            .entry(lock_id.clone())
+            .or_insert_with(async {
+                LockEntry {
+                    semaphore: Arc::new(tokio::sync::Semaphore::new(1)),
+                }
+            })
+            .await
+            .into_value();
+
+        let permit = match deadline {
+            Some(dl) => {
+                let remaining = dl.saturating_duration_since(Instant::now());
+                tokio::time::timeout(remaining, entry.semaphore.acquire_owned())
+                    .await
+                    .map_err(|_| anyhow::anyhow!("timed out waiting for cache lock `{}`", lock_id))?
+                    .map_err(|_| anyhow::anyhow!("semaphore closed for lock `{}`", lock_id))?
+            }
+            None => entry
+                .semaphore
+                .acquire_owned()
+                .await
+                .map_err(|_| anyhow::anyhow!("semaphore closed for lock `{}`", lock_id))?,
+        };
+
+        match self
+            .try_acquire_redis_lock(&redis_key, ttl_secs, deadline)
+            .await?
+        {
+            true => {
+                tracing::debug!("acquired cache lock");
+                Ok(CacheLock::new(lock_id, self.client.clone(), permit, ttl))
+            }
+            false => anyhow::bail!("timed out acquiring redis lock `{}`", lock_id),
+        }
+    }
+
+    async fn try_acquire_redis_lock(
+        &self,
+        redis_key: &compact_str::CompactString,
+        ttl_secs: u64,
+        deadline: Option<Instant>,
+    ) -> Result<bool, anyhow::Error> {
+        loop {
+            let acquired = self
+                .client
+                .set_with_options(
+                    redis_key.as_str(),
+                    "1",
+                    SetCondition::NX,
+                    SetExpiration::Ex(ttl_secs),
+                )
+                .await
+                .unwrap_or(false);
+
+            if acquired {
+                return Ok(true);
+            }
+
+            if let Some(dl) = deadline {
+                let remaining = dl.saturating_duration_since(Instant::now());
+                if remaining.is_zero() {
+                    return Ok(false);
+                }
+                tokio::time::sleep(remaining.min(Duration::from_millis(50))).await;
+            } else {
+                tokio::time::sleep(Duration::from_millis(50)).await;
+            }
+        }
+    }
+
     #[tracing::instrument(skip(self, fn_compute))]
     pub async fn cached<
         T: Serialize + DeserializeOwned + Send,
@@ -192,10 +289,8 @@ impl Cache {
 
                 if let Some(value) = cached_value {
                     tracing::debug!("found in redis cache");
-                    let data = value.to_vec();
-
-                    return Ok(InternalEntry {
-                        data: Arc::new(data),
+                    return Ok(DataEntry {
+                        data: Arc::new(value.to_vec()),
                         intended_ttl: effective_moka_ttl,
                     });
                 }
@@ -213,7 +308,7 @@ impl Cache {
                     .set_with_options(key, serialized_arc.as_slice(), None, SetExpiration::Ex(ttl))
                     .await;
 
-                Ok::<_, anyhow::Error>(InternalEntry {
+                Ok::<_, anyhow::Error>(DataEntry {
                     data: serialized_arc,
                     intended_ttl: effective_moka_ttl,
                 })
@@ -237,10 +332,7 @@ impl Cache {
         );
 
         match entry {
-            Ok(internal_entry) => {
-                let val = rmp_serde::from_slice::<T>(&internal_entry.data)?;
-                Ok(val)
-            }
+            Ok(internal_entry) => Ok(rmp_serde::from_slice::<T>(&internal_entry.data)?),
             Err(arc_error) => Err(anyhow::anyhow!("cache computation failed: {:?}", arc_error)),
         }
     }
@@ -269,6 +361,65 @@ impl Cache {
             0
         } else {
             self.cache_latency_ns_total.load(Ordering::Relaxed) / calls
+        }
+    }
+}
+
+pub struct CacheLock {
+    lock_id: Option<compact_str::CompactString>,
+    redis_client: Arc<Client>,
+    permit: Option<tokio::sync::OwnedSemaphorePermit>,
+    ttl_guard: Option<tokio::task::JoinHandle<()>>,
+}
+
+impl CacheLock {
+    fn new(
+        lock_id: compact_str::CompactString,
+        redis_client: Arc<Client>,
+        permit: tokio::sync::OwnedSemaphorePermit,
+        ttl: Option<u64>,
+    ) -> Self {
+        let ttl_guard = ttl.map(|secs| {
+            let lock_id = lock_id.clone();
+            let redis_client = redis_client.clone();
+
+            tokio::spawn(async move {
+                tokio::time::sleep(Duration::from_secs(secs)).await;
+                tracing::warn!(%lock_id, "cache lock TTL expired; force-releasing");
+                let redis_key = compact_str::format_compact!("lock::{}", lock_id);
+                let _ = redis_client.del(&redis_key).await;
+            })
+        });
+
+        Self {
+            lock_id: Some(lock_id),
+            redis_client,
+            permit: Some(permit),
+            ttl_guard,
+        }
+    }
+
+    #[inline]
+    pub fn is_active(&self) -> bool {
+        self.lock_id.is_some() && self.ttl_guard.as_ref().is_none_or(|h| !h.is_finished())
+    }
+}
+
+impl Drop for CacheLock {
+    fn drop(&mut self) {
+        if let Some(ttl_guard) = self.ttl_guard.take() {
+            ttl_guard.abort();
+        }
+
+        self.permit.take();
+
+        if let Some(lock_id) = self.lock_id.take() {
+            let redis_client = self.redis_client.clone();
+
+            tokio::spawn(async move {
+                let redis_key = compact_str::format_compact!("lock::{}", lock_id);
+                let _ = redis_client.del(&redis_key).await;
+            });
         }
     }
 }

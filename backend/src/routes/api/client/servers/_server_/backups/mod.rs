@@ -141,6 +141,15 @@ mod post {
 
         permissions.has_server_permission("backups.create")?;
 
+        let backups_lock = state
+            .cache
+            .lock(
+                format!("servers::{}::backups", server.uuid),
+                Some(30),
+                Some(5),
+            )
+            .await?;
+
         let backups = ServerBackup::count_by_server_uuid(&state.database, server.uuid).await;
         if backups >= server.backup_limit as i64 {
             return ApiResponse::error("maximum number of backups reached")
@@ -164,6 +173,8 @@ mod post {
             ignored_files: data.ignored_files,
         };
         let backup = ServerBackup::create(&state, options).await?;
+
+        drop(backups_lock);
 
         activity_logger
             .log(

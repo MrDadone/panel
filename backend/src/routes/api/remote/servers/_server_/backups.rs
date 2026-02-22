@@ -52,6 +52,15 @@ mod post {
                 .ok();
         }
 
+        let backups_lock = state
+            .cache
+            .lock(
+                format!("servers::{}::backups", server.uuid),
+                Some(30),
+                Some(5),
+            )
+            .await?;
+
         let backups = ServerBackup::count_by_server_uuid(&state.database, server.uuid).await;
         if backups >= server.backup_limit as i64
             && let Err(err) = ServerBackup::delete_oldest_by_server_uuid(&state, &server).await
@@ -78,10 +87,9 @@ mod post {
             name: data.name.unwrap_or_else(ServerBackup::default_name),
             ignored_files: data.ignored_files,
         };
-        let backup = match ServerBackup::create_raw(&state, options).await {
-            Ok(backup) => backup,
-            Err(err) => return ApiResponse::from(err).ok(),
-        };
+        let backup = ServerBackup::create_raw(&state, options).await?;
+
+        drop(backups_lock);
 
         if let Err(err) = ServerActivity::create(
             &state,

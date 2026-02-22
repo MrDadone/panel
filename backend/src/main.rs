@@ -256,7 +256,7 @@ async fn main() {
     ));
 
     let jwt = Arc::new(shared::jwt::Jwt::new(&env));
-    let cache = Arc::new(shared::cache::Cache::new(&env).await);
+    let cache = shared::cache::Cache::new(&env).await;
     let database = Arc::new(shared::database::Database::new(&env, cache.clone()).await);
 
     if env.database_migrate {
@@ -659,6 +659,13 @@ async fn main() {
                 };
 
                 if (entry.as_file().is_none() || is_index) && path.starts_with("assets") {
+                    // technically not needed (cap filesystem) but never hurts
+                    if path.contains("..") {
+                        return ApiResponse::error("file not found")
+                            .with_status(StatusCode::NOT_FOUND)
+                            .ok();
+                    }
+
                     let settings = state.settings.get().await?;
 
                     let base_filesystem = match settings.storage_driver.get_cap_filesystem().await {

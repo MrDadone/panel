@@ -9,6 +9,7 @@ validator = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
 chrono = { workspace = true }
+chrono-tz = { workspace = true }
 uuid = { workspace = true }
 regex = { workspace = true }
 compact_str = { workspace = true }

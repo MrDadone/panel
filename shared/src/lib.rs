@@ -127,7 +127,7 @@ impl AppState {
         };
 
         let jwt = Arc::new(jwt::Jwt::new(&env));
-        let cache = Arc::new(cache::Cache::new(&env).await);
+        let cache = cache::Cache::new(&env).await;
         let database = Arc::new(database::Database::new(&env, cache.clone()).await);
 
         let background_tasks =

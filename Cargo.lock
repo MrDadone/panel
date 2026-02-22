@@ -5028,6 +5028,7 @@ name = "rule-validator"
 version = "0.19.0"
 dependencies = [
  "chrono",
+ "chrono-tz",
  "compact_str",
  "regex",
  "reqwest 0.13.2",
