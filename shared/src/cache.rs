@@ -121,12 +121,12 @@ impl Cache {
         limit_identifier: impl AsRef<str>,
         limit: u64,
         limit_window: u64,
-        client: impl Into<String>,
+        client: impl AsRef<str>,
     ) -> Result<(), ApiResponse> {
-        let key = format!(
+        let key = compact_str::format_compact!(
             "ratelimit::{}::{}",
             limit_identifier.as_ref(),
-            client.into()
+            client.as_ref()
         );
 
         let now = chrono::Utc::now().timestamp();

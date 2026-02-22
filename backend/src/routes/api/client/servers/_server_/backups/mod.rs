@@ -151,10 +151,10 @@ mod post {
         state
             .cache
             .ratelimit(
-                format!("client/servers/{}/backups/create", server.uuid),
+                "client/servers/backups/create",
                 4,
                 300,
-                server.uuid,
+                server.uuid.to_string(),
             )
             .await?;
 

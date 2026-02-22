@@ -47,10 +47,10 @@ mod post {
         state
             .cache
             .ratelimit(
-                format!("client/servers/{}/files/pull/query", server.uuid),
+                "client/servers/files/pull/query",
                 10,
                 60,
-                server.uuid,
+                server.uuid.to_string(),
             )
             .await?;
 

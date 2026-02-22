@@ -671,7 +671,9 @@ async fn main() {
                     };
                     drop(settings);
 
-                    let metadata = match base_filesystem.async_metadata(path).await {
+                    let path = urlencoding::decode(path)?;
+
+                    let metadata = match base_filesystem.async_metadata(&*path).await {
                         Ok(metadata) => metadata,
                         Err(_) => {
                             return ApiResponse::error("file not found")
@@ -680,7 +682,7 @@ async fn main() {
                         }
                     };
 
-                    let tokio_file = match base_filesystem.async_open(path).await {
+                    let tokio_file = match base_filesystem.async_open(&*path).await {
                         Ok(file) => file,
                         Err(_) => {
                             return ApiResponse::error("file not found")

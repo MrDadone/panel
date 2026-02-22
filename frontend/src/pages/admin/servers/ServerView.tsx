@@ -89,7 +89,7 @@ export default function ServerView() {
           {
             name: 'View',
             icon: faExternalLink,
-            link: `/server/${params.id}`,
+            link: `/server/${server.uuidShort}`,
             permission: 'servers.read',
           },
         ]}
