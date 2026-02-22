@@ -102,7 +102,7 @@ function FileOperationsProgress() {
         })}
 
         {Array.from(uploadingFiles).map(([key, file]) => {
-          if (aggregatedUploadProgress.size > 0 && file.fileName.includes('/')) {
+          if (aggregatedUploadProgress.size > 0 && file.filePath.includes('/')) {
             return null;
           }
 
@@ -111,7 +111,7 @@ function FileOperationsProgress() {
               <div className='flex flex-col grow'>
                 <p className='break-all mb-1 text-sm'>
                   {file.status === 'pending' ? 'Waiting: ' : 'Uploading: '}
-                  {file.fileName}
+                  {file.filePath}
                 </p>
                 <Tooltip
                   label={`${bytesToString(file.uploaded)} / ${bytesToString(file.size)}`}

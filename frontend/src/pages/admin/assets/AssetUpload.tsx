@@ -1,66 +1,71 @@
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Text } from '@mantine/core';
-import { ChangeEvent, useRef, useState } from 'react';
+import { Text, UnstyledButton } from '@mantine/core';
+import { useRef } from 'react';
 import uploadAssets from '@/api/admin/assets/uploadAssets.ts';
-import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
+import CloseButton from '@/elements/CloseButton.tsx';
+import Popover from '@/elements/Popover.tsx';
+import Progress from '@/elements/Progress.tsx';
 import RingProgress from '@/elements/RingProgress.tsx';
-import { useToast } from '@/providers/ToastProvider.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
+import { bytesToString } from '@/lib/size.ts';
+import { useFileUpload } from '@/plugins/useFileUpload.ts';
 
 export default function AssetUpload({ invalidateAssets }: { invalidateAssets: () => void }) {
-  const { addToast } = useToast();
+  const { uploadingFiles, handleFileSelect, totalUploadProgress, cancelFileUpload } = useFileUpload(
+    uploadAssets,
+    invalidateAssets,
+  );
 
-  const [progress, setProgress] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    setProgress(0);
-    const files = event.target.files;
-    if (!files?.length) return;
-
-    const form = new FormData();
-    for (const file of files) {
-      form.append(file.name, file);
-    }
-
-    event.target.value = '';
-
-    uploadAssets(form, {
-      onUploadProgress: (progressEvent) => {
-        setProgress(progressEvent.progress ? progressEvent.progress * 100 : 0);
-      },
-    })
-      .then((assets) => {
-        invalidateAssets();
-        addToast(`${assets.length} Asset${assets.length === 1 ? '' : 's'} uploaded.`, 'success');
-      })
-      .catch((msg) => {
-        addToast(httpErrorToHuman(msg), 'error');
-      })
-      .finally(() => setTimeout(() => setProgress(null), 100));
-  };
 
   return (
     <>
-      {progress ? (
-        <RingProgress
-          size={50}
-          sections={[
-            {
-              value: progress,
-              color: 'green',
-            },
-          ]}
-          roundCaps
-          thickness={4}
-          label={
-            <Text c='green' fw={700} ta='center' size='xs'>
-              {progress.toFixed(0)}%
-            </Text>
-          }
-        />
+      {uploadingFiles.size > 0 ? (
+        <Popover position='bottom-start' shadow='md'>
+          <Popover.Target>
+            <UnstyledButton>
+              <RingProgress
+                size={50}
+                sections={[
+                  {
+                    value: totalUploadProgress,
+                    color: 'green',
+                  },
+                ]}
+                roundCaps
+                thickness={4}
+                label={
+                  <Text c='green' fw={700} ta='center' size='xs'>
+                    {totalUploadProgress.toFixed(0)}%
+                  </Text>
+                }
+              />
+            </UnstyledButton>
+          </Popover.Target>
+          <Popover.Dropdown className='md:min-w-xl max-w-screen max-h-96 overflow-y-auto'>
+            {Array.from(uploadingFiles).map(([key, file]) => (
+              <div key={key} className='flex flex-row items-center mb-2'>
+                <div className='flex flex-col grow'>
+                  <p className='break-all mb-1 text-sm'>
+                    {file.status === 'pending' ? 'Waiting: ' : 'Uploading: '}
+                    {file.filePath}
+                  </p>
+                  <Tooltip
+                    label={`${bytesToString(file.uploaded)} / ${bytesToString(file.size)}`}
+                    innerClassName='w-full'
+                  >
+                    <Progress value={file.progress} />
+                  </Tooltip>
+                </div>
+                <CloseButton className='ml-3' onClick={() => cancelFileUpload(key)} />
+              </div>
+            ))}
+          </Popover.Dropdown>
+        </Popover>
       ) : null}
+
       <Button
         onClick={() => fileInputRef.current?.click()}
         color='blue'
@@ -69,7 +74,13 @@ export default function AssetUpload({ invalidateAssets }: { invalidateAssets: ()
         Upload
       </Button>
 
-      <input type='file' ref={fileInputRef} className='hidden' onChange={handleFileUpload} multiple />
+      <input
+        type='file'
+        ref={fileInputRef}
+        className='hidden'
+        onChange={(e) => handleFileSelect(e, fileInputRef)}
+        multiple
+      />
     </>
   );
 }

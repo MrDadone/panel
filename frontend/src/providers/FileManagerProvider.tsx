@@ -1,7 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { AxiosRequestConfig } from 'axios';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { axiosInstance, getEmptyPaginationSet } from '@/api/axios.ts';
+import getFileUploadUrl from '@/api/server/files/getFileUploadUrl.ts';
 import { useFileUpload } from '@/plugins/useFileUpload.ts';
 import { FileManagerContext, ModalType, SearchInfo } from '@/providers/contexts/fileManagerContext.ts';
 import { useServerStore } from '@/stores/server.ts';
@@ -34,7 +36,12 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
       .catch((e) => console.error(e));
   };
 
-  const fileUploader = useFileUpload(server.uuid, browsingDirectory!, invalidateFilemanager);
+  const doUpload = async (form: FormData, config: AxiosRequestConfig) => {
+    const { url } = await getFileUploadUrl(server.uuid, browsingDirectory);
+    return axiosInstance.post(url, form, config);
+  };
+
+  const fileUploader = useFileUpload(doUpload, invalidateFilemanager);
 
   const setSelectedFiles = (files: string[]) => setSelectedFileNames(new Set(files));
 
