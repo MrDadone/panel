@@ -241,21 +241,14 @@ async fn main() {
         env.sentry_url.clone(),
         sentry::ClientOptions {
             server_name: env.server_name.clone().map(|s| s.into()),
-            release: Some(
-                format!(
-                    "{}:{}@{}",
-                    shared::VERSION,
-                    shared::GIT_COMMIT,
-                    shared::GIT_BRANCH
-                )
-                .into(),
-            ),
+            release: Some(shared::full_version().into()),
             traces_sample_rate: 1.0,
             ..Default::default()
         },
     ));
 
     let jwt = Arc::new(shared::jwt::Jwt::new(&env));
+    let ntp = shared::ntp::Ntp::new();
     let cache = shared::cache::Cache::new(&env).await;
     let database = Arc::new(shared::database::Database::new(&env, cache.clone()).await);
 
@@ -357,6 +350,7 @@ async fn main() {
         shutdown_handlers: shutdown_handlers.clone(),
         settings: settings.clone(),
         jwt,
+        ntp,
         storage,
         captcha,
         mail,
@@ -823,7 +817,7 @@ async fn main() {
         SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("Authorization"))),
     );
 
-    for (path, item) in openapi.paths.paths.iter_mut() {
+    for (original_path, item) in openapi.paths.paths.iter_mut() {
         let operations = [
             ("get", &mut item.get),
             ("post", &mut item.post),
@@ -832,13 +826,24 @@ async fn main() {
             ("delete", &mut item.delete),
         ];
 
-        let path = path
+        let path = original_path
             .replace('/', "_")
             .replace(|c| ['{', '}'].contains(&c), "");
 
         for (method, operation) in operations {
+            const OPERATION_GROUPS: &[&str] =
+                &["/api/admin", "/api/client", "/api/auth", "/api/remote"];
+
             if let Some(operation) = operation {
-                operation.operation_id = Some(format!("{method}{path}"))
+                operation.operation_id = Some(format!("{method}{path}"));
+                operation.tags = if let Some(group) = OPERATION_GROUPS
+                    .iter()
+                    .find(|g| original_path.starts_with(**g))
+                {
+                    Some(vec![group.to_string()])
+                } else {
+                    None
+                };
             }
         }
     }

@@ -28,6 +28,7 @@ pub mod extract;
 pub mod jwt;
 pub mod mail;
 pub mod models;
+pub mod ntp;
 pub mod payload;
 pub mod permissions;
 pub mod prelude;
@@ -105,6 +106,7 @@ pub struct AppState {
     pub shutdown_handlers: Arc<extensions::shutdown_handlers::ShutdownHandlerManager>,
     pub settings: Arc<settings::Settings>,
     pub jwt: Arc<jwt::Jwt>,
+    pub ntp: Arc<ntp::Ntp>,
     pub storage: Arc<storage::Storage>,
     pub captcha: Arc<captcha::Captcha>,
     pub mail: Arc<mail::Mail>,
@@ -127,6 +129,7 @@ impl AppState {
         };
 
         let jwt = Arc::new(jwt::Jwt::new(&env));
+        let ntp = ntp::Ntp::new();
         let cache = cache::Cache::new(&env).await;
         let database = Arc::new(database::Database::new(&env, cache.clone()).await);
 
@@ -163,6 +166,7 @@ impl AppState {
             shutdown_handlers: shutdown_handlers.clone(),
             settings: settings.clone(),
             jwt,
+            ntp,
             storage,
             captcha,
             mail,

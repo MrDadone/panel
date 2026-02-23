@@ -17,6 +17,7 @@ mod backups;
 mod mounts;
 mod reset_token;
 mod servers;
+mod system;
 
 pub async fn auth(
     state: GetState,
@@ -231,6 +232,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
         .routes(routes!(patch::route))
         .nest("/reset-token", reset_token::router(state))
         .nest("/allocations", allocations::router(state))
+        .nest("/system", system::router(state))
         .nest("/servers", servers::router(state))
         .nest("/mounts", mounts::router(state))
         .nest("/backups", backups::router(state))

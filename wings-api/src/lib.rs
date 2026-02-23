@@ -2168,6 +2168,8 @@ pub mod system_overview {
                 #[schema(inline)]
                 pub version: compact_str::CompactString,
                 #[schema(inline)]
+                pub local_time: chrono::DateTime<chrono::Utc>,
+                #[schema(inline)]
                 pub container_type: AppContainerType,
                 #[schema(inline)]
                 pub cpu: #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200Cpu {
@@ -2254,6 +2256,8 @@ pub mod system_upgrade {
 
         nestify::nest! {
             #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response202 {
+                #[schema(inline)]
+                pub applied: bool,
             }
         }
 
