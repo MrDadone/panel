@@ -60,7 +60,7 @@ export default function GroupAddServerModal({ serverGroup, opened, onClose, onSe
       opened={opened}
     >
       <Select
-      	withAsterisk
+        withAsterisk
         label={t('common.form.server', {})}
         placeholder={t('common.form.server', {})}
         data={otherServers.map((server) => ({
