@@ -28,7 +28,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
   const [_, setSearchParams] = useSearchParams();
   const canOpenActionBar = useServerCan(['files.read-content', 'files.archive', 'files.update', 'files.delete'], true);
   const { server } = useServerStore();
-  const { browsingDirectory, browsingFastDirectory, setSelectedFiles, addSelectedFile, removeSelectedFile, clickOnce } =
+  const { browsingDirectory, browsingFastDirectory, doSelectFiles, addSelectedFile, removeSelectedFile, clickOnce } =
     useFileManager();
   const { settings } = useGlobalStore();
   const canOpenFile = useServerCan('files.read-content');
@@ -68,12 +68,12 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
 
     if (isSelected) {
       if (multipleSelected) {
-        setSelectedFiles([file.name]);
+        doSelectFiles([file]);
       } else {
         removeSelectedFile(file);
       }
     } else {
-      setSelectedFiles([file.name]);
+      doSelectFiles([file]);
     }
 
     clickTimer.current = setTimeout(() => {

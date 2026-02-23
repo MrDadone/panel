@@ -6,6 +6,7 @@ import { FileUploader } from '@/plugins/useFileUpload.ts';
 export type ModalType =
   | 'rename'
   | 'copy'
+  | 'copy-remote'
   | 'permissions'
   | 'archive'
   | 'delete'
@@ -20,39 +21,50 @@ export interface SearchInfo {
   filters: z.infer<typeof serverFilesSearchSchema>;
 }
 
+export type ActingFileMode = 'copy' | 'move';
+
 export interface FileManagerContextType {
   fileInputRef: RefObject<HTMLInputElement | null>;
   folderInputRef: RefObject<HTMLInputElement | null>;
 
-  selectedFileNames: Set<string>;
+  actingMode: ActingFileMode | null;
+  setActingMode: (actingMode: ActingFileMode, files: DirectoryEntry[]) => void;
+  actingFiles: Set<DirectoryEntry>;
+  setActingFiles: (files: Set<DirectoryEntry>) => void;
+  actingFilesSource: string | null;
+  setActingFilesSource: (directory: string | null) => void;
+  selectedFiles: Set<DirectoryEntry>;
+  setSelectedFiles: (files: Set<DirectoryEntry>) => void;
   browsingBackup: ServerBackup | null;
+  setBrowsingBackup: (backup: ServerBackup | null) => void;
   browsingDirectory: string;
+  setBrowsingDirectory: (directory: string) => void;
   browsingEntries: ResponseMeta<DirectoryEntry>;
+  setBrowsingEntries: (entries: ResponseMeta<DirectoryEntry>) => void;
   page: number;
+  setPage: (page: number) => void;
   browsingWritableDirectory: boolean;
+  setBrowsingWritableDirectory: (state: boolean) => void;
   browsingFastDirectory: boolean;
+  setBrowsingFastDirectory: (state: boolean) => void;
   openModal: ModalType;
-  modalDirectoryEntry: DirectoryEntry | null;
+  setOpenModal: (modal: ModalType) => void;
+  modalDirectoryEntries: DirectoryEntry[];
+  setModalDirectoryEntries: (files: DirectoryEntry[]) => void;
   searchInfo: SearchInfo | null;
+  setSearchInfo: (info: SearchInfo | null) => void;
   clickOnce: boolean;
+  setClickOnce: (state: boolean) => void;
 
-  setSelectedFiles: (files: string[]) => void;
+  invalidateFilemanager: () => void;
+  fileUploader: FileUploader;
+  doActFiles: (mode: ActingFileMode | null, files: DirectoryEntry[]) => void;
+  clearActingFiles: () => void;
+  doSelectFiles: (files: DirectoryEntry[]) => void;
   addSelectedFile: (file: DirectoryEntry) => void;
   removeSelectedFile: (file: DirectoryEntry) => void;
-  setBrowsingBackup: (backup: ServerBackup | null) => void;
-  setBrowsingDirectory: (directory: string) => void;
-  setBrowsingEntries: (entries: ResponseMeta<DirectoryEntry>) => void;
-  setPage: (page: number) => void;
-  setBrowsingWritableDirectory: (value: boolean) => void;
-  setBrowsingFastDirectory: (value: boolean) => void;
-  doOpenModal: (modal: ModalType, entry?: DirectoryEntry) => void;
+  doOpenModal: (modal: ModalType, entries?: DirectoryEntry[]) => void;
   doCloseModal: () => void;
-  setModalDirectoryEntry: (directoryEntry: DirectoryEntry) => void;
-  setSearchInfo: (info: SearchInfo | null) => void;
-  setClickOnce: (clickOnce: boolean) => void;
-
-  fileUploader: FileUploader;
-  invalidateFilemanager: () => void;
 }
 
 export const FileManagerContext = createContext<FileManagerContextType | undefined>(undefined);

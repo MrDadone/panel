@@ -67,7 +67,7 @@ function FileEditorComponent() {
     const currentContent = editorRef.current.getValue();
     setSaving(true);
 
-    saveFileContent(server.uuid, join(browsingDirectory!, name ?? fileName), currentContent).then(() => {
+    saveFileContent(server.uuid, join(browsingDirectory, name ?? fileName), currentContent).then(() => {
       startTransition(() => {
         setSaving(false);
         setNameModalOpen(false);
@@ -78,7 +78,7 @@ function FileEditorComponent() {
       if (name) {
         navigate(
           `/server/${server.uuidShort}/files/edit?${createSearchParams({
-            directory: browsingDirectory!,
+            directory: browsingDirectory,
             file: name,
           })}`,
         );
@@ -125,7 +125,7 @@ function FileEditorComponent() {
           />
 
           <div className='flex justify-between w-full py-4'>
-            <FileBreadcrumbs inFileEditor path={join(decodeURIComponent(browsingDirectory!), fileName)} />
+            <FileBreadcrumbs inFileEditor path={join(decodeURIComponent(browsingDirectory), fileName)} />
           </div>
           <div className='relative'>
             <div className='flex h-[calc(100vh-185px)] lg:h-[calc(100vh-119px)] max-w-full w-full z-1 absolute'>

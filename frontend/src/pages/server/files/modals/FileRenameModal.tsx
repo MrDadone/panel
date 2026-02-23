@@ -9,6 +9,7 @@ import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesNameSchema } from '@/lib/schemas/server/files.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -18,7 +19,8 @@ type Props = ModalProps & {
 
 export default function FileRenameModal({ file, opened, onClose }: Props) {
   const { addToast } = useToast();
-  const { server, browsingDirectory, browsingEntries, setBrowsingEntries } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory, invalidateFilemanager } = useFileManager();
 
   const [loading, setLoading] = useState(false);
 
@@ -45,7 +47,7 @@ export default function FileRenameModal({ file, opened, onClose }: Props) {
 
     renameFiles({
       uuid: server.uuid,
-      root: browsingDirectory!,
+      root: browsingDirectory,
       files: [
         {
           from: file.name,
@@ -60,12 +62,7 @@ export default function FileRenameModal({ file, opened, onClose }: Props) {
         }
 
         addToast('File has been renamed.', 'success');
-        setBrowsingEntries({
-          ...browsingEntries,
-          data: browsingEntries.data.map((entry) =>
-            entry.name === file.name ? { ...entry, name: form.values.name } : entry,
-          ),
-        });
+        invalidateFilemanager();
         onClose();
       })
       .catch((msg) => {

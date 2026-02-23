@@ -15,7 +15,7 @@ import { useServerStore } from '@/stores/server.ts';
 export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; inFileEditor?: boolean }) {
   const { addToast } = useToast();
   const { server, setBrowsingDirectory, actingFileNames } = useServerStore();
-  const { selectedFileNames, browsingBackup, browsingEntries, setSelectedFiles, setBrowsingBackup, doOpenModal } =
+  const { selectedFiles, browsingBackup, browsingEntries, doSelectFiles, setBrowsingBackup, doOpenModal } =
     useFileManager();
 
   const splittedPath = path.split('/').filter(Boolean);
@@ -81,16 +81,16 @@ export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; 
       <Breadcrumbs separatorMargin='xs'>
         <Checkbox
           disabled={actingFileNames.size > 0}
-          checked={!inFileEditor && selectedFileNames.size > 0 && selectedFileNames.size >= browsingEntries.data.length}
-          indeterminate={selectedFileNames.size > 0 && selectedFileNames.size < browsingEntries.data.length}
+          checked={!inFileEditor && selectedFiles.size > 0 && selectedFiles.size >= browsingEntries.data.length}
+          indeterminate={selectedFiles.size > 0 && selectedFiles.size < browsingEntries.data.length}
           className='mr-2'
           classNames={{ input: 'cursor-pointer!' }}
           hidden={inFileEditor}
           onChange={() => {
-            if (selectedFileNames.size >= browsingEntries.data.length) {
-              setSelectedFiles([]);
+            if (selectedFiles.size >= browsingEntries.data.length) {
+              doSelectFiles([]);
             } else {
-              setSelectedFiles(browsingEntries.data.map((entry) => entry.name));
+              doSelectFiles(browsingEntries.data);
             }
           }}
         />

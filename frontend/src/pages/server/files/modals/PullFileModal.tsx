@@ -14,12 +14,14 @@ import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesPullSchema } from '@/lib/schemas/server/files.ts';
 import { bytesToString } from '@/lib/size.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 export default function PullFileModal({ opened, onClose }: ModalProps) {
   const { addToast } = useToast();
-  const { server, browsingDirectory } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory } = useFileManager();
 
   const [loading, setLoading] = useState(false);
   const [queryResult, setQueryResult] = useState<null | ServerPullQueryResult>(null);
@@ -56,7 +58,7 @@ export default function PullFileModal({ opened, onClose }: ModalProps) {
     setLoading(true);
 
     pullFile(server.uuid, {
-      root: browsingDirectory!,
+      root: browsingDirectory,
       url: form.values.url,
       name: form.values.name,
     })
@@ -104,7 +106,7 @@ export default function PullFileModal({ opened, onClose }: ModalProps) {
           <Code>
             /home/container/
             <span className='text-cyan-200'>
-              {join(browsingDirectory!, form.values.name ?? '').replace(/^(\.\.\/|\/)+/, '')}
+              {join(browsingDirectory, form.values.name ?? '').replace(/^(\.\.\/|\/)+/, '')}
             </span>
           </Code>
         </p>

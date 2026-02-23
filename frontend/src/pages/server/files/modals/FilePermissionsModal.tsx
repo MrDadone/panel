@@ -9,6 +9,7 @@ import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { permissionStringToNumber } from '@/lib/files.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -21,7 +22,8 @@ type PermissionType = 'read' | 'write' | 'execute';
 
 export default function FilePermissionsModal({ file, opened, onClose }: Props) {
   const { addToast } = useToast();
-  const { server, browsingWritableDirectory, browsingDirectory } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingWritableDirectory, browsingDirectory } = useFileManager();
 
   const [permissions, setPermissions] = useState<Record<PermissionKey, Record<PermissionType, boolean>>>({
     owner: { read: false, write: false, execute: false },
@@ -128,7 +130,7 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
 
     chmodFiles({
       uuid: server.uuid,
-      root: browsingDirectory!,
+      root: browsingDirectory,
       files: [{ file: file.name, mode: newPermissions.toString() }],
     })
       .then(() => {

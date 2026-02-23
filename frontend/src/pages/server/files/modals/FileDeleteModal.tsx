@@ -5,6 +5,7 @@ import deleteFiles from '@/api/server/files/deleteFiles.ts';
 import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -14,7 +15,8 @@ type Props = ModalProps & {
 
 export default function FileDeleteModal({ files, opened, onClose }: Props) {
   const { addToast } = useToast();
-  const { server, browsingDirectory, browsingEntries, setBrowsingEntries, setSelectedFiles } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory, doSelectFiles, invalidateFilemanager } = useFileManager();
 
   const [loading, setLoading] = useState(false);
 
@@ -23,17 +25,14 @@ export default function FileDeleteModal({ files, opened, onClose }: Props) {
 
     deleteFiles(
       server.uuid,
-      browsingDirectory!,
+      browsingDirectory,
       files.map((f) => f.name),
     )
       .then(() => {
         addToast('Files have been deleted.', 'success');
         onClose();
-        setSelectedFiles([]);
-        setBrowsingEntries({
-          ...browsingEntries,
-          data: browsingEntries.data.filter((f) => !files.find((s) => s.name === f.name)),
-        });
+        doSelectFiles([]);
+        invalidateFilemanager();
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');

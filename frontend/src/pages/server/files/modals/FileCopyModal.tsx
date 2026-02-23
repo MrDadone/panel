@@ -11,6 +11,7 @@ import Code from '@/elements/Code.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesCopySchema } from '@/lib/schemas/server/files.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -20,7 +21,8 @@ type Props = ModalProps & {
 
 export default function FileCopyModal({ file, opened, onClose }: Props) {
   const { addToast } = useToast();
-  const { server, browsingDirectory, browsingEntries } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory, browsingEntries } = useFileManager();
 
   const [loading, setLoading] = useState(false);
 
@@ -88,7 +90,7 @@ export default function FileCopyModal({ file, opened, onClose }: Props) {
 
     setLoading(true);
 
-    copyFile(server.uuid, join(browsingDirectory!, file.name), form.values.name || null)
+    copyFile(server.uuid, join(browsingDirectory, file.name), form.values.name || null)
       .then(() => {
         addToast('File copying has started.', 'success');
         onClose();
@@ -109,7 +111,7 @@ export default function FileCopyModal({ file, opened, onClose }: Props) {
           <Code>
             /home/container/
             <span className='text-cyan-200'>
-              {join(browsingDirectory!, form.values.name || generateNewName()).replace(/^(\.\.\/|\/)+/, '')}
+              {join(browsingDirectory, form.values.name || generateNewName()).replace(/^(\.\.\/|\/)+/, '')}
             </span>
           </Code>
         </p>

@@ -8,6 +8,7 @@ import ServerContentContainer from '@/elements/containers/ServerContentContainer
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Table from '@/elements/Table.tsx';
+import FileActionBar from '@/pages/server/files/FileActionBar.tsx';
 import FileBreadcrumbs from '@/pages/server/files/FileBreadcrumbs.tsx';
 import FileModals from '@/pages/server/files/FileModals.tsx';
 import FileOperationsProgress from '@/pages/server/files/FileOperationsProgress.tsx';
@@ -23,7 +24,7 @@ import { useServerStore } from '@/stores/server.ts';
 function ServerFilesComponent() {
   const { server } = useServerStore();
   const {
-    selectedFileNames,
+    selectedFiles,
     browsingDirectory,
     browsingEntries,
     page,
@@ -47,14 +48,14 @@ function ServerFilesComponent() {
     setBrowsingFastDirectory(data.isFilesystemFast);
   }, [data]);
 
-  const previousSelected = useRef<string[]>([]);
+  const previousSelected = useRef<DirectoryEntry[]>([]);
 
   const onSelectedStart = (event: React.MouseEvent | MouseEvent) => {
-    previousSelected.current = event.shiftKey ? [...selectedFileNames] : [];
+    previousSelected.current = event.shiftKey ? [...selectedFiles] : [];
   };
 
   const onSelected = (selected: DirectoryEntry[]) => {
-    setSelectedFiles([...previousSelected.current, ...selected.map((entry) => entry.name)]);
+    setSelectedFiles(new Set([...previousSelected.current, ...selected]));
   };
 
   const onPageSelect = (page: number) => setSearchParams({ directory: browsingDirectory, page: page.toString() });
@@ -63,6 +64,7 @@ function ServerFilesComponent() {
     <div className='h-fit relative'>
       <FileModals />
       <FileUpload />
+      <FileActionBar />
 
       <Group justify='space-between' align='center' mb='md'>
         <Group>
@@ -101,8 +103,8 @@ function ServerFilesComponent() {
                     <FileRow
                       ref={innerRef as Ref<HTMLTableRowElement>}
                       file={entry}
-                      isSelected={selectedFileNames.has(entry.name)}
-                      multipleSelected={selectedFileNames.size > 1}
+                      isSelected={selectedFiles.has(entry)}
+                      multipleSelected={selectedFiles.size > 1}
                     />
                   )}
                 </SelectionArea.Selectable>

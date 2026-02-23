@@ -41,13 +41,13 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
   const canArchive = useServerCan('files.archive');
 
   const doUnarchive = () => {
-    decompressFile(server.uuid, browsingDirectory!, file.name).catch((msg) => {
+    decompressFile(server.uuid, browsingDirectory, file.name).catch((msg) => {
       addToast(httpErrorToHuman(msg), 'error');
     });
   };
 
   const doDownload = (archiveFormat: StreamingArchiveFormat) => {
-    downloadFiles(server.uuid, browsingDirectory!, [file.name], file.directory, archiveFormat)
+    downloadFiles(server.uuid, browsingDirectory, [file.name], file.directory, archiveFormat)
       .then(({ url }) => {
         addToast('Download started.', 'success');
         window.open(url);
@@ -97,14 +97,14 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
           icon: faFilePen,
           label: 'Rename',
           hidden: !!browsingBackup || !browsingWritableDirectory,
-          onClick: () => doOpenModal('rename', file),
+          onClick: () => doOpenModal('rename', [file]),
           canAccess: useServerCan('files.update'),
         },
         {
           icon: faCopy,
           label: 'Copy',
           hidden: !!browsingBackup || !browsingWritableDirectory || (!file.file && !file.directory),
-          onClick: () => doOpenModal('copy', file),
+          onClick: () => doOpenModal('copy', [file]),
           color: 'gray',
           canAccess: canCreate,
         },
@@ -119,7 +119,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
         {
           icon: faFileShield,
           label: 'Permissions',
-          onClick: () => doOpenModal('permissions', file),
+          onClick: () => doOpenModal('permissions', [file]),
           color: 'gray',
           canAccess: useServerCan('files.update'),
         },
@@ -136,7 +136,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
               icon: faFileZipper,
               label: 'Archive',
               hidden: !!browsingBackup || !browsingWritableDirectory,
-              onClick: () => doOpenModal('archive', file),
+              onClick: () => doOpenModal('archive', [file]),
               color: 'gray',
               canAccess: canArchive,
             },
@@ -159,7 +159,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
           icon: faTrash,
           label: 'Delete',
           hidden: !!browsingBackup || !browsingWritableDirectory,
-          onClick: () => doOpenModal('delete', file),
+          onClick: () => doOpenModal('delete', [file]),
           color: 'red',
           canAccess: useServerCan('files.delete'),
         },
