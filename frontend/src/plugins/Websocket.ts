@@ -1,3 +1,4 @@
+import { decode, encode } from '@msgpack/msgpack';
 import { EventEmitter } from 'events';
 import Sockette from 'sockette';
 
@@ -10,6 +11,9 @@ export class Websocket extends EventEmitter {
 
   // The socket instance being tracked.
   private socket: Sockette | null = null;
+
+  // Whether to use binary msgpack messages for this socket.
+  private useBinary = false;
 
   // The URL being connected to for the socket.
   private url: string | null = null;
@@ -26,13 +30,17 @@ export class Websocket extends EventEmitter {
     this.url = url;
 
     this.socket = new Sockette(`${this.url}`, {
-      onmessage: (e) => {
+      onmessage: async (e) => {
         try {
-          const { event, args } = JSON.parse(e.data);
-          if (args) {
+          if (typeof e.data === 'string') {
+            const { event, args } = JSON.parse(e.data) as { event: string; args: string[] };
+
             this.emit(event, ...args);
-          } else {
-            this.emit(event);
+          } else if (e.data instanceof Blob) {
+            const data = await e.data.arrayBuffer();
+            const [event, args] = decode(data) as [string, string[]];
+
+            this.emit(event, ...args);
           }
         } catch (ex) {
           console.warn('Failed to parse incoming websocket message.', ex);
@@ -82,6 +90,12 @@ export class Websocket extends EventEmitter {
     return this;
   }
 
+  // Sets whether to use binary msgpack messages for this socket.
+  setUseBinary(useBinary: boolean): this {
+    this.useBinary = useBinary;
+    return this;
+  }
+
   authenticate() {
     if (this.url && this.token) {
       this.send('auth', this.token);
@@ -110,12 +124,18 @@ export class Websocket extends EventEmitter {
 
   send(event: string, payload?: string | string[]) {
     if (this.socket) {
-      this.socket.send(
-        JSON.stringify({
-          event,
-          args: Array.isArray(payload) ? payload : [payload],
-        }),
-      );
+      try {
+        this.socket.send(
+          this.useBinary
+            ? encode([event, Array.isArray(payload) ? payload : [payload]])
+            : JSON.stringify({
+                event,
+                args: Array.isArray(payload) ? payload : [payload],
+              }),
+        );
+      } catch (err) {
+        console.warn('Failed to send websocket message.', err);
+      }
     }
   }
 }

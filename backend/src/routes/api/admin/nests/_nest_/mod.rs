@@ -80,7 +80,7 @@ mod get {
     pub async fn route(permissions: GetPermissionManager, nest: GetNest) -> ApiResponseResult {
         permissions.has_admin_permission("nests.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             nest: nest.0.into_admin_api_object(),
         })
         .ok()
@@ -129,7 +129,7 @@ mod delete {
                 .ok();
         }
 
-        nest.delete(&state.database, ()).await?;
+        nest.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -142,7 +142,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -153,7 +153,7 @@ mod patch {
     use shared::{
         ApiError, GetState,
         models::{admin_activity::GetAdminActivityLogger, user::GetPermissionManager},
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -193,10 +193,10 @@ mod patch {
         permissions: GetPermissionManager,
         mut nest: GetNest,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -256,7 +256,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

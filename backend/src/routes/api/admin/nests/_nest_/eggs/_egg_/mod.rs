@@ -97,7 +97,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("eggs.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             egg: egg.0.into_admin_api_object(&state.database).await?,
         })
         .ok()
@@ -152,7 +152,7 @@ mod delete {
                 .ok();
         }
 
-        egg.delete(&state.database, ()).await?;
+        egg.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -167,7 +167,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -182,7 +182,7 @@ mod patch {
             ByUuid, admin_activity::GetAdminActivityLogger, egg_repository_egg::EggRepositoryEgg,
             user::GetPermissionManager,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -252,10 +252,10 @@ mod patch {
         nest: GetNest,
         mut egg: GetNestEgg,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -410,7 +410,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

@@ -7,7 +7,7 @@ import updateCaptchaSettings from '@/api/admin/settings/updateCaptchaSettings.ts
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { captchaProviderTypeLabelMapping } from '@/lib/enums.ts';
 import {
@@ -56,7 +56,7 @@ export default function CaptchaContainer() {
   };
 
   return (
-    <AdminContentContainer title='Captcha Settings' titleOrder={2}>
+    <AdminSubContentContainer title='Captcha Settings' titleOrder={2}>
       <form onSubmit={form.onSubmit(() => doUpdate())}>
         <Select
           label='Provider'
@@ -96,6 +96,6 @@ export default function CaptchaContainer() {
           </AdminCan>
         </Group>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

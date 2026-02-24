@@ -25,12 +25,17 @@ mod get {
     pub async fn route(state: GetState, ip: shared::GetIp) -> ApiResponseResult {
         state
             .cache
-            .ratelimit("auth/oauth", 6, 60, ip.to_string())
+            .ratelimit("auth/oauth", 12, 60, ip.to_string())
             .await?;
 
-        let oauth_providers = OAuthProvider::all_by_usable(&state.database).await?;
+        let oauth_providers = state
+            .cache
+            .cached("oauth_providers::usable", 60, || async {
+                OAuthProvider::all_by_usable(&state.database).await
+            })
+            .await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             oauth_providers: oauth_providers
                 .into_iter()
                 .map(|oauth_provider| oauth_provider.into_api_object())

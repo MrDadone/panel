@@ -7,7 +7,7 @@ import updateServerSettings from '@/api/admin/settings/updateServerSettings.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import SizeInput from '@/elements/input/SizeInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
@@ -29,6 +29,7 @@ export default function ServerContainer() {
       maxSchedulesStepCount: 0,
       allowOverwritingCustomDockerImage: false,
       allowEditingStartupCommand: false,
+      allowViewingInstallationLogs: false,
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(adminSettingsServerSchema),
@@ -54,7 +55,7 @@ export default function ServerContainer() {
   };
 
   return (
-    <AdminContentContainer title='Server Settings' titleOrder={2}>
+    <AdminSubContentContainer title='Server Settings' titleOrder={2}>
       <form onSubmit={form.onSubmit(() => doUpdate())}>
         <Stack>
           <Group grow>
@@ -107,6 +108,12 @@ export default function ServerContainer() {
           </Group>
         </Stack>
 
+        <Switch
+          label='Allow Viewing Installation Logs'
+          description='If enabled, users with console read permissions will also be able to view installation logs via the websocket connection. If disabled, installation logs will only be available for admins.'
+          {...form.getInputProps('allowViewingInstallationLogs', { type: 'checkbox' })}
+        />
+
         <Group mt='md'>
           <AdminCan
             action='settings.update'
@@ -122,6 +129,6 @@ export default function ServerContainer() {
           </AdminCan>
         </Group>
       </form>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

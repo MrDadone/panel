@@ -12,7 +12,7 @@ pub struct ServerAllocation {
     pub uuid: uuid::Uuid,
     pub allocation: super::node_allocation::NodeAllocation,
 
-    pub notes: Option<String>,
+    pub notes: Option<compact_str::CompactString>,
 
     pub created: chrono::NaiveDateTime,
 }
@@ -228,21 +228,21 @@ impl ServerAllocation {
 impl DeletableModel for ServerAllocation {
     type DeleteOptions = ();
 
-    fn get_delete_listeners() -> &'static LazyLock<DeleteListenerList<Self>> {
+    fn get_delete_handlers() -> &'static LazyLock<DeleteListenerList<Self>> {
         static DELETE_LISTENERS: LazyLock<DeleteListenerList<ServerAllocation>> =
-            LazyLock::new(|| Arc::new(ListenerList::default()));
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
 
         &DELETE_LISTENERS
     }
 
     async fn delete(
         &self,
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         options: Self::DeleteOptions,
     ) -> Result<(), anyhow::Error> {
-        let mut transaction = database.write().begin().await?;
+        let mut transaction = state.database.write().begin().await?;
 
-        self.run_delete_listeners(&options, database, &mut transaction)
+        self.run_delete_handlers(&options, state, &mut transaction)
             .await?;
 
         sqlx::query(
@@ -270,7 +270,7 @@ pub struct ApiServerAllocation {
     pub ip_alias: Option<compact_str::CompactString>,
     pub port: i32,
 
-    pub notes: Option<String>,
+    pub notes: Option<compact_str::CompactString>,
     pub is_primary: bool,
 
     pub created: chrono::DateTime<chrono::Utc>,

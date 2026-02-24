@@ -1,3 +1,10 @@
+//! Shared library for the Calagopus Panel.
+//!
+//! This library contains code that is shared between the backend and extensions.
+//! It includes models, utilities, and other common functionality to avoid repetition
+//! and ensure consistency across the project. If something for a job exists in here,
+//! it's generally preferred to be used instead of re-implementing it elsewhere.
+
 use include_dir::{Dir, include_dir};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -13,11 +20,13 @@ pub mod captcha;
 pub mod database;
 pub mod deserialize;
 pub mod env;
+pub mod events;
 pub mod extensions;
 pub mod extract;
 pub mod jwt;
 pub mod mail;
 pub mod models;
+pub mod payload;
 pub mod permissions;
 pub mod prelude;
 pub mod response;
@@ -26,8 +35,11 @@ pub mod storage;
 pub mod telemetry;
 pub mod utils;
 
+pub use payload::Payload;
+
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GIT_COMMIT: &str = env!("CARGO_GIT_COMMIT");
+pub const GIT_BRANCH: &str = env!("CARGO_GIT_BRANCH");
 pub const TARGET: &str = env!("CARGO_TARGET");
 
 pub type GetIp = axum::extract::Extension<std::net::IpAddr>;
@@ -78,6 +90,7 @@ pub struct AppState {
 
     pub extensions: Arc<extensions::manager::ExtensionManager>,
     pub background_tasks: Arc<extensions::background_tasks::BackgroundTaskManager>,
+    pub shutdown_handlers: Arc<extensions::shutdown_handlers::ShutdownHandlerManager>,
     pub settings: Arc<settings::Settings>,
     pub jwt: Arc<jwt::Jwt>,
     pub storage: Arc<storage::Storage>,

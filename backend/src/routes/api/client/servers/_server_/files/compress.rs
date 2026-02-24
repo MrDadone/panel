@@ -56,7 +56,7 @@ mod post {
         permissions: GetPermissionManager,
         mut server: GetServer,
         activity_logger: GetServerActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("files.archive")?;
 
@@ -82,22 +82,22 @@ mod post {
                 .await
             {
                 Ok(wings_api::servers_server_files_compress::post::Response::Ok(data)) => {
-                    ApiResponse::json(Response { entry: data }).ok()
+                    ApiResponse::new_serialized(Response { entry: data }).ok()
                 }
                 Ok(wings_api::servers_server_files_compress::post::Response::Accepted(data)) => {
-                    ApiResponse::json(ResponseAccepted {
+                    ApiResponse::new_serialized(ResponseAccepted {
                         identifier: data.identifier,
                     })
                     .with_status(StatusCode::ACCEPTED)
                     .ok()
                 }
                 Err(wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, err)) => {
-                    return ApiResponse::json(ApiError::new_wings_value(err))
+                    return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                         .with_status(StatusCode::NOT_FOUND)
                         .ok();
                 }
                 Err(wings_api::client::ApiHttpError::Http(StatusCode::EXPECTATION_FAILED, err)) => {
-                    return ApiResponse::json(ApiError::new_wings_value(err))
+                    return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                         .with_status(StatusCode::EXPECTATION_FAILED)
                         .ok();
                 }

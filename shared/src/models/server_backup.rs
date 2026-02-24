@@ -49,13 +49,13 @@ pub struct ServerBackup {
     pub locked: bool,
 
     pub ignored_files: Vec<compact_str::CompactString>,
-    pub checksum: Option<String>,
+    pub checksum: Option<compact_str::CompactString>,
     pub bytes: i64,
     pub files: i64,
 
     pub disk: BackupDisk,
     pub upload_id: Option<compact_str::CompactString>,
-    pub upload_path: Option<String>,
+    pub upload_path: Option<compact_str::CompactString>,
 
     pub completed: Option<chrono::NaiveDateTime>,
     pub deleted: Option<chrono::NaiveDateTime>,
@@ -203,6 +203,14 @@ impl ServerBackup {
                 .with_status(StatusCode::EXPECTATION_FAILED)
             })?;
 
+        if backup_configuration.maintenance_enabled {
+            return Err(crate::response::DisplayError::new(
+                "cannot create backup while backup configuration is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .into());
+        }
+
         let row = sqlx::query(&format!(
             r#"
             INSERT INTO server_backups (server_uuid, node_uuid, backup_configuration_uuid, name, ignored_files, bytes, disk)
@@ -299,6 +307,14 @@ impl ServerBackup {
                 )
                 .with_status(StatusCode::EXPECTATION_FAILED)
             })?;
+
+        if backup_configuration.maintenance_enabled {
+            return Err(crate::response::DisplayError::new(
+                "cannot create backup while backup configuration is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .into());
+        }
 
         let row = sqlx::query(&format!(
             r#"
@@ -587,6 +603,14 @@ impl ServerBackup {
             .fetch_cached(database)
             .await?;
 
+        if backup_configuration.maintenance_enabled {
+            return Err(crate::response::DisplayError::new(
+                "cannot restore backup while backup configuration is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .into());
+        }
+
         server
             .node
             .fetch_cached(database)
@@ -606,7 +630,7 @@ impl ServerBackup {
 
                                 let client = s3_configuration.into_client()?;
                                 let file_path = match &self.upload_path {
-                                    Some(path) => path,
+                                    Some(path) => path.as_str(),
                                     None => &Self::s3_path(server.uuid, self.uuid),
                                 };
 
@@ -626,7 +650,7 @@ impl ServerBackup {
     }
 
     pub async fn delete_oldest_by_server_uuid(
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         server: &super::server::Server,
     ) -> Result<(), anyhow::Error> {
         let row = sqlx::query(&format!(
@@ -643,21 +667,21 @@ impl ServerBackup {
             Self::columns_sql(None)
         ))
         .bind(server.uuid)
-        .fetch_optional(database.read())
+        .fetch_optional(state.database.read())
         .await?;
 
         if let Some(row) = row {
             let backup = Self::map(None, &row)?;
 
-            backup.delete(database, ()).await
+            backup.delete(state, ()).await
         } else {
             Err(sqlx::Error::RowNotFound.into())
         }
     }
 
     #[inline]
-    pub fn s3_path(server_uuid: uuid::Uuid, backup_uuid: uuid::Uuid) -> String {
-        format!("{server_uuid}/{backup_uuid}.tar.gz")
+    pub fn s3_path(server_uuid: uuid::Uuid, backup_uuid: uuid::Uuid) -> compact_str::CompactString {
+        compact_str::format_compact!("{server_uuid}/{backup_uuid}.tar.gz")
     }
 
     #[inline]
@@ -746,24 +770,24 @@ impl ByUuid for ServerBackup {
 impl DeletableModel for ServerBackup {
     type DeleteOptions = ();
 
-    fn get_delete_listeners() -> &'static LazyLock<DeleteListenerList<Self>> {
+    fn get_delete_handlers() -> &'static LazyLock<DeleteListenerList<Self>> {
         static DELETE_LISTENERS: LazyLock<DeleteListenerList<ServerBackup>> =
-            LazyLock::new(|| Arc::new(ListenerList::default()));
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
 
         &DELETE_LISTENERS
     }
 
     async fn delete(
         &self,
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         options: Self::DeleteOptions,
     ) -> Result<(), anyhow::Error> {
-        let mut transaction = database.write().begin().await?;
+        let mut transaction = state.database.write().begin().await?;
 
-        self.run_delete_listeners(&options, database, &mut transaction)
+        self.run_delete_handlers(&options, state, &mut transaction)
             .await?;
 
-        let node = self.node.fetch_cached(database).await?;
+        let node = self.node.fetch_cached(&state.database).await?;
 
         let backup_configuration = self
             .backup_configuration
@@ -774,10 +798,18 @@ impl DeletableModel for ServerBackup {
                 )
                 .with_status(StatusCode::EXPECTATION_FAILED)
             })?
-            .fetch_cached(database)
+            .fetch_cached(&state.database)
             .await?;
 
-        let database = Arc::clone(database);
+        if backup_configuration.maintenance_enabled {
+            return Err(crate::response::DisplayError::new(
+                "cannot delete backup while backup configuration is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .into());
+        }
+
+        let database = Arc::clone(&state.database);
         let server_uuid = self.server.as_ref().map(|s| s.uuid);
         let backup_uuid = self.uuid;
         let backup_disk = self.disk;
@@ -857,7 +889,7 @@ pub struct AdminApiServerBackup {
     pub is_browsable: bool,
     pub is_streaming: bool,
 
-    pub checksum: Option<String>,
+    pub checksum: Option<compact_str::CompactString>,
     pub bytes: i64,
     pub files: i64,
 
@@ -878,7 +910,7 @@ pub struct ApiServerBackup {
     pub is_browsable: bool,
     pub is_streaming: bool,
 
-    pub checksum: Option<String>,
+    pub checksum: Option<compact_str::CompactString>,
     pub bytes: i64,
     pub files: i64,
 

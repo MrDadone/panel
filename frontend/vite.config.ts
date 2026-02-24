@@ -2,9 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import type { LanguageData } from 'shared';
 import { defineConfig } from 'vite';
+import dynamicPublicDirectory from 'vite-multiple-assets';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
+// Minifies all JSON translation files in the dist/translations/ directory after build
 const minifyTranslations = () => {
   return {
     name: 'minify-translations',
@@ -17,6 +21,8 @@ const minifyTranslations = () => {
         let total = 0;
         let minified = 0;
 
+        const languageData: Record<string, Record<string, LanguageData>> = {};
+
         files.forEach((file) => {
           if (file.endsWith('.json')) {
             const filePath = path.join(dir, file);
@@ -24,15 +30,46 @@ const minifyTranslations = () => {
               const content = fs.readFileSync(filePath, 'utf-8');
               total += content.length;
 
-              const minifiedContent = JSON.stringify(JSON.parse(content));
-              minified += minifiedContent.length;
-              fs.writeFileSync(filePath, minifiedContent);
-              count++;
+              const jsonParsed = JSON.parse(content);
+              if (!languageData[file.replace('.json', '')]) {
+                languageData[file.replace('.json', '')] = {};
+              }
+              languageData[file.replace('.json', '')][''] = jsonParsed;
             } catch (error) {
               console.error(`[minify-translations] Error processing ${file}:`, error);
             }
+          } else {
+            const subDirPath = path.join(dir, file);
+            if (fs.statSync(subDirPath).isDirectory()) {
+              const subFiles = fs.readdirSync(subDirPath);
+              subFiles.forEach((subFile) => {
+                if (subFile.endsWith('.json')) {
+                  const subFilePath = path.join(subDirPath, subFile);
+                  try {
+                    const content = fs.readFileSync(subFilePath, 'utf-8');
+                    total += content.length;
+
+                    const jsonParsed = JSON.parse(content);
+                    if (!languageData[file]) {
+                      languageData[file] = {};
+                    }
+                    languageData[file][subFile.replace('.json', '')] = jsonParsed;
+                  } catch (error) {
+                    console.error(`[minify-translations] Error processing ${subFile} in ${file}:`, error);
+                  }
+                }
+              });
+            }
           }
         });
+
+        // Now write minified files
+        for (const [language, namespaces] of Object.entries(languageData)) {
+          const minifiedContent = JSON.stringify(namespaces);
+          fs.writeFileSync(path.join(dir, `${language}.json`), minifiedContent);
+          count++;
+          minified += minifiedContent.length;
+        }
 
         console.log(`[minify-translations] Minified ${count} JSON files in dist/translations`);
         console.log(`[minify-translations] Total size before minification: ${total} bytes`);
@@ -44,7 +81,41 @@ const minifyTranslations = () => {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tsconfigPaths(), tailwindcss(), minifyTranslations()],
+  plugins: [
+    react({
+      babel: {
+        overrides: [
+          {
+            include: ['./src/elements/**/*.{ts,tsx}', './src/pages/**/*.{ts,tsx}'],
+            plugins: ['babel-plugin-react-compiler'],
+          },
+        ],
+      },
+    }),
+    tsconfigPaths(),
+    tailwindcss(),
+    dynamicPublicDirectory(['public/**', 'extensions/*/public/**'], {
+      dst(path) {
+        if (path.baseFile.startsWith('extensions/')) {
+          return path.dstFile.split('/').slice(2).join('/');
+        }
+
+        return path.dstFile;
+      },
+    }),
+    minifyTranslations(),
+    viteStaticCopy({
+      targets: [
+        {
+          src: path.join(new URL('./', import.meta.resolve('monaco-editor/package.json')).pathname, 'min/vs'),
+          dest: 'monaco',
+        },
+      ],
+    }),
+  ],
+  optimizeDeps: {
+    exclude: ['monaco-editor'],
+  },
   build: {
     outDir: './dist',
     emptyOutDir: true,
@@ -52,6 +123,7 @@ export default defineConfig({
     target: 'es2020',
     cssCodeSplit: false,
     rollupOptions: {
+      external: ['monaco-editor'],
       output: {
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
@@ -75,10 +147,12 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://localhost:8000',
-      '/assets': 'http://localhost:8000',
-      '/avatars': 'http://localhost:8000',
+      '/openapi.json': `http://localhost:${process.env.BACKEND_PORT ?? 8000}`,
+      '/api': `http://localhost:${process.env.BACKEND_PORT ?? 8000}`,
+      '/assets': `http://localhost:${process.env.BACKEND_PORT ?? 8000}`,
+      '/avatars': `http://localhost:${process.env.BACKEND_PORT ?? 8000}`,
     },
     allowedHosts: true,
   },
+  publicDir: false,
 });

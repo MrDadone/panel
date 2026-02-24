@@ -102,7 +102,7 @@ const routes: ServerRouteDefinition[] = [
     icon: faCog,
     path: '/settings',
     element: ServerSettings,
-    permission: ['settings.read', 'file.sftp'],
+    permission: ['settings.*'],
   },
   {
     name: () => getTranslations().t('pages.server.activity.title', {}),

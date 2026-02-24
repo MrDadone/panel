@@ -1,9 +1,8 @@
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { backupDiskLabelMapping } from '@/lib/enums.ts';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 
 export default function BackupConfigurationRow({ backupConfiguration }: { backupConfiguration: BackupConfiguration }) {
   return (
@@ -21,9 +20,7 @@ export default function BackupConfigurationRow({ backupConfiguration }: { backup
       <TableData>{backupDiskLabelMapping[backupConfiguration.backupDisk]}</TableData>
 
       <TableData>
-        <Tooltip label={formatDateTime(backupConfiguration.created)}>
-          {formatTimestamp(backupConfiguration.created)}
-        </Tooltip>
+        <FormattedTimestamp timestamp={backupConfiguration.created} />
       </TableData>
     </TableRow>
   );

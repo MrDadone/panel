@@ -1,6 +1,17 @@
-import { faChevronDown, faFileDownload, faMinus, faPlus, faRefresh, faUpload } from '@fortawesome/free-solid-svg-icons';
+import {
+  faChevronDown,
+  faFileDownload,
+  faFileText,
+  faMinus,
+  faNetworkWired,
+  faPlay,
+  faPlus,
+  faRefresh,
+  faStop,
+  faUpload,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon, Group, Stack, Title } from '@mantine/core';
+import { ActionIcon, Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import jsYaml from 'js-yaml';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
@@ -31,6 +42,7 @@ import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { processConfigurationParserLabelMapping } from '@/lib/enums.ts';
 import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
@@ -102,8 +114,8 @@ export default function EggCreateOrUpdate({
           content: '#!/bin/bash\n\n# Install script content goes here\n',
         },
       }),
-    updateFn: () => updateEgg(contextNest.uuid, contextEgg!.uuid, form.values),
-    deleteFn: () => deleteEgg(contextNest.uuid, contextEgg!.uuid),
+    updateFn: contextEgg ? () => updateEgg(contextNest.uuid, contextEgg.uuid, form.values) : undefined,
+    deleteFn: contextEgg ? () => deleteEgg(contextNest.uuid, contextEgg.uuid) : undefined,
     doUpdate: !!contextEgg,
     basePath: `/admin/nests/${contextNest.uuid}/eggs`,
     resourceName: 'Egg',
@@ -295,11 +307,7 @@ export default function EggCreateOrUpdate({
             />
           </Group>
 
-          <Card>
-            <Title order={4} mb='xs'>
-              Startup Configuration
-            </Title>
-
+          <TitleCard title='Startup Configuration' icon={<FontAwesomeIcon icon={faPlay} size='sm' />}>
             <Group grow>
               <TagsInput
                 withAsterisk
@@ -315,13 +323,9 @@ export default function EggCreateOrUpdate({
                 {...form.getInputProps('configStartup.stripAnsi', { type: 'checkbox' })}
               />
             </Group>
-          </Card>
+          </TitleCard>
 
-          <Card>
-            <Title order={4} mb='xs'>
-              Stop Configuration
-            </Title>
-
+          <TitleCard title='Stop Configuration' icon={<FontAwesomeIcon icon={faStop} size='sm' />}>
             <Group grow>
               <Select
                 withAsterisk
@@ -330,7 +334,7 @@ export default function EggCreateOrUpdate({
                 data={[
                   { label: 'Send Command', value: 'command' },
                   { label: 'Send Signal', value: 'signal' },
-                  { label: 'Docker Shutdown', value: 'docker' },
+                  { label: 'Docker Stop', value: 'docker' },
                 ]}
                 {...form.getInputProps('configStop.type')}
               />
@@ -358,13 +362,9 @@ export default function EggCreateOrUpdate({
                 />
               ) : null}
             </Group>
-          </Card>
+          </TitleCard>
 
-          <Card>
-            <Title order={4} mb='xs'>
-              Allocation Configuration
-            </Title>
-
+          <TitleCard title='Allocation Configuration' icon={<FontAwesomeIcon icon={faNetworkWired} size='sm' />}>
             <Stack>
               <Group grow>
                 <Switch
@@ -375,7 +375,7 @@ export default function EggCreateOrUpdate({
 
                 <Switch
                   label='Require Primary Allocation'
-                  description='Whether users must have always have a primary allocation.'
+                  description='Whether users must always have a primary allocation.'
                   {...form.getInputProps('configAllocations.userSelfAssign.requirePrimaryAllocation', {
                     type: 'checkbox',
                   })}
@@ -395,13 +395,9 @@ export default function EggCreateOrUpdate({
                 />
               </Group>
             </Stack>
-          </Card>
+          </TitleCard>
 
-          <Card>
-            <Title order={4} mb='xs'>
-              Config Files Configuration
-            </Title>
-
+          <TitleCard title='Config Files Configuration' icon={<FontAwesomeIcon icon={faFileText} size='sm' />}>
             {form.values.configFiles.length === 0 ? (
               <p className='mb-2'>No config files defined.</p>
             ) : (
@@ -550,7 +546,7 @@ export default function EggCreateOrUpdate({
             >
               Add Config File
             </Button>
-          </Card>
+          </TitleCard>
 
           <TextInput withAsterisk label='Startup' placeholder='Startup' {...form.getInputProps('startup')} />
 

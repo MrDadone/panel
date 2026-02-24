@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import getOAuthProviders from '@/api/admin/oauth-providers/getOAuthProviders.ts';
 import createUserOAuthLink from '@/api/admin/users/oauthLinks/createUserOAuthLink.ts';
@@ -31,9 +31,13 @@ export default function UserOAuthLinkAddModal({ user, opened, onClose }: ModalPr
   }, [opened]);
 
   const doAdd = () => {
+    if (!selectedOAuthProvider) {
+      return;
+    }
+
     setLoading(true);
 
-    createUserOAuthLink(user.uuid, selectedOAuthProvider!.uuid, identifier)
+    createUserOAuthLink(user.uuid, selectedOAuthProvider.uuid, identifier)
       .then((oauthLink) => {
         addToast('OAuth Link added.', 'success');
 
@@ -72,14 +76,14 @@ export default function UserOAuthLinkAddModal({ user, opened, onClose }: ModalPr
           onChange={(e) => setIdentifier(e.target.value)}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doAdd} loading={loading} disabled={!selectedOAuthProvider || !identifier}>
             Add
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

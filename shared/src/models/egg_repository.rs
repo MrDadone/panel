@@ -184,7 +184,7 @@ impl EggRepository {
                                 Err(_) => continue,
                             }
                         } else {
-                            match serde_yml::from_str(&file_content) {
+                            match serde_norway::from_str(&file_content) {
                                 Ok(egg) => egg,
                                 Err(_) => continue,
                             }
@@ -281,21 +281,21 @@ impl ByUuid for EggRepository {
 impl DeletableModel for EggRepository {
     type DeleteOptions = ();
 
-    fn get_delete_listeners() -> &'static LazyLock<DeleteListenerList<Self>> {
+    fn get_delete_handlers() -> &'static LazyLock<DeleteListenerList<Self>> {
         static DELETE_LISTENERS: LazyLock<DeleteListenerList<EggRepository>> =
-            LazyLock::new(|| Arc::new(ListenerList::default()));
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
 
         &DELETE_LISTENERS
     }
 
     async fn delete(
         &self,
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         options: Self::DeleteOptions,
     ) -> Result<(), anyhow::Error> {
-        let mut transaction = database.write().begin().await?;
+        let mut transaction = state.database.write().begin().await?;
 
-        self.run_delete_listeners(&options, database, &mut transaction)
+        self.run_delete_handlers(&options, state, &mut transaction)
             .await?;
 
         sqlx::query(

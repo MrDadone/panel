@@ -46,13 +46,15 @@ mod delete {
             {
                 Some(security_key) => security_key,
                 None => {
-                    return ApiResponse::json(ApiError::new_value(&["security key not found"]))
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
+                    return ApiResponse::new_serialized(ApiError::new_value(&[
+                        "security key not found",
+                    ]))
+                    .with_status(StatusCode::NOT_FOUND)
+                    .ok();
                 }
             };
 
-        security_key.delete(&state.database, ()).await?;
+        security_key.delete(&state, ()).await?;
 
         if security_key.registration.is_none() {
             activity_logger
@@ -66,7 +68,7 @@ mod delete {
                 .await;
         }
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -80,7 +82,7 @@ mod patch {
             user_activity::GetUserActivityLogger,
             user_security_key::UserSecurityKey,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -114,10 +116,10 @@ mod patch {
         user: GetUser,
         activity_logger: GetUserActivityLogger,
         Path(security_key): Path<uuid::Uuid>,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -181,7 +183,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

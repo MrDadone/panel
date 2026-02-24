@@ -34,7 +34,7 @@ mod post {
     ), request_body = inline(Payload))]
     pub async fn route(
         state: GetState,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         for schedule_status in data.data {
             let schedule =
@@ -98,7 +98,7 @@ mod post {
             futures_util::future::try_join_all(futures).await?;
         }
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

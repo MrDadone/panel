@@ -163,29 +163,58 @@ pub trait BaseModel: Serialize + DeserializeOwned {
     fn map(prefix: Option<&str>, row: &PgRow) -> Result<Self, crate::database::DatabaseError>;
 }
 
+#[async_trait::async_trait]
+pub trait EventEmittingModel: BaseModel {
+    type Event: Send + Sync + 'static;
+
+    fn get_event_emitter() -> &'static crate::events::EventEmitter<Self::Event>;
+
+    async fn register_event_handler<
+        F: Fn(crate::State, Arc<Self::Event>) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<(), anyhow::Error>> + Send + 'static,
+    >(
+        listener: F,
+    ) -> crate::events::EventHandlerHandle {
+        Self::get_event_emitter()
+            .register_event_handler(listener)
+            .await
+    }
+
+    /// # Warning
+    /// This method will block the current thread if the lock is not available
+    fn blocking_register_event_handler<
+        F: Fn(crate::State, Arc<Self::Event>) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<(), anyhow::Error>> + Send + 'static,
+    >(
+        listener: F,
+    ) -> crate::events::EventHandlerHandle {
+        Self::get_event_emitter().blocking_register_event_handler(listener)
+    }
+}
+
 type DeleteListenerResult<'a> =
     Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'a>>;
 type DeleteListener<M> = dyn for<'a> Fn(
         &'a M,
         &'a <M as DeletableModel>::DeleteOptions,
-        &'a Arc<crate::database::Database>,
+        &'a crate::State,
         &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
     ) -> DeleteListenerResult<'a>
     + Send
     + Sync;
-pub type DeleteListenerList<M> = Arc<ListenerList<Box<DeleteListener<M>>>>;
+pub type DeleteListenerList<M> = Arc<ModelHandlerList<Box<DeleteListener<M>>>>;
 
 #[async_trait::async_trait]
 pub trait DeletableModel: BaseModel + Send + Sync + 'static {
     type DeleteOptions: Send + Sync + Default;
 
-    fn get_delete_listeners() -> &'static LazyLock<DeleteListenerList<Self>>;
+    fn get_delete_handlers() -> &'static LazyLock<DeleteListenerList<Self>>;
 
-    async fn add_delete_listener<
+    async fn register_delete_handler<
         F: for<'a> Fn(
                 &'a Self,
                 &'a Self::DeleteOptions,
-                &'a Arc<crate::database::Database>,
+                &'a crate::State,
                 &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
             )
                 -> Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'a>>
@@ -198,18 +227,18 @@ pub trait DeletableModel: BaseModel + Send + Sync + 'static {
     ) {
         let erased = Box::new(callback) as Box<DeleteListener<Self>>;
 
-        Self::get_delete_listeners()
-            .add_listener(priority, erased)
+        Self::get_delete_handlers()
+            .register_handler(priority, erased)
             .await;
     }
 
     /// # Warning
     /// This method will block the current thread if the lock is not available
-    fn add_delete_listener_sync<
+    fn blocking_register_delete_handler<
         F: for<'a> Fn(
                 &'a Self,
                 &'a Self::DeleteOptions,
-                &'a Arc<crate::database::Database>,
+                &'a crate::State,
                 &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
             )
                 -> Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'a>>
@@ -222,23 +251,23 @@ pub trait DeletableModel: BaseModel + Send + Sync + 'static {
     ) {
         let erased = Box::new(callback) as Box<DeleteListener<Self>>;
 
-        Self::get_delete_listeners().add_listener_sync(priority, erased);
+        Self::get_delete_handlers().blocking_register_handler(priority, erased);
     }
 
-    async fn run_delete_listeners(
+    async fn run_delete_handlers(
         &self,
         options: &Self::DeleteOptions,
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), anyhow::Error> {
-        let listeners = Self::get_delete_listeners().listeners.read().await;
+        let listeners = Self::get_delete_handlers().listeners.read().await;
 
         for listener in listeners.iter() {
             let transaction_ref: &mut sqlx::Transaction<'_, sqlx::Postgres> = unsafe {
                 std::mem::transmute(transaction as &mut sqlx::Transaction<'_, sqlx::Postgres>)
             };
 
-            (*listener.callback)(self, options, database, transaction_ref).await?;
+            (*listener.callback)(self, options, state, transaction_ref).await?;
         }
 
         Ok(())
@@ -246,7 +275,7 @@ pub trait DeletableModel: BaseModel + Send + Sync + 'static {
 
     async fn delete(
         &self,
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         options: Self::DeleteOptions,
     ) -> Result<(), anyhow::Error>;
 }
@@ -355,11 +384,11 @@ impl Ord for ListenerPriority {
     }
 }
 
-pub struct ListenerList<F> {
-    listeners: RwLock<Vec<Listener<F>>>,
+pub struct ModelHandlerList<F> {
+    listeners: RwLock<Vec<ModelHandler<F>>>,
 }
 
-impl<F> Default for ListenerList<F> {
+impl<F> Default for ModelHandlerList<F> {
     fn default() -> Self {
         Self {
             listeners: RwLock::new(Vec::new()),
@@ -367,14 +396,14 @@ impl<F> Default for ListenerList<F> {
     }
 }
 
-impl<F> ListenerList<F> {
-    pub async fn add_listener(
+impl<F> ModelHandlerList<F> {
+    pub async fn register_handler(
         self: &Arc<Self>,
         priority: ListenerPriority,
         callback: F,
-    ) -> ListenerAborter<F> {
-        let listener = Listener::new(callback, priority, self.clone());
-        let aborter = listener.aborter();
+    ) -> ModelHandlerHandle<F> {
+        let listener = ModelHandler::new(callback, priority, self.clone());
+        let aborter = listener.handle();
 
         let mut self_listeners = self.listeners.write().await;
         self_listeners.push(listener);
@@ -385,13 +414,13 @@ impl<F> ListenerList<F> {
 
     /// # Warning
     /// This method will block the current thread if the lock is not available
-    pub fn add_listener_sync(
+    pub fn blocking_register_handler(
         self: &Arc<Self>,
         priority: ListenerPriority,
         callback: F,
-    ) -> ListenerAborter<F> {
-        let listener = Listener::new(callback, priority, self.clone());
-        let aborter = listener.aborter();
+    ) -> ModelHandlerHandle<F> {
+        let listener = ModelHandler::new(callback, priority, self.clone());
+        let aborter = listener.handle();
 
         let mut self_listeners = self.listeners.blocking_write();
         self_listeners.push(listener);
@@ -401,16 +430,16 @@ impl<F> ListenerList<F> {
     }
 }
 
-pub struct Listener<F> {
+pub struct ModelHandler<F> {
     uuid: uuid::Uuid,
     priority: ListenerPriority,
-    list: Arc<ListenerList<F>>,
+    list: Arc<ModelHandlerList<F>>,
 
     pub callback: F,
 }
 
-impl<F> Listener<F> {
-    pub fn new(callback: F, priority: ListenerPriority, list: Arc<ListenerList<F>>) -> Self {
+impl<F> ModelHandler<F> {
+    pub fn new(callback: F, priority: ListenerPriority, list: Arc<ModelHandlerList<F>>) -> Self {
         Self {
             uuid: uuid::Uuid::new_v4(),
             priority,
@@ -419,21 +448,21 @@ impl<F> Listener<F> {
         }
     }
 
-    pub fn aborter(&self) -> ListenerAborter<F> {
-        ListenerAborter {
+    pub fn handle(&self) -> ModelHandlerHandle<F> {
+        ModelHandlerHandle {
             uuid: self.uuid,
             list: self.list.clone(),
         }
     }
 }
 
-pub struct ListenerAborter<F> {
+pub struct ModelHandlerHandle<F> {
     uuid: uuid::Uuid,
-    list: Arc<ListenerList<F>>,
+    list: Arc<ModelHandlerList<F>>,
 }
 
-impl<F> ListenerAborter<F> {
-    pub async fn abort(&self) {
+impl<F> ModelHandlerHandle<F> {
+    pub async fn disconnect(&self) {
         self.list
             .listeners
             .write()
@@ -443,7 +472,7 @@ impl<F> ListenerAborter<F> {
 
     /// # Warning
     /// This method will block the current thread if the lists' lock is not available
-    pub fn abort_sync(&self) {
+    pub fn blocking_disconnect(&self) {
         self.list
             .listeners
             .blocking_write()

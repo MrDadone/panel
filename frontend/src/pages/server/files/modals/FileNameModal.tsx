@@ -1,4 +1,4 @@
-import { Group, ModalProps } from '@mantine/core';
+import { ModalProps } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { z } from 'zod';
@@ -25,14 +25,14 @@ export default function FileNameModal({ onFileName, opened, onClose }: Props) {
       <form onSubmit={form.onSubmit(() => onFileName(form.values.name))}>
         <TextInput withAsterisk label='File Name' placeholder='File Name' {...form.getInputProps('name')} />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button type='submit' disabled={!form.isValid()}>
             Create
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </form>
     </Modal>
   );

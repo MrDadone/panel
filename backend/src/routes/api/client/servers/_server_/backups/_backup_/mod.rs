@@ -92,7 +92,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_server_permission("backups.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             backup: backup.0.into_api_object(),
         })
         .ok()
@@ -155,7 +155,7 @@ mod delete {
                 .ok();
         }
 
-        if let Err(err) = backup.delete(&state.database, ()).await {
+        if let Err(err) = backup.delete(&state, ()).await {
             tracing::error!(server = %server.uuid, backup = %backup.uuid, "failed to delete backup: {:?}", err);
 
             return ApiResponse::error("failed to delete backup")
@@ -173,7 +173,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -222,10 +222,10 @@ mod patch {
         permissions: GetPermissionManager,
         activity_logger: GetServerActivityLogger,
         mut backup: GetServerBackup,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -267,7 +267,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

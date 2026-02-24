@@ -52,7 +52,7 @@ mod post {
         ip: shared::GetIp,
         headers: axum::http::HeaderMap,
         cookies: Cookies,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         let payload: TwoFactorRequiredJwt = match state.jwt.verify(&data.confirmation_token) {
             Ok(payload) => payload,
@@ -232,7 +232,7 @@ mod post {
 
         drop(settings);
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             user: user.into_api_full_object(&state.storage.retrieve_urls().await?),
         })
         .ok()

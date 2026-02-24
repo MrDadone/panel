@@ -52,8 +52,24 @@ export default function SubNavigation({ baseUrl, items }: Props) {
   const location = useLocation();
   const activeItem =
     items
-      .filter((item) => item.path && location.pathname.endsWith(item.path))
-      .sort((a, b) => b.path!.length - a.path!.length)[0] ?? items[0];
+      .filter((item) => {
+        if (item.path) {
+          if (item.path.includes('*')) {
+            const segments = item.path.split('/').filter(Boolean);
+            const locationSegments = location.pathname.replace(baseUrl, '').split('/').filter(Boolean);
+            for (let i = 0; i < segments.length - 1; i++) {
+              if (segments[i] !== locationSegments[i]) {
+                return false;
+              }
+            }
+            return true;
+          }
+          return location.pathname.endsWith(item.path);
+        }
+        if (item.link) return item.link === '/' ? location.pathname === '/' : location.pathname.endsWith(item.link);
+        return false;
+      })
+      .sort((a, b) => (b.path?.length ?? b.link?.length ?? 0) - (a.path?.length ?? a.link?.length ?? 0))[0] ?? items[0];
 
   return (
     <>

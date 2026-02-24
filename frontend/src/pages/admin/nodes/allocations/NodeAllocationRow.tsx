@@ -3,8 +3,7 @@ import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
 interface NodeAllocationRowProps {
@@ -13,11 +12,13 @@ interface NodeAllocationRowProps {
 
 const NodeAllocationRow = memo(
   forwardRef<HTMLTableRowElement, NodeAllocationRowProps>(function FileRow({ allocation }, ref) {
-    const { isNodeAllocationSelected, addSelectedNodeAllocation, removeSelectedNodeAllocation } = useAdminStore();
+    const { selectedNodeAllocations, addSelectedNodeAllocation, removeSelectedNodeAllocation } = useAdminStore();
+
+    const isNodeAllocationSelected = selectedNodeAllocations.some((a) => a.uuid === allocation.uuid);
 
     return (
       <TableRow
-        bg={isNodeAllocationSelected(allocation) ? 'var(--mantine-color-blue-light)' : undefined}
+        bg={isNodeAllocationSelected ? 'var(--mantine-color-blue-light)' : undefined}
         onClick={(e) => {
           if (e.ctrlKey || e.metaKey) {
             addSelectedNodeAllocation(allocation);
@@ -31,9 +32,9 @@ const NodeAllocationRow = memo(
         <td className='pl-4 relative cursor-pointer w-10 text-center'>
           <Checkbox
             id={allocation.uuid}
-            checked={isNodeAllocationSelected(allocation)}
+            checked={isNodeAllocationSelected}
             onChange={() => {
-              if (isNodeAllocationSelected(allocation)) {
+              if (isNodeAllocationSelected) {
                 removeSelectedNodeAllocation(allocation);
               } else {
                 addSelectedNodeAllocation(allocation);
@@ -75,7 +76,7 @@ const NodeAllocationRow = memo(
         </TableData>
 
         <TableData>
-          <Tooltip label={formatDateTime(allocation.created)}>{formatTimestamp(allocation.created)}</Tooltip>
+          <FormattedTimestamp timestamp={allocation.created} />
         </TableData>
       </TableRow>
     );

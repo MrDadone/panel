@@ -8,7 +8,7 @@ export const adminEggSchema = z.object({
   configFiles: z.array(
     z.object({
       file: z.string(),
-      parser: z.enum(['file', 'yaml', 'properties', 'ini', 'json', 'xml']),
+      parser: z.enum(['file', 'yaml', 'properties', 'ini', 'json', 'xml', 'toml']),
       replace: z.array(
         z.object({
           match: z.string(),

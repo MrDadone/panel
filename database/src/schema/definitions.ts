@@ -1,7 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { bytea, DatabaseEnum, DatabaseTable, UTF8_MAX_SCALAR_SIZE } from '@/schema/table';
 import {
-  PgColumn,
   bigint,
   boolean,
   char,
@@ -9,6 +7,7 @@ import {
   inet,
   integer,
   jsonb,
+  PgColumn,
   primaryKey,
   smallint,
   text,
@@ -17,6 +16,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { bytea, DatabaseEnum, DatabaseTable, UTF8_MAX_SCALAR_SIZE } from '@/schema/table.ts';
 
 export const databaseTypeEnum = new DatabaseEnum('database_type', ['MYSQL', 'POSTGRES']);
 export const serverStatusEnum = new DatabaseEnum('server_status', ['INSTALLING', 'INSTALL_FAILED', 'RESTORING_BACKUP']);
@@ -304,6 +304,7 @@ export const mountsTable = new DatabaseTable('mounts')
 export const backupConfigurationsTable = new DatabaseTable('backup_configurations')
   .addColumn('uuid', uuid().default(sql`gen_random_uuid()`).primaryKey().notNull())
   .addColumn('name', varchar({ length: 255 * UTF8_MAX_SCALAR_SIZE }).notNull())
+  .addColumn('maintenance_enabled', boolean().default(false).notNull())
   .addColumn('description', text())
   .addColumn('backup_disk', backupDiskEnum.intoDrizzleEnum()().default('LOCAL').notNull())
   .addColumn('backup_configs', jsonb().default({}).notNull())
@@ -357,13 +358,13 @@ export const nodesTable = new DatabaseTable('nodes')
     uuid().references(() => backupConfigurationsTable.join().uuid, { onDelete: 'set null' }),
   )
   .addColumn('name', varchar({ length: 255 * UTF8_MAX_SCALAR_SIZE }).notNull())
-  .addColumn('public', boolean().notNull())
+  .addColumn('deployment_enabled', boolean().default(false).notNull())
+  .addColumn('maintenance_enabled', boolean().default(false).notNull())
   .addColumn('description', text())
   .addColumn('public_url', varchar({ length: 255 * UTF8_MAX_SCALAR_SIZE }))
   .addColumn('url', varchar({ length: 255 * UTF8_MAX_SCALAR_SIZE }).notNull())
   .addColumn('sftp_host', varchar({ length: 255 * UTF8_MAX_SCALAR_SIZE }))
   .addColumn('sftp_port', integer().notNull())
-  .addColumn('maintenance_message', text())
   .addColumn('memory', bigint({ mode: 'number' }).notNull())
   .addColumn('disk', bigint({ mode: 'number' }).notNull())
   .addColumn('token_id', char({ length: 16 }).notNull())
@@ -533,7 +534,8 @@ export const nestEggVariablesTable = new DatabaseTable('nest_egg_variables')
 export const databaseHostsTable = new DatabaseTable('database_hosts')
   .addColumn('uuid', uuid().default(sql`gen_random_uuid()`).primaryKey().notNull())
   .addColumn('name', varchar({ length: 255 * UTF8_MAX_SCALAR_SIZE }).notNull())
-  .addColumn('public', boolean().default(false).notNull())
+  .addColumn('deployment_enabled', boolean().default(false).notNull())
+  .addColumn('maintenance_enabled', boolean().default(false).notNull())
   .addColumn('type', databaseTypeEnum.intoDrizzleEnum()().notNull())
   .addColumn('public_host', varchar({ length: 255 * UTF8_MAX_SCALAR_SIZE }))
   .addColumn('host', varchar({ length: 255 * UTF8_MAX_SCALAR_SIZE }).notNull())
@@ -600,6 +602,8 @@ export const serversTable = new DatabaseTable('servers')
   .addColumn('auto_kill', jsonb().default({ enabled: false, seconds: 30 }).notNull())
   .addColumn('auto_start_behavior', serverAutoStartBehaviorEnum.intoDrizzleEnum()().default('UNLESS_STOPPED').notNull())
   .addColumn('timezone', varchar({ length: 255 }))
+  .addColumn('hugepages_passthrough_enabled', boolean().default(false).notNull())
+  .addColumn('kvm_passthrough_enabled', boolean().default(false).notNull())
   .addColumn('allocation_limit', integer().default(0).notNull())
   .addColumn('database_limit', integer().default(0).notNull())
   .addColumn('backup_limit', integer().default(0).notNull())
@@ -672,6 +676,10 @@ export const serverActivitiesTable = new DatabaseTable('server_activities')
   .addColumn(
     'api_key_uuid',
     uuid().references(() => userApiKeysTable.join().uuid, { onDelete: 'set null' }),
+  )
+  .addColumn(
+    'schedule_uuid',
+    uuid().references(() => serverSchedulesTable.join().uuid, { onDelete: 'set null' }),
   )
   .addColumn('event', varchar({ length: 255 }).notNull())
   .addColumn('ip', inet())

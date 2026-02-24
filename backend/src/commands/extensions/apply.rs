@@ -24,6 +24,15 @@ impl ApplyProfile {
             Self::Optimized => "release",
         }
     }
+
+    #[inline]
+    fn to_target_path(self) -> &'static str {
+        match self {
+            Self::Dev => "debug",
+            Self::Balanced => "heavy-release",
+            Self::Optimized => "release",
+        }
+    }
 }
 
 #[derive(Args)]
@@ -35,6 +44,12 @@ pub struct ApplyArgs {
         default_value = "balanced"
     )]
     profile: ApplyProfile,
+    #[arg(
+        long = "skip-replace-binary",
+        help = "skip replacing the current binary after building",
+        default_value = "false"
+    )]
+    skip_replace_binary: bool,
 }
 
 pub struct ApplyCommand;
@@ -133,17 +148,6 @@ impl shared::extensions::commands::CliCommand<ApplyArgs> for ApplyCommand {
                     std::process::exit(1);
                 }
 
-                println!("checking backend...");
-                let status = Command::new(&cargo_bin).arg("check").status().await?;
-                if !status.success() {
-                    eprintln!(
-                        "{} {}",
-                        "cargo check".bright_red(),
-                        "did not run successfully, aborting process".red()
-                    );
-                    std::process::exit(1);
-                }
-
                 println!();
                 println!("┏━━━━━━━━━━━━━━━━━━━┓");
                 println!("┃ building frontend ┃");
@@ -222,11 +226,11 @@ impl shared::extensions::commands::CliCommand<ApplyArgs> for ApplyCommand {
 
                 #[cfg(not(windows))]
                 let output_location = Path::new("target")
-                    .join(args.profile.to_rust_profile())
+                    .join(args.profile.to_target_path())
                     .join("panel-rs");
                 #[cfg(windows)]
                 let output_location = Path::new("target")
-                    .join(args.profile.to_rust_profile())
+                    .join(args.profile.to_target_path())
                     .join("panel-rs.exe");
 
                 let output_metadata = tokio::fs::metadata(&output_location).await?;
@@ -236,34 +240,37 @@ impl shared::extensions::commands::CliCommand<ApplyArgs> for ApplyCommand {
                     human_bytes::human_bytes(output_metadata.len() as f64).bright_black()
                 );
 
-                let current_exe = std::env::current_exe().with_context(|| {
-                    format!(
-                        "unable to retrieve current executable, manually move `{}`",
-                        output_location.display()
-                    )
-                })?;
+                if !args.skip_replace_binary {
+                    let current_exe = std::env::current_exe().with_context(|| {
+                        format!(
+                            "unable to retrieve current executable, manually move `{}`",
+                            output_location.display()
+                        )
+                    })?;
 
-                #[cfg(not(windows))]
-                {
-                    tokio::fs::rename(&output_location, &current_exe)
-                        .await
-                        .with_context(|| {
-                            format!(
-                                "unable to automatically move binary, move `{}` to `{}`",
-                                output_location.display(),
-                                current_exe.display()
-                            )
-                        })?;
-                }
-                #[cfg(windows)]
-                {
-                    eprintln!(
-                        "{} {} {} {}",
-                        "unable to automatically move binary on windows, move".red(),
-                        output_location.to_string_lossy().bright_red(),
-                        "to".red(),
-                        current_exe.to_string_lossy().bright_red()
-                    );
+                    #[cfg(not(windows))]
+                    {
+                        if let Err(err) = tokio::fs::rename(&output_location, &current_exe).await {
+                            eprintln!(
+                                "{} {} {} {}: {}",
+                                "unable to automatically move binary, manually move".red(),
+                                output_location.to_string_lossy().bright_red(),
+                                "to".red(),
+                                current_exe.to_string_lossy().bright_red(),
+                                err
+                            );
+                        }
+                    }
+                    #[cfg(windows)]
+                    {
+                        eprintln!(
+                            "{} {} {} {}",
+                            "unable to automatically move binary on windows, move".red(),
+                            output_location.to_string_lossy().bright_red(),
+                            "to".red(),
+                            current_exe.to_string_lossy().bright_red()
+                        );
+                    }
                 }
 
                 Ok(())

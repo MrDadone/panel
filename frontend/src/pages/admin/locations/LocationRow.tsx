@@ -1,8 +1,7 @@
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 
 export default ({ location }: { location: Location }) => {
   return (
@@ -31,7 +30,7 @@ export default ({ location }: { location: Location }) => {
       </TableData>
 
       <TableData>
-        <Tooltip label={formatDateTime(location.created)}>{formatTimestamp(location.created)}</Tooltip>
+        <FormattedTimestamp timestamp={location.created} />
       </TableData>
     </TableRow>
   );

@@ -53,7 +53,7 @@ mod delete {
                 }
             };
 
-        server_mount.delete(&state.database, ()).await?;
+        server_mount.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -65,7 +65,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

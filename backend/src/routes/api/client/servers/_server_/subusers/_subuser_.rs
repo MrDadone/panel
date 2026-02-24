@@ -115,7 +115,7 @@ mod delete {
             }
         });
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -169,10 +169,10 @@ mod patch {
         server: GetServer,
         activity_logger: GetServerActivityLogger,
         Path((_server, subuser)): Path<(String, String)>,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -260,7 +260,16 @@ mod patch {
                         &wings_api::servers_server_ws_permissions::post::RequestBody {
                             user_permissions: vec![wings_api::servers_server_ws_permissions::post::RequestBodyUserPermissions {
                                 user: subuser.user.uuid,
-                                permissions: server.wings_subuser_permissions(&subuser).into_iter().map(compact_str::CompactString::from).collect(),
+                                permissions: server.wings_subuser_permissions(
+                                    match &state.settings.get().await {
+                                        Ok(settings) => settings,
+                                        Err(_) => return,
+                                    },
+                                    &subuser
+                                )
+                                    .into_iter()
+                                    .map(compact_str::CompactString::from)
+                                    .collect(),
                                 ignored_files: subuser.ignored_files,
                             }]
                         }
@@ -272,7 +281,7 @@ mod patch {
             }
         });
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

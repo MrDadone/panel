@@ -1,7 +1,9 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.3.4/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-  "files": { "includes": ["**", "!!**/dist"] },
+  "files": {
+    "includes": ["src/**", "!!**/dist"]
+  },
   "formatter": {
     "enabled": true,
     "formatWithErrors": false,
@@ -60,7 +62,8 @@
         "noNamespace": "error",
         "useArrayLiterals": "error",
         "useAsConstAssertion": "error",
-        "useConsistentCurlyBraces": "warn"
+        "useConsistentCurlyBraces": "warn",
+        "useComponentExportOnlyModules": "warn"
       },
       "suspicious": {
         "noAsyncPromiseExecutor": "error",

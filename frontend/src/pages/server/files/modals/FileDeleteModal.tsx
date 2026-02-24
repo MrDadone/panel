@@ -1,4 +1,4 @@
-import { Group, ModalProps } from '@mantine/core';
+import { ModalProps } from '@mantine/core';
 import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteFiles from '@/api/server/files/deleteFiles.ts';
@@ -61,14 +61,14 @@ export default function FileDeleteModal({ files, opened, onClose }: Props) {
         </>
       )}
 
-      <Group mt='md'>
+      <Modal.Footer>
         <Button color='red' onClick={doDelete} loading={loading}>
           Delete
         </Button>
         <Button variant='default' onClick={onClose}>
           Close
         </Button>
-      </Group>
+      </Modal.Footer>
     </Modal>
   );
 }

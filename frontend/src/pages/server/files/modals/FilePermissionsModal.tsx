@@ -183,14 +183,14 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
         </div>
       </Card>
 
-      <Group mt='md'>
+      <Modal.Footer>
         <Button onClick={doChmod} loading={loading} disabled={!browsingWritableDirectory}>
           Save
         </Button>
         <Button variant='default' onClick={onClose}>
           Close
         </Button>
-      </Group>
+      </Modal.Footer>
     </Modal>
   );
 }

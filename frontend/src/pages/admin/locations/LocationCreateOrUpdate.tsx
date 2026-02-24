@@ -39,8 +39,8 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
   const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminLocationSchema>, Location>({
     form,
     createFn: () => createLocation(form.values),
-    updateFn: () => updateLocation(contextLocation!.uuid, form.values),
-    deleteFn: () => deleteLocation(contextLocation!.uuid),
+    updateFn: contextLocation ? () => updateLocation(contextLocation.uuid, form.values) : undefined,
+    deleteFn: contextLocation ? () => deleteLocation(contextLocation.uuid) : undefined,
     doUpdate: !!contextLocation,
     basePath: '/admin/locations',
     resourceName: 'Location',

@@ -35,7 +35,7 @@ mod post {
 
         let found = egg_repository.sync(&state.database).await?;
 
-        ApiResponse::json(Response { found }).ok()
+        ApiResponse::new_serialized(Response { found }).ok()
     }
 }
 

@@ -46,7 +46,7 @@ mod get {
         Query(params): Query<PaginationParamsWithSearch>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -63,7 +63,7 @@ mod get {
 
         let storage_url_retriever = state.storage.retrieve_urls().await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             servers: servers
                 .try_async_map(|server| {
                     server.into_admin_api_object(&state.database, &storage_url_retriever)
@@ -140,6 +140,9 @@ mod post {
         #[schema(min_length = 3, max_length = 255, value_type = String)]
         timezone: Option<chrono_tz::Tz>,
 
+        hugepages_passthrough_enabled: bool,
+        kvm_passthrough_enabled: bool,
+
         feature_limits: shared::models::server::ApiServerFeatureLimits,
         #[schema(inline)]
         variables: Vec<PayloadVariable>,
@@ -160,10 +163,10 @@ mod post {
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -286,6 +289,8 @@ mod post {
             &data.startup,
             &data.image,
             data.timezone.as_ref().map(|tz| tz.name()),
+            data.hugepages_passthrough_enabled,
+            data.kvm_passthrough_enabled,
             &data.feature_limits,
             &server_variables,
         )
@@ -329,13 +334,17 @@ mod post {
                     "startup": data.startup,
                     "image": data.image,
                     "timezone": data.timezone,
+
+                    "hugepages_passthrough_enabled": data.hugepages_passthrough_enabled,
+                    "kvm_passthrough_enabled": data.kvm_passthrough_enabled,
+
                     "feature_limits": data.feature_limits,
                     "variables": data.variables,
                 }),
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             server: server
                 .into_admin_api_object(&state.database, &state.storage.retrieve_urls().await?)
                 .await?,

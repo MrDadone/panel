@@ -1,27 +1,10 @@
 import classNames from 'classnames';
 import { AnimatePresence, motion } from 'motion/react';
-import { createContext, FC, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+import { FC, ReactNode, useCallback, useMemo, useState } from 'react';
 import Notification from '@/elements/Notification.tsx';
+import { Toast, ToastContext, ToastType } from '@/providers/contexts/toastContext.ts';
 
-type ToastType = 'success' | 'error' | 'warning' | 'info';
-
-interface Toast {
-  id: number;
-  message: string;
-  type: ToastType;
-}
-
-interface ToastContextType {
-  toastPosition: UserToastPosition;
-  setToastPosition: (position: UserToastPosition) => void;
-
-  addToast: (message: string, type?: ToastType) => number;
-  dismissToast: (id: number) => void;
-}
-
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
-
-let toastId = 0;
+let toastId = 1;
 
 const toastTimeout = 7500;
 
@@ -72,7 +55,7 @@ const getToastPositionInitial = (position: UserToastPosition) => {
   }
 };
 
-export const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
+const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [toastPosition, setToastPosition] = useState<UserToastPosition>('bottom_right');
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -115,9 +98,11 @@ export const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
               transition={{ duration: 0.3 }}
               className='w-72'
             >
-              <Notification color={getToastColor(toast.type)} withCloseButton onClose={() => dismissToast(toast.id)}>
-                {toast.message}
-              </Notification>
+              <div className='pt-2'>
+                <Notification color={getToastColor(toast.type)} withCloseButton onClose={() => dismissToast(toast.id)}>
+                  {toast.message}
+                </Notification>
+              </div>
             </motion.div>
           ))}
         </AnimatePresence>
@@ -126,11 +111,5 @@ export const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
 };
 
-export const useToast = (): ToastContextType => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-
-  return context;
-};
+export { ToastProvider };
+export { useToast } from './contexts/toastContext.ts';

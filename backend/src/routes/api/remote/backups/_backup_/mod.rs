@@ -208,13 +208,13 @@ mod get {
             SET upload_id = $1, upload_path = $2
             WHERE server_backups.uuid = $3",
             multipart.upload_id,
-            file_path,
+            &file_path,
             backup.0.uuid
         )
         .execute(state.database.write())
         .await?;
 
-        ApiResponse::json(Response { parts, part_size }).ok()
+        ApiResponse::new_serialized(Response { parts, part_size }).ok()
     }
 }
 
@@ -450,7 +450,7 @@ mod post {
             );
         }
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

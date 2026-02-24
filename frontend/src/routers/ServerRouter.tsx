@@ -10,6 +10,8 @@ import { ServerCan } from '@/elements/Can.tsx';
 import Container from '@/elements/Container.tsx';
 import Notification from '@/elements/Notification.tsx';
 import Progress from '@/elements/Progress.tsx';
+import ServerStatusIndicator from '@/elements/ServerStatusIndicator.tsx';
+import ServerSwitcher from '@/elements/ServerSwitcher.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { isAdmin } from '@/lib/permissions.ts';
@@ -35,7 +37,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
   const [loading, setLoading] = useState(true);
   const [abortLoading, setAbortLoading] = useState(false);
 
-  const { server, updateServer, backupRestoreProgress } = useServerStore();
+  const { server, updateServer, backupRestoreProgress, setSocketInstance } = useServerStore();
   const resetState = useServerStore((state) => state.reset);
   const setServer = useServerStore((state) => state.setServer);
 
@@ -54,8 +56,12 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
 
   useEffect(() => {
     if (params.id) {
+      setLoading(true);
       getServer(params.id)
-        .then((data) => setServer(data))
+        .then((data) => {
+          setSocketInstance(null);
+          setServer(data);
+        })
         .finally(() => setLoading(false));
     }
   }, [params.id]);
@@ -77,11 +83,16 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
       {isNormal && (
         <Sidebar>
           <NavLink to='/' className='w-full'>
-            <div className='h-28 w-full flex flex-row items-center justify-between mt-1 select-none cursor-pointer'>
-              <img src='/icon.svg' className='h-full py-4' alt='Calagopus Icon' />
-              <h1 className='grow font-logo text-xl'>{settings.app.name}</h1>
+            <div className='h-16 w-full flex flex-row items-center justify-between mt-1 select-none cursor-pointer'>
+              <img src='/icon.svg' className='h-12 w-12' alt='Calagopus Icon' />
+              <h1 className='grow text-md font-bold! ml-2'>{settings.app.name}</h1>
             </div>
           </NavLink>
+
+          <div className='flex flex-col gap-2 mt-2 mb-1'>
+            <ServerSwitcher />
+            <ServerStatusIndicator />
+          </div>
 
           <Sidebar.Divider />
 
@@ -100,7 +111,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
 
           <Sidebar.Divider />
 
-          {[...serverRoutes, ...window.extensionContext.routes.serverRoutes]
+          {[...serverRoutes, ...window.extensionContext.extensionRegistry.routes.serverRoutes]
             .filter((route) => !!route.name && (!route.filter || route.filter()))
             .map((route) =>
               route.permission ? (
@@ -127,42 +138,46 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
         </Sidebar>
       )}
 
-      <div
-        id='server-root'
-        className={
-          isNormal ? 'max-w-[100vw] lg:max-w-[calc(100vw-17.5rem)] flex-1 lg:ml-0' : 'flex-1 lg:ml-0 overflow-auto'
-        }
-      >
+      <div id='server-root' className={isNormal ? 'max-w-[100vw] flex-1 lg:ml-0' : 'flex-1 lg:ml-0 overflow-auto'}>
         <Container isNormal={isNormal}>
           {loading ? (
             <Spinner.Centered />
-          ) : server ? (
+          ) : server.uuid ? (
             <>
               <WebsocketHandler />
               <WebsocketListener />
+              {window.extensionContext.extensionRegistry.pages.server.prependedComponents.map((Component, i) => (
+                <Component key={`server-prepended-component-${i}`} />
+              ))}
               {server.status === 'restoring_backup' ? (
-                <Notification className='mb-4' loading>
-                  {t('pages.server.console.notification.restoringBackup', {})}
-                  <Progress value={backupRestoreProgress} />
-                </Notification>
+                <div className='pt-2 px-12'>
+                  <Notification loading>
+                    {t('pages.server.console.notification.restoringBackup', {})}
+                    <Progress value={backupRestoreProgress} />
+                  </Notification>
+                </div>
               ) : server.status === 'installing' ? (
-                <Notification className='mb-4' loading>
-                  {t('pages.server.console.notification.installing', {})}
-                  <Button
-                    className='ml-2'
-                    leftSection={<FontAwesomeIcon icon={faCancel} />}
-                    variant='subtle'
-                    loading={abortLoading}
-                    onClick={doAbortInstall}
-                  >
-                    {t('common.button.cancel', {})}
-                  </Button>
-                </Notification>
+                <div className='pt-2 px-12'>
+                  <Notification loading>
+                    {t('pages.server.console.notification.installing', {})}
+                    <ServerCan action='settings.cancel-install'>
+                      <Button
+                        className='ml-2'
+                        leftSection={<FontAwesomeIcon icon={faCancel} />}
+                        variant='subtle'
+                        loading={abortLoading}
+                        onClick={doAbortInstall}
+                      >
+                        {t('common.button.cancel', {})}
+                      </Button>
+                    </ServerCan>
+                  </Notification>
+                </div>
               ) : null}
 
               <Suspense fallback={<Spinner.Centered />}>
                 <Routes>
-                  {[...serverRoutes, ...window.extensionContext.routes.serverRoutes]
+                  {[...serverRoutes, ...window.extensionContext.extensionRegistry.routes.serverRoutes]
                     .filter((route) => !route.filter || route.filter())
                     .map(({ path, element: Element, permission }) => (
                       <Route key={path} element={<ServerPermissionGuard permission={permission ?? []} />}>
@@ -172,6 +187,10 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
                   <Route path='*' element={<NotFound />} />
                 </Routes>
               </Suspense>
+
+              {window.extensionContext.extensionRegistry.pages.server.appendedComponents.map((Component, i) => (
+                <Component key={`server-appended-component-${i}`} />
+              ))}
             </>
           ) : (
             <NotFound />

@@ -12,8 +12,9 @@ mod post {
 
     #[derive(ToSchema, Deserialize)]
     pub struct PayloadActivity {
-        user: Option<uuid::Uuid>,
         server: uuid::Uuid,
+        user: Option<uuid::Uuid>,
+        schedule: Option<uuid::Uuid>,
         event: String,
         metadata: Option<serde_json::Value>,
 
@@ -37,13 +38,22 @@ mod post {
     ), request_body = inline(Payload))]
     pub async fn route(
         state: GetState,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
+        let settings = state.settings.get().await?;
+        let server_log_schedule_activity = settings.activity.server_log_schedule_activity;
+        drop(settings);
+
         for activity in data.data {
+            if activity.schedule.is_some() && !server_log_schedule_activity {
+                continue;
+            }
+
             if let Err(err) = ServerActivity::log_remote(
                 &state.database,
                 activity.server,
                 activity.user,
+                activity.schedule,
                 &activity.event,
                 activity.ip.map(|ip| ip.into()),
                 activity.metadata.unwrap_or_else(|| serde_json::json!({})),
@@ -59,7 +69,7 @@ mod post {
             }
         }
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

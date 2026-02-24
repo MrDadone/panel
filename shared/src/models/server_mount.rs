@@ -333,16 +333,16 @@ impl ServerMount {
 impl DeletableModel for ServerMount {
     type DeleteOptions = ();
 
-    fn get_delete_listeners() -> &'static LazyLock<DeleteListenerList<Self>> {
+    fn get_delete_handlers() -> &'static LazyLock<DeleteListenerList<Self>> {
         static DELETE_LISTENERS: LazyLock<DeleteListenerList<ServerMount>> =
-            LazyLock::new(|| Arc::new(ListenerList::default()));
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
 
         &DELETE_LISTENERS
     }
 
     async fn delete(
         &self,
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         options: Self::DeleteOptions,
     ) -> Result<(), anyhow::Error> {
         let server_uuid = match &self.server {
@@ -354,9 +354,9 @@ impl DeletableModel for ServerMount {
             }
         };
 
-        let mut transaction = database.write().begin().await?;
+        let mut transaction = state.database.write().begin().await?;
 
-        self.run_delete_listeners(&options, database, &mut transaction)
+        self.run_delete_handlers(&options, state, &mut transaction)
             .await?;
 
         sqlx::query(
@@ -367,7 +367,7 @@ impl DeletableModel for ServerMount {
         )
         .bind(server_uuid)
         .bind(self.mount.uuid)
-        .execute(database.write())
+        .execute(&mut *transaction)
         .await?;
 
         transaction.commit().await?;

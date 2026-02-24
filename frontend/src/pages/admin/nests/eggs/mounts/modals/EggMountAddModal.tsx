@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import getMounts from '@/api/admin/mounts/getMounts.ts';
 import createEggMount from '@/api/admin/nests/eggs/mounts/createEggMount.ts';
@@ -25,14 +25,18 @@ export default function EggMountAddModal({
   const mounts = useSearchableResource<Mount>({ fetcher: (search) => getMounts(1, search) });
 
   const doAdd = () => {
+    if (!mount) {
+      return;
+    }
+
     setLoading(true);
 
-    createEggMount(nest.uuid, egg.uuid, mount!.uuid)
+    createEggMount(nest.uuid, egg.uuid, mount.uuid)
       .then(() => {
         addToast('Egg Mount added.', 'success');
 
         onClose();
-        addEggMount({ mount: mount!, created: new Date() });
+        addEggMount({ mount, created: new Date() });
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
@@ -58,14 +62,14 @@ export default function EggMountAddModal({
           onSearchChange={mounts.setSearch}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doAdd} loading={loading} disabled={!mount}>
             Add
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

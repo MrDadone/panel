@@ -15,6 +15,8 @@ static CLIENT: LazyLock<Client> = LazyLock::new(|| {
 pub enum ApiHttpError {
     Http(StatusCode, super::ApiError),
     Reqwest(reqwest::Error),
+    MsgpackEncode(rmp_serde::encode::Error),
+    MsgpackDecode(rmp_serde::decode::Error),
 }
 
 impl From<ApiHttpError> for anyhow::Error {
@@ -24,6 +26,8 @@ impl From<ApiHttpError> for anyhow::Error {
                 anyhow::anyhow!("wings api status code {status}: {}", err.error)
             }
             ApiHttpError::Reqwest(err) => anyhow::anyhow!(err),
+            ApiHttpError::MsgpackEncode(err) => anyhow::anyhow!(err),
+            ApiHttpError::MsgpackDecode(err) => anyhow::anyhow!(err),
         }
     }
 }
@@ -41,13 +45,23 @@ async fn request_impl<T: DeserializeOwned + 'static>(
         endpoint.as_ref()
     );
     let mut request = CLIENT.request(method, &url);
+    request = request.header("Accept", "application/msgpack");
 
     if !client.token.is_empty() {
         request = request.header("Authorization", format!("Bearer {}", client.token));
     }
 
     if let Some(body) = body {
-        request = request.json(body);
+        request = request.header("Content-Type", "application/msgpack");
+
+        let mut bytes = Vec::new();
+        let mut se = rmp_serde::Serializer::new(&mut bytes)
+            .with_struct_map()
+            .with_human_readable();
+        if let Err(err) = body.serialize(&mut se) {
+            return Err(ApiHttpError::MsgpackEncode(err));
+        }
+        request = request.body(bytes);
     } else if let Some(body_raw) = body_raw {
         request = request.body(Vec::from(body_raw));
     }
@@ -69,16 +83,35 @@ async fn request_impl<T: DeserializeOwned + 'static>(
                     };
                 }
 
-                match response.json().await {
-                    Ok(data) => Ok(data),
+                match response.bytes().await {
+                    Ok(data) => {
+                        let mut de =
+                            rmp_serde::Deserializer::new(data.as_ref()).with_human_readable();
+                        match T::deserialize(&mut de) {
+                            Ok(data) => Ok(data),
+                            Err(err) => Err(ApiHttpError::MsgpackDecode(err)),
+                        }
+                    }
                     Err(err) => Err(ApiHttpError::Reqwest(err)),
                 }
             } else {
                 Err(ApiHttpError::Http(
                     response.status(),
-                    response.json().await.unwrap_or_else(|err| super::ApiError {
-                        error: err.to_string().into(),
-                    }),
+                    match response.bytes().await {
+                        Ok(data) => {
+                            let mut de =
+                                rmp_serde::Deserializer::new(data.as_ref()).with_human_readable();
+                            match super::ApiError::deserialize(&mut de) {
+                                Ok(data) => data,
+                                Err(err) => super::ApiError {
+                                    error: err.to_string().into(),
+                                },
+                            }
+                        }
+                        Err(err) => super::ApiError {
+                            error: err.to_string().into(),
+                        },
+                    },
                 ))
             }
         }
@@ -154,6 +187,13 @@ impl WingsClient {
         data: &super::servers::post::RequestBody,
     ) -> Result<super::servers::post::Response, ApiHttpError> {
         request_impl(self, Method::POST, "/api/servers", Some(data), None).await
+    }
+
+    pub async fn post_servers_power(
+        &self,
+        data: &super::servers_power::post::RequestBody,
+    ) -> Result<super::servers_power::post::Response, ApiHttpError> {
+        request_impl(self, Method::POST, "/api/servers/power", Some(data), None).await
     }
 
     pub async fn get_servers_server(
@@ -295,6 +335,21 @@ impl WingsClient {
             self,
             Method::POST,
             format!("/api/servers/{server}/files/copy"),
+            Some(data),
+            None,
+        )
+        .await
+    }
+
+    pub async fn post_servers_server_files_copy_many(
+        &self,
+        server: uuid::Uuid,
+        data: &super::servers_server_files_copy_many::post::RequestBody,
+    ) -> Result<super::servers_server_files_copy_many::post::Response, ApiHttpError> {
+        request_impl(
+            self,
+            Method::POST,
+            format!("/api/servers/{server}/files/copy-many"),
             Some(data),
             None,
         )
@@ -454,6 +509,21 @@ impl WingsClient {
             self,
             Method::POST,
             format!("/api/servers/{server}/files/pull"),
+            Some(data),
+            None,
+        )
+        .await
+    }
+
+    pub async fn post_servers_server_files_pull_query(
+        &self,
+        server: uuid::Uuid,
+        data: &super::servers_server_files_pull_query::post::RequestBody,
+    ) -> Result<super::servers_server_files_pull_query::post::Response, ApiHttpError> {
+        request_impl(
+            self,
+            Method::POST,
+            format!("/api/servers/{server}/files/pull/query"),
             Some(data),
             None,
         )
@@ -711,6 +781,21 @@ impl WingsClient {
             Method::GET,
             format!("/api/servers/{server}/version?game={game}"),
             None::<&()>,
+            None,
+        )
+        .await
+    }
+
+    pub async fn post_servers_server_ws_broadcast(
+        &self,
+        server: uuid::Uuid,
+        data: &super::servers_server_ws_broadcast::post::RequestBody,
+    ) -> Result<super::servers_server_ws_broadcast::post::Response, ApiHttpError> {
+        request_impl(
+            self,
+            Method::POST,
+            format!("/api/servers/{server}/ws/broadcast"),
+            Some(data),
             None,
         )
         .await

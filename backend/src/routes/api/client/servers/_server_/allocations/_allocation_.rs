@@ -71,7 +71,7 @@ mod delete {
                 .ok();
         }
 
-        allocation.delete(&state.database, ()).await?;
+        allocation.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -84,7 +84,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -107,7 +107,7 @@ mod patch {
     pub struct Payload {
         #[validate(length(max = 1024))]
         #[schema(max_length = 1024)]
-        notes: Option<String>,
+        notes: Option<compact_str::CompactString>,
 
         primary: Option<bool>,
     }
@@ -138,10 +138,10 @@ mod patch {
         server: GetServer,
         activity_logger: GetServerActivityLogger,
         Path((_server, allocation)): Path<(String, uuid::Uuid)>,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -163,7 +163,11 @@ mod patch {
         let mut transaction = state.database.write().begin().await?;
 
         if let Some(notes) = &data.notes {
-            let notes = if notes.is_empty() { None } else { Some(notes) };
+            let notes = if notes.is_empty() {
+                None
+            } else {
+                Some(notes.as_str())
+            };
 
             sqlx::query!(
                 "UPDATE server_allocations
@@ -243,7 +247,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

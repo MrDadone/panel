@@ -32,8 +32,8 @@ export default function NestCreateOrUpdate({ contextNest }: { contextNest?: Admi
   const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminNestSchema>, AdminNest>({
     form,
     createFn: () => createNest(form.values),
-    updateFn: () => updateNest(contextNest!.uuid, form.values),
-    deleteFn: () => deleteNest(contextNest!.uuid),
+    updateFn: contextNest ? () => updateNest(contextNest.uuid, form.values) : undefined,
+    deleteFn: contextNest ? () => deleteNest(contextNest.uuid) : undefined,
     doUpdate: !!contextNest,
     basePath: '/admin/nests',
     resourceName: 'Nest',

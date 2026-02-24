@@ -1,0 +1,26 @@
+FROM node:24-alpine AS node_source
+
+FROM rust:alpine
+
+RUN apk add --no-cache libstdc++ inotify-tools git perl build-base
+
+COPY --from=node_source /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node_source /usr/local/bin/node /usr/local/bin/node
+
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
+RUN npm install -g pnpm@10
+
+# Add panel-rs and entrypoint
+ARG TARGETPLATFORM
+COPY .docker/${TARGETPLATFORM#linux/}/panel-rs /usr/bin/panel-rs
+COPY entrypoint.heavy.sh /entrypoint.sh
+
+RUN mkdir -p /app/repo
+
+COPY . /app/repo
+
+ENV OCI_CONTAINER=official-heavy
+
+ENTRYPOINT ["/bin/ash", "/entrypoint.sh"]

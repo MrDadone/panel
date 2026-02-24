@@ -4,14 +4,14 @@ import { Menu, MenuProps } from '@mantine/core';
 import { createContext, memo, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { useCurrentWindow } from '@/providers/CurrentWindowProvider.tsx';
 
-interface Item {
+export interface ContextMenuItem {
   icon: IconDefinition;
   label: string;
   hidden?: boolean;
   disabled?: boolean;
   onClick?: () => void;
   color?: 'gray' | 'red';
-  items?: Omit<Item, 'items'>[];
+  items?: Omit<ContextMenuItem, 'items'>[];
   canAccess?: boolean;
 }
 
@@ -19,12 +19,12 @@ interface ContextMenuState {
   visible: boolean;
   x: number;
   y: number;
-  items: Item[];
+  items: ContextMenuItem[];
 }
 
 interface ContextMenuContextType {
   state: ContextMenuState;
-  showMenu: (x: number, y: number, items: Item[]) => void;
+  showMenu: (x: number, y: number, items: ContextMenuItem[]) => void;
   hideMenu: () => void;
 }
 
@@ -40,7 +40,7 @@ export const ContextMenuProvider = ({ children, menuProps }: { children: ReactNo
     items: [],
   });
 
-  const showMenu = (x: number, y: number, items: Item[]) => {
+  const showMenu = (x: number, y: number, items: ContextMenuItem[]) => {
     const windowContainer = getParent();
     if (windowContainer) {
       const windowRect = windowContainer.getBoundingClientRect();
@@ -170,8 +170,12 @@ const ContextMenu = memo(
     items = [],
     children,
   }: {
-    items: Item[];
-    children: (ctx: { items: Item[]; openMenu: (x: number, y: number) => void; hideMenu: () => void }) => ReactNode;
+    items: ContextMenuItem[];
+    children: (ctx: {
+      items: ContextMenuItem[];
+      openMenu: (x: number, y: number) => void;
+      hideMenu: () => void;
+    }) => ReactNode;
   }) => {
     const context = useContext(ContextMenuContext);
 
@@ -197,25 +201,27 @@ const ContextMenu = memo(
 
 ContextMenu.displayName = 'ContextMenu';
 
-const ContextMenuToggle = memo(({ openMenu, items }: { openMenu: (x: number, y: number) => void; items: Item[] }) => {
-  if (!items.some((item) => item.canAccess !== false)) {
-    return <td></td>;
-  }
+const ContextMenuToggle = memo(
+  ({ openMenu, items }: { openMenu: (x: number, y: number) => void; items: ContextMenuItem[] }) => {
+    if (!items.some((item) => item.canAccess !== false)) {
+      return <td></td>;
+    }
 
-  return (
-    <td
-      className='relative cursor-pointer w-10 text-center'
-      onClick={(e) => {
-        e.stopPropagation();
+    return (
+      <td
+        className='relative cursor-pointer w-10 text-center'
+        onClick={(e) => {
+          e.stopPropagation();
 
-        const rect = e.currentTarget.getBoundingClientRect();
-        openMenu(rect.left, rect.bottom);
-      }}
-    >
-      <FontAwesomeIcon icon={faEllipsis} />
-    </td>
-  );
-});
+          const rect = e.currentTarget.getBoundingClientRect();
+          openMenu(rect.left, rect.bottom);
+        }}
+      >
+        <FontAwesomeIcon icon={faEllipsis} />
+      </td>
+    );
+  },
+);
 
 ContextMenuToggle.displayName = 'ContextMenuToggle';
 

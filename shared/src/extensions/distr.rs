@@ -5,11 +5,12 @@ use std::{
     collections::BTreeMap,
     io::{Read, Write},
     path::Path,
+    sync::Arc,
 };
 use utoipa::ToSchema;
 use zip::write::FileOptions;
 
-#[derive(ToSchema, Deserialize, Serialize)]
+#[derive(Clone, ToSchema, Deserialize, Serialize)]
 pub struct MetadataToml {
     pub package_name: String,
     pub name: String,
@@ -18,42 +19,53 @@ pub struct MetadataToml {
 }
 
 impl MetadataToml {
+    /// Get the package identifier for this extension.
+    /// This is derived from the package name by replacing `.` with `_`.
+    ///
+    /// Example: `com.example.myextension` becomes `com_example_myextension`.
     #[inline]
     pub fn get_package_identifier(&self) -> String {
         Self::convert_package_name_to_identifier(&self.package_name)
     }
 
+    /// Convert a package name to an identifier by replacing `.` with `_`.
+    ///
+    /// Example: `com.example.myextension` becomes `com_example_myextension`.
     #[inline]
     pub fn convert_package_name_to_identifier(package_name: &str) -> String {
         package_name.replace('.', "_")
     }
 
+    /// Convert an identifier to a package name by replacing `_` with `.`.
+    ///
+    /// Example: `com_example_myextension` becomes `com.example.myextension`.
     #[inline]
     pub fn convert_identifier_to_package_name(identifier: &str) -> String {
         identifier.replace('_', ".")
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct CargoPackage {
     pub description: String,
     pub authors: Vec<String>,
     pub version: semver::Version,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct CargoToml {
     pub package: CargoPackage,
     pub dependencies: BTreeMap<String, toml::Value>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct PackageJson {
     pub dependencies: BTreeMap<String, String>,
 }
 
+#[derive(Clone)]
 pub struct ExtensionDistrFile {
-    zip: zip::ZipArchive<std::fs::File>,
+    zip: zip::ZipArchive<Arc<std::fs::File>>,
 
     pub metadata_toml: MetadataToml,
     pub cargo_toml: CargoToml,
@@ -62,7 +74,7 @@ pub struct ExtensionDistrFile {
 
 impl ExtensionDistrFile {
     pub fn parse_from_file(file: std::fs::File) -> Result<Self, anyhow::Error> {
-        let mut zip = zip::ZipArchive::new(file)?;
+        let mut zip = zip::ZipArchive::new(Arc::new(file))?;
 
         let mut metadata_toml = zip.by_name("Metadata.toml")?;
         let mut metadata_toml_bytes = vec![0; metadata_toml.size() as usize];
@@ -223,7 +235,7 @@ impl ExtensionDistrFile {
             ));
         }
 
-        if identifier_segment.len() < 5 || identifier_segment.len() > 30 {
+        if identifier_segment.len() < 4 || identifier_segment.len() > 30 {
             return Err(anyhow::anyhow!(
                 "invalid identifier segment `{}` in calagopus extension archive package name.",
                 identifier_segment
@@ -501,4 +513,125 @@ impl ExtensionDistrFileBuilder {
 
         Ok(writer)
     }
+}
+
+pub fn resync_extension_list() -> Result<(), anyhow::Error> {
+    let internal_list_extension = Path::new("backend-extensions/internal-list");
+    let extensions_path = Path::new("backend-extensions");
+
+    let mut packages = Vec::new();
+
+    for dir in std::fs::read_dir(extensions_path).unwrap().flatten() {
+        if !dir.file_type().unwrap().is_dir() || dir.file_name() == "internal-list" {
+            continue;
+        }
+
+        let metadata_toml = match std::fs::read_to_string(dir.path().join("Metadata.toml")) {
+            Ok(file) => file,
+            Err(_) => continue,
+        };
+
+        let cargo_toml = match std::fs::read_to_string(dir.path().join("Cargo.toml")) {
+            Ok(file) => file,
+            Err(_) => continue,
+        };
+
+        #[derive(Deserialize)]
+        struct MetadataToml {
+            package_name: String,
+            name: String,
+            panel_version: semver::VersionReq,
+        }
+
+        #[derive(Deserialize)]
+        struct CargoToml {
+            package: CargoPackage,
+        }
+
+        #[derive(Deserialize)]
+        struct CargoPackage {
+            description: Option<String>,
+            authors: Option<Vec<String>>,
+            version: semver::Version,
+        }
+
+        let metadata_toml: MetadataToml = toml::from_str(&metadata_toml).unwrap();
+        let cargo_toml: CargoToml = toml::from_str(&cargo_toml).unwrap();
+        packages.push((dir.file_name(), metadata_toml, cargo_toml.package));
+    }
+
+    std::fs::create_dir_all(internal_list_extension).unwrap();
+    std::fs::create_dir_all(internal_list_extension.join("src")).unwrap();
+
+    let mut deps = String::new();
+
+    for (path, metadata, _) in packages.iter() {
+        deps.push_str(&metadata.package_name.replace('.', "_"));
+        deps.push_str(" = { path = \"../");
+        deps.push_str(&path.to_string_lossy());
+        deps.push_str("\" }\n");
+    }
+
+    const CARGO_TEMPLATE_TOML: &str =
+        include_str!("../../../backend-extensions/internal-list/Cargo.template.toml");
+
+    std::fs::write(
+        internal_list_extension.join("Cargo.toml"),
+        format!("{CARGO_TEMPLATE_TOML}{}", deps),
+    )?;
+
+    let mut exts = String::new();
+
+    for (_, metadata, package) in packages {
+        exts.push_str(&format!(
+            r#"
+        ConstructedExtension {{
+            metadata_toml: MetadataToml {{
+                package_name: {}.to_string(),
+                name: {}.to_string(),
+                panel_version: semver::VersionReq::parse({}).unwrap(),
+            }},
+            package_name: {},
+            description: {},
+            authors: &{},
+            version: semver::Version::parse({}).unwrap(),
+            extension: Arc::new({}::ExtensionStruct::default()),
+        }},"#,
+            toml::Value::String(metadata.package_name.clone()),
+            toml::Value::String(metadata.name),
+            toml::Value::String(metadata.panel_version.to_string()),
+            toml::Value::String(metadata.package_name.clone()),
+            toml::Value::String(package.description.unwrap_or_default()),
+            toml::Value::Array(
+                package
+                    .authors
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(toml::Value::String)
+                    .collect(),
+            ),
+            toml::Value::String(package.version.to_string()),
+            metadata.package_name.replace('.', "_"),
+        ));
+    }
+
+    std::fs::write(
+        internal_list_extension.join("src/lib.rs"),
+        format!(
+            r#"#![allow(clippy::default_constructed_unit_structs)]
+#![allow(unused_imports)]
+
+use shared::extensions::{{ConstructedExtension, distr::MetadataToml}};
+use std::sync::Arc;
+
+pub fn list() -> Vec<ConstructedExtension> {{
+    vec![{}
+    ]
+}}
+"#,
+            exts,
+        ),
+    )?;
+
+    Ok(())
 }

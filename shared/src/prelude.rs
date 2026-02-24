@@ -1,11 +1,11 @@
 use std::borrow::Cow;
 
 pub use crate::models::{
-    BaseModel, ByUuid, DeletableModel, DeleteListenerList, Fetchable, ListenerList,
-    ListenerPriority,
+    BaseModel, ByUuid, DeletableModel, DeleteListenerList, EventEmittingModel, Fetchable,
+    ListenerPriority, ModelHandlerList,
 };
 
-pub trait IteratorExtension<R, E>: Iterator<Item = Result<R, E>> {
+pub trait IteratorExt<R, E>: Iterator<Item = Result<R, E>> {
     fn try_collect_vec(self) -> Result<Vec<R>, E>
     where
         Self: Sized,
@@ -25,13 +25,13 @@ pub trait IteratorExtension<R, E>: Iterator<Item = Result<R, E>> {
     }
 }
 
-impl<R, E, T: Iterator<Item = Result<R, E>>> IteratorExtension<R, E> for T {}
+impl<R, E, T: Iterator<Item = Result<R, E>>> IteratorExt<R, E> for T {}
 
-pub trait OptionExtension<T> {
+pub trait OptionExt<T> {
     fn try_map<R, E, F: FnMut(T) -> Result<R, E>>(self, f: F) -> Result<Option<R>, E>;
 }
 
-impl<T> OptionExtension<T> for Option<T> {
+impl<T> OptionExt<T> for Option<T> {
     #[inline]
     fn try_map<R, E, F: FnMut(T) -> Result<R, E>>(self, mut f: F) -> Result<Option<R>, E> {
         match self {
@@ -42,12 +42,12 @@ impl<T> OptionExtension<T> for Option<T> {
 }
 
 #[async_trait::async_trait]
-pub trait AsyncOptionExtension<T, Fut: Future<Output = T>> {
+pub trait AsyncOptionExt<T, Fut: Future<Output = T>> {
     async fn awaited(self) -> Option<T>;
 }
 
 #[async_trait::async_trait]
-impl<T, Fut: Future<Output = T> + Send> AsyncOptionExtension<T, Fut> for Option<Fut> {
+impl<T, Fut: Future<Output = T> + Send> AsyncOptionExt<T, Fut> for Option<Fut> {
     #[inline]
     async fn awaited(self) -> Option<T> {
         match self {
@@ -57,7 +57,7 @@ impl<T, Fut: Future<Output = T> + Send> AsyncOptionExtension<T, Fut> for Option<
     }
 }
 
-pub trait SqlxErrorExtension {
+pub trait SqlxErrorExt {
     fn is_unique_violation(&self) -> bool;
     fn is_foreign_key_violation(&self) -> bool;
     fn is_check_violation(&self) -> bool;
@@ -66,7 +66,7 @@ pub trait SqlxErrorExtension {
     fn message(&self) -> Option<&str>;
 }
 
-impl SqlxErrorExtension for sqlx::Error {
+impl SqlxErrorExt for sqlx::Error {
     #[inline]
     fn is_unique_violation(&self) -> bool {
         self.as_database_error()
@@ -117,6 +117,18 @@ impl StringExt for String {
 }
 
 impl StringExt for compact_str::CompactString {
+    #[inline]
+    fn optional(&self) -> Option<&Self> {
+        if self.is_empty() { None } else { Some(self) }
+    }
+
+    #[inline]
+    fn into_optional(self) -> Option<Self> {
+        if self.is_empty() { None } else { Some(self) }
+    }
+}
+
+impl StringExt for &str {
     #[inline]
     fn optional(&self) -> Option<&Self> {
         if self.is_empty() { None } else { Some(self) }

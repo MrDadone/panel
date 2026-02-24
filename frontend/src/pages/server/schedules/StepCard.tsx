@@ -5,14 +5,12 @@ import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteScheduleStep from '@/api/server/schedules/steps/deleteScheduleStep.ts';
 import Card from '@/elements/Card.tsx';
-import Code from '@/elements/Code.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { scheduleStepIconMapping, scheduleStepLabelMapping } from '@/lib/enums.ts';
-import { formatMiliseconds } from '@/lib/time.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import StepCreateOrUpdateModal from './modals/StepCreateOrUpdateModal.tsx';
-import ScheduleDynamicParameterRenderer from './ScheduleDynamicParameterRenderer.tsx';
+import ActionRenderer from './renderers/ActionRenderer.tsx';
 
 interface Props {
   schedule: ServerSchedule;
@@ -66,81 +64,7 @@ export default function StepCard({ schedule, step, onStepUpdate, onStepDelete }:
           <Stack gap={4}>
             <Text fw={600}>{scheduleStepLabelMapping[step.action.type] || step.action.type}</Text>
             <Text size='sm' c='dimmed'>
-              {step.action.type === 'sleep' ? (
-                <span>Sleep for {step.action.duration}ms</span>
-              ) : step.action.type === 'ensure' ? (
-                <span>Ensure a condition matches</span>
-              ) : step.action.type === 'format' ? (
-                <span>
-                  Format a string into <ScheduleDynamicParameterRenderer value={step.action.outputInto} />
-                </span>
-              ) : step.action.type === 'match_regex' ? (
-                <span>
-                  Match <ScheduleDynamicParameterRenderer value={step.action.input} /> with regex{' '}
-                  <Code>{step.action.regex}</Code>
-                </span>
-              ) : step.action.type === 'wait_for_console_line' ? (
-                <span>
-                  Wait {formatMiliseconds(step.action.timeout)} for console line containing{' '}
-                  <ScheduleDynamicParameterRenderer value={step.action.contains} />
-                </span>
-              ) : step.action.type === 'send_power' ? (
-                <span>Do {step.action.action}</span>
-              ) : step.action.type === 'send_command' ? (
-                <span>
-                  Run <ScheduleDynamicParameterRenderer value={step.action.command} />
-                </span>
-              ) : step.action.type === 'create_backup' ? (
-                <span>
-                  Create <ScheduleDynamicParameterRenderer value={step.action.name} />
-                </span>
-              ) : step.action.type === 'create_directory' ? (
-                <span>
-                  Create <ScheduleDynamicParameterRenderer value={step.action.name} /> in{' '}
-                  <ScheduleDynamicParameterRenderer value={step.action.root} />
-                </span>
-              ) : step.action.type === 'write_file' ? (
-                <span>
-                  Write to <ScheduleDynamicParameterRenderer value={step.action.file} />
-                </span>
-              ) : step.action.type === 'copy_file' ? (
-                <span>
-                  Copy <ScheduleDynamicParameterRenderer value={step.action.file} /> to{' '}
-                  <ScheduleDynamicParameterRenderer value={step.action.destination} />
-                </span>
-              ) : step.action.type === 'delete_files' ? (
-                <span>
-                  Delete <Code>{step.action.files.join(', ')}</Code>
-                </span>
-              ) : step.action.type === 'rename_files' ? (
-                <span>Rename {step.action.files.length} files</span>
-              ) : step.action.type === 'compress_files' ? (
-                <span>
-                  Compress {step.action.files.length} files in{' '}
-                  <ScheduleDynamicParameterRenderer value={step.action.root} /> to{' '}
-                  <ScheduleDynamicParameterRenderer value={step.action.name} />
-                </span>
-              ) : step.action.type === 'decompress_file' ? (
-                <span>
-                  Decompress <ScheduleDynamicParameterRenderer value={step.action.file} /> to{' '}
-                  <ScheduleDynamicParameterRenderer value={step.action.root} />
-                </span>
-              ) : step.action.type === 'update_startup_variable' ? (
-                <span>
-                  Set <ScheduleDynamicParameterRenderer value={step.action.envVariable} /> to{' '}
-                  <ScheduleDynamicParameterRenderer value={step.action.value} />
-                </span>
-              ) : step.action.type === 'update_startup_command' ? (
-                <span>
-                  Set to <ScheduleDynamicParameterRenderer value={step.action.command} />
-                </span>
-              ) : step.action.type === 'update_startup_docker_image' ? (
-                <span>
-                  Set to <ScheduleDynamicParameterRenderer value={step.action.image} />
-                </span>
-              ) : (
-                <span>Select an action type to configure</span>
-              )}
+              <ActionRenderer action={step.action} mode='compact' />
             </Text>
           </Stack>
         </Group>

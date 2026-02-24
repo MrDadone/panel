@@ -36,8 +36,8 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: M
   const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminMountSchema>, Mount>({
     form,
     createFn: () => createMount(form.values),
-    updateFn: () => updateMount(contextMount!.uuid, form.values),
-    deleteFn: () => deleteMount(contextMount!.uuid),
+    updateFn: contextMount ? () => updateMount(contextMount.uuid, form.values) : undefined,
+    deleteFn: contextMount ? () => deleteMount(contextMount.uuid) : undefined,
     doUpdate: !!contextMount,
     basePath: '/admin/locations',
     resourceName: 'Location',

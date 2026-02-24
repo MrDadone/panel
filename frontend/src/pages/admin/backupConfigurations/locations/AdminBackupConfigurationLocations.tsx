@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import getBackupConfigurationLocations from '@/api/admin/backup-configurations/locations/getBackupConfigurationLocations.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { locationTableColumns } from '@/lib/tableColumns.ts';
 import LocationRow from '@/pages/admin/locations/LocationRow.tsx';
@@ -22,7 +22,7 @@ export default function AdminBackupConfigurationLocations({
   });
 
   return (
-    <AdminContentContainer title={`Backup Config Locations`} titleOrder={2} search={search} setSearch={setSearch}>
+    <AdminSubContentContainer title={`Backup Config Locations`} titleOrder={2} search={search} setSearch={setSearch}>
       <Table
         columns={locationTableColumns}
         loading={loading}
@@ -33,6 +33,6 @@ export default function AdminBackupConfigurationLocations({
           <LocationRow key={location.uuid} location={location} />
         ))}
       </Table>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

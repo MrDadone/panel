@@ -4,7 +4,8 @@
     "moduleResolution": "bundler",
     "module": "esnext",
     "target": "esnext",
-    "baseUrl": ".",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "paths": {
       "@/*": ["../src/*"]
     },

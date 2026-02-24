@@ -1,36 +1,28 @@
 import { faInfo } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon, Group, Stack } from '@mantine/core';
-import hljs from 'highlight.js/lib/core';
-import json from 'highlight.js/lib/languages/json';
-import { useState } from 'react';
+import { ActionIcon } from '@mantine/core';
+import { useMemo, useState } from 'react';
 import Button from '../Button.tsx';
-import Code from '../Code.tsx';
+import HljsCode from '../HljsCode.tsx';
 import Modal from '../modals/Modal.tsx';
-import 'highlight.js/styles/a11y-dark.min.css';
 
-hljs.registerLanguage('json', json);
-
-export default function ActivityInfoButton({ activity }: { activity: ServerActivity | UserActivity }) {
+export default function ActivityInfoButton({ activity }: { activity: AdminActivity | UserActivity | ServerActivity }) {
   const [openModal, setOpenModal] = useState<'view' | null>(null);
+
+  const jsonLanguage = useMemo(() => () => import('highlight.js/lib/languages/json').then((m) => m.default), []);
 
   return (
     <>
       <Modal title='Activity Details' onClose={() => setOpenModal(null)} opened={openModal === 'view'}>
-        <Stack>
-          <Code
-            block
-            dangerouslySetInnerHTML={{
-              __html: hljs.highlight(JSON.stringify(activity.data, null, 2), { language: 'json' }).value,
-            }}
-          />
+        <HljsCode languageName='json' language={jsonLanguage}>
+          {JSON.stringify(activity.data, null, 2)}
+        </HljsCode>
 
-          <Group>
-            <Button variant='default' onClick={() => setOpenModal(null)}>
-              Close
-            </Button>
-          </Group>
-        </Stack>
+        <Modal.Footer>
+          <Button variant='default' onClick={() => setOpenModal(null)}>
+            Close
+          </Button>
+        </Modal.Footer>
       </Modal>
 
       <ActionIcon onClick={() => setOpenModal('view')}>

@@ -38,7 +38,8 @@ export default function DatabaseHostCreateOrUpdate({
       password: '',
       host: '',
       port: 3306,
-      public: false,
+      deploymentEnabled: true,
+      maintenanceEnabled: false,
       publicHost: null,
       publicPort: null,
       type: 'mysql',
@@ -53,8 +54,8 @@ export default function DatabaseHostCreateOrUpdate({
   >({
     form,
     createFn: () => createDatabaseHost(form.values),
-    updateFn: () => updateDatabaseHost(contextDatabaseHost!.uuid, form.values),
-    deleteFn: () => deleteDatabaseHost(contextDatabaseHost!.uuid),
+    updateFn: contextDatabaseHost ? () => updateDatabaseHost(contextDatabaseHost.uuid, form.values) : undefined,
+    deleteFn: contextDatabaseHost ? () => deleteDatabaseHost(contextDatabaseHost.uuid) : undefined,
     doUpdate: !!contextDatabaseHost,
     basePath: '/admin/database-hosts',
     resourceName: 'Database host',
@@ -68,7 +69,8 @@ export default function DatabaseHostCreateOrUpdate({
         password: null,
         host: contextDatabaseHost.host,
         port: contextDatabaseHost.port,
-        public: contextDatabaseHost.public,
+        deploymentEnabled: contextDatabaseHost.deploymentEnabled,
+        maintenanceEnabled: contextDatabaseHost.maintenanceEnabled,
         publicHost: contextDatabaseHost.publicHost,
         publicPort: contextDatabaseHost.publicPort,
         type: contextDatabaseHost.type,
@@ -145,7 +147,10 @@ export default function DatabaseHostCreateOrUpdate({
             />
           </Group>
 
-          <Switch label='Public' {...form.getInputProps('public', { type: 'checkbox' })} />
+          <Group grow>
+            <Switch label='Deployment Enabled' {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })} />
+            <Switch label='Maintenance Enabled' {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })} />
+          </Group>
 
           <Group>
             <AdminCan action={contextDatabaseHost ? 'database-hosts.update' : 'database-hosts.create'} cantSave>

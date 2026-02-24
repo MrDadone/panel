@@ -1,4 +1,5 @@
 import classNames from 'classnames';
+import { handleCopyToClipboard } from '@/lib/copy.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function CopyOnClick({
@@ -14,26 +15,8 @@ export default function CopyOnClick({
 }) {
   const { addToast } = useToast();
 
-  const handleCopy = (e: React.MouseEvent) => {
-    e.preventDefault();
-
-    if (!window.isSecureContext) {
-      addToast('Copying is only available in secure contexts (HTTPS).', 'error');
-      return;
-    }
-
-    navigator.clipboard
-      .writeText(content)
-      .then(() => {
-        addToast('Copied to clipboard');
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
   return enabled ? (
-    <button onClick={handleCopy} className={classNames('cursor-pointer', className)}>
+    <button onClick={handleCopyToClipboard(content, addToast)} className={classNames('cursor-pointer', className)}>
       {children}
     </button>
   ) : (

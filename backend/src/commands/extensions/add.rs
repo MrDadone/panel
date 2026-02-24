@@ -9,7 +9,7 @@ use tokio::process::Command;
 
 #[derive(Args)]
 pub struct AddArgs {
-    #[arg(help = "the file to add as an extension")]
+    #[arg(help = "the file to add as an extension", value_hint = clap::ValueHint::FilePath)]
     file: String,
     #[arg(
         long = "skip-version-check",
@@ -196,19 +196,37 @@ impl shared::extensions::commands::CliCommand<AddArgs> for AddCommand {
                     }
 
                     let status = Command::new(&pnpm_bin)
-                        .arg("kit:generate:extensions")
+                        .arg("kit:generate")
                         .current_dir("database")
                         .status()
                         .await?;
                     if !status.success() {
                         eprintln!(
                             "{} {}",
-                            "pnpm kit:generate:extensions".bright_red(),
+                            "pnpm kit:generate".bright_red(),
                             "did not run successfully, aborting process".red()
                         );
                         std::process::exit(1);
                     }
                 }
+
+                if let Err(err) = tokio::task::spawn_blocking(|| {
+                    shared::extensions::distr::resync_extension_list()
+                })
+                .await?
+                {
+                    eprintln!(
+                        "{} {}",
+                        "failed to resync internal extension list:".red(),
+                        err.to_string().red()
+                    );
+                    std::process::exit(1);
+                }
+
+                println!(
+                    "{}",
+                    "successfully resynced internal extension list.".green()
+                );
 
                 println!(
                     "sucessfully added {}",

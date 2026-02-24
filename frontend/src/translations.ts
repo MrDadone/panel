@@ -1,10 +1,16 @@
 import { DefinedTranslations, defineEnglishItem, defineTranslations } from 'shared';
 
-const extensionTranslations = import.meta.glob?.('../extensions/*/src/translations.ts', { eager: true });
+let extensionTranslations: Record<string, unknown> = {};
+try {
+  extensionTranslations = import.meta.glob('../extensions/*/src/translations.ts', { eager: true });
+} catch {
+  // Ignore
+}
 
 const baseTranslations = defineTranslations({
   items: {
     user: defineEnglishItem('User', 'Users'),
+    server: defineEnglishItem('Server', 'Servers'),
     sshKey: defineEnglishItem('SSH Key', 'SSH Keys'),
   },
   translations: {
@@ -24,6 +30,12 @@ const baseTranslations = defineTranslations({
         cancel: 'Cancel',
         continue: 'Continue',
         skip: 'Skip',
+        logout: 'Logout',
+        back: 'Back',
+        next: 'Next',
+        install: 'Install',
+        selectAll: 'Select All',
+        deselectAll: 'Deselect All',
       },
       input: {
         search: 'Search...',
@@ -34,7 +46,9 @@ const baseTranslations = defineTranslations({
         password: 'Password',
         host: 'Host',
         username: 'Username',
-        truncateDirectory: 'Do you want to empty the filesystem of this server before restoring the backup?',
+        server: 'Server',
+        truncateDirectory:
+          'Do you want to delete all files of this server before performing this action? This cannot be undone.',
       },
       table: {
         pagination: {
@@ -52,6 +66,7 @@ const baseTranslations = defineTranslations({
           event: 'Event',
           ip: 'IP',
           when: 'When',
+          command: 'Command',
         },
       },
       server: {
@@ -73,15 +88,26 @@ const baseTranslations = defineTranslations({
           bottomRight: 'Bottom Right',
         },
         serverState: {
+          unknown: 'Unknown',
           offline: 'Offline',
           running: 'Running',
           starting: 'Starting',
           stopping: 'Stopping',
         },
+        connectionStatus: {
+          connected: 'Connected',
+          offline: 'Offline',
+        },
         serverAutoStartBehavior: {
           always: 'Always',
           unlessStopped: 'Unless Stopped',
           never: 'Never',
+        },
+        bulkActionServerAction: {
+          started: 'Started',
+          stopped: 'Stopped',
+          restarted: 'Restarted',
+          killed: 'Killed',
         },
       },
       unlimited: 'Unlimited',
@@ -89,6 +115,7 @@ const baseTranslations = defineTranslations({
       yes: 'Yes',
       no: 'No',
       system: 'System',
+      schedule: 'Schedule',
     },
     pages: {
       oobe: {
@@ -259,6 +286,13 @@ const baseTranslations = defineTranslations({
                       deleted: 'Server group deleted.',
                     },
                   },
+                  addServerToGroup: {
+                    title: 'Add Server to {group}',
+                    noServers: 'All servers are already in this group.',
+                    toast: {
+                      added: 'Server added to group.',
+                    },
+                  },
                 },
                 noGroups: 'No Groups could be found, time to create one?',
               },
@@ -279,6 +313,14 @@ const baseTranslations = defineTranslations({
                 },
               },
             },
+          },
+          bulkActions: {
+            selectionMode: 'Selection Mode',
+            select: 'Select server',
+            deselect: 'Deselect server',
+            success: 'Successfully {action} {servers}.',
+            partial: 'Successfully {action} {successfulServers}. {failedServers} failed.',
+            groupActions: 'Group Actions',
           },
           noServers: 'No Servers could be found, time to add one?',
         },
@@ -425,6 +467,38 @@ const baseTranslations = defineTranslations({
             },
           },
         },
+        shortcuts: {
+          title: 'Keyboard Shortcuts',
+          description: 'Use these keyboard shortcuts to navigate and interact with the panel more efficiently.',
+          detectedMac: 'macOS detected',
+          detectedWindows: 'Windows/Linux detected',
+          fileManager: {
+            title: 'File Manager',
+            selectAll: 'Select all files',
+            deselectAll: 'Deselect all files',
+            cutFiles: 'Cut selected files',
+            pasteFiles: 'Paste files',
+            deleteFiles: 'Delete selected files',
+            dragToMove: 'Drag files or folder to move into folder',
+            search: 'Search files',
+          },
+          table: {
+            title: 'Table Navigation',
+            previousPage: 'Previous page',
+            nextPage: 'Next page',
+            firstPage: 'First page',
+            lastPage: 'Last page',
+          },
+          console: {
+            title: 'Server Console',
+            previousCommand: 'Previous command in history',
+            nextCommand: 'Next command in history',
+          },
+          serverList: {
+            title: 'Server List',
+            selectServer: 'Hold S and click to select/deselect server',
+          },
+        },
         sshKeys: {
           title: 'SSH Keys',
           button: {
@@ -559,6 +633,36 @@ const baseTranslations = defineTranslations({
             pulling: 'Pulling',
             extracting: 'Extracting',
             layer: 'Layer',
+          },
+          tooltip: {
+            commandHistory: 'Command History',
+            decreaseFontSize: 'Decrease Font Size',
+            increaseFontSize: 'Increase Font Size',
+          },
+          drawer: {
+            commandHistory: {
+              title: 'Command History',
+              detailTitle: 'Command Details',
+              noCommands: 'No commands found.',
+              copyButton: 'Copy Command',
+              sendButton: 'Send Command',
+              commandSent: 'Command sent successfully.',
+            },
+          },
+          feature: {
+            eula: {
+              title: 'Minecraft EULA Agreement',
+              content:
+                'The Minecraft server requires you to accept the [Minecraft End User License Agreement](https://minecraft.net/eula) before it can start.',
+              contentDetails:
+                'By clicking "Accept EULA", you agree to the terms of the Minecraft EULA and the **eula.txt** file will be updated to **eula=true**.',
+              toast: {
+                accepted: 'EULA accepted successfully.',
+              },
+              button: {
+                accept: 'Accept EULA',
+              },
+            },
           },
           details: {
             address: 'Address',
@@ -845,6 +949,8 @@ const baseTranslations = defineTranslations({
           reinstall: {
             title: 'Reinstall Server',
             button: 'Reinstall Server',
+            content:
+              'Reinstalling your server will stop it, and then re-run the installation script that initially set it up. **Some files may be deleted or modified during this process, please back up your data before continuing.**',
             modal: {
               title: 'Reinstall Server',
               button: 'Reinstall',

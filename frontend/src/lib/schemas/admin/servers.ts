@@ -17,6 +17,8 @@ export const adminServerCreateSchema = z.object({
   startup: z.string().min(1).max(8192),
   image: z.string().min(2).max(255),
   timezone: z.string().min(3).max(255),
+  hugepagesPassthroughEnabled: z.boolean(),
+  kvmPassthroughEnabled: z.boolean(),
   featureLimits: z.object({
     allocations: z.number().min(0),
     databases: z.number().min(0),
@@ -55,6 +57,8 @@ export const adminServerUpdateSchema = z.object({
   startup: z.string().min(1).max(8192),
   image: z.string().min(2).max(255),
   timezone: z.string().min(3).max(255),
+  hugepagesPassthroughEnabled: z.boolean(),
+  kvmPassthroughEnabled: z.boolean(),
   featureLimits: z.object({
     allocations: z.number().min(0),
     databases: z.number().min(0),

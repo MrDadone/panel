@@ -54,7 +54,7 @@ mod patch {
         activity_logger: GetServerActivityLogger,
         schedule: GetServerSchedule,
         Path((_server, _schedule, schedule_step)): Path<(String, uuid::Uuid, uuid::Uuid)>,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         let mut schedule_step = match ServerScheduleStep::by_schedule_uuid_uuid(
             &state.database,
@@ -109,20 +109,11 @@ mod patch {
             .batch_action("sync_server", server.uuid, {
                 let state = state.clone();
 
-                async move {
-                    let uuid = server.uuid;
-
-                    match server.0.sync(&state.database).await {
-                        Ok(_) => {}
-                        Err(err) => {
-                            tracing::warn!(server = %uuid, "failed to post server sync: {:?}", err);
-                        }
-                    }
-                }
+                async move { server.0.sync(&state.database).await }
             })
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -192,7 +183,7 @@ mod delete {
 
         permissions.has_server_permission("schedules.update")?;
 
-        schedule_step.delete(&state.database, ()).await?;
+        schedule_step.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -212,20 +203,11 @@ mod delete {
             .batch_action("sync_server", server.uuid, {
                 let state = state.clone();
 
-                async move {
-                    let uuid = server.uuid;
-
-                    match server.0.sync(&state.database).await {
-                        Ok(_) => {}
-                        Err(err) => {
-                            tracing::warn!(server = %uuid, "failed to post server sync: {:?}", err);
-                        }
-                    }
-                }
+                async move { server.0.sync(&state.database).await }
             })
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

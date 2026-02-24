@@ -82,6 +82,15 @@ export const adminSettingsServerSchema = z.object({
   maxSchedulesStepCount: z.number().min(0),
   allowOverwritingCustomDockerImage: z.boolean(),
   allowEditingStartupCommand: z.boolean(),
+  allowViewingInstallationLogs: z.boolean(),
+});
+
+export const adminSettingsActivitySchema = z.object({
+  adminLogRetentionDays: z.number().min(1).max(3650),
+  userLogRetentionDays: z.number().min(1).max(3650),
+  serverLogRetentionDays: z.number().min(1).max(3650),
+  serverLogAdminActivity: z.boolean(),
+  serverLogScheduleActivity: z.boolean(),
 });
 
 export const adminSettingsStorageFilesystemSchema = z.object({

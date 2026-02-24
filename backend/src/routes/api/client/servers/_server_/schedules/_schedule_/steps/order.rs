@@ -7,7 +7,10 @@ mod put {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{server::GetServerActivityLogger, user::GetPermissionManager},
+        models::{
+            server::{GetServer, GetServerActivityLogger},
+            user::GetPermissionManager,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -29,12 +32,13 @@ mod put {
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
+        server: GetServer,
         activity_logger: GetServerActivityLogger,
         schedule: GetServerSchedule,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -61,7 +65,16 @@ mod put {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        state
+            .database
+            .batch_action("sync_server", server.uuid, {
+                let state = state.clone();
+
+                async move { server.0.sync(&state.database).await }
+            })
+            .await;
+
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

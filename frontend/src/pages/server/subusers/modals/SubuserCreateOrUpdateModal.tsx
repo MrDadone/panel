@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack, TagsInput } from '@mantine/core';
+import { ModalProps, Stack, TagsInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useRef } from 'react';
@@ -70,6 +70,7 @@ export default function SubuserCreateOrUpdateModal({ subuser, onCreate, onUpdate
         <Stack>
           {subuser ? (
             <TextInput
+              withAsterisk
               label={t('common.form.username', {})}
               placeholder={t('common.form.username', {})}
               value={subuser.user.username}
@@ -77,6 +78,7 @@ export default function SubuserCreateOrUpdateModal({ subuser, onCreate, onUpdate
             />
           ) : (
             <TextInput
+              withAsterisk
               label={t('pages.server.subusers.modal.createSubuser.form.email', {})}
               placeholder={t('pages.server.subusers.modal.createSubuser.form.emailPlaceholder', {})}
               {...form.getInputProps('email')}
@@ -99,14 +101,14 @@ export default function SubuserCreateOrUpdateModal({ subuser, onCreate, onUpdate
 
           {!subuser && <Captcha ref={captchaRef} />}
 
-          <Group>
+          <Modal.Footer>
             <Button type='submit' disabled={!form.isValid()}>
               {subuser ? t('common.button.update', {}) : t('common.button.create', {})}
             </Button>
             <Button variant='default' onClick={onClose}>
               {t('common.button.close', {})}
             </Button>
-          </Group>
+          </Modal.Footer>
         </Stack>
       </form>
     </Modal>

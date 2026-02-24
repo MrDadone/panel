@@ -19,6 +19,8 @@ mod post {
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        schedule_uuid: Option<uuid::Uuid>,
+
         #[validate(length(min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
         name: Option<String>,
@@ -44,18 +46,17 @@ mod post {
     pub async fn route(
         state: GetState,
         server: GetServer,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
 
         let backups = ServerBackup::count_by_server_uuid(&state.database, server.uuid).await;
         if backups >= server.backup_limit as i64
-            && let Err(err) =
-                ServerBackup::delete_oldest_by_server_uuid(&state.database, &server).await
+            && let Err(err) = ServerBackup::delete_oldest_by_server_uuid(&state, &server).await
         {
             tracing::error!(server = %server.uuid, "failed to delete old backup: {:?}", err);
 
@@ -96,6 +97,7 @@ mod post {
             &state.database,
             server.uuid,
             None,
+            data.schedule_uuid,
             "server:backup.create",
             None,
             serde_json::json!({
@@ -114,7 +116,7 @@ mod post {
             );
         }
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             adapter: match backup.disk {
                 BackupDisk::Local => wings_api::BackupAdapter::Wings,
                 BackupDisk::S3 => wings_api::BackupAdapter::S3,

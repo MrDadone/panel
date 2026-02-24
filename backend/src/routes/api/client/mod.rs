@@ -49,7 +49,7 @@ pub async fn auth(
                 .into_response());
         }
 
-        let user = User::by_session_cached(&state.database, session_id.value()).await;
+        let user = User::by_session(&state.database, session_id.value()).await;
         let (user, session) = match user {
             Ok(Some(data)) => data,
             Ok(None) => {
@@ -74,7 +74,7 @@ pub async fn auth(
                 .to_string();
 
                 async move {
-                    if let Err(err) = sqlx::query!(
+                    sqlx::query!(
                         "UPDATE user_sessions
                         SET ip = $1, user_agent = $2, last_used = NOW()
                         WHERE user_sessions.uuid = $3",
@@ -83,11 +83,9 @@ pub async fn auth(
                         session.uuid,
                     )
                     .execute(state.database.write())
-                    .await
-                    {
-                        tracing::warn!(user = %user.uuid, "failed to update user session: {:?}", err);
-                        sentry::capture_error(&err);
-                    }
+                    .await?;
+
+                    Ok(())
                 }
             })
             .await;
@@ -138,7 +136,7 @@ pub async fn auth(
                 .into_response());
         }
 
-        let user = User::by_api_key_cached(
+        let user = User::by_api_key(
             &state.database,
             api_token
                 .to_str()
@@ -175,17 +173,16 @@ pub async fn auth(
                 let state = state.clone();
 
                 async move {
-                    if let Err(err) = sqlx::query!(
+                    sqlx::query!(
                         "UPDATE user_api_keys
                         SET last_used = NOW()
                         WHERE user_api_keys.uuid = $1",
                         api_key.uuid,
                     )
                     .execute(state.database.write())
-                    .await
-                    {
-                        tracing::warn!(user = %user.uuid, "failed to update api key: {:?}", err);
-                    }
+                    .await?;
+
+                    Ok(())
                 }
             })
             .await;

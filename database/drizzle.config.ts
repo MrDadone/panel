@@ -13,9 +13,6 @@ export default defineConfig({
   schema: './src/schema/index.ts',
   out: './migrations',
   breakpoints: false,
-  migrations: {
-    prefix: process.env.MODE === 'extension' ? 'timestamp' : 'index',
-  },
   dbCredentials: {
     url: env.DATABASE_URL_PRIMARY ?? env.DATABASE_URL,
   },

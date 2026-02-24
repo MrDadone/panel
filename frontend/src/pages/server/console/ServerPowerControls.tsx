@@ -39,7 +39,7 @@ export default function ServerPowerControls() {
         confirm={t('common.button.continue', {})}
         onConfirmed={() => onButtonClick('kill-confirmed')}
       >
-        {t('pages.server.console.power.modal.forceStop.content', {})}
+        {t('pages.server.console.power.modal.forceStop.content', {}).md()}
       </ConfirmationModal>
 
       <ServerCan action='control.start'>

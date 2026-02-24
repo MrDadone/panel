@@ -86,7 +86,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("nodes.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             node: node.0.into_admin_api_object(&state.database).await?,
         })
         .ok()
@@ -134,7 +134,7 @@ mod delete {
                 .ok();
         }
 
-        node.delete(&state.database, ()).await?;
+        node.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -146,7 +146,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -161,7 +161,7 @@ mod patch {
             backup_configurations::BackupConfiguration, location::Location, node::GetNode,
             user::GetPermissionManager,
         },
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -175,10 +175,12 @@ mod patch {
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: Option<compact_str::CompactString>,
-        public: Option<bool>,
         #[validate(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
+
+        deployment_enabled: Option<bool>,
+        maintenance_enabled: Option<bool>,
 
         #[validate(length(min = 3, max = 255), url)]
         #[schema(min_length = 3, max_length = 255, format = "uri")]
@@ -219,10 +221,10 @@ mod patch {
         permissions: GetPermissionManager,
         mut node: GetNode,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -267,8 +269,11 @@ mod patch {
         if let Some(name) = data.name {
             node.name = name;
         }
-        if let Some(public) = data.public {
-            node.public = public;
+        if let Some(deployment_enabled) = data.deployment_enabled {
+            node.deployment_enabled = deployment_enabled;
+        }
+        if let Some(maintenance_enabled) = data.maintenance_enabled {
+            node.maintenance_enabled = maintenance_enabled;
         }
         if let Some(description) = data.description {
             if description.is_empty() {
@@ -297,13 +302,6 @@ mod patch {
         if let Some(sftp_port) = data.sftp_port {
             node.sftp_port = sftp_port as i32;
         }
-        if let Some(maintenance_message) = data.maintenance_message {
-            if maintenance_message.is_empty() {
-                node.maintenance_message = None;
-            } else {
-                node.maintenance_message = Some(maintenance_message);
-            }
-        }
         if let Some(memory) = data.memory {
             node.memory = memory;
         }
@@ -314,22 +312,22 @@ mod patch {
         match sqlx::query!(
             "UPDATE nodes
             SET location_uuid = $1, backup_configuration_uuid = $2, name = $3,
-                public = $4, description = $5, public_url = $6,
-                url = $7, sftp_host = $8, sftp_port = $9,
-                maintenance_message = $10, memory = $11, disk = $12
+                description = $4, deployment_enabled = $5, maintenance_enabled = $6, public_url = $7,
+                url = $8, sftp_host = $9, sftp_port = $10,
+                memory = $11, disk = $12
             WHERE nodes.uuid = $13",
             node.location.uuid,
             node.backup_configuration
                 .as_ref()
                 .map(|backup_configuration| backup_configuration.uuid),
             &node.name,
-            node.public,
             node.description.as_deref(),
+            node.deployment_enabled,
+            node.maintenance_enabled,
             node.public_url.as_ref().map(|url| url.to_string()),
             &node.url.to_compact_string(),
             node.sftp_host.as_deref(),
             node.sftp_port,
-            node.maintenance_message,
             node.memory,
             node.disk,
             node.uuid,
@@ -360,20 +358,20 @@ mod patch {
                     "location_uuid": node.location.uuid,
 
                     "name": node.name,
-                    "public": node.public,
                     "description": node.description,
+                    "deployment_enabled": node.deployment_enabled,
+                    "maintenance_enabled": node.maintenance_enabled,
                     "public_url": node.public_url,
                     "url": node.url,
                     "sftp_host": node.sftp_host,
                     "sftp_port": node.sftp_port,
-                    "maintenance_message": node.maintenance_message,
                     "memory": node.memory,
                     "disk": node.disk,
                 }),
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

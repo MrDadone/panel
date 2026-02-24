@@ -1,4 +1,4 @@
-import { Group, ModalProps } from '@mantine/core';
+import { ModalProps } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -69,14 +69,14 @@ export default function FileRenameModal({ file, opened, onClose }: Props) {
       <form onSubmit={form.onSubmit(() => doRename())}>
         <TextInput withAsterisk label='File Name' placeholder='File Name' {...form.getInputProps('name')} />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button type='submit' loading={loading}>
             Rename
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </form>
     </Modal>
   );

@@ -1,18 +1,19 @@
-import { Stack, Title } from '@mantine/core';
-import hljs from 'highlight.js/lib/core';
-import yaml from 'highlight.js/lib/languages/yaml';
-import Card from '@/elements/Card.tsx';
-import Code from '@/elements/Code.tsx';
-import NumberInput from '@/elements/input/NumberInput.tsx';
-import TextInput from '@/elements/input/TextInput.tsx';
-import 'highlight.js/styles/a11y-dark.min.css';
+import { faCopy } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ActionIcon, Group, Stack, Title, Tooltip } from '@mantine/core';
 import jsYaml from 'js-yaml';
 import { useState } from 'react';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
-
-hljs.registerLanguage('yaml', yaml);
+import Card from '@/elements/Card.tsx';
+import Code from '@/elements/Code.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
+import HljsCode from '@/elements/HljsCode.tsx';
+import NumberInput from '@/elements/input/NumberInput.tsx';
+import TextInput from '@/elements/input/TextInput.tsx';
+import { handleCopyToClipboard } from '@/lib/copy.ts';
+import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function AdminNodeConfiguration({ node }: { node: Node }) {
+  const { addToast } = useToast();
   const [remote, setRemote] = useState(window.location.origin);
   const [apiPort, setApiPort] = useState(parseInt(new URL(node.url).port || '8080'));
   const [sftpPort, setSftpPort] = useState(node.sftpPort);
@@ -44,24 +45,36 @@ export default function AdminNodeConfiguration({ node }: { node: Node }) {
     };
   };
 
+  const getCommand = () => {
+    return `wings configure --join-data ${btoa(jsYaml.dump(getNodeConfiguration(), { condenseFlow: true, indent: 1, noArrayIndent: true }))}`;
+  };
+
   return (
-    <AdminContentContainer title='Node Configuration' titleOrder={2}>
+    <AdminSubContentContainer title='Node Configuration' titleOrder={2}>
       <div className='grid md:grid-cols-4 grid-cols-1 grid-rows-2 gap-4'>
         <div className='flex flex-col md:col-span-3'>
-          <Code
-            block
-            dangerouslySetInnerHTML={{
-              __html: hljs.highlight(jsYaml.dump(getNodeConfiguration()), { language: 'yaml' }).value,
-            }}
-          />
+          <HljsCode
+            languageName='yaml'
+            language={() => import('highlight.js/lib/languages/yaml').then((mod) => mod.default)}
+          >
+            {jsYaml.dump(getNodeConfiguration())}
+          </HljsCode>
 
-          <p className='mt-2'>
-            Place this into the configuration file at <Code>/etc/pterodactyl/config.yml</Code> or run{' '}
-            <Code block>
-              wings configure --join-data{' '}
-              {btoa(jsYaml.dump(getNodeConfiguration(), { condenseFlow: true, indent: 1, noArrayIndent: true }))}
-            </Code>
-          </p>
+          <div className='mt-2'>
+            <p>
+              Place this into the configuration file at <Code>/etc/pterodactyl/config.yml</Code> or run
+            </p>
+            <Group gap='xs' align='flex-start' wrap='nowrap' className='mt-2'>
+              <Code block className='flex-1'>
+                {getCommand()}
+              </Code>
+              <Tooltip label='Copy command'>
+                <ActionIcon variant='subtle' onClick={handleCopyToClipboard(getCommand(), addToast)} size='lg'>
+                  <FontAwesomeIcon icon={faCopy} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          </div>
         </div>
         <Card>
           <Title className='text-right'>Configuration</Title>
@@ -87,6 +100,6 @@ export default function AdminNodeConfiguration({ node }: { node: Node }) {
           </Stack>
         </Card>
       </div>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

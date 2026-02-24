@@ -1,3 +1,4 @@
+use compact_str::ToCompactString;
 use std::sync::{Arc, LazyLock};
 
 static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
@@ -16,8 +17,16 @@ impl Captcha {
         Self { settings }
     }
 
-    pub async fn verify(&self, ip: crate::GetIp, captcha: Option<String>) -> Result<(), String> {
-        let settings = self.settings.get().await.map_err(|e| e.to_string())?;
+    pub async fn verify(
+        &self,
+        ip: crate::GetIp,
+        captcha: Option<String>,
+    ) -> Result<(), compact_str::CompactString> {
+        let settings = self
+            .settings
+            .get()
+            .await
+            .map_err(|e| e.to_compact_string())?;
 
         let captcha = match captcha {
             Some(c) => c,
@@ -28,7 +37,7 @@ impl Captcha {
                 ) {
                     return Ok(());
                 } else {
-                    return Err("captcha: required".to_string());
+                    return Err("captcha: required".into());
                 }
             }
         };
@@ -45,11 +54,11 @@ impl Captcha {
                     }))
                     .send()
                     .await
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e| e.to_compact_string())?;
 
                 if response.status().is_success() {
                     let body: serde_json::Value =
-                        response.json().await.map_err(|e| e.to_string())?;
+                        response.json().await.map_err(|e| e.to_compact_string())?;
                     if let Some(success) = body.get("success")
                         && success.as_bool().unwrap_or(false)
                     {
@@ -57,7 +66,7 @@ impl Captcha {
                     }
                 }
 
-                Err("captcha: verification failed".to_string())
+                Err("captcha: verification failed".into())
             }
             super::settings::CaptchaProvider::Recaptcha { v3, secret_key, .. } => {
                 let response = CLIENT
@@ -69,11 +78,11 @@ impl Captcha {
                     ])
                     .send()
                     .await
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e| e.to_compact_string())?;
 
                 if response.status().is_success() {
                     let body: serde_json::Value =
-                        response.json().await.map_err(|e| e.to_string())?;
+                        response.json().await.map_err(|e| e.to_compact_string())?;
                     if let Some(success) = body.get("success")
                         && success.as_bool().unwrap_or(false)
                     {
@@ -89,7 +98,7 @@ impl Captcha {
                     }
                 }
 
-                Err("captcha: verification failed".to_string())
+                Err("captcha: verification failed".into())
             }
             super::settings::CaptchaProvider::Hcaptcha {
                 secret_key,
@@ -105,11 +114,11 @@ impl Captcha {
                     ])
                     .send()
                     .await
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e| e.to_compact_string())?;
 
                 if response.status().is_success() {
                     let body: serde_json::Value =
-                        response.json().await.map_err(|e| e.to_string())?;
+                        response.json().await.map_err(|e| e.to_compact_string())?;
                     if let Some(success) = body.get("success")
                         && success.as_bool().unwrap_or(false)
                     {
@@ -117,7 +126,7 @@ impl Captcha {
                     }
                 }
 
-                Err("captcha: verification failed".to_string())
+                Err("captcha: verification failed".into())
             }
         }
     }

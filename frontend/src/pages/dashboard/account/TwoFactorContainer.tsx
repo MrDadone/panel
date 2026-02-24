@@ -1,5 +1,7 @@
-import { Grid, Title } from '@mantine/core';
-import Card from '@/elements/Card.tsx';
+import { faMobilePhone } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Grid } from '@mantine/core';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { formatTimestamp } from '@/lib/time.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -12,11 +14,12 @@ export default function TwoFactorContainer() {
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-      <Card h='100%'>
-        <Title order={2} c='white'>
-          {t('pages.account.account.containers.twoFactor.title', {})}
-        </Title>
-        <div className='mt-4'>
+      <TitleCard
+        title={t('pages.account.account.containers.twoFactor.title', {})}
+        icon={<FontAwesomeIcon icon={faMobilePhone} />}
+        className='h-full'
+      >
+        <div>
           {user!.totpEnabled
             ? t('pages.account.account.containers.twoFactor.twoFactorEnabled', {}).md()
             : t('pages.account.account.containers.twoFactor.twoFactorDisabled', {}).md()}
@@ -28,10 +31,8 @@ export default function TwoFactorContainer() {
             </div>
           )}
         </div>
-        <div className='pt-4 flex mt-auto'>
-          {user!.totpEnabled ? <TwoFactorDisableButton /> : <TwoFactorSetupButton />}
-        </div>
-      </Card>
+        <div className='mt-4'>{user!.totpEnabled ? <TwoFactorDisableButton /> : <TwoFactorSetupButton />}</div>
+      </TitleCard>
     </Grid.Col>
   );
 }

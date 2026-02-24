@@ -3,10 +3,7 @@
 use crate::{State, permissions::PermissionGroup};
 use indexmap::IndexMap;
 use serde::Serialize;
-use std::{
-    ops::{Deref, DerefMut},
-    sync::Arc,
-};
+use std::{ops::Deref, sync::Arc};
 use utoipa::ToSchema;
 use utoipa_axum::router::OpenApiRouter;
 
@@ -15,6 +12,7 @@ pub mod commands;
 pub mod distr;
 pub mod manager;
 pub mod settings;
+pub mod shutdown_handlers;
 
 pub struct ExtensionRouteBuilder {
     state: State,
@@ -230,6 +228,15 @@ pub trait Extension: Send + Sync {
         builder
     }
 
+    /// Your extension shutdown handler entrypoint, this runs as soon as the database is migrated and before the webserver starts
+    async fn initialize_shutdown_handlers(
+        &mut self,
+        state: State,
+        builder: shutdown_handlers::ShutdownHandlerBuilder,
+    ) -> shutdown_handlers::ShutdownHandlerBuilder {
+        builder
+    }
+
     /// Your extension permissions entrypoint, this runs as soon as the database is migrated and before the webserver starts
     async fn initialize_permissions(
         &mut self,
@@ -241,7 +248,7 @@ pub trait Extension: Send + Sync {
 
     /// Your extension settings deserializer, this is used to deserialize your extension settings from the database
     /// Whatever value you return in the `deserialize_boxed` method must match the trait `ExtensionSettings`, which requires
-    /// `SettingsSerializeExt` to be implemented for it.
+    /// `SettingsSerializeExt` to be implemented for it. If you have no clue what this means. copy code from the docs.
     async fn settings_deserializer(&self, state: State) -> settings::ExtensionSettingsDeserializer {
         Arc::new(settings::EmptySettings)
     }
@@ -273,7 +280,7 @@ pub trait Extension: Send + Sync {
     }
 }
 
-#[derive(ToSchema, Serialize)]
+#[derive(ToSchema, Serialize, Clone)]
 pub struct ConstructedExtension {
     pub metadata_toml: distr::MetadataToml,
     pub package_name: &'static str,
@@ -284,19 +291,13 @@ pub struct ConstructedExtension {
 
     #[serde(skip)]
     #[schema(ignore)]
-    pub extension: Box<dyn Extension>,
+    pub extension: Arc<dyn Extension>,
 }
 
 impl Deref for ConstructedExtension {
-    type Target = Box<dyn Extension>;
+    type Target = Arc<dyn Extension>;
 
     fn deref(&self) -> &Self::Target {
         &self.extension
-    }
-}
-
-impl DerefMut for ConstructedExtension {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.extension
     }
 }

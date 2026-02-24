@@ -15,22 +15,15 @@ export default function Container({ children, isNormal }: LayoutProps) {
     <div
       className={
         isNormal
-          ? 'flex flex-col justify-between min-w-full h-full px-4 lg:px-12'
+          ? 'flex flex-col justify-between min-w-full h-full'
           : 'flex flex-col justify-between h-full overflow-auto p-4'
       }
     >
-      <div ref={bodyRef} className={isNormal ? 'mb-4 lg:mt-12' : 'mb-4'}>
-        {children}
-      </div>
-      <div className='my-2 text-xs transition-all text-gray-400'>
+      <div ref={bodyRef}>{children}</div>
+      <div className='my-2 text-xs transition-all text-gray-400 mr-12'>
         <span className='flex flex-row justify-end gap-2'>
           <Tooltip label={settings.version}>
-            <a
-              href='https://github.com/calagopus/panel'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='underline'
-            >
+            <a href='https://calagopus.com' target='_blank' rel='noopener noreferrer' className='underline'>
               Calagopus
             </a>
           </Tooltip>

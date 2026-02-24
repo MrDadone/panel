@@ -107,7 +107,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_server_permission("databases.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             database: database
                 .0
                 .into_api_object(&state.database, params.include_password)
@@ -167,7 +167,15 @@ mod delete {
                 .ok();
         }
 
-        if let Err(err) = database.delete(&state.database, Default::default()).await {
+        if database.database_host.maintenance_enabled {
+            return ApiResponse::error(
+                "cannot delete database while database host is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .ok();
+        }
+
+        if let Err(err) = database.delete(&state, Default::default()).await {
             tracing::error!(server = %server.uuid, "failed to delete database: {:?}", err);
 
             return ApiResponse::error("failed to delete database")
@@ -185,7 +193,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -229,7 +237,7 @@ mod patch {
         permissions: GetPermissionManager,
         activity_logger: GetServerActivityLogger,
         mut database: GetServerDatabase,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("databases.update")?;
 
@@ -258,7 +266,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

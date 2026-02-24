@@ -2,14 +2,14 @@ import { faChevronDown, faChevronUp, faX } from '@fortawesome/free-solid-svg-ico
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Checkbox, Group, Input, Stack, Title } from '@mantine/core';
 import { useCallback, useMemo, useState } from 'react';
-import { ExtensionPermissionIconsBuilder } from 'shared';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import { permissionCategoryIconMapping } from '@/lib/enums.ts';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 const permissionIconMap: Record<
   keyof ApiPermissions,
-  keyof Pick<ExtensionPermissionIconsBuilder, 'userPermissionIcons' | 'adminPermissionIcons' | 'serverPermissionIcons'>
+  'userPermissionIcons' | 'adminPermissionIcons' | 'serverPermissionIcons'
 > = {
   userPermissions: 'userPermissionIcons',
   adminPermissions: 'adminPermissionIcons',
@@ -31,8 +31,10 @@ export default function PermissionSelector({
   selectedPermissions: string[];
   setSelectedPermissions: (selected: string[]) => void;
 }) {
+  const { t } = useTranslations();
+
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
-  const permissionIcons = window.extensionContext.permissionIcons;
+  const permissionIcons = window.extensionContext.extensionRegistry.permissionIcons;
 
   const allPermissionKeys = useMemo(() => {
     return Object.entries(permissions).flatMap(([category, { permissions: perms }]) =>
@@ -205,7 +207,7 @@ export default function PermissionSelector({
 
           <div className='mt-4 flex flex-row'>
             <Button disabled={selectedPermissions.length === allPermissionKeys.length} onClick={selectAllPermissions}>
-              Select All
+              {t('common.button.selectAll', {})}
             </Button>
             <Button
               disabled={selectedPermissions.length === 0}
@@ -214,7 +216,7 @@ export default function PermissionSelector({
               onClick={clearAllPermissions}
               className='ml-2'
             >
-              Clear All
+              {t('common.button.deselectAll', {})}
             </Button>
           </div>
         </Card>

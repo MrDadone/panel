@@ -1,0 +1,2 @@
+ALTER TABLE "server_activities" ADD COLUMN "schedule_uuid" uuid;
+ALTER TABLE "server_activities" ADD CONSTRAINT "server_activities_schedule_uuid_server_schedules_uuid_fk" FOREIGN KEY ("schedule_uuid") REFERENCES "public"."server_schedules"("uuid") ON DELETE set null ON UPDATE no action;

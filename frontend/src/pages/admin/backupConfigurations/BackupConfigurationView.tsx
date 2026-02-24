@@ -1,9 +1,9 @@
 import { faArchive, faChartBar, faCog, faDesktop, faEarthAmerica, faServer } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getBackupConfiguration from '@/api/admin/backup-configurations/getBackupConfiguration.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import AdminBackupConfigurationLocations from '@/pages/admin/backupConfigurations/locations/AdminBackupConfigurationLocations.tsx';
@@ -34,9 +34,7 @@ export default function BackupConfigurationView() {
   return !backupConfiguration ? (
     <Spinner.Centered />
   ) : (
-    <>
-      <Title order={1}>{backupConfiguration.name}</Title>
-
+    <AdminContentContainer title={backupConfiguration.name}>
       <SubNavigation
         baseUrl={`/admin/backup-configurations/${params.id}`}
         items={[
@@ -82,6 +80,6 @@ export default function BackupConfigurationView() {
           },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 }

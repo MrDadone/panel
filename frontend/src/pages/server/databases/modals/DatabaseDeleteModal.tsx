@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack, Text } from '@mantine/core';
+import { ModalProps, Stack, Text } from '@mantine/core';
 import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteDatabase from '@/api/server/databases/deleteDatabase.ts';
@@ -51,14 +51,14 @@ export default function DatabaseDeleteModal({ database, opened, onClose }: Props
           onChange={(e) => setEnteredName(e.target.value)}
         />
 
-        <Group>
+        <Modal.Footer>
           <Button color='red' onClick={doDelete} loading={loading} disabled={database.name !== enteredName}>
             {t('common.button.delete', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

@@ -76,7 +76,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("servers.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             server: server
                 .0
                 .into_admin_api_object(&state.database, &state.storage.retrieve_urls().await?)
@@ -124,7 +124,7 @@ mod delete {
         permissions: GetPermissionManager,
         server: GetServer,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_admin_permission("servers.delete")?;
 
@@ -136,7 +136,7 @@ mod delete {
 
         if let Err(err) = server
             .delete(
-                &state.database,
+                &state,
                 shared::models::server::DeleteServerOptions { force: data.force },
             )
             .await
@@ -152,7 +152,7 @@ mod delete {
             for backup in backups {
                 let backup_uuid = backup.uuid;
 
-                if let Err(err) = backup.delete(&state.database, ()).await {
+                if let Err(err) = backup.delete(&state, ()).await {
                     tracing::error!(server = %server.uuid, backup = %backup_uuid, "failed to delete backup: {:?}", err);
 
                     if !data.force {
@@ -174,7 +174,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -228,6 +228,9 @@ mod patch {
         #[schema(max_length = 255)]
         timezone: Option<compact_str::CompactString>,
 
+        hugepages_passthrough_enabled: Option<bool>,
+        kvm_passthrough_enabled: Option<bool>,
+
         feature_limits: Option<shared::models::server::ApiServerFeatureLimits>,
     }
 
@@ -251,10 +254,10 @@ mod patch {
         permissions: GetPermissionManager,
         mut server: GetServer,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -357,6 +360,12 @@ mod patch {
                 server.timezone = Some(timezone);
             }
         }
+        if let Some(hugepages_passthrough_enabled) = data.hugepages_passthrough_enabled {
+            server.hugepages_passthrough_enabled = hugepages_passthrough_enabled;
+        }
+        if let Some(kvm_passthrough_enabled) = data.kvm_passthrough_enabled {
+            server.kvm_passthrough_enabled = kvm_passthrough_enabled;
+        }
         if let Some(feature_limits) = &data.feature_limits {
             server.allocation_limit = feature_limits.allocations;
             server.backup_limit = feature_limits.backups;
@@ -371,9 +380,9 @@ mod patch {
                 suspended = $4, external_id = $5, name = $6, description = $7,
                 cpu = $8, memory = $9, swap = $10, disk = $11, io_weight = $12,
                 pinned_cpus = $13, startup = $14, image = $15, timezone = $16,
-                allocation_limit = $17, backup_limit = $18, database_limit = $19,
-                schedule_limit = $20
-            WHERE servers.uuid = $21",
+                hugepages_passthrough_enabled = $17, kvm_passthrough_enabled = $18, allocation_limit = $19, backup_limit = $20,
+                database_limit = $21, schedule_limit = $22
+            WHERE servers.uuid = $23",
             server.owner.uuid,
             server.egg.uuid,
             server
@@ -393,6 +402,8 @@ mod patch {
             &server.startup,
             &server.image,
             server.timezone.as_deref(),
+            server.hugepages_passthrough_enabled,
+            server.kvm_passthrough_enabled,
             server.allocation_limit,
             server.backup_limit,
             server.database_limit,
@@ -428,6 +439,9 @@ mod patch {
                     "startup": server.startup,
                     "image": server.image,
                     "timezone": server.timezone,
+
+                    "hugepages_passthrough_enabled": server.hugepages_passthrough_enabled,
+
                     "feature_limits": data.feature_limits,
                 }),
             )
@@ -439,7 +453,7 @@ mod patch {
             }
         });
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

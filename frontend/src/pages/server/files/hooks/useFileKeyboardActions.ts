@@ -5,17 +5,18 @@ interface UseFileKeyboardActionsOptions {
   onDelete?: () => void;
   onPaste?: () => void;
   enabled?: boolean;
-  browsingBackup?: boolean;
 }
 
-export function useFileKeyboardActions({
-  onDelete,
-  onPaste,
-  enabled = true,
-  browsingBackup = false,
-}: UseFileKeyboardActionsOptions = {}) {
-  const { browsingEntries, selectedFileNames, movingFileNames, setSelectedFiles, setMovingFiles, getSelectedFiles } =
-    useServerStore();
+export function useFileKeyboardActions({ onDelete, onPaste, enabled = true }: UseFileKeyboardActionsOptions = {}) {
+  const {
+    browsingEntries,
+    browsingWritableDirectory,
+    selectedFileNames,
+    actingFileNames,
+    setSelectedFiles,
+    setActingFiles,
+    getSelectedFiles,
+  } = useServerStore();
 
   useKeyboardShortcuts({
     shortcuts: [
@@ -33,10 +34,23 @@ export function useFileKeyboardActions({
         key: 'x',
         modifiers: ['ctrlOrMeta'],
         callback: () => {
-          if (movingFileNames.size === 0 && !browsingBackup) {
+          if (actingFileNames.size === 0 && browsingWritableDirectory) {
             const selectedFiles = getSelectedFiles();
             if (selectedFiles.length > 0) {
-              setMovingFiles(selectedFiles);
+              setActingFiles('move', selectedFiles);
+              setSelectedFiles([]);
+            }
+          }
+        },
+      },
+      {
+        key: 'c',
+        modifiers: ['ctrlOrMeta'],
+        callback: () => {
+          if (actingFileNames.size === 0) {
+            const selectedFiles = getSelectedFiles();
+            if (selectedFiles.length > 0) {
+              setActingFiles('copy', selectedFiles);
               setSelectedFiles([]);
             }
           }
@@ -46,7 +60,7 @@ export function useFileKeyboardActions({
         key: 'v',
         modifiers: ['ctrlOrMeta'],
         callback: () => {
-          if (movingFileNames.size > 0 && !browsingBackup && onPaste) {
+          if (actingFileNames.size > 0 && onPaste) {
             onPaste();
           }
         },
@@ -54,13 +68,20 @@ export function useFileKeyboardActions({
       {
         key: 'Delete',
         callback: () => {
-          if (movingFileNames.size === 0 && selectedFileNames.size > 0 && !browsingBackup && onDelete) {
+          if (actingFileNames.size === 0 && selectedFileNames.size > 0 && browsingWritableDirectory && onDelete) {
             onDelete();
           }
         },
       },
     ],
     enabled,
-    deps: [browsingEntries.data, selectedFileNames.size, movingFileNames.size, onDelete, onPaste, browsingBackup],
+    deps: [
+      browsingEntries.data,
+      selectedFileNames.size,
+      actingFileNames.size,
+      onDelete,
+      onPaste,
+      browsingWritableDirectory,
+    ],
   });
 }

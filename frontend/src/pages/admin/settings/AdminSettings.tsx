@@ -1,11 +1,21 @@
-import { faAt, faDatabase, faLayerGroup, faRobot, faServer, faUserCheck } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
-import { useEffect } from 'react';
+import {
+  faAt,
+  faDatabase,
+  faLayerGroup,
+  faRobot,
+  faServer,
+  faToolbox,
+  faUserCheck,
+} from '@fortawesome/free-solid-svg-icons';
+import { useEffect, useState } from 'react';
 import getSettings from '@/api/admin/settings/getSettings.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
+import ActivityContainer from './ActivityContainer.tsx';
 import ApplicationContainer from './ApplicationContainer.tsx';
 import CaptchaContainer from './CaptchaContainer.tsx';
 import EmailContainer from './EmailContainer.tsx';
@@ -17,18 +27,21 @@ export default function AdminSettings() {
   const { addToast } = useToast();
   const { setSettings } = useAdminStore();
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     getSettings()
       .then(setSettings)
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  return (
-    <>
-      <Title order={1}>Settings</Title>
-
+  return loading ? (
+    <Spinner.Centered />
+  ) : (
+    <AdminContentContainer title='Settings'>
       <SubNavigation
         baseUrl='/admin/settings'
         items={[
@@ -68,8 +81,14 @@ export default function AdminSettings() {
             path: '/server',
             element: <ServerContainer />,
           },
+          {
+            name: 'Activity',
+            icon: faToolbox,
+            path: '/activity',
+            element: <ActivityContainer />,
+          },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 }

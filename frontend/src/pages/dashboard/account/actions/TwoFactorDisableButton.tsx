@@ -1,4 +1,4 @@
-import { Group, Stack, Text } from '@mantine/core';
+import { Stack, Text } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -79,14 +79,14 @@ export default function TwoFactorDisableButton() {
             {...form.getInputProps('password')}
           />
 
-          <Group>
+          <Modal.Footer>
             <Button color='red' onClick={doDisable} loading={loading} disabled={!form.isValid()}>
               {t('common.button.disable', {})}
             </Button>
             <Button variant='default' onClick={() => setOpenModal(null)}>
               {t('common.button.close', {})}
             </Button>
-          </Group>
+          </Modal.Footer>
         </Stack>
       </Modal>
 

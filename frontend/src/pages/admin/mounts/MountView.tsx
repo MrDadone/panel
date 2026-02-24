@@ -1,9 +1,9 @@
 import { faCog, faComputer, faEgg, faServer } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getMount from '@/api/admin/mounts/getMount.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import MountCreateOrUpdate from '@/pages/admin/mounts/MountCreateOrUpdate.tsx';
@@ -32,9 +32,7 @@ export default function MountView() {
   return !mount ? (
     <Spinner.Centered />
   ) : (
-    <>
-      <Title order={1}>{mount.name}</Title>
-
+    <AdminContentContainer title={mount.name}>
       <SubNavigation
         baseUrl={`/admin/mounts/${params.id}`}
         items={[
@@ -67,6 +65,6 @@ export default function MountView() {
           },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 }

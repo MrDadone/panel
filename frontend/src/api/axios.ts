@@ -28,8 +28,10 @@ axiosInstance.interceptors.response.use(
  * Converts an error into a human readable response. Mostly just a generic helper to
  * make sure we display the message from the server back to the user if we can.
  */
-export function httpErrorToHuman(error: object): string {
+export function httpErrorToHuman(error: unknown): string {
   if (
+    error &&
+    typeof error === 'object' &&
     'response' in error &&
     error.response &&
     typeof error.response === 'object' &&
@@ -60,7 +62,7 @@ export function httpErrorToHuman(error: object): string {
     }
   }
 
-  if ('message' in error && typeof error.message === 'string') {
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
     return error.message;
   } else {
     return String(error);

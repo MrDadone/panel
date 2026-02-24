@@ -41,58 +41,13 @@ mod post {
         permissions: GetPermissionManager,
         server: GetServer,
         activity_logger: GetServerActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("settings.install")?;
 
-        let mut transaction = state.database.write().begin().await?;
-
-        let rows_affected = sqlx::query!(
-            "UPDATE servers
-            SET status = 'INSTALLING'
-            WHERE servers.uuid = $1 AND servers.status IS NULL",
-            server.uuid
-        )
-        .execute(&mut *transaction)
-        .await?
-        .rows_affected();
-
-        if rows_affected == 0 {
-            transaction.rollback().await?;
-
-            return ApiResponse::error("server is not in a valid state to reinstall.")
-                .with_status(StatusCode::EXPECTATION_FAILED)
-                .ok();
-        }
-
-        match server
-            .node
-            .fetch_cached(&state.database)
-            .await?
-            .api_client(&state.database)
-            .post_servers_server_reinstall(
-                server.uuid,
-                &wings_api::servers_server_reinstall::post::RequestBody {
-                    truncate_directory: data.truncate_directory,
-                    installation_script: Some(wings_api::InstallationScript {
-                        container_image: server.0.egg.config_script.container,
-                        entrypoint: server.0.egg.config_script.entrypoint,
-                        script: server.0.egg.config_script.content.into(),
-                        environment: Default::default(),
-                    }),
-                },
-            )
-            .await
-        {
-            Ok(_) => {}
-            Err(err) => {
-                transaction.rollback().await?;
-
-                return Err(err.into());
-            }
-        };
-
-        transaction.commit().await?;
+        server
+            .install(&state, data.truncate_directory, None)
+            .await?;
 
         activity_logger
             .log(
@@ -103,7 +58,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {})
+        ApiResponse::new_serialized(Response {})
             .with_status(StatusCode::ACCEPTED)
             .ok()
     }

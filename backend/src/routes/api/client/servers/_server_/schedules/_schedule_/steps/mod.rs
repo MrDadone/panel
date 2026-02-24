@@ -45,7 +45,7 @@ mod get {
         Query(params): Query<PaginationParams>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -55,7 +55,7 @@ mod get {
         let schedule_steps =
             ServerScheduleStep::all_by_schedule_uuid(&state.database, schedule.uuid).await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             schedule_steps: schedule_steps
                 .into_iter()
                 .map(|schedule_step| schedule_step.into_api_object())
@@ -114,10 +114,10 @@ mod post {
         server: GetServer,
         activity_logger: GetServerActivityLogger,
         schedule: GetServerSchedule,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -172,20 +172,11 @@ mod post {
             .batch_action("sync_server", server.uuid, {
                 let state = state.clone();
 
-                async move {
-                    let uuid = server.uuid;
-
-                    match server.0.sync(&state.database).await {
-                        Ok(_) => {}
-                        Err(err) => {
-                            tracing::warn!(server = %uuid, "failed to post server sync: {:?}", err);
-                        }
-                    }
-                }
+                async move { server.0.sync(&state.database).await }
             })
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             schedule_step: schedule_step.into_api_object(),
         })
         .ok()

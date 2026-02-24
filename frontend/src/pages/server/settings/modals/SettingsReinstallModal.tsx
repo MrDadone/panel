@@ -1,4 +1,4 @@
-import { Group, ModalProps } from '@mantine/core';
+import { ModalProps } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -55,14 +55,14 @@ export default function SettingsReinstallModal({ opened, onClose }: ModalProps) 
           {...form.getInputProps('truncateDirectory', { type: 'checkbox' })}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button color='red' type='submit' loading={loading} disabled={!form.isValid()}>
             {t('pages.server.settings.reinstall.modal.button', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Group>
+        </Modal.Footer>
       </form>
     </Modal>
   );

@@ -36,7 +36,7 @@ mod post {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("nodes.reset-token")?;
 
-        let (token_id, token) = node.reset_token(&state.database).await?;
+        let (token_id, token) = node.reset_token(&state).await?;
 
         activity_logger
             .log(
@@ -47,7 +47,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response { token_id, token }).ok()
+        ApiResponse::new_serialized(Response { token_id, token }).ok()
     }
 }
 

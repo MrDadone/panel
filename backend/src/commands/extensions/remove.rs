@@ -13,7 +13,7 @@ pub struct RemoveArgs {
     package_name: String,
     #[arg(
         long = "remove-migrations",
-        help = "whether to remove the database migrations of this extension (usually not recommended)",
+        help = "whether to remove the database migrations definition of this extension (usually not recommended)",
         default_value = "false"
     )]
     remove_migrations: bool,
@@ -169,6 +169,24 @@ impl shared::extensions::commands::CliCommand<RemoveArgs> for RemoveCommand {
                 )
                 .await?;
 
+                if let Err(err) = tokio::task::spawn_blocking(|| {
+                    shared::extensions::distr::resync_extension_list()
+                })
+                .await?
+                {
+                    eprintln!(
+                        "{} {}",
+                        "failed to resync internal extension list:".red(),
+                        err.to_string().red()
+                    );
+                    std::process::exit(1);
+                }
+
+                println!(
+                    "{}",
+                    "successfully resynced internal extension list.".green()
+                );
+
                 println!("recalculating dependencies...");
                 let status = Command::new(&pnpm_bin)
                     .arg("install")
@@ -214,14 +232,14 @@ impl shared::extensions::commands::CliCommand<RemoveArgs> for RemoveCommand {
                     }
 
                     let status = Command::new(&pnpm_bin)
-                        .arg("kit:generate:extensions")
+                        .arg("kit:generate")
                         .current_dir("database")
                         .status()
                         .await?;
                     if !status.success() {
                         eprintln!(
                             "{} {}",
-                            "pnpm kit:generate:extensions".bright_red(),
+                            "pnpm kit:generate".bright_red(),
                             "did not run successfully, aborting process".red()
                         );
                         std::process::exit(1);

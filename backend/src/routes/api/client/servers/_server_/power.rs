@@ -15,7 +15,8 @@ mod post {
 
     #[derive(ToSchema, Deserialize)]
     pub struct Payload {
-        signal: wings_api::ServerPowerAction,
+        #[serde(alias = "signal")]
+        action: wings_api::ServerPowerAction,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -36,9 +37,9 @@ mod post {
         permissions: GetPermissionManager,
         server: GetServer,
         activity_logger: GetServerActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
-        permissions.has_server_permission(match data.signal {
+        permissions.has_server_permission(match data.action {
             wings_api::ServerPowerAction::Start => "control.start",
             wings_api::ServerPowerAction::Stop => "control.stop",
             wings_api::ServerPowerAction::Kill => "control.kill",
@@ -53,7 +54,7 @@ mod post {
             .post_servers_server_power(
                 server.uuid,
                 &wings_api::servers_server_power::post::RequestBody {
-                    action: data.signal,
+                    action: data.action,
                     wait_seconds: None,
                 },
             )
@@ -61,14 +62,14 @@ mod post {
 
         activity_logger
             .log(
-                "server:power.signal",
+                "server:power.action",
                 serde_json::json!({
-                    "signal": data.signal
+                    "action": data.action
                 }),
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

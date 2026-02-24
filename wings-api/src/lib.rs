@@ -1,4 +1,10 @@
-// This file is auto-generated from OpenAPI spec. Do not edit manually.
+//! The Calagopus Panel Wings API library.
+//!
+//! Used for communicating with the Wings daemon. This library contains
+//! auto-generated code from the OpenAPI specification as well as
+//! some utilities for working with the Wings API. In 99% of cases you will
+//! want to use the [crate::client::WingsClient] struct to interact with the API.
+
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -138,6 +144,8 @@ nestify::nest! {
         pub environment: IndexMap<compact_str::CompactString, serde_json::Value>,
     }
 }
+
+pub type MiB = u64;
 
 nestify::nest! {
     #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Mount {
@@ -296,11 +304,13 @@ nestify::nest! {
         #[schema(inline)]
         pub container: #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct ServerConfigurationContainer {
             #[schema(inline)]
-            pub privileged: bool,
-            #[schema(inline)]
             pub image: compact_str::CompactString,
             #[schema(inline)]
             pub timezone: Option<compact_str::CompactString>,
+            #[schema(inline)]
+            pub hugepages_passthrough_enabled: bool,
+            #[schema(inline)]
+            pub kvm_passthrough_enabled: bool,
             #[schema(inline)]
             pub seccomp: #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct ServerConfigurationContainerSeccomp {
                 #[schema(inline)]
@@ -387,6 +397,8 @@ nestify::nest! {
             #[schema(inline)]
             pub used: u64,
             #[schema(inline)]
+            pub used_process: u64,
+            #[schema(inline)]
             pub total: u64,
         },
 
@@ -427,6 +439,95 @@ pub enum TransferArchiveFormat {
     TarZstd,
 }
 
+#[derive(Debug, ToSchema, Deserialize, Serialize, Clone, Copy)]
+pub enum WebsocketEvent {
+    #[serde(rename = "auth success")]
+    AuthSuccess,
+    #[serde(rename = "token expiring")]
+    TokenExpiring,
+    #[serde(rename = "token expired")]
+    TokenExpired,
+    #[serde(rename = "auth")]
+    Auth,
+    #[serde(rename = "configure socket")]
+    ConfigureSocket,
+    #[serde(rename = "set state")]
+    SetState,
+    #[serde(rename = "send logs")]
+    SendLogs,
+    #[serde(rename = "send command")]
+    SendCommand,
+    #[serde(rename = "send stats")]
+    SendStats,
+    #[serde(rename = "daemon error")]
+    DaemonError,
+    #[serde(rename = "jwt error")]
+    JwtError,
+    #[serde(rename = "ping")]
+    Ping,
+    #[serde(rename = "pong")]
+    Pong,
+    #[serde(rename = "stats")]
+    Stats,
+    #[serde(rename = "status")]
+    Status,
+    #[serde(rename = "custom event")]
+    CustomEvent,
+    #[serde(rename = "console output")]
+    ConsoleOutput,
+    #[serde(rename = "install output")]
+    InstallOutput,
+    #[serde(rename = "image pull progress")]
+    ImagePullProgress,
+    #[serde(rename = "image pull completed")]
+    ImagePullCompleted,
+    #[serde(rename = "install started")]
+    InstallStarted,
+    #[serde(rename = "install completed")]
+    InstallCompleted,
+    #[serde(rename = "daemon message")]
+    DaemonMessage,
+    #[serde(rename = "backup started")]
+    BackupStarted,
+    #[serde(rename = "backup progress")]
+    BackupProgress,
+    #[serde(rename = "backup completed")]
+    BackupCompleted,
+    #[serde(rename = "backup restore started")]
+    BackupRestoreStarted,
+    #[serde(rename = "backup restore progress")]
+    BackupRestoreProgress,
+    #[serde(rename = "backup restore completed")]
+    BackupRestoreCompleted,
+    #[serde(rename = "transfer logs")]
+    TransferLogs,
+    #[serde(rename = "transfer status")]
+    TransferStatus,
+    #[serde(rename = "schedule started")]
+    ScheduleStarted,
+    #[serde(rename = "schedule step status")]
+    ScheduleStepStatus,
+    #[serde(rename = "schedule step error")]
+    ScheduleStepError,
+    #[serde(rename = "schedule completed")]
+    ScheduleCompleted,
+    #[serde(rename = "operation progress")]
+    OperationProgress,
+    #[serde(rename = "operation error")]
+    OperationError,
+    #[serde(rename = "operation completed")]
+    OperationCompleted,
+}
+
+nestify::nest! {
+    #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct WebsocketMessage {
+        #[schema(inline)]
+        pub event: WebsocketEvent,
+        #[schema(inline)]
+        pub args: Vec<compact_str::CompactString>,
+    }
+}
+
 pub mod backups_backup {
     use super::*;
 
@@ -459,9 +560,9 @@ pub mod deauthorize_user {
         nestify::nest! {
             #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
                 #[schema(inline)]
-                pub user: uuid::Uuid,
-                #[schema(inline)]
                 pub servers: Vec<uuid::Uuid>,
+                #[schema(inline)]
+                pub user: uuid::Uuid,
             }
         }
 
@@ -513,6 +614,33 @@ pub mod servers {
         pub type Response409 = ApiError;
 
         pub type Response = Response200;
+    }
+}
+pub mod servers_power {
+    use super::*;
+
+    pub mod post {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
+                #[schema(inline)]
+                pub servers: Vec<uuid::Uuid>,
+                #[schema(inline)]
+                pub action: ServerPowerAction,
+                #[schema(inline)]
+                pub wait_seconds: Option<u64>,
+            }
+        }
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response202 {
+                #[schema(inline)]
+                pub affected: u64,
+            }
+        }
+
+        pub type Response = Response202;
     }
 }
 pub mod servers_server {
@@ -741,6 +869,54 @@ pub mod servers_server_files_copy {
         }
 
         pub type Response200 = DirectoryEntry;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response202 {
+                #[schema(inline)]
+                pub identifier: uuid::Uuid,
+            }
+        }
+
+        pub type Response404 = ApiError;
+
+        pub type Response417 = ApiError;
+
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        pub enum Response {
+            Ok(Response200),
+            Accepted(Response202),
+        }
+    }
+}
+pub mod servers_server_files_copy_many {
+    use super::*;
+
+    pub mod post {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
+                #[schema(inline)]
+                pub root: compact_str::CompactString,
+                #[schema(inline)]
+                pub files: Vec<#[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBodyFiles {
+                    #[schema(inline)]
+                    pub from: compact_str::CompactString,
+                    #[schema(inline)]
+                    pub to: compact_str::CompactString,
+                }>,
+                #[schema(inline)]
+                pub foreground: bool,
+            }
+        }
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
+                #[schema(inline)]
+                pub copied: u64,
+            }
+        }
 
         nestify::nest! {
             #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response202 {
@@ -1038,6 +1214,37 @@ pub mod servers_server_files_pull {
             Ok(Response200),
             Accepted(Response202),
         }
+    }
+}
+pub mod servers_server_files_pull_query {
+    use super::*;
+
+    pub mod post {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
+                #[schema(inline)]
+                pub url: compact_str::CompactString,
+            }
+        }
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
+                #[schema(inline)]
+                pub file_name: Option<compact_str::CompactString>,
+                #[schema(inline)]
+                pub file_size: Option<u64>,
+                #[schema(inline)]
+                pub final_url: compact_str::CompactString,
+                #[schema(inline)]
+                pub headers: IndexMap<compact_str::CompactString, compact_str::CompactString>,
+            }
+        }
+
+        pub type Response417 = ApiError;
+
+        pub type Response = Response200;
     }
 }
 pub mod servers_server_files_pull_pull {
@@ -1410,6 +1617,31 @@ pub mod servers_server_version {
         pub type Response = Response200;
     }
 }
+pub mod servers_server_ws_broadcast {
+    use super::*;
+
+    pub mod post {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBody {
+                #[schema(inline)]
+                pub users: Vec<uuid::Uuid>,
+                #[schema(inline)]
+                pub permissions: Vec<compact_str::CompactString>,
+                #[schema(inline)]
+                pub message: WebsocketMessage,
+            }
+        }
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
+            }
+        }
+
+        pub type Response = Response200;
+    }
+}
 pub mod servers_server_ws_deny {
     use super::*;
 
@@ -1542,7 +1774,7 @@ pub mod system_config {
                     #[schema(inline)]
                     pub file_compression_threads: u64,
                     #[schema(inline)]
-                    pub upload_limit: u64,
+                    pub upload_limit: MiB,
                     #[schema(inline)]
                     pub max_jwt_uses: u64,
                     #[schema(inline)]
@@ -1674,9 +1906,9 @@ pub mod system_config {
                     #[schema(inline)]
                     pub backups: #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200SystemBackups {
                         #[schema(inline)]
-                        pub write_limit: u64,
+                        pub write_limit: MiB,
                         #[schema(inline)]
-                        pub read_limit: u64,
+                        pub read_limit: MiB,
                         #[schema(inline)]
                         pub compression_level: CompressionLevel,
                         #[schema(inline)]
@@ -1746,7 +1978,7 @@ pub mod system_config {
                     #[schema(inline)]
                     pub transfers: #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200SystemTransfers {
                         #[schema(inline)]
-                        pub download_limit: u64,
+                        pub download_limit: MiB,
                     },
 
                 },
@@ -1816,7 +2048,7 @@ pub mod system_config {
                         #[schema(inline)]
                         pub timeout: u64,
                         #[schema(inline)]
-                        pub memory: u64,
+                        pub memory: MiB,
                         #[schema(inline)]
                         pub cpu: u64,
                     },
@@ -1951,6 +2183,8 @@ pub mod system_overview {
                     pub free_bytes: u64,
                     #[schema(inline)]
                     pub used_bytes: u64,
+                    #[schema(inline)]
+                    pub used_bytes_process: u64,
                 },
 
                 #[schema(inline)]
@@ -2105,7 +2339,7 @@ pub mod update {
                         pub key: Option<compact_str::CompactString>,
                     }>,
                     #[schema(inline)]
-                    pub upload_limit: Option<u64>,
+                    pub upload_limit: Option<MiB>,
                 }>,
                 #[schema(inline)]
                 pub system: Option<#[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct RequestBodySystem {

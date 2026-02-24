@@ -46,7 +46,7 @@ mod post {
         egg_repository: GetEggRepository,
         activity_logger: GetAdminActivityLogger,
         Path((_egg_repository_uuid, egg_uuid)): Path<(uuid::Uuid, uuid::Uuid)>,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_admin_permission("eggs.create")?;
 
@@ -126,7 +126,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             egg: egg.into_admin_api_object(&state.database).await?,
         })
         .ok()

@@ -72,6 +72,14 @@ mod get {
             }
         };
 
+        if backup_configuration.maintenance_enabled {
+            return ApiResponse::error(
+                "cannot download backup while backup configuration is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .ok();
+        }
+
         if matches!(backup.disk, BackupDisk::S3)
             && let Some(mut s3_configuration) = backup_configuration.backup_configs.s3
         {
@@ -98,7 +106,7 @@ mod get {
 
             let url = client.presign_get(file_path, 15 * 60, None).await?;
 
-            return ApiResponse::json(Response { url }).ok();
+            return ApiResponse::new_serialized(Response { url }).ok();
         }
 
         #[derive(Serialize)]
@@ -136,7 +144,7 @@ mod get {
             params.archive_format
         )));
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             url: url.to_string(),
         })
         .ok()

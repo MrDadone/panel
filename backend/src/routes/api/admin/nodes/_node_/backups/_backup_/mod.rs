@@ -92,7 +92,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("nodes.backups")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             backup: backup.0.into_api_object(),
         })
         .ok()
@@ -148,7 +148,7 @@ mod delete {
                 .ok();
         }
 
-        if let Err(err) = backup.delete(&state.database, ()).await {
+        if let Err(err) = backup.delete(&state, ()).await {
             tracing::error!(backup = %backup.uuid, "failed to delete detached backup: {:?}", err);
 
             return ApiResponse::error("failed to delete detached backup")
@@ -168,7 +168,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

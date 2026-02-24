@@ -49,7 +49,7 @@ mod get {
         Query(params): Query<PaginationParamsWithSearch>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -65,7 +65,7 @@ mod get {
         )
         .await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             sessions: Pagination {
                 total: sessions.total,
                 per_page: sessions.per_page,

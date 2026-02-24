@@ -32,6 +32,7 @@ import {
   faPuzzlePiece,
   faScroll,
   faServer,
+  faSkull,
   faStopwatch,
   faTerminal,
   faTextSlash,
@@ -63,6 +64,7 @@ export const processConfigurationParserLabelMapping: Record<ProcessConfiguration
   ini: 'INI',
   json: 'JSON',
   xml: 'XML',
+  toml: 'TOML',
 };
 
 export const databaseTypeLabelMapping: Record<DatabaseType, string> = {
@@ -362,6 +364,42 @@ export const permissionCategoryIconMapping: Record<string, IconDefinition> = {
   startup: faPlay,
   subusers: faUsers,
   users: faUsers,
+};
+
+export const scheduleTriggerIconMapping: Record<ScheduleTrigger['type'], IconDefinition> = {
+  cron: faStopwatch,
+  power_action: faPowerOff,
+  server_state: faServer,
+  backup_status: faBoxArchive,
+  console_line: faTerminal,
+  crash: faSkull,
+};
+
+export const scheduleTriggerColorMapping: Record<ScheduleTrigger['type'], string> = {
+  cron: 'blue',
+  power_action: 'orange',
+  server_state: 'green',
+  backup_status: 'green',
+  console_line: 'gray',
+  crash: 'red',
+};
+
+export const scheduleTriggerLabelMapping: Record<ScheduleTrigger['type'], string> = {
+  cron: 'Cron',
+  power_action: 'Power Action',
+  server_state: 'Server State',
+  backup_status: 'Backup Status',
+  console_line: 'Console Line',
+  crash: 'Crash',
+};
+
+export const scheduleTriggerDefaultMapping: Record<ScheduleTrigger['type'], ScheduleTrigger> = {
+  cron: { type: 'cron', schedule: '' },
+  power_action: { type: 'power_action', action: 'start' },
+  server_state: { type: 'server_state', state: 'running' },
+  backup_status: { type: 'backup_status', status: 'starting' },
+  console_line: { type: 'console_line', contains: '', outputInto: null },
+  crash: { type: 'crash' },
 };
 
 export const languageToZodLocaleMapping: Record<string, string> = {

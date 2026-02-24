@@ -25,32 +25,51 @@ impl ExtensionManager {
     ) -> (
         ExtensionRouteBuilder,
         super::background_tasks::BackgroundTaskBuilder,
+        super::shutdown_handlers::ShutdownHandlerBuilder,
     ) {
         let mut route_builder = ExtensionRouteBuilder::new(state.clone());
         let mut background_tasks_builder =
             super::background_tasks::BackgroundTaskBuilder::new(state.clone());
+        let mut shutdown_handlers_builder =
+            super::shutdown_handlers::ShutdownHandlerBuilder::new(state.clone());
         let mut permissions_builder = ExtensionPermissionsBuilder::new(
             crate::permissions::BASE_USER_PERMISSIONS.clone(),
             crate::permissions::BASE_ADMIN_PERMISSIONS.clone(),
             crate::permissions::BASE_SERVER_PERMISSIONS.clone(),
         );
 
+        for ext in self.vec.read().await.iter() {
+            let deserializer = ext.settings_deserializer(state.clone()).await;
+            crate::settings::SETTINGS_DESER_EXTENSIONS
+                .write()
+                .unwrap()
+                .insert(ext.package_name, deserializer);
+        }
+        state.settings.invalidate_cache().await;
+
         for ext in self.vec.write().await.iter_mut() {
+            let ext = match Arc::get_mut(&mut ext.extension) {
+                Some(ext) => ext,
+                None => {
+                    panic!(
+                        "Failed to get mutable reference to extension {}. This should NEVER happen.",
+                        ext.package_name
+                    );
+                }
+            };
+
             ext.initialize(state.clone()).await;
 
             route_builder = ext.initialize_router(state.clone(), route_builder).await;
             background_tasks_builder = ext
                 .initialize_background_tasks(state.clone(), background_tasks_builder)
                 .await;
+            shutdown_handlers_builder = ext
+                .initialize_shutdown_handlers(state.clone(), shutdown_handlers_builder)
+                .await;
             permissions_builder = ext
                 .initialize_permissions(state.clone(), permissions_builder)
                 .await;
-
-            let deserializer = ext.settings_deserializer(state.clone()).await;
-            crate::settings::SETTINGS_DESER_EXTENSIONS
-                .write()
-                .unwrap()
-                .insert(ext.package_name, deserializer);
         }
 
         crate::permissions::USER_PERMISSIONS
@@ -66,7 +85,11 @@ impl ExtensionManager {
             .unwrap()
             .replace(permissions_builder.server_permissions);
 
-        (route_builder, background_tasks_builder)
+        (
+            route_builder,
+            background_tasks_builder,
+            shutdown_handlers_builder,
+        )
     }
 
     pub async fn init_cli(
@@ -75,6 +98,16 @@ impl ExtensionManager {
         mut builder: CliCommandGroupBuilder,
     ) -> CliCommandGroupBuilder {
         for ext in self.vec.write().await.iter_mut() {
+            let ext = match Arc::get_mut(&mut ext.extension) {
+                Some(ext) => ext,
+                None => {
+                    panic!(
+                        "Failed to get mutable reference to extension {}. This should NEVER happen.",
+                        ext.package_name
+                    );
+                }
+            };
+
             builder = ext.initialize_cli(env, builder).await;
         }
 

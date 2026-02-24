@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import installEgg from '@/api/admin/egg-repositories/eggs/installEgg.ts';
 import getNests from '@/api/admin/nests/getNests.ts';
@@ -62,14 +62,14 @@ export default function EggRepositoryEggsInstallModal({
           onSearchChange={nests.setSearch}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doInstall} loading={loading} disabled={!selectedNest}>
             Install
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

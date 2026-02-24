@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import moveEgg from '@/api/admin/nests/eggs/moveEgg.ts';
@@ -25,12 +25,16 @@ export default function EggMoveModal({
   const nests = useSearchableResource<AdminNest>({ fetcher: (search) => getNests(1, search) });
 
   const doMove = () => {
+    if (!selectedNest) {
+      return;
+    }
+
     setLoading(true);
 
-    moveEgg(nest.uuid, egg.uuid, selectedNest!.uuid)
+    moveEgg(nest.uuid, egg.uuid, selectedNest.uuid)
       .then(() => {
         addToast('Egg moved.', 'success');
-        navigate(`/admin/nests/${selectedNest!.uuid}/eggs/${egg.uuid}`);
+        navigate(`/admin/nests/${selectedNest.uuid}/eggs/${egg.uuid}`);
 
         onClose();
       })
@@ -58,14 +62,14 @@ export default function EggMoveModal({
           onSearchChange={nests.setSearch}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doMove} loading={loading} disabled={!selectedNest}>
             Move
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

@@ -17,7 +17,7 @@ mod get {
         ),
     ))]
     pub async fn route(server: GetServer) -> ApiResponseResult {
-        ApiResponse::json(wings_api::InstallationScript {
+        ApiResponse::new_serialized(wings_api::InstallationScript {
             container_image: server.0.egg.config_script.container,
             entrypoint: server.0.egg.config_script.entrypoint,
             script: server.0.egg.config_script.content.into(),
@@ -31,7 +31,10 @@ mod post {
     use serde::{Deserialize, Serialize};
     use shared::{
         GetState,
-        models::server::{GetServer, ServerStatus},
+        models::{
+            EventEmittingModel,
+            server::{GetServer, ServerStatus},
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -56,7 +59,7 @@ mod post {
     pub async fn route(
         state: GetState,
         server: GetServer,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         let status = if !data.successful {
             Some(ServerStatus::InstallFailed)
@@ -74,7 +77,15 @@ mod post {
         .execute(state.database.write())
         .await?;
 
-        ApiResponse::json(Response {}).ok()
+        shared::models::server::Server::get_event_emitter().emit(
+            state.0,
+            shared::models::server::ServerEvent::InstallCompleted {
+                server: Box::new(server.0),
+                successful: data.successful,
+            },
+        );
+
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

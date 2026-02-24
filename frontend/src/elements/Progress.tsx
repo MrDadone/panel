@@ -16,7 +16,7 @@ export default function Progress({
         </span>
       )}
 
-      <MantineProgress.Root size='xl' className='flex-grow' {...rest}>
+      <MantineProgress.Root size='xl' className='grow' {...rest}>
         <MantineProgress.Section value={value} color='blue'>
           <MantineProgress.Label>{value.toFixed(1)}%</MantineProgress.Label>
         </MantineProgress.Section>

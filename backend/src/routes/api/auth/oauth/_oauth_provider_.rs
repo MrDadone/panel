@@ -123,7 +123,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                 }
 
                 let (user, session) =
-                    match User::by_session_cached(&state.database, session_id.value()).await? {
+                    match User::by_session(&state.database, session_id.value()).await? {
                         Some(data) => data,
                         None => {
                             return ApiResponse::error("invalid session")
@@ -146,7 +146,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                         .to_string();
 
                         async move {
-                            if let Err(err) = sqlx::query!(
+                            sqlx::query!(
                                 "UPDATE user_sessions
                                 SET ip = $1, user_agent = $2, last_used = NOW()
                                 WHERE user_sessions.uuid = $3",
@@ -155,11 +155,9 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                                 session.uuid,
                             )
                             .execute(state.database.write())
-                            .await
-                            {
-                                tracing::warn!(user = %user.uuid, "failed to update user session: {:?}", err);
-                                sentry::capture_error(&err);
-                            }
+                            .await?;
+
+                            Ok(())
                         }
                     })
                     .await;
@@ -226,7 +224,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                 let settings = state.settings.get().await?;
 
                 ApiResponse::new(Body::empty())
-                    .with_header("Location", &format!("{}/account/oauth-links", settings.app.url.trim_end_matches('/')))
+                    .with_header("Location", format!("{}/account/oauth-links", settings.app.url.trim_end_matches('/')))
                     .with_status(StatusCode::TEMPORARY_REDIRECT)
                     .ok()
             } else {

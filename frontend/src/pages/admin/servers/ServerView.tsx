@@ -6,11 +6,11 @@ import {
   faNetworkWired,
   faWrench,
 } from '@fortawesome/free-solid-svg-icons';
-import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import getServer from '@/api/admin/servers/getServer.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
 import AdminServerAllocations from '@/pages/admin/servers/allocations/AdminServerAllocations.tsx';
@@ -40,9 +40,7 @@ export default function ServerView() {
   return !server ? (
     <Spinner.Centered />
   ) : (
-    <>
-      <Title order={1}>{server.name}</Title>
-
+    <AdminContentContainer title={server.name}>
       <SubNavigation
         baseUrl={`/admin/servers/${params.id}`}
         items={[
@@ -87,6 +85,6 @@ export default function ServerView() {
           },
         ]}
       />
-    </>
+    </AdminContentContainer>
   );
 }

@@ -51,7 +51,7 @@ mod get {
 
         let settings = state.settings.get().await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             otp_url: format!(
                 "otpauth://totp/{name}:{}?secret={}&issuer={name}",
                 urlencoding::encode(&user.email),
@@ -105,7 +105,7 @@ mod post {
         permissions: GetPermissionManager,
         user: GetUser,
         activity_logger: GetUserActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_user_permission("account.two-factor")?;
 
@@ -125,7 +125,7 @@ mod post {
         };
 
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -168,7 +168,7 @@ mod post {
             .log("account:two-factor.enable", serde_json::json!({}))
             .await;
 
-        ApiResponse::json(Response { recovery_codes }).ok()
+        ApiResponse::new_serialized(Response { recovery_codes }).ok()
     }
 }
 
@@ -211,7 +211,7 @@ mod delete {
         permissions: GetPermissionManager,
         mut user: GetUser,
         activity_logger: GetUserActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_user_permission("account.two-factor")?;
 
@@ -222,7 +222,7 @@ mod delete {
         }
 
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -288,7 +288,7 @@ mod delete {
             .log("account:two-factor.disable", serde_json::json!({}))
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

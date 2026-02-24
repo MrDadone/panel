@@ -1,8 +1,7 @@
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 
 export default function UserOAuthLinkRow({ userOAuthLink }: { userOAuthLink: AdminUserOAuthLink }) {
   return (
@@ -25,15 +24,11 @@ export default function UserOAuthLinkRow({ userOAuthLink }: { userOAuthLink: Adm
       </TableData>
 
       <TableData>
-        {!userOAuthLink.lastUsed ? (
-          'N/A'
-        ) : (
-          <Tooltip label={formatDateTime(userOAuthLink.lastUsed)}>{formatTimestamp(userOAuthLink.lastUsed)}</Tooltip>
-        )}
+        {!userOAuthLink.lastUsed ? 'N/A' : <FormattedTimestamp timestamp={userOAuthLink.lastUsed} />}
       </TableData>
 
       <TableData>
-        <Tooltip label={formatDateTime(userOAuthLink.created)}>{formatTimestamp(userOAuthLink.created)}</Tooltip>
+        <FormattedTimestamp timestamp={userOAuthLink.created} />
       </TableData>
     </TableRow>
   );

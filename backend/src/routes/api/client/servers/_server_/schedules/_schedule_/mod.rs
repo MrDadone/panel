@@ -96,7 +96,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_server_permission("schedules.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             schedule: schedule.0.into_api_object(),
         })
         .ok()
@@ -146,7 +146,7 @@ mod delete {
     ) -> ApiResponseResult {
         permissions.has_server_permission("schedules.delete")?;
 
-        schedule.delete(&state.database, ()).await?;
+        schedule.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -163,20 +163,11 @@ mod delete {
             .batch_action("sync_server", server.uuid, {
                 let state = state.clone();
 
-                async move {
-                    let uuid = server.uuid;
-
-                    match server.0.sync(&state.database).await {
-                        Ok(_) => {}
-                        Err(err) => {
-                            tracing::warn!(server = %uuid, "failed to post server sync: {:?}", err);
-                        }
-                    }
-                }
+                async move { server.0.sync(&state.database).await }
             })
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -233,10 +224,10 @@ mod patch {
         server: GetServer,
         activity_logger: GetServerActivityLogger,
         mut schedule: GetServerSchedule,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -287,20 +278,11 @@ mod patch {
             .batch_action("sync_server", server.uuid, {
                 let state = state.clone();
 
-                async move {
-                    let uuid = server.uuid;
-
-                    match server.0.sync(&state.database).await {
-                        Ok(_) => {}
-                        Err(err) => {
-                            tracing::warn!(server = %uuid, "failed to post server sync: {:?}", err);
-                        }
-                    }
-                }
+                async move { server.0.sync(&state.database).await }
             })
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

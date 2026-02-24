@@ -77,7 +77,7 @@ mod get {
 
         for file in &params.files {
             if server.is_ignored(file, params.directory) {
-                return ApiResponse::json(ApiError::new_value(&["file not found"]))
+                return ApiResponse::new_serialized(ApiError::new_value(&["file not found"]))
                     .with_status(StatusCode::NOT_FOUND)
                     .ok();
             }
@@ -181,7 +181,7 @@ mod get {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             url: url.to_string(),
         })
         .ok()

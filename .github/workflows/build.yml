@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - nightly
 
 env:
   BIN_NAME: panel-rs
@@ -50,6 +51,7 @@ jobs:
       - name: Build frontend
         run: |
           cd frontend
+          export NODE_OPTIONS="--max-old-space-size=4096"
           pnpm build
 
       - name: Upload frontend build
@@ -192,7 +194,8 @@ jobs:
         id: version
         run: echo "val=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version')" >> $GITHUB_OUTPUT
 
-      - name: Upload binaries to GitHub Release
+      - name: Upload binaries to GitHub Release (main)
+        if: github.ref == 'refs/heads/main'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -245,12 +248,42 @@ jobs:
         id: version
         run: echo "val=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version')" >> $GITHUB_OUTPUT
 
-      - name: Build & push multi-arch image
+      - name: Build & push multi-arch image (main)
+        if: github.ref == 'refs/heads/main'
         uses: useblacksmith/build-push-action@v2
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/riscv64,linux/ppc64le
           push: true
-          tags: |
-            ghcr.io/${{ env.REPO_NAME }}:latest
-            ghcr.io/${{ env.REPO_NAME }}:${{ steps.version.outputs.val }}
+          tags: ghcr.io/${{ env.REPO_NAME }}:latest,ghcr.io/${{ env.REPO_NAME }}:nightly,ghcr.io/${{ env.REPO_NAME }}:${{ steps.version.outputs.val }}
+
+      - name: Build & push multi-arch image (nightly)
+        if: github.ref == 'refs/heads/nightly'
+        uses: useblacksmith/build-push-action@v2
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/riscv64,linux/ppc64le
+          push: true
+          tags: ghcr.io/${{ env.REPO_NAME }}:nightly
+
+      - name: Build & push multi-arch heavy image (main)
+        if: github.ref == 'refs/heads/main'
+        uses: useblacksmith/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfile.heavy
+          platforms: linux/amd64,linux/arm64
+          #,linux/riscv64,linux/ppc64le
+          push: true
+          tags: ghcr.io/${{ env.REPO_NAME }}:heavy,ghcr.io/${{ env.REPO_NAME }}:nightly-heavy,ghcr.io/${{ env.REPO_NAME }}:${{ steps.version.outputs.val }}-heavy
+
+      - name: Build & push multi-arch heavy image (nightly)
+        if: github.ref == 'refs/heads/nightly'
+        uses: useblacksmith/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfile.heavy
+          platforms: linux/amd64,linux/arm64
+          #,linux/riscv64,linux/ppc64le
+          push: true
+          tags: ghcr.io/${{ env.REPO_NAME }}:nightly-heavy

@@ -1,6 +1,6 @@
 const hexChars = '0123456789ABCDEFabcdef';
 
-function fullyHex(hex: string): boolean {
+export function fullyHex(hex: string): boolean {
   for (const char of hex) {
     if (!hexChars.includes(char)) return false;
   }
@@ -18,13 +18,13 @@ function checkV4(ip: string): boolean {
   if (segments.length > 1) {
     for (const segment of segments) {
       const int = parseInt(segment);
-      if (isNaN(int)) return false;
+      if (Number.isNaN(int)) return false;
       if (int < 0 || int > 0xff) return false;
     }
   } else {
     const int = parseInt(ip, fullyHex(ip) ? 16 : 10);
 
-    if (isNaN(int)) return false;
+    if (Number.isNaN(int)) return false;
     if (int < 0 || int > MAX_IPV4_LONG) return false;
   }
 
@@ -53,7 +53,7 @@ export function isIP(ip: string, type: 'v4' | 'v6' | 'v6 | v4' = 'v6 | v4'): 'v4
         }
 
         const int = parseInt(segment, 16);
-        if (isNaN(int)) return false;
+        if (Number.isNaN(int)) return false;
         if (int < 0 || int > 0xffff) return false;
       }
 

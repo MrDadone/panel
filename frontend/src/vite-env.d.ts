@@ -23,6 +23,7 @@ declare global {
   interface BackupConfiguration {
     name: string;
     description?: string;
+    maintenanceEnabled: boolean;
     backupDisk: BackupDisk;
     backupConfigs: BackupDiskConfigurations;
     uuid: string;
@@ -36,7 +37,8 @@ declare global {
     password: string;
     host: string;
     port: number;
-    public: boolean;
+    deploymentEnabled: boolean;
+    maintenanceEnabled: boolean;
     publicHost: string | null;
     publicPort: number | null;
     type: DatabaseType;
@@ -91,6 +93,17 @@ declare global {
     readOnly: boolean;
     userMountable: boolean;
     created: Date;
+  }
+
+  interface AdminBackendExtension {
+    metadataToml: {
+      packageName: string;
+      name: string;
+      panelVersion: string;
+    };
+    description: string;
+    authors: string[];
+    version: string;
   }
 
   interface AdminUpdateEggRepository {
@@ -192,13 +205,13 @@ declare global {
     location: Location;
     backupConfiguration: BackupConfiguration | null;
     name: string;
-    public: boolean;
+    deploymentEnabled: boolean;
+    maintenanceEnabled: boolean;
     description: string | null;
     publicUrl: string | null;
     url: string;
     sftpHost: string | null;
     sftpPort: number;
-    maintenanceMessage: string | null;
     memory: number;
     disk: number;
     tokenId: string;
@@ -255,6 +268,8 @@ declare global {
     };
     autoStartBehavior: ServerAutostartBehavior;
     timezone: string;
+    hugepagesPassthroughEnabled: boolean;
+    kvmPassthroughEnabled: boolean;
     created: Date;
   }
 
@@ -323,7 +338,7 @@ declare global {
     permissions: string[];
     nodeUuid: string;
     nodeName: string;
-    nodeMaintenanceMessage: string | null;
+    nodeMaintenanceEnabled: boolean;
     sftpHost: string;
     sftpPort: number;
     name: string;
@@ -353,6 +368,7 @@ declare global {
     ip: string | null;
     data: object | null;
     isApi: boolean;
+    isSchedule: boolean;
     created: Date;
   }
 
@@ -470,6 +486,13 @@ declare global {
     isSecret: boolean;
     rules: string[];
     created: Date;
+  }
+
+  interface ServerPullQueryResult {
+    fileName: string | null;
+    fileSize: number | null;
+    finalUrl: string;
+    headers: Record<string, string>;
   }
 
   interface ScheduleTriggerCron {
@@ -864,10 +887,20 @@ declare global {
     total: number;
   }
 
+  interface FileOperationCopyMany {
+    type: 'copy_many';
+    path: string;
+    files: { from: string; to: string }[];
+
+    progress: number;
+    total: number;
+  }
+
   interface FileOperationCopyRemote {
     type: 'copy_remote';
     server: string;
     path: string;
+    files: string[];
     destinationServer: string;
     destinationPath: string;
 
@@ -880,7 +913,9 @@ declare global {
     | FileOperationDecompress
     | FileOperationPull
     | FileOperationCopy
+    | FileOperationCopyMany
     | FileOperationCopyRemote;
+
   type UserToastPosition = 'top_left' | 'top_center' | 'top_right' | 'bottom_left' | 'bottom_center' | 'bottom_right';
 
   interface UpdateUser {
@@ -1084,7 +1119,7 @@ declare global {
 
   type MailMode = MailModeNone | MailModeSmtp | MailModeSendmail | MailModeFilesystem;
 
-  type ProcessConfigurationConfigParser = 'file' | 'yaml' | 'properties' | 'ini' | 'json' | 'xml';
+  type ProcessConfigurationConfigParser = 'file' | 'yaml' | 'properties' | 'ini' | 'json' | 'xml' | 'toml';
 
   interface ProcessConfiguration {
     startup: {
@@ -1135,6 +1170,7 @@ declare global {
   interface PublicSettings {
     version: string;
     oobeStep: OobeStepKey | null;
+    appDebug: boolean;
     captchaProvider: PublicCaptchaProvider;
     app: {
       url: string;
@@ -1178,6 +1214,15 @@ declare global {
       maxSchedulesStepCount: number;
       allowOverwritingCustomDockerImage: boolean;
       allowEditingStartupCommand: boolean;
+      allowViewingInstallationLogs: boolean;
+    };
+    activity: {
+      adminLogRetentionDays: number;
+      userLogRetentionDays: number;
+      serverLogRetentionDays: number;
+
+      serverLogAdminActivity: boolean;
+      serverLogScheduleActivity: boolean;
     };
   }
 

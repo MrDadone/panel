@@ -9,8 +9,8 @@ mod post {
         ApiError, GetState,
         jwt::BasePayload,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger, node::Node, server::GetServer,
-            user::GetPermissionManager,
+            ByUuid, EventEmittingModel, admin_activity::GetAdminActivityLogger, node::Node,
+            server::GetServer, user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
@@ -49,7 +49,7 @@ mod post {
         permissions: GetPermissionManager,
         server: GetServer,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_admin_permission("servers.transfer")?;
 
@@ -138,7 +138,7 @@ mod post {
 
         transaction.commit().await?;
 
-        let mut url = destination_node.url;
+        let mut url = destination_node.url.clone();
         url.set_path("/api/transfers");
 
         if let Err(err) = server
@@ -179,7 +179,17 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        shared::models::server::Server::get_event_emitter().emit(
+            state.0,
+            shared::models::server::ServerEvent::TransferStarted {
+                server: Box::new(server.0),
+                destination_node: Box::new(destination_node),
+                destination_allocation: destination_allocation_uuid,
+                destination_allocations: data.allocation_uuids,
+            },
+        );
+
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

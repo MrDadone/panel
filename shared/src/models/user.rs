@@ -88,14 +88,12 @@ impl PermissionManager {
     }
 
     pub fn has_admin_permission(&self, permission: &str) -> Result<(), ApiResponse> {
-        if self.user_admin {
-            return Ok(());
-        }
-
-        let has_role_permission = if let Some(permissions) = &self.role_admin_permissions {
+        let has_role_permission = if !self.user_admin
+            && let Some(permissions) = &self.role_admin_permissions
+        {
             permissions.iter().any(|p| p == permission)
         } else {
-            false
+            self.user_admin
         };
 
         if !has_role_permission {
@@ -118,11 +116,10 @@ impl PermissionManager {
     }
 
     pub fn has_server_permission(&self, permission: &str) -> Result<(), ApiResponse> {
-        if self.user_admin {
-            return Ok(());
-        }
-
-        if self.server_subuser_permissions.is_none() && self.role_server_permissions.is_none() {
+        if !self.user_admin
+            && self.server_subuser_permissions.is_none()
+            && self.role_server_permissions.is_none()
+        {
             if let Some(api_key_permissions) = &self.api_key_server_permissions
                 && api_key_permissions.iter().all(|p| p != permission)
             {
@@ -135,10 +132,12 @@ impl PermissionManager {
             return Ok(());
         }
 
-        let has_role_permission = if let Some(permissions) = &self.role_server_permissions {
+        let has_role_permission = if !self.user_admin
+            && let Some(permissions) = &self.role_server_permissions
+        {
             permissions.iter().any(|p| p == permission)
         } else {
-            false
+            self.user_admin
         };
 
         let has_subuser_permission = if let Some(permissions) = &self.server_subuser_permissions {
@@ -402,7 +401,10 @@ impl User {
         row.try_map(|row| Self::map(None, &row))
     }
 
-    pub async fn by_session_cached(
+    /// Returns the user and session associated with the given session string, if valid.
+    ///
+    /// Cached for 5 seconds.
+    pub async fn by_session(
         database: &crate::database::Database,
         session: &str,
     ) -> Result<Option<(Self, super::user_session::UserSession)>, anyhow::Error> {
@@ -440,7 +442,10 @@ impl User {
             .await
     }
 
-    pub async fn by_api_key_cached(
+    /// Returns the user and API key associated with the given API key string, if valid.
+    ///
+    /// Cached for 5 seconds.
+    pub async fn by_api_key(
         database: &crate::database::Database,
         key: &str,
     ) -> Result<Option<(Self, super::user_api_key::UserApiKey)>, anyhow::Error> {
@@ -786,21 +791,21 @@ impl User {
 impl DeletableModel for User {
     type DeleteOptions = ();
 
-    fn get_delete_listeners() -> &'static LazyLock<DeleteListenerList<Self>> {
+    fn get_delete_handlers() -> &'static LazyLock<DeleteListenerList<Self>> {
         static DELETE_LISTENERS: LazyLock<DeleteListenerList<User>> =
-            LazyLock::new(|| Arc::new(ListenerList::default()));
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
 
         &DELETE_LISTENERS
     }
 
     async fn delete(
         &self,
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         options: Self::DeleteOptions,
     ) -> Result<(), anyhow::Error> {
-        let mut transaction = database.write().begin().await?;
+        let mut transaction = state.database.write().begin().await?;
 
-        self.run_delete_listeners(&options, database, &mut transaction)
+        self.run_delete_handlers(&options, state, &mut transaction)
             .await?;
 
         sqlx::query(
@@ -812,6 +817,8 @@ impl DeletableModel for User {
         .bind(self.uuid)
         .execute(&mut *transaction)
         .await?;
+
+        state.storage.remove(self.avatar.as_deref()).await?;
 
         transaction.commit().await?;
 

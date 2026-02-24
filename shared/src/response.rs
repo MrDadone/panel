@@ -1,8 +1,24 @@
 use crate::ApiError;
+use accept_header::Accept;
 use axum::response::IntoResponse;
-use std::{borrow::Cow, fmt::Display};
+use std::{
+    borrow::Cow,
+    fmt::{Debug, Display},
+    str::FromStr,
+};
 
 pub type ApiResponseResult = Result<ApiResponse, ApiResponse>;
+
+tokio::task_local! {
+    pub static ACCEPT_HEADER: Option<Accept>;
+}
+
+pub fn accept_from_headers(headers: &axum::http::HeaderMap) -> Option<Accept> {
+    let header_value = headers.get(axum::http::header::ACCEPT)?;
+    let header_str = header_value.to_str().ok()?;
+
+    Accept::from_str(header_str).ok()
+}
 
 #[derive(Debug)]
 pub struct ApiResponse {
@@ -21,21 +37,85 @@ impl ApiResponse {
         }
     }
 
-    #[inline]
-    pub fn json(body: impl serde::Serialize) -> Self {
+    /// Create a new API response with content negotiation based on the `Accept` header.
+    pub fn new_serialized(body: impl serde::Serialize) -> Self {
+        let accept_header = ACCEPT_HEADER.try_with(|h| h.clone()).ok().flatten();
+
+        static AVAILABLE_SERIALIZERS: &[mime::Mime] = &[
+            mime::APPLICATION_JSON,
+            mime::APPLICATION_MSGPACK,
+            mime::TEXT_XML,
+        ];
+
+        let negotiated = accept_header
+            .as_ref()
+            .and_then(|accept| accept.negotiate(AVAILABLE_SERIALIZERS).ok())
+            .unwrap_or(mime::APPLICATION_JSON);
+
+        let (content_type, body) = match negotiated {
+            m if m.essence_str() == mime::APPLICATION_MSGPACK.essence_str() => {
+                let mut bytes = Vec::new();
+                let mut se = rmp_serde::Serializer::new(&mut bytes)
+                    .with_struct_map()
+                    .with_human_readable();
+                if let Err(err) = body.serialize(&mut se) {
+                    tracing::error!(
+                        "failed to serialize response body to MessagePack: {:?}",
+                        err
+                    );
+
+                    (
+                        axum::http::HeaderValue::from_static("application/json"),
+                        axum::body::Body::from("{}"),
+                    )
+                } else {
+                    (
+                        axum::http::HeaderValue::from_static("application/msgpack"),
+                        axum::body::Body::from(bytes),
+                    )
+                }
+            }
+            m if m.essence_str() == mime::TEXT_XML.essence_str() => {
+                let string = serde_xml_rs::to_string(&body).unwrap_or_else(|err| {
+                    tracing::error!("failed to serialize response body to XML: {:?}", err);
+                    "<error>serialization failed</error>".to_string()
+                });
+
+                (
+                    axum::http::HeaderValue::from_static("text/xml"),
+                    axum::body::Body::from(string),
+                )
+            }
+            _ => {
+                let bytes = serde_json::to_vec(&body).unwrap_or_else(|err| {
+                    tracing::error!("failed to serialize response body to JSON: {:?}", err);
+                    b"{}".to_vec()
+                });
+
+                (
+                    axum::http::HeaderValue::from_static("application/json"),
+                    axum::body::Body::from(bytes),
+                )
+            }
+        };
+
         Self {
-            body: axum::body::Body::from(serde_json::to_vec(&body).unwrap()),
+            body,
             status: axum::http::StatusCode::OK,
-            headers: axum::http::HeaderMap::from_iter([(
-                axum::http::header::CONTENT_TYPE,
-                axum::http::HeaderValue::from_static("application/json"),
-            )]),
+            headers: axum::http::HeaderMap::from_iter([
+                (axum::http::header::CONTENT_TYPE, content_type),
+                (
+                    axum::http::header::VARY,
+                    axum::http::HeaderValue::from_static("Accept"),
+                ),
+            ]),
         }
     }
 
     #[inline]
     pub fn error(err: &str) -> Self {
-        Self::json(ApiError::new_value(&[err])).with_status(axum::http::StatusCode::BAD_REQUEST)
+        Self::new_serialized(ApiError::new_value(&[err]))
+            .with_status(axum::http::StatusCode::BAD_REQUEST)
     }
 
     #[inline]
@@ -45,8 +125,8 @@ impl ApiResponse {
     }
 
     #[inline]
-    pub fn with_header(mut self, key: &'static str, value: &str) -> Self {
-        if let Ok(header_value) = axum::http::HeaderValue::from_str(value) {
+    pub fn with_header(mut self, key: &'static str, value: impl AsRef<str>) -> Self {
+        if let Ok(header_value) = axum::http::HeaderValue::from_str(value.as_ref()) {
             self.headers.insert(key, header_value);
         }
 
@@ -54,13 +134,17 @@ impl ApiResponse {
     }
 
     #[inline]
-    pub fn with_optional_header(mut self, key: &'static str, value: Option<&str>) -> Self {
+    pub fn with_optional_header(
+        mut self,
+        key: &'static str,
+        value: Option<impl AsRef<str>>,
+    ) -> Self {
         let value = match value {
             Some(value) => value,
             None => return self,
         };
 
-        if let Ok(header_value) = axum::http::HeaderValue::from_str(value) {
+        if let Ok(header_value) = axum::http::HeaderValue::from_str(value.as_ref()) {
             self.headers.insert(key, header_value);
         }
 
@@ -77,7 +161,6 @@ impl<T> From<T> for ApiResponse
 where
     T: Into<anyhow::Error>,
 {
-    #[inline]
     fn from(err: T) -> Self {
         let err: anyhow::Error = err.into();
 
@@ -96,7 +179,7 @@ where
 impl IntoResponse for ApiResponse {
     #[inline]
     fn into_response(self) -> axum::response::Response {
-        let mut response = axum::http::Response::new(self.body);
+        let mut response = axum::response::Response::new(self.body);
         *response.status_mut() = self.status;
         *response.headers_mut() = self.headers;
 

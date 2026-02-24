@@ -6,6 +6,7 @@ mod export;
 mod inspect;
 mod list;
 mod remove;
+mod resync;
 mod update;
 
 pub fn commands(cli: CliCommandGroupBuilder) -> CliCommandGroupBuilder {
@@ -28,6 +29,11 @@ pub fn commands(cli: CliCommandGroupBuilder) -> CliCommandGroupBuilder {
         "apply",
         "Applies (builds) all extensions and panel sourcecode to the current bin location.",
         apply::ApplyCommand,
+    )
+    .add_command(
+        "resync",
+        "Resyncs the internal extension list used for building the Panel.",
+        resync::ResyncCommand,
     )
     .add_command(
         "add",

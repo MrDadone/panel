@@ -1,11 +1,14 @@
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faCheckDouble, faPlus, faX } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { MouseEvent as ReactMouseEvent, Ref, useEffect, useState } from 'react';
+import { ActionIcon, Group } from '@mantine/core';
+import { MouseEvent as ReactMouseEvent, Ref, useCallback, useEffect, useMemo, useState } from 'react';
 import getNodeAllocations from '@/api/admin/nodes/allocations/getNodeAllocations.ts';
 import Button from '@/elements/Button.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
+import Select from '@/elements/input/Select.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
 import { nodeAllocationTableColumns } from '@/lib/tableColumns.ts';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -19,11 +22,45 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
 
   const [openModal, setOpenModal] = useState<'create' | null>(null);
   const [selectedNodeAllocationsPrevious, setSelectedNodeAllocationsPrevious] = useState(selectedNodeAllocations);
+  const [ipFilter, setIpFilter] = useState('');
+  const [portFilter, setPortFilter] = useState('');
+
+  const uniqueIps = useMemo(() => {
+    const ips = new Set<string>();
+    nodeAllocations.data.forEach((alloc) => ips.add(alloc.ip));
+    return Array.from(ips)
+      .sort()
+      .map((ip) => ({ label: ip, value: ip }));
+  }, [nodeAllocations.data]);
+
+  const uniquePorts = useMemo(() => {
+    const ports = new Set<string>();
+    nodeAllocations.data.forEach((alloc) => ports.add(alloc.port.toString()));
+    return Array.from(ports)
+      .sort((a, b) => Number(a) - Number(b))
+      .map((port) => ({ label: port, value: port }));
+  }, [nodeAllocations.data]);
+
+  const buildSearch = useCallback((generalSearch: string, ip: string, port: string) => {
+    const parts: string[] = [];
+    if (generalSearch) parts.push(generalSearch);
+    if (ip) parts.push(ip);
+    if (port) parts.push(port);
+    return parts.length > 0 ? parts.join(':') : undefined;
+  }, []);
 
   const { loading, search, setSearch, setPage, refetch } = useSearchablePaginatedTable({
-    fetcher: (page, search) => getNodeAllocations(node.uuid, page, search),
+    fetcher: (page, generalSearch) => {
+      const finalSearch = buildSearch(generalSearch || '', ipFilter, portFilter);
+      return getNodeAllocations(node.uuid, page, finalSearch);
+    },
     setStoreData: setNodeAllocations,
+    deps: [ipFilter, portFilter, node.uuid],
   });
+
+  useEffect(() => {
+    refetch();
+  }, [ipFilter, portFilter]);
 
   const onSelectedStart = (event: ReactMouseEvent | MouseEvent) => {
     setSelectedNodeAllocationsPrevious(event.shiftKey ? selectedNodeAllocations : []);
@@ -75,16 +112,66 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
     deps: [nodeAllocations.data],
   });
 
+  const handleSelectAll = () => {
+    setSelectedNodeAllocations(nodeAllocations.data);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedNodeAllocations([]);
+  };
+
   return (
-    <AdminContentContainer
+    <AdminSubContentContainer
       title='Node Allocations'
       titleOrder={2}
       search={search}
       setSearch={setSearch}
       contentRight={
-        <Button onClick={() => setOpenModal('create')} color='blue' leftSection={<FontAwesomeIcon icon={faPlus} />}>
-          Create
-        </Button>
+        <Group gap='xs'>
+          <Select
+            placeholder='IP'
+            value={ipFilter || null}
+            onChange={(value) => setIpFilter(value || '')}
+            data={uniqueIps}
+            searchable
+            clearable
+            allowDeselect
+            w={120}
+          />
+          <Select
+            placeholder='Port'
+            value={portFilter || null}
+            onChange={(value) => setPortFilter(value || '')}
+            data={uniquePorts}
+            searchable
+            clearable
+            allowDeselect
+            w={100}
+          />
+          <Tooltip label='Select All'>
+            <ActionIcon variant='subtle' onClick={handleSelectAll} color='gray'>
+              <FontAwesomeIcon icon={faCheckDouble} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label='Clear Selection'>
+            <ActionIcon
+              variant='subtle'
+              onClick={handleClearSelection}
+              disabled={selectedNodeAllocations.length === 0}
+              color='gray'
+            >
+              <FontAwesomeIcon icon={faX} />
+            </ActionIcon>
+          </Tooltip>
+          <Button
+            onClick={() => setOpenModal('create')}
+            color='blue'
+            size='sm'
+            leftSection={<FontAwesomeIcon icon={faPlus} />}
+          >
+            Create
+          </Button>
+        </Group>
       }
     >
       <NodeAllocationsCreateModal
@@ -117,6 +204,6 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
           ))}
         </Table>
       </SelectionArea>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

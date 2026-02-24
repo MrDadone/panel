@@ -1,4 +1,6 @@
-import { Grid, Group, Stack, Text, Title } from '@mantine/core';
+import { faClock } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Grid, Group, Stack, Text } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -7,8 +9,8 @@ import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updateTimezone from '@/api/server/settings/updateTimezone.ts';
 import Button from '@/elements/Button.tsx';
-import Card from '@/elements/Card.tsx';
 import Select from '@/elements/input/Select.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { serverSettingsTimezoneSchema } from '@/lib/schemas/server/settings.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -63,13 +65,13 @@ export default function TimezoneContainer() {
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-      <Card h='100%'>
+      <TitleCard
+        title={t('pages.server.settings.timezone.title', {})}
+        icon={<FontAwesomeIcon icon={faClock} />}
+        className='h-full'
+      >
         <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack h='100%'>
-            <Title order={2} c='white'>
-              {t('pages.server.settings.timezone.title', {})}
-            </Title>
-
+          <Stack>
             <Stack gap='xs'>
               <Select
                 withAsterisk
@@ -94,7 +96,7 @@ export default function TimezoneContainer() {
             </Group>
           </Stack>
         </form>
-      </Card>
+      </TitleCard>
     </Grid.Col>
   );
 }

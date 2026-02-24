@@ -1,14 +1,14 @@
 import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { Editor } from '@monaco-editor/react';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import updateEggScript from '@/api/admin/nests/eggs/updateEggScript.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import MonacoEditor from '@/elements/MonacoEditor.tsx';
 import { adminEggScriptSchema } from '@/lib/schemas/admin/eggs.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -61,7 +61,7 @@ export default function EggInstallationScriptContainer({
 
   return (
     <>
-      <AdminContentContainer title='Egg Installation Script' titleOrder={2}>
+      <AdminSubContentContainer title='Egg Installation Script' titleOrder={2}>
         <form onSubmit={form.onSubmit(doUpdate)}>
           <Stack>
             <Group grow>
@@ -80,7 +80,7 @@ export default function EggInstallationScriptContainer({
             </Group>
 
             <div className='rounded-md overflow-hidden'>
-              <Editor
+              <MonacoEditor
                 height='53vh'
                 theme='vs-dark'
                 value={form.values.content || ''}
@@ -105,7 +105,7 @@ export default function EggInstallationScriptContainer({
             </Button>
           </Group>
         </form>
-      </AdminContentContainer>
+      </AdminSubContentContainer>
     </>
   );
 }

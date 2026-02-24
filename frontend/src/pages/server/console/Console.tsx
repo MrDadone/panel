@@ -1,4 +1,4 @@
-import { faArrowDown, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faArrowDown, faClockRotateLeft, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon } from '@mantine/core';
 import { AnsiUp } from 'ansi_up';
@@ -10,9 +10,12 @@ import Card from '@/elements/Card.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import Progress from '@/elements/Progress.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
 import { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
+import CommandHistoryDrawer from './drawers/CommandHistoryDrawer.tsx';
+import FeatureProvider from './features/FeatureProvider.tsx';
 
 const ansiUp = new AnsiUp();
 const MAX_LINES = 1000;
@@ -78,6 +81,7 @@ export default function Terminal() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [websocketPing, setWebsocketPing] = useState(0);
   const [consoleFontSize, setConsoleFontSize] = useState(14);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -345,88 +349,124 @@ export default function Terminal() {
   );
 
   return (
-    <Card className='h-full flex flex-col font-mono text-sm relative p-2!'>
-      <div className='flex flex-row justify-between items-center mb-2 text-xs'>
-        <div className='flex flex-row items-center'>
-          <span
-            className={classNames(
-              'rounded-full h-3 w-3 animate-pulse mr-2',
-              socketConnected ? 'bg-green-500' : 'bg-red-500',
+    <>
+      <FeatureProvider />
+
+      <Card className='h-full flex flex-col font-mono text-sm relative p-2!'>
+        <div className='flex flex-row justify-between items-center mb-2 text-xs'>
+          <div className='flex flex-row items-center'>
+            <span
+              className={classNames(
+                'rounded-full size-3 animate-pulse mr-2',
+                socketConnected ? 'bg-green-500' : 'bg-red-500',
+              )}
+            />
+            {socketConnected && socketInstance
+              ? t('pages.server.console.socketConnected', { ping: websocketPing })
+              : t('pages.server.console.socketDisconnected', {})}
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderLeftComponents.map(
+              (Component, idx) => (
+                <Component key={idx} />
+              ),
             )}
+          </div>
+          <div className='flex flex-row items-center gap-2'>
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderRightComponents.map(
+              (Component, idx) => (
+                <Component key={idx} />
+              ),
+            )}
+            <Tooltip label={t('pages.server.console.tooltip.commandHistory', {})}>
+              <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setHistoryModalOpen(true)}>
+                <FontAwesomeIcon icon={faClockRotateLeft} />
+              </ActionIcon>
+            </Tooltip>
+            <div className='flex flex-row items-center'>
+              <Tooltip label={t('pages.server.console.tooltip.decreaseFontSize', {})}>
+                <ActionIcon
+                  className='mr-2'
+                  size='xs'
+                  variant='subtle'
+                  color='gray'
+                  onClick={() => setConsoleFontSize((size) => Math.max(10, size - 1))}
+                >
+                  <FontAwesomeIcon icon={faMinus} />
+                </ActionIcon>
+              </Tooltip>
+              {consoleFontSize}px
+              <Tooltip label={t('pages.server.console.tooltip.increaseFontSize', {})}>
+                <ActionIcon
+                  className='ml-2'
+                  size='xs'
+                  variant='subtle'
+                  color='gray'
+                  onClick={() => setConsoleFontSize((size) => Math.min(24, size + 1))}
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </ActionIcon>
+              </Tooltip>
+            </div>
+          </div>
+        </div>
+
+        {!socketConnected && <Spinner.Centered />}
+
+        <div
+          ref={containerRef}
+          className='flex-1 overflow-auto custom-scrollbar space-y-1 select-text'
+          style={{ fontSize: `${consoleFontSize}px` }}
+          onScroll={handleScroll}
+        >
+          {MemoizedLines}
+        </div>
+
+        {imagePulls.size > 0 && (
+          <span className='flex flex-col justify-end mt-4'>
+            {t('pages.server.console.message.pullingImage', {})}
+            {Array.from(imagePulls).map(([id, progress]) => (
+              <span key={id} className='flex flex-row w-full items-center whitespace-pre-wrap break-all'>
+                {progress.status === 'pulling'
+                  ? t('pages.server.console.message.pulling', {})
+                  : t('pages.server.console.message.extracting', {})}{' '}
+                {t('pages.server.console.message.layer', {})}{' '}
+                <Progress
+                  hourglass={false}
+                  value={(progress.progress / progress.total) * 100}
+                  className='flex-1 ml-2'
+                />
+              </span>
+            ))}
+          </span>
+        )}
+
+        {!isAtBottom && (
+          <div className='absolute bottom-2 right-2 z-90 w-fit'>
+            <Button onClick={scrollToBottom} variant='transparent'>
+              <FontAwesomeIcon icon={faArrowDown} />
+            </Button>
+          </div>
+        )}
+
+        <div className='w-full mt-4 flex flex-row'>
+          <TextInput
+            ref={inputRef}
+            placeholder={t('pages.server.console.input.placeholder', {})}
+            aria-label={t('pages.server.console.input.ariaLabel', {})}
+            disabled={!socketConnected || state === 'offline'}
+            onKeyDown={handleKeyDown}
+            autoCorrect='off'
+            autoCapitalize='none'
+            className='w-full'
           />
-          {socketConnected && socketInstance
-            ? t('pages.server.console.socketConnected', { ping: websocketPing })
-            : t('pages.server.console.socketDisconnected', {})}
+          {window.extensionContext.extensionRegistry.pages.server.console.terminalInputRowComponents.map(
+            (Component, idx) => (
+              <Component key={idx} />
+            ),
+          )}
         </div>
-        <div className='flex flex-row items-center'>
-          <ActionIcon
-            className='mr-2'
-            size='xs'
-            variant='subtle'
-            color='gray'
-            onClick={() => setConsoleFontSize((size) => Math.max(10, size - 1))}
-          >
-            <FontAwesomeIcon icon={faMinus} />
-          </ActionIcon>
-          {consoleFontSize}px
-          <ActionIcon
-            className='ml-2'
-            size='xs'
-            variant='subtle'
-            color='gray'
-            onClick={() => setConsoleFontSize((size) => Math.min(24, size + 1))}
-          >
-            <FontAwesomeIcon icon={faPlus} />
-          </ActionIcon>
-        </div>
-      </div>
+      </Card>
 
-      {!socketConnected && <Spinner.Centered />}
-
-      <div
-        ref={containerRef}
-        className='flex-1 overflow-auto custom-scrollbar space-y-1 select-text'
-        style={{ fontSize: `${consoleFontSize}px` }}
-        onScroll={handleScroll}
-      >
-        {MemoizedLines}
-      </div>
-
-      {imagePulls.size > 0 && (
-        <span className='flex flex-col justify-end mt-4'>
-          {t('pages.server.console.message.pullingImage', {})}
-          {Array.from(imagePulls).map(([id, progress]) => (
-            <span key={id} className='flex flex-row w-full items-center whitespace-pre-wrap break-all'>
-              {progress.status === 'pulling'
-                ? t('pages.server.console.message.pulling', {})
-                : t('pages.server.console.message.extracting', {})}{' '}
-              {t('pages.server.console.message.layer', {})}{' '}
-              <Progress hourglass={false} value={(progress.progress / progress.total) * 100} className='flex-1 ml-2' />
-            </span>
-          ))}
-        </span>
-      )}
-
-      {!isAtBottom && (
-        <div className='absolute bottom-2 right-2 z-90 w-fit'>
-          <Button onClick={scrollToBottom} variant='transparent'>
-            <FontAwesomeIcon icon={faArrowDown} />
-          </Button>
-        </div>
-      )}
-
-      <div className='w-full mt-4'>
-        <TextInput
-          ref={inputRef}
-          placeholder={t('pages.server.console.input.placeholder', {})}
-          aria-label={t('pages.server.console.input.ariaLabel', {})}
-          disabled={!socketConnected || state === 'offline'}
-          onKeyDown={handleKeyDown}
-          autoCorrect='off'
-          autoCapitalize='none'
-          className='w-full'
-        />
-      </div>
-    </Card>
+      <CommandHistoryDrawer opened={historyModalOpen} onClose={() => setHistoryModalOpen(false)} />
+    </>
   );
 }

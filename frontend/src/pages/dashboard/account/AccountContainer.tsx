@@ -1,4 +1,6 @@
-import { Grid, Group, Stack, Title } from '@mantine/core';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Grid, Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -6,10 +8,10 @@ import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updateAccount from '@/api/me/account/updateAccount.ts';
 import Button from '@/elements/Button.tsx';
-import Card from '@/elements/Card.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { dashboardAccountSchema } from '@/lib/schemas/dashboard.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -71,12 +73,13 @@ export default function AccountContainer({ blurred }: AccountCardProps) {
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>
-      <Card h='100%'>
-        <Title order={2} c='white'>
-          {t('pages.account.account.containers.account.title', {})}
-        </Title>
+      <TitleCard
+        title={t('pages.account.account.containers.account.title', {})}
+        icon={<FontAwesomeIcon icon={faUser} />}
+        className='h-full'
+      >
         <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack className='mt-4'>
+          <Stack>
             <Group grow>
               <TextInput
                 withAsterisk
@@ -157,7 +160,7 @@ export default function AccountContainer({ blurred }: AccountCardProps) {
             </Group>
           </Stack>
         </form>
-      </Card>
+      </TitleCard>
     </Grid.Col>
   );
 }

@@ -41,7 +41,7 @@ mod get {
         .fetch_one(state.database.read())
         .await?;
 
-        ApiResponse::json(Response { stats }).ok()
+        ApiResponse::new_serialized(Response { stats }).ok()
     }
 }
 

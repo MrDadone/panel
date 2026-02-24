@@ -43,10 +43,10 @@ mod put {
         permissions: GetPermissionManager,
         mut server: GetServer,
         activity_logger: GetServerActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -83,20 +83,11 @@ mod put {
             .batch_action("sync_server", server.uuid, {
                 let state = state.clone();
 
-                async move {
-                    let uuid = server.uuid;
-
-                    match server.0.sync(&state.database).await {
-                        Ok(_) => {}
-                        Err(err) => {
-                            tracing::warn!(server = %uuid, "failed to post server sync: {:?}", err);
-                        }
-                    }
-                }
+                async move { server.0.sync(&state.database).await }
             })
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

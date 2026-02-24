@@ -19,9 +19,9 @@ export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
       {isNormal && (
         <Sidebar>
           <NavLink to='/' className='w-full'>
-            <div className='h-28 w-full flex flex-row items-center justify-between mt-1 select-none cursor-pointer'>
-              <img src='/icon.svg' className='h-full py-4' alt='Calagopus Icon' />
-              <h1 className='grow font-logo text-xl'>{settings.app.name}</h1>
+            <div className='h-16 w-full flex flex-row items-center justify-between mt-1 select-none cursor-pointer'>
+              <img src='/icon.svg' className='h-12 w-12' alt='Calagopus Icon' />
+              <h1 className='grow text-md font-bold! ml-2'>{settings.app.name}</h1>
             </div>
           </NavLink>
 
@@ -31,7 +31,7 @@ export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
 
           <Sidebar.Divider />
 
-          {[...adminRoutes, ...window.extensionContext.routes.adminRoutes]
+          {[...adminRoutes, ...window.extensionContext.extensionRegistry.routes.adminRoutes]
             .filter((route) => !!route.name && (!route.filter || route.filter()))
             .map((route) =>
               route.permission ? (
@@ -59,16 +59,11 @@ export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
         </Sidebar>
       )}
 
-      <div
-        id='admin-root'
-        className={
-          isNormal ? 'max-w-[100vw] lg:max-w-[calc(100vw-17.5rem)] flex-1 lg:ml-0' : 'flex-1 lg:ml-0 overflow-auto'
-        }
-      >
+      <div id='admin-root' className={isNormal ? 'max-w-[100vw] flex-1 lg:ml-0' : 'flex-1 lg:ml-0 overflow-auto'}>
         <Container isNormal={isNormal}>
           <Suspense fallback={<Spinner.Centered />}>
             <Routes>
-              {[...adminRoutes, ...window.extensionContext.routes.adminRoutes]
+              {[...adminRoutes, ...window.extensionContext.extensionRegistry.routes.adminRoutes]
                 .filter((route) => !route.filter || route.filter())
                 .map(({ path, element: Element, permission }) => (
                   <Route key={path} element={<AdminPermissionGuard permission={permission ?? []} />}>

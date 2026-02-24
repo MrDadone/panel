@@ -172,6 +172,8 @@ pub struct BackupConfiguration {
     pub name: compact_str::CompactString,
     pub description: Option<compact_str::CompactString>,
 
+    pub maintenance_enabled: bool,
+
     pub backup_disk: super::server_backup::BackupDisk,
     pub backup_configs: BackupConfigs,
 
@@ -199,6 +201,10 @@ impl BaseModel for BackupConfiguration {
                 compact_str::format_compact!("{prefix}description"),
             ),
             (
+                "backup_configurations.maintenance_enabled",
+                compact_str::format_compact!("{prefix}maintenance_enabled"),
+            ),
+            (
                 "backup_configurations.backup_disk",
                 compact_str::format_compact!("{prefix}backup_disk"),
             ),
@@ -222,6 +228,8 @@ impl BaseModel for BackupConfiguration {
             name: row.try_get(compact_str::format_compact!("{prefix}name").as_str())?,
             description: row
                 .try_get(compact_str::format_compact!("{prefix}description").as_str())?,
+            maintenance_enabled: row
+                .try_get(compact_str::format_compact!("{prefix}maintenance_enabled").as_str())?,
             backup_disk: row
                 .try_get(compact_str::format_compact!("{prefix}backup_disk").as_str())?,
             backup_configs: serde_json::from_value(
@@ -238,6 +246,7 @@ impl BackupConfiguration {
         database: &crate::database::Database,
         name: &str,
         description: Option<&str>,
+        maintenance_enabled: bool,
         backup_disk: super::server_backup::BackupDisk,
         mut backup_configs: BackupConfigs,
     ) -> Result<Self, crate::database::DatabaseError> {
@@ -245,14 +254,15 @@ impl BackupConfiguration {
 
         let row = sqlx::query(&format!(
             r#"
-            INSERT INTO backup_configurations (name, description, backup_disk, backup_configs)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO backup_configurations (name, description, maintenance_enabled, backup_disk, backup_configs)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING {}
             "#,
             Self::columns_sql(None)
         ))
         .bind(name)
         .bind(description)
+        .bind(maintenance_enabled)
         .bind(backup_disk)
         .bind(serde_json::to_value(backup_configs)?)
         .fetch_one(database.write())
@@ -308,6 +318,7 @@ impl BackupConfiguration {
         Ok(AdminApiBackupConfiguration {
             uuid: self.uuid,
             name: self.name,
+            maintenance_enabled: self.maintenance_enabled,
             description: self.description,
             backup_disk: self.backup_disk,
             backup_configs: self.backup_configs,
@@ -342,21 +353,21 @@ impl ByUuid for BackupConfiguration {
 impl DeletableModel for BackupConfiguration {
     type DeleteOptions = ();
 
-    fn get_delete_listeners() -> &'static LazyLock<DeleteListenerList<Self>> {
+    fn get_delete_handlers() -> &'static LazyLock<DeleteListenerList<Self>> {
         static DELETE_LISTENERS: LazyLock<DeleteListenerList<BackupConfiguration>> =
-            LazyLock::new(|| Arc::new(ListenerList::default()));
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
 
         &DELETE_LISTENERS
     }
 
     async fn delete(
         &self,
-        database: &Arc<crate::database::Database>,
+        state: &crate::State,
         options: Self::DeleteOptions,
     ) -> Result<(), anyhow::Error> {
-        let mut transaction = database.write().begin().await?;
+        let mut transaction = state.database.write().begin().await?;
 
-        self.run_delete_listeners(&options, database, &mut transaction)
+        self.run_delete_handlers(&options, state, &mut transaction)
             .await?;
 
         sqlx::query(
@@ -381,6 +392,7 @@ pub struct AdminApiBackupConfiguration {
     pub uuid: uuid::Uuid,
 
     pub name: compact_str::CompactString,
+    pub maintenance_enabled: bool,
     pub description: Option<compact_str::CompactString>,
 
     pub backup_disk: super::server_backup::BackupDisk,

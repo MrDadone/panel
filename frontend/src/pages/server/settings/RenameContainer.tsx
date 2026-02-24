@@ -1,4 +1,6 @@
-import { Grid, Group, Stack, Title } from '@mantine/core';
+import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Grid, Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -6,9 +8,9 @@ import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import renameServer from '@/api/server/settings/renameServer.ts';
 import Button from '@/elements/Button.tsx';
-import Card from '@/elements/Card.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { serverSettingsRenameSchema } from '@/lib/schemas/server/settings.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -45,13 +47,13 @@ export default function RenameContainer() {
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-      <Card h='100%'>
+      <TitleCard
+        title={t('pages.server.settings.rename.title', {})}
+        icon={<FontAwesomeIcon icon={faPenToSquare} />}
+        className='h-full'
+      >
         <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack h='100%'>
-            <Title order={2} c='white'>
-              {t('pages.server.settings.rename.title', {})}
-            </Title>
-
+          <Stack>
             <TextInput
               withAsterisk
               label={t('pages.server.settings.rename.form.serverName', {})}
@@ -66,14 +68,14 @@ export default function RenameContainer() {
               {...form.getInputProps('description')}
             />
 
-            <Group h='100%'>
+            <Group mt='auto'>
               <Button type='submit' loading={loading} disabled={!form.isValid()}>
                 {t('common.button.save', {})}
               </Button>
             </Group>
           </Stack>
         </form>
-      </Card>
+      </TitleCard>
     </Grid.Col>
   );
 }

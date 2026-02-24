@@ -43,7 +43,7 @@ pub async fn auth(
     mut req: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
-    let server = Server::by_user_identifier_cached(&state.database, &user, &server[0]).await;
+    let server = Server::by_user_identifier(&state.database, &user, &server[0]).await;
     let server = match server {
         Ok(Some(server)) => server,
         Ok(None) => {
@@ -94,6 +94,9 @@ pub async fn auth(
         state: Arc::clone(&state),
         server_uuid: server.uuid,
         user_uuid: user.uuid,
+        user_admin: user.admin,
+        user_owner: user.uuid == server.owner.uuid,
+        user_subuser: server.subuser_permissions.is_some(),
         api_key_uuid: match auth.0 {
             crate::routes::api::client::AuthMethod::ApiKey(api_key) => Some(api_key.uuid),
             _ => None,
@@ -130,7 +133,7 @@ mod get {
         ),
     ))]
     pub async fn route(state: GetState, user: GetUser, server: GetServer) -> ApiResponseResult {
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             server: server.0.into_api_object(&state.database, &user).await?,
         })
         .ok()

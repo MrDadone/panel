@@ -45,7 +45,7 @@ mod post {
         nest: GetNest,
         egg: GetNestEgg,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_admin_permission("eggs.update")?;
 
@@ -87,7 +87,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

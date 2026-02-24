@@ -43,7 +43,7 @@ mod get {
         Query(params): Query<PaginationParamsWithSearch>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -58,7 +58,7 @@ mod get {
         )
         .await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             nodes: nodes
                 .try_async_map(|node| node.into_admin_api_object(&state.database))
                 .await?,
@@ -90,10 +90,12 @@ mod post {
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: compact_str::CompactString,
-        public: bool,
         #[validate(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
+
+        deployment_enabled: bool,
+        maintenance_enabled: bool,
 
         #[validate(length(min = 3, max = 255), url)]
         #[schema(min_length = 3, max_length = 255, format = "uri")]
@@ -105,10 +107,6 @@ mod post {
         #[schema(min_length = 3, max_length = 255)]
         sftp_host: Option<compact_str::CompactString>,
         sftp_port: u16,
-
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        maintenance_message: Option<String>,
 
         memory: i64,
         disk: i64,
@@ -129,10 +127,10 @@ mod post {
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -172,13 +170,13 @@ mod post {
             location.uuid,
             backup_configuration.map(|backup_configuration| backup_configuration.uuid),
             &data.name,
-            data.public,
             data.description.as_deref(),
+            data.deployment_enabled,
+            data.maintenance_enabled,
             data.public_url.as_deref(),
             &data.url,
             data.sftp_host.as_deref(),
             data.sftp_port as i32,
-            data.maintenance_message.as_deref(),
             data.memory,
             data.disk,
         )
@@ -207,20 +205,20 @@ mod post {
                     "location_uuid": location.uuid,
 
                     "name": node.name,
-                    "public": node.public,
                     "description": node.description,
+                    "deployment_enabled": node.deployment_enabled,
+                    "maintenance_enabled": node.maintenance_enabled,
                     "public_url": node.public_url,
                     "url": node.url,
                     "sftp_host": node.sftp_host,
                     "sftp_port": node.sftp_port,
-                    "maintenance_message": node.maintenance_message,
                     "memory": node.memory,
                     "disk": node.disk,
                 }),
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             node: node.into_admin_api_object(&state.database).await?,
         })
         .ok()

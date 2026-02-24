@@ -8,6 +8,7 @@ use utoipa::ToSchema;
 pub struct ServerActivity {
     pub user: Option<super::user::User>,
     pub api_key_uuid: Option<uuid::Uuid>,
+    pub schedule_uuid: Option<uuid::Uuid>,
 
     pub event: compact_str::CompactString,
     pub ip: Option<sqlx::types::ipnetwork::IpNetwork>,
@@ -27,6 +28,10 @@ impl BaseModel for ServerActivity {
             (
                 "server_activities.api_key_uuid",
                 compact_str::format_compact!("{prefix}api_key_uuid"),
+            ),
+            (
+                "server_activities.schedule_uuid",
+                compact_str::format_compact!("{prefix}schedule_uuid"),
             ),
             (
                 "server_activities.event",
@@ -66,6 +71,8 @@ impl BaseModel for ServerActivity {
             },
             api_key_uuid: row
                 .try_get(compact_str::format_compact!("{prefix}api_key_uuid").as_str())?,
+            schedule_uuid: row
+                .try_get(compact_str::format_compact!("{prefix}schedule_uuid").as_str())?,
             event: row.try_get(compact_str::format_compact!("{prefix}event").as_str())?,
             ip: row.try_get(compact_str::format_compact!("{prefix}ip").as_str())?,
             data: row.try_get(compact_str::format_compact!("{prefix}data").as_str())?,
@@ -107,6 +114,7 @@ impl ServerActivity {
         database: &crate::database::Database,
         server_uuid: uuid::Uuid,
         user_uuid: Option<uuid::Uuid>,
+        schedule_uuid: Option<uuid::Uuid>,
         event: &str,
         ip: Option<sqlx::types::ipnetwork::IpNetwork>,
         data: serde_json::Value,
@@ -114,12 +122,13 @@ impl ServerActivity {
     ) -> Result<(), crate::database::DatabaseError> {
         sqlx::query(
             r#"
-            INSERT INTO server_activities (server_uuid, user_uuid, event, ip, data, created)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO server_activities (server_uuid, user_uuid, schedule_uuid, event, ip, data, created)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             "#,
         )
         .bind(server_uuid)
         .bind(user_uuid)
+        .bind(schedule_uuid)
         .bind(event)
         .bind(ip)
         .bind(data)
@@ -171,6 +180,23 @@ impl ServerActivity {
         })
     }
 
+    pub async fn delete_older_than(
+        database: &crate::database::Database,
+        cutoff: chrono::DateTime<chrono::Utc>,
+    ) -> Result<u64, crate::database::DatabaseError> {
+        let result = sqlx::query(
+            r#"
+            DELETE FROM server_activities
+            WHERE created < $1
+            "#,
+        )
+        .bind(cutoff.naive_utc())
+        .execute(database.write())
+        .await?;
+
+        Ok(result.rows_affected())
+    }
+
     #[inline]
     pub fn into_api_object(
         self,
@@ -186,6 +212,7 @@ impl ServerActivity {
                 .map(|ip| compact_str::format_compact!("{}", ip.ip())),
             data: self.data,
             is_api: self.api_key_uuid.is_some(),
+            is_schedule: self.schedule_uuid.is_some(),
             created: self.created.and_utc(),
         }
     }
@@ -201,6 +228,7 @@ pub struct ApiServerActivity {
     pub data: serde_json::Value,
 
     pub is_api: bool,
+    pub is_schedule: bool,
 
     pub created: chrono::DateTime<chrono::Utc>,
 }

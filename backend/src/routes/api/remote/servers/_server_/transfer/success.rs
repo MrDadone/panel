@@ -6,7 +6,7 @@ mod post {
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{node::GetNode, server::GetServer},
+        models::{EventEmittingModel, node::GetNode, server::GetServer},
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -34,7 +34,7 @@ mod post {
         state: GetState,
         node: GetNode,
         server: GetServer,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         let destination_node = match &server.destination_node {
             Some(id) => id,
@@ -112,7 +112,18 @@ mod post {
             tracing::error!("failed to delete server on source node: {:?}", err);
         }
 
-        ApiResponse::json(Response {}).ok()
+        if let Ok(destination_node) = destination_node.fetch_cached(&state.database).await {
+            shared::models::server::Server::get_event_emitter().emit(
+                state.0,
+                shared::models::server::ServerEvent::TransferCompleted {
+                    server: Box::new(server.0),
+                    destination_node: Box::new(destination_node),
+                    successful: true,
+                },
+            );
+        }
+
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

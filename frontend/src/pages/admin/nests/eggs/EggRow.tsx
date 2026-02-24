@@ -1,8 +1,7 @@
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 
 export default function EggRow({ nest, egg }: { nest: AdminNest; egg: AdminNestEgg }) {
   return (
@@ -23,7 +22,7 @@ export default function EggRow({ nest, egg }: { nest: AdminNest; egg: AdminNestE
       <TableData>{egg.description}</TableData>
 
       <TableData>
-        <Tooltip label={formatDateTime(egg.created)}>{formatTimestamp(egg.created)}</Tooltip>
+        <FormattedTimestamp timestamp={egg.created} />
       </TableData>
     </TableRow>
   );

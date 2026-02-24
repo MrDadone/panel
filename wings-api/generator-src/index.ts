@@ -8,7 +8,13 @@ import { convertType } from "@/generate-schema-property"
 const openapi: oas31.OpenAPIObject = JSON.parse(fs.readFileSync('../openapi.json', 'utf-8'))
 const output = fs.createWriteStream('../src/lib.rs', { flags: 'w' })
 
-output.write(`// This file is auto-generated from OpenAPI spec. Do not edit manually.
+output.write(`//! The Calagopus Panel Wings API library.
+//!
+//! Used for communicating with the Wings daemon. This library contains
+//! auto-generated code from the OpenAPI specification as well as
+//! some utilities for working with the Wings API. In 99% of cases you will
+//! want to use the [crate::client::WingsClient] struct to interact with the API.
+
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -38,6 +44,8 @@ static CLIENT: LazyLock<Client> = LazyLock::new(|| {
 pub enum ApiHttpError {
     Http(StatusCode, super::ApiError),
     Reqwest(reqwest::Error),
+    MsgpackEncode(rmp_serde::encode::Error),
+    MsgpackDecode(rmp_serde::decode::Error),
 }
 
 impl From<ApiHttpError> for anyhow::Error {
@@ -47,6 +55,8 @@ impl From<ApiHttpError> for anyhow::Error {
                 anyhow::anyhow!("wings api status code {status}: {}", err.error)
             }
             ApiHttpError::Reqwest(err) => anyhow::anyhow!(err),
+            ApiHttpError::MsgpackEncode(err) => anyhow::anyhow!(err),
+            ApiHttpError::MsgpackDecode(err) => anyhow::anyhow!(err),
         }
     }
 }
@@ -64,13 +74,23 @@ async fn request_impl<T: DeserializeOwned + 'static>(
         endpoint.as_ref()
     );
     let mut request = CLIENT.request(method, &url);
+    request = request.header("Accept", "application/msgpack");
 
     if !client.token.is_empty() {
         request = request.header("Authorization", format!("Bearer {}", client.token));
     }
 
     if let Some(body) = body {
-        request = request.json(body);
+        request = request.header("Content-Type", "application/msgpack");
+
+        let mut bytes = Vec::new();
+        let mut se = rmp_serde::Serializer::new(&mut bytes)
+            .with_struct_map()
+            .with_human_readable();
+        if let Err(err) = body.serialize(&mut se) {
+            return Err(ApiHttpError::MsgpackEncode(err));
+        }
+        request = request.body(bytes);
     } else if let Some(body_raw) = body_raw {
         request = request.body(Vec::from(body_raw));
     }
@@ -92,16 +112,35 @@ async fn request_impl<T: DeserializeOwned + 'static>(
                     };
                 }
 
-                match response.json().await {
-                    Ok(data) => Ok(data),
+                match response.bytes().await {
+                    Ok(data) => {
+                        let mut de =
+                            rmp_serde::Deserializer::new(data.as_ref()).with_human_readable();
+                        match T::deserialize(&mut de) {
+                            Ok(data) => Ok(data),
+                            Err(err) => Err(ApiHttpError::MsgpackDecode(err)),
+                        }
+                    }
                     Err(err) => Err(ApiHttpError::Reqwest(err)),
                 }
             } else {
                 Err(ApiHttpError::Http(
                     response.status(),
-                    response.json().await.unwrap_or_else(|err| super::ApiError {
-                        error: err.to_string().into(),
-                    }),
+                    match response.bytes().await {
+                        Ok(data) => {
+                            let mut de =
+                                rmp_serde::Deserializer::new(data.as_ref()).with_human_readable();
+                            match super::ApiError::deserialize(&mut de) {
+                                Ok(data) => data,
+                                Err(err) => super::ApiError {
+                                    error: err.to_string().into(),
+                                },
+                            }
+                        }
+                        Err(err) => super::ApiError {
+                            error: err.to_string().into(),
+                        },
+                    },
                 ))
             }
         }
@@ -144,6 +183,11 @@ impl WingsClient {
 
 for (const [name, schema] of Object.entries(openapi.components?.schemas || {})) {
     if (schema.$ref || name === 'CompactString') continue
+
+    if (name === 'MiB') {
+        output.write('pub type MiB = u64;\n\n')
+        continue
+    }
 
     generateSchemaObject(output, 0, null, name, schema as oas31.SchemaObject)
 }

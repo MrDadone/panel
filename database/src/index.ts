@@ -1,6 +1,6 @@
-import { system } from '@rjweb/utils';
 import * as fs from 'node:fs';
-import logger from '@/globals/logger';
+import { system } from '@rjweb/utils';
+import logger from '@/globals/logger.ts';
 
 export default function getVersion() {
   return `${JSON.parse(fs.readFileSync('../package.json', 'utf8')).version}:${system.execute('git rev-parse --short=10 HEAD').trim()}`;

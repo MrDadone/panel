@@ -32,10 +32,18 @@ export const createSettingsSlice: StateCreator<AdminStore, [], [], SettingsSlice
     maxSchedulesStepCount: 100,
     allowOverwritingCustomDockerImage: true,
     allowEditingStartupCommand: false,
+    allowViewingInstallationLogs: true,
   },
   webauthn: {
     rpId: '',
     rpOrigin: '',
+  },
+  activity: {
+    adminLogRetentionDays: 180,
+    userLogRetentionDays: 90,
+    serverLogRetentionDays: 90,
+    serverLogAdminActivity: true,
+    serverLogScheduleActivity: true,
   },
 
   setSettings: (value) =>
@@ -46,6 +54,7 @@ export const createSettingsSlice: StateCreator<AdminStore, [], [], SettingsSlice
       state.app = value.app;
       state.server = value.server;
       state.webauthn = value.webauthn;
+      state.activity = value.activity;
       return state;
     }),
 });

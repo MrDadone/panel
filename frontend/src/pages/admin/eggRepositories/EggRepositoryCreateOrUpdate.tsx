@@ -44,8 +44,8 @@ export default function EggRepositoryCreateOrUpdate({
   >({
     form,
     createFn: () => createEggRepository(form.values),
-    updateFn: () => updateEggRepository(contextEggRepository!.uuid, form.values),
-    deleteFn: () => deleteEggRepository(contextEggRepository!.uuid),
+    updateFn: contextEggRepository ? () => updateEggRepository(contextEggRepository.uuid, form.values) : undefined,
+    deleteFn: contextEggRepository ? () => deleteEggRepository(contextEggRepository.uuid) : undefined,
     doUpdate: !!contextEggRepository,
     basePath: '/admin/egg-repositories',
     resourceName: 'Egg Repository',

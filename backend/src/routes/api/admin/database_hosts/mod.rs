@@ -46,7 +46,7 @@ mod get {
         Query(params): Query<PaginationParamsWithSearch>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -61,7 +61,7 @@ mod get {
         )
         .await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             database_hosts: Pagination {
                 total: database_hosts.total,
                 per_page: database_hosts.per_page,
@@ -97,8 +97,10 @@ mod post {
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: String,
-        public: bool,
         r#type: DatabaseType,
+
+        deployment_enabled: bool,
+        maintenance_enabled: bool,
 
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
@@ -131,10 +133,10 @@ mod post {
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -144,8 +146,9 @@ mod post {
         let database_host = match DatabaseHost::create(
             &state.database,
             &data.name,
-            data.public,
             data.r#type,
+            data.deployment_enabled,
+            data.maintenance_enabled,
             data.public_host.as_deref(),
             &data.host,
             data.public_port.map(|port| port as i32),
@@ -174,9 +177,12 @@ mod post {
             .log(
                 "database-host:create",
                 serde_json::json!({
+                    "uuid": database_host.uuid,
                     "name": database_host.name,
-                    "public": database_host.public,
                     "type": database_host.r#type,
+
+                    "deployment_enabled": database_host.deployment_enabled,
+                    "maintenance_enabled": database_host.maintenance_enabled,
 
                     "public_host": database_host.public_host,
                     "host": database_host.host,
@@ -188,7 +194,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             database_host: database_host.into_admin_api_object(),
         })
         .ok()

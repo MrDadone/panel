@@ -22,7 +22,7 @@ import { formatMiliseconds } from '@/lib/time.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
-function StatCard({
+export function StatCard({
   icon,
   label,
   value,
@@ -186,6 +186,9 @@ export default function ServerDetails() {
           state === 'offline' ? null : `${bytesToString(Math.round(networkRef.current.txSpeed), undefined, true)}/s`
         }
       />
+      {window.extensionContext.extensionRegistry.pages.server.console.statCards.map((StatCard, i) => (
+        <StatCard key={`console-stat-card-${i}`} />
+      ))}
     </div>
   );
 }

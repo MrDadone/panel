@@ -4,10 +4,9 @@ import getUserActivity from '@/api/admin/users/getUserActivity.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import ActivityInfoButton from '@/elements/activity/ActivityInfoButton.tsx';
 import Code from '@/elements/Code.tsx';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table, { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 
 export default function AdminUserActivity({ user }: { user: User }) {
@@ -19,7 +18,7 @@ export default function AdminUserActivity({ user }: { user: User }) {
   });
 
   return (
-    <AdminContentContainer title='User Activity' titleOrder={2} search={search} setSearch={setSearch}>
+    <AdminSubContentContainer title='User Activity' titleOrder={2} search={search} setSearch={setSearch}>
       <Table
         columns={['Actor', 'Event', 'IP', 'When', '']}
         loading={loading}
@@ -39,7 +38,7 @@ export default function AdminUserActivity({ user }: { user: User }) {
             </TableData>
 
             <TableData>
-              <Tooltip label={formatDateTime(activity.created)}>{formatTimestamp(activity.created)}</Tooltip>
+              <FormattedTimestamp timestamp={activity.created} />
             </TableData>
 
             <TableData>
@@ -50,6 +49,6 @@ export default function AdminUserActivity({ user }: { user: User }) {
           </TableRow>
         ))}
       </Table>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

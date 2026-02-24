@@ -1,0 +1,9 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src", "extensions/shared/src"],
+  "entryPointStrategy": "expand",
+  "out": "docs",
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts"],
+  "plugin": ["typedoc-plugin-rename-defaults", "typedoc-plugin-zod"],
+  "name": "Calagopus Frontend"
+}

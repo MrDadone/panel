@@ -3,17 +3,19 @@ import {
   faCloud,
   faFingerprint,
   faKey,
+  faKeyboard,
   faUnlockKeyhole,
   faUser,
   faUserSecret,
 } from '@fortawesome/free-solid-svg-icons';
 import type { RouteDefinition } from 'shared';
 import DashboardAccount from '@/pages/dashboard/account/DashboardAccount.tsx';
+import DashboardActivity from '@/pages/dashboard/activity/DashboardActivity.tsx';
 import DashboardApiKeys from '@/pages/dashboard/api-keys/DashboardApiKeys.tsx';
-import DashboardActivity from '@/pages/dashboard/DashboardActivity.tsx';
 import DashboardOAuthLinks from '@/pages/dashboard/oauth-links/DashboardOAuthLinks.tsx';
 import DashboardSecurityKeys from '@/pages/dashboard/security-keys/DashboardSecurityKeys.tsx';
 import DashboardSessions from '@/pages/dashboard/sessions/DashboardSessions.tsx';
+import DashboardShortcuts from '@/pages/dashboard/shortcuts/DashboardShortcuts.tsx';
 import DashboardSshKeys from '@/pages/dashboard/ssh-keys/DashboardSshKeys.tsx';
 import { getTranslations } from '@/providers/TranslationProvider.tsx';
 
@@ -54,6 +56,12 @@ const routes: RouteDefinition[] = [
     icon: faUserSecret,
     path: '/sessions',
     element: DashboardSessions,
+  },
+  {
+    name: () => getTranslations().t('pages.account.shortcuts.title', {}),
+    icon: faKeyboard,
+    path: '/shortcuts',
+    element: DashboardShortcuts,
   },
   {
     name: () => getTranslations().t('pages.account.activity.title', {}),

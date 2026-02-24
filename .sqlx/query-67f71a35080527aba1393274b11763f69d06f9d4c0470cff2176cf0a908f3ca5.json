@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE backup_configurations\n            SET name = $2, description = $3, maintenance_enabled = $4, backup_disk = $5, backup_configs = $6\n            WHERE backup_configurations.uuid = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Text",
+        "Bool",
+        {
+          "Custom": {
+            "name": "backup_disk",
+            "kind": {
+              "Enum": [
+                "LOCAL",
+                "S3",
+                "DDUP_BAK",
+                "BTRFS",
+                "ZFS",
+                "RESTIC"
+              ]
+            }
+          }
+        },
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "67f71a35080527aba1393274b11763f69d06f9d4c0470cff2176cf0a908f3ca5"
+}

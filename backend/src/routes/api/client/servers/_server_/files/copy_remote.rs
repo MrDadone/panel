@@ -58,24 +58,21 @@ mod post {
         server: GetServer,
         user: GetUser,
         mut activity_logger: GetServerActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_server_permission("files.read")?;
 
-        let destination_server = match Server::by_user_identifier_cached(
-            &state.database,
-            &user,
-            &data.destination_server,
-        )
-        .await?
-        {
-            Some(server) => server,
-            None => {
-                return ApiResponse::error("destination server not found")
-                    .with_status(StatusCode::NOT_FOUND)
-                    .ok();
-            }
-        };
+        let destination_server =
+            match Server::by_user_identifier(&state.database, &user, &data.destination_server)
+                .await?
+            {
+                Some(server) => server,
+                None => {
+                    return ApiResponse::error("destination server not found")
+                        .with_status(StatusCode::NOT_FOUND)
+                        .ok();
+                }
+            };
 
         if server.uuid == destination_server.uuid {
             return ApiResponse::error("cannot remote copy files to the same server")
@@ -158,22 +155,22 @@ mod post {
                 .await
             {
                 Ok(wings_api::servers_server_files_copy_remote::post::Response::Ok(_)) => {
-                    ApiResponse::json(Response {}).ok()
+                    ApiResponse::new_serialized(Response {}).ok()
                 }
                 Ok(wings_api::servers_server_files_copy_remote::post::Response::Accepted(data)) => {
-                    ApiResponse::json(ResponseAccepted {
+                    ApiResponse::new_serialized(ResponseAccepted {
                         identifier: data.identifier,
                     })
                     .with_status(StatusCode::ACCEPTED)
                     .ok()
                 }
                 Err(wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, err)) => {
-                    return ApiResponse::json(ApiError::new_wings_value(err))
+                    return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                         .with_status(StatusCode::NOT_FOUND)
                         .ok();
                 }
                 Err(wings_api::client::ApiHttpError::Http(StatusCode::EXPECTATION_FAILED, err)) => {
-                    return ApiResponse::json(ApiError::new_wings_value(err))
+                    return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                         .with_status(StatusCode::EXPECTATION_FAILED)
                         .ok();
                 }

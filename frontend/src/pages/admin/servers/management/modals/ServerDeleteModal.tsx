@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import deleteServer from '@/api/admin/servers/deleteServer.ts';
@@ -62,14 +62,14 @@ export default function ServerDeleteModal({ server, opened, onClose }: ModalProp
           />
         </Stack>
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button color='red' disabled={server.name != deleteServerName} loading={loading} onClick={doDelete}>
             Okay
           </Button>
           <Button variant='default' onClick={() => onClose()}>
             Cancel
           </Button>
-        </Group>
+        </Modal.Footer>
       </Modal>
     </>
   );

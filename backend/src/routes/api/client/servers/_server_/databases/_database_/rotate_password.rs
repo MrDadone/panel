@@ -52,6 +52,14 @@ mod post {
                 .ok();
         }
 
+        if database.database_host.maintenance_enabled {
+            return ApiResponse::error(
+                "cannot rotate database password while database host is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .ok();
+        }
+
         let password = match database.rotate_password(&state.database).await {
             Ok(password) => password,
             Err(err) => {
@@ -73,7 +81,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             password: if permissions
                 .has_server_permission("databases.read-password")
                 .is_ok()

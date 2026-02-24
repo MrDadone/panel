@@ -49,5 +49,5 @@ export const createServerStore = () =>
     return initialState;
   });
 
-export const ServerStoreContextprovider = Provider;
+export const ServerStoreContextProvider = Provider;
 export const useServerStore = useStore;

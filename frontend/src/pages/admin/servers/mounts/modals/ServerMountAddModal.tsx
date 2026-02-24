@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import createServerMount from '@/api/admin/servers/mounts/createServerMount.ts';
 import getAvailableServerMounts from '@/api/admin/servers/mounts/getAvailableServerMounts.ts';
@@ -64,14 +64,14 @@ export default function ServerMountAddModal({ server, opened, onClose }: ModalPr
           onSearchChange={mounts.setSearch}
         />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doAdd} loading={loading} disabled={!selectedMount}>
             Add
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

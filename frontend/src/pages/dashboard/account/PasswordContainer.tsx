@@ -1,4 +1,6 @@
-import { Grid, Group, Stack, Title } from '@mantine/core';
+import { faUserLock } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Grid, Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -6,8 +8,8 @@ import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updatePassword from '@/api/me/account/updatePassword.ts';
 import Button from '@/elements/Button.tsx';
-import Card from '@/elements/Card.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { dashboardPasswordSchema } from '@/lib/schemas/dashboard.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -48,12 +50,13 @@ export default function PasswordContainer({ blurred }: AccountCardProps) {
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>
-      <Card h='100%'>
-        <Title order={2} c='white'>
-          {t('pages.account.account.containers.password.title', {})}
-        </Title>
+      <TitleCard
+        title={t('pages.account.account.containers.password.title', {})}
+        icon={<FontAwesomeIcon icon={faUserLock} />}
+        className='h-full'
+      >
         <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack className='mt-4'>
+          <Stack>
             <PasswordInput
               withAsterisk
               label={t('pages.account.account.containers.password.form.currentPassword', {})}
@@ -82,7 +85,7 @@ export default function PasswordContainer({ blurred }: AccountCardProps) {
             </Group>
           </Stack>
         </form>
-      </Card>
+      </TitleCard>
     </Grid.Col>
   );
 }

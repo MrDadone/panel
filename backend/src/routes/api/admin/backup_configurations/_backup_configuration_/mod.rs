@@ -92,7 +92,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("backup-configurations.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             backup_configuration: backup_configuration
                 .0
                 .into_admin_api_object(&state.database)
@@ -135,7 +135,7 @@ mod delete {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("backup-configurations.delete")?;
 
-        backup_configuration.delete(&state.database, ()).await?;
+        backup_configuration.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -147,7 +147,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -158,7 +158,7 @@ mod patch {
     use shared::{
         ApiError, GetState,
         models::{admin_activity::GetAdminActivityLogger, user::GetPermissionManager},
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -172,6 +172,8 @@ mod patch {
         #[validate(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
+
+        maintenance_enabled: Option<bool>,
 
         backup_disk: Option<shared::models::server_backup::BackupDisk>,
         backup_configs: Option<shared::models::backup_configurations::BackupConfigs>,
@@ -197,10 +199,10 @@ mod patch {
         permissions: GetPermissionManager,
         mut backup_configuration: GetBackupConfiguration,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -209,6 +211,9 @@ mod patch {
 
         if let Some(name) = data.name {
             backup_configuration.name = name;
+        }
+        if let Some(maintenance_enabled) = data.maintenance_enabled {
+            backup_configuration.maintenance_enabled = maintenance_enabled;
         }
         if let Some(description) = data.description {
             if description.is_empty() {
@@ -230,11 +235,12 @@ mod patch {
 
         match sqlx::query!(
             "UPDATE backup_configurations
-            SET name = $2, description = $3, backup_disk = $4, backup_configs = $5
+            SET name = $2, description = $3, maintenance_enabled = $4, backup_disk = $5, backup_configs = $6
             WHERE backup_configurations.uuid = $1",
             backup_configuration.uuid,
             &backup_configuration.name,
             backup_configuration.description.as_deref(),
+            backup_configuration.maintenance_enabled,
             backup_configuration.backup_disk as shared::models::server_backup::BackupDisk,
             serde_json::to_value(&backup_configuration.backup_configs)?,
         )
@@ -263,11 +269,13 @@ mod patch {
                     "uuid": backup_configuration.uuid,
                     "name": backup_configuration.name,
                     "description": backup_configuration.description,
+
+                    "maintenance_enabled": backup_configuration.maintenance_enabled,
                 }),
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

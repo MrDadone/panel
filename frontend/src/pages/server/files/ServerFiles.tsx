@@ -1,6 +1,10 @@
-import { Group, Title } from '@mantine/core';
-import { MouseEvent as ReactMouseEvent, type Ref, useEffect, useRef, useState } from 'react';
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Alert, Group, Title } from '@mantine/core';
+import { MouseEvent as ReactMouseEvent, type Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
+import type { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getBackup from '@/api/server/backups/getBackup.ts';
 import cancelOperation from '@/api/server/files/cancelOperation.ts';
@@ -10,17 +14,22 @@ import ServerContentContainer from '@/elements/containers/ServerContentContainer
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Table from '@/elements/Table.tsx';
+import { serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
+import { bytesToString } from '@/lib/size.ts';
 import { useFileUpload } from '@/plugins/useFileUpload.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import FileActionBar from './FileActionBar.tsx';
 import FileBreadcrumbs from './FileBreadcrumbs.tsx';
+import FileDragOverlay from './FileDragOverlay.tsx';
 import FileOperationsProgress from './FileOperationsProgress.tsx';
 import FileRow from './FileRow.tsx';
 import FileToolbar from './FileToolbar.tsx';
 import FileUploadOverlay from './FileUploadOverlay.tsx';
 import { useFileDragAndDrop } from './hooks/useFileDragAndDrop.ts';
+import { useFileMoveHandler } from './hooks/useFileMoveDropzone.ts';
 import DirectoryNameModal from './modals/DirectoryNameModal.tsx';
+import FileSearchModal from './modals/FileSearchModal.tsx';
 import PullFileModal from './modals/PullFileModal.tsx';
 import SftpDetailsModal from './modals/SftpDetailsModal.tsx';
 
@@ -40,45 +49,29 @@ export default function ServerFiles() {
     setBrowsingEntries,
     selectedFileNames,
     setSelectedFiles,
-    movingFileNames,
+    actingFileNames,
     fileOperations,
     removeFileOperation,
   } = useServerStore();
 
-  const [openModal, setOpenModal] = useState<'sftpDetails' | 'nameDirectory' | 'pullFile' | null>(null);
+  const [openModal, setOpenModal] = useState<'sftpDetails' | 'nameDirectory' | 'pullFile' | 'search' | null>(null);
   const [childOpenModal, setChildOpenModal] = useState(false);
   const [loading, setLoading] = useState(browsingEntries.data.length === 0);
   const [page, setPage] = useState(1);
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [searchInfo, setSearchInfo] = useState<{
+    query?: string;
+    filters: z.infer<typeof serverFilesSearchSchema>;
+  } | null>(null);
   const [selectedFilesPrevious, setSelectedFilesPrevious] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    uploadingFiles,
-    uploadFiles,
-    cancelFileUpload,
-    cancelFolderUpload,
-    aggregatedUploadProgress,
-    handleFileSelect,
-    handleFolderSelect,
-  } = useFileUpload(server.uuid, browsingDirectory!, () => loadDirectoryData());
-
-  const { isDragging } = useFileDragAndDrop({
-    onDrop: uploadFiles,
-    enabled: !browsingBackup,
-  });
-
-  useEffect(() => {
-    setBrowsingDirectory(searchParams.get('directory') || '/');
-    setPage(Number(searchParams.get('page')) || 1);
-  }, [searchParams, setBrowsingDirectory]);
-
-  const onPageSelect = (page: number) => {
-    setSearchParams({ directory: browsingDirectory!, page: page.toString() });
-  };
-
-  const loadDirectoryData = () => {
+  // Define loadDirectoryData early so it can be used by hooks
+  const loadDirectoryData = useCallback(() => {
     setLoading(true);
+    setIsSearchMode(false);
+    setSearchInfo(null);
 
     loadDirectory(server.uuid, browsingDirectory!, page)
       .then((data) => {
@@ -90,6 +83,77 @@ export default function ServerFiles() {
         addToast(httpErrorToHuman(msg), 'error');
       })
       .finally(() => setLoading(false));
+  }, [
+    server.uuid,
+    browsingDirectory,
+    page,
+    setBrowsingWritableDirectory,
+    setBrowsingFastDirectory,
+    setBrowsingEntries,
+    addToast,
+  ]);
+
+  const {
+    uploadingFiles,
+    uploadFiles,
+    cancelFileUpload,
+    cancelFolderUpload,
+    aggregatedUploadProgress,
+    handleFileSelect,
+    handleFolderSelect,
+  } = useFileUpload(server.uuid, browsingDirectory!, loadDirectoryData);
+
+  const { isDragging } = useFileDragAndDrop({
+    onDrop: uploadFiles,
+    enabled: !browsingBackup,
+  });
+
+  // Drag-and-drop for moving files into folders (requires holding "D" key)
+  const { handleDragEnd } = useFileMoveHandler(loadDirectoryData);
+  const [activeDragFile, setActiveDragFile] = useState<DirectoryEntry | null>(null);
+  const [activeDragCount, setActiveDragCount] = useState(0);
+  const [isDKeyHeld, setIsDKeyHeld] = useState(false);
+
+  // Track "D" key state for drag-to-move functionality and Cmd/Ctrl+K for search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'd' || e.key === 'D') {
+        setIsDKeyHeld(true);
+      }
+      // Cmd/Ctrl+K to open search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setOpenModal('search');
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'd' || e.key === 'D') {
+        setIsDKeyHeld(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  );
+
+  useEffect(() => {
+    setBrowsingDirectory(searchParams.get('directory') || '/');
+    setPage(Number(searchParams.get('page')) || 1);
+  }, [searchParams, setBrowsingDirectory]);
+
+  const onPageSelect = (page: number) => {
+    setSearchParams({ directory: browsingDirectory!, page: page.toString() });
   };
 
   const doCancelOperation = (uuid: string) => {
@@ -117,7 +181,7 @@ export default function ServerFiles() {
     if (!browsingDirectory) return;
 
     loadDirectoryData();
-  }, [browsingDirectory, page]);
+  }, [browsingDirectory, page, loadDirectoryData]);
 
   useEffect(() => {
     setSelectedFiles([]);
@@ -167,6 +231,14 @@ export default function ServerFiles() {
         <SftpDetailsModal opened={openModal === 'sftpDetails'} onClose={() => setOpenModal(null)} />
         <DirectoryNameModal opened={openModal === 'nameDirectory'} onClose={() => setOpenModal(null)} />
         <PullFileModal opened={openModal === 'pullFile'} onClose={() => setOpenModal(null)} />
+        <FileSearchModal
+          opened={openModal === 'search'}
+          onClose={() => setOpenModal(null)}
+          onSearchComplete={(info) => {
+            setIsSearchMode(true);
+            setSearchInfo(info);
+          }}
+        />
 
         <FileActionBar />
 
@@ -204,36 +276,118 @@ export default function ServerFiles() {
             <FileUploadOverlay visible={isDragging && !browsingBackup} />
 
             <div className='bg-[#282828] border border-[#424242] rounded-lg mb-2 p-4'>
-              <FileBreadcrumbs path={decodeURIComponent(browsingDirectory)} browsingBackup={browsingBackup} />
+              <FileBreadcrumbs
+                path={decodeURIComponent(browsingDirectory)}
+                browsingBackup={browsingBackup}
+                onSearchClick={() => setOpenModal('search')}
+              />
             </div>
-            <SelectionArea
-              onSelectedStart={onSelectedStart}
-              onSelected={onSelected}
-              className='h-full'
-              disabled={movingFileNames.size > 0 || !!openModal || childOpenModal}
+            {isSearchMode && searchInfo && (
+              <Alert
+                icon={<FontAwesomeIcon icon={faSearch} />}
+                color='blue'
+                title={`Search Results (${browsingEntries.total} files found)`}
+                onClose={() => loadDirectoryData()}
+                withCloseButton
+                mb='md'
+              >
+                {(searchInfo.query ||
+                  searchInfo.filters.contentFilter ||
+                  searchInfo.filters.sizeFilter ||
+                  (searchInfo.filters.pathFilter?.exclude && searchInfo.filters.pathFilter.exclude.length > 0)) && (
+                  <div className='flex flex-col gap-1 text-sm'>
+                    {searchInfo.query && (
+                      <div>
+                        <span className='font-medium text-white/80'>Query:</span>{' '}
+                        <span className='text-white/60'>&quot;{searchInfo.query}&quot;</span>
+                      </div>
+                    )}
+                    {searchInfo.filters.pathFilter?.exclude && searchInfo.filters.pathFilter.exclude.length > 0 && (
+                      <div>
+                        <span className='font-medium text-white/80'>Excluded:</span>{' '}
+                        <span className='text-white/60'>{searchInfo.filters.pathFilter.exclude.join(', ')}</span>
+                      </div>
+                    )}
+                    {searchInfo.filters.contentFilter && (
+                      <div>
+                        <span className='font-medium text-white/80'>Content:</span>{' '}
+                        <span className='text-white/60'>{searchInfo.filters.contentFilter.query || '(empty)'}</span>
+                      </div>
+                    )}
+                    {searchInfo.filters.sizeFilter && (
+                      <div>
+                        <span className='font-medium text-white/80'>Size:</span>{' '}
+                        <span className='text-white/60'>
+                          {searchInfo.filters.sizeFilter.min > 0 && (
+                            <span>Min: {bytesToString(searchInfo.filters.sizeFilter.min)}</span>
+                          )}
+                          {searchInfo.filters.sizeFilter.min > 0 && searchInfo.filters.sizeFilter.max > 0 && ', '}
+                          {searchInfo.filters.sizeFilter.max > 0 && (
+                            <span>Max: {bytesToString(searchInfo.filters.sizeFilter.max)}</span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Alert>
+            )}
+            <DndContext
+              sensors={sensors}
+              onDragStart={(event) => {
+                const data = event.active.data.current;
+                if (data?.type === 'file') {
+                  setActiveDragFile(data.file);
+                  setActiveDragCount(data.files?.length || 1);
+                }
+              }}
+              onDragEnd={(event) => {
+                handleDragEnd(event);
+                setActiveDragFile(null);
+                setActiveDragCount(0);
+              }}
+              onDragCancel={() => {
+                setActiveDragFile(null);
+                setActiveDragCount(0);
+              }}
             >
-              <ContextMenuProvider>
-                <Table
-                  columns={['', 'Name', 'Size', 'Modified', '']}
-                  pagination={browsingEntries}
-                  onPageSelect={onPageSelect}
-                  allowSelect={false}
-                >
-                  {browsingEntries.data.map((file) => (
-                    <SelectionArea.Selectable key={file.name} item={file}>
-                      {(innerRef: Ref<HTMLElement>) => (
-                        <FileRow
-                          key={file.name}
-                          file={file}
-                          ref={innerRef as Ref<HTMLTableRowElement>}
-                          setChildOpenModal={setChildOpenModal}
-                        />
-                      )}
-                    </SelectionArea.Selectable>
-                  ))}
-                </Table>
-              </ContextMenuProvider>
-            </SelectionArea>
+              <SelectionArea
+                onSelectedStart={onSelectedStart}
+                onSelected={onSelected}
+                className='h-full'
+                disabled={actingFileNames.size > 0 || !!openModal || childOpenModal || !!activeDragFile || isDKeyHeld}
+              >
+                <ContextMenuProvider>
+                  <div style={isDKeyHeld && browsingWritableDirectory ? { cursor: 'grab' } : undefined}>
+                    <Table
+                      columns={['', 'Name', 'Size', 'Modified', '']}
+                      pagination={browsingEntries}
+                      onPageSelect={onPageSelect}
+                      allowSelect={false}
+                    >
+                      {browsingEntries.data.map((file) => (
+                        <SelectionArea.Selectable key={file.name} item={file}>
+                          {(innerRef: Ref<HTMLElement>) => (
+                            <FileRow
+                              key={file.name}
+                              file={file}
+                              ref={innerRef as Ref<HTMLTableRowElement>}
+                              setChildOpenModal={setChildOpenModal}
+                              dndEnabled={
+                                browsingWritableDirectory && !browsingBackup && actingFileNames.size === 0 && isDKeyHeld
+                              }
+                            />
+                          )}
+                        </SelectionArea.Selectable>
+                      ))}
+                    </Table>
+                  </div>
+                </ContextMenuProvider>
+              </SelectionArea>
+              <DragOverlay>
+                {activeDragFile && <FileDragOverlay file={activeDragFile} count={activeDragCount} />}
+              </DragOverlay>
+            </DndContext>
           </>
         )}
       </div>

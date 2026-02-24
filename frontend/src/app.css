@@ -9,20 +9,32 @@
     url("/fonts/Helvetica.woff") format("woff");
 }
 
-@font-face {
-  font-family: "Odor Mean Chey";
-  font-style: normal;
-  font-weight: normal;
-  src:
-    local("Odor Mean Chey"),
-    url("/fonts/OdorMeanChey.ttf") format("truetype");
-}
-
 @theme {
   --font-sans: "Helvetica", "Arial", "sans-serif";
-  --font-logo: "Odor Mean Chey", "Helvetica", "Arial", "sans-serif";
 
   --color-neutral-850: oklch(25.4% 0 0);
+
+  /* Server status colors - for status indicators (circles, cards, etc.) */
+  --color-server-status-running: #22c55e; /* Green - server is running */
+  --color-server-status-offline: #ef4444; /* Red - server is offline */
+  --color-server-status-starting: #eab308; /* Yellow - server is starting */
+  --color-server-status-stopping: #eab308; /* Yellow - server is stopping */
+}
+
+/* Custom utility classes for server status colors */
+@layer utilities {
+  .bg-server-status-running {
+    background-color: var(--color-server-status-running);
+  }
+  .bg-server-status-offline {
+    background-color: var(--color-server-status-offline);
+  }
+  .bg-server-status-starting {
+    background-color: var(--color-server-status-starting);
+  }
+  .bg-server-status-stopping {
+    background-color: var(--color-server-status-stopping);
+  }
 }
 
 body {
@@ -53,4 +65,8 @@ button,
 button:focus,
 button:focus-visible {
   @apply outline-none;
+}
+
+strong {
+  @apply font-semibold;
 }

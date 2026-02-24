@@ -14,6 +14,8 @@ mod put {
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        schedule_uuid: Option<uuid::Uuid>,
+
         #[validate(length(min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
         image: String,
@@ -37,10 +39,10 @@ mod put {
     pub async fn route(
         state: GetState,
         server: GetServer,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -84,6 +86,7 @@ mod put {
             &state.database,
             server.uuid,
             None,
+            data.schedule_uuid,
             "server:startup.docker-image",
             None,
             serde_json::json!({
@@ -100,7 +103,7 @@ mod put {
             );
         }
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

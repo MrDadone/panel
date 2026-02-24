@@ -5,7 +5,7 @@ use shared::extensions::distr::ExtensionDistrFile;
 
 #[derive(Args)]
 pub struct InspectArgs {
-    #[arg(help = "the file to inspect")]
+    #[arg(help = "the file to inspect", value_hint = clap::ValueHint::FilePath)]
     file: String,
 }
 

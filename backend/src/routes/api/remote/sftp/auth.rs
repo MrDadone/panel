@@ -40,7 +40,7 @@ mod post {
     ), request_body = inline(Payload))]
     pub async fn route(
         state: GetState,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         let mut parts = data.username.splitn(2, '.');
         let user = match parts.next() {
@@ -91,8 +91,7 @@ mod post {
                 }
             }
         };
-        let server = match Server::by_user_identifier_cached(&state.database, &user, server).await?
-        {
+        let server = match Server::by_user_identifier(&state.database, &user, server).await? {
             Some(server) => server,
             None => {
                 return ApiResponse::error("server not found")
@@ -101,10 +100,10 @@ mod post {
             }
         };
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             user: user.uuid,
             server: server.uuid,
-            permissions: server.wings_permissions(&user),
+            permissions: server.wings_permissions(&*state.settings.get().await?, &user),
             ignored_files: server.subuser_ignored_files.as_deref().unwrap_or(&[]),
         })
         .ok()

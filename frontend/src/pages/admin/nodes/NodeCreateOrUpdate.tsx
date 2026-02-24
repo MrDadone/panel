@@ -37,13 +37,13 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
       locationUuid: '',
       backupConfigurationUuid: uuidNil,
       name: '',
-      public: false,
+      deploymentEnabled: true,
+      maintenanceEnabled: false,
       description: null,
       publicUrl: null,
       url: '',
       sftpHost: null,
       sftpPort: 2022,
-      maintenanceMessage: null,
       memory: 8192,
       disk: 10240,
     },
@@ -54,8 +54,8 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
   const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminNodeSchema>, Node>({
     form,
     createFn: () => createNode(form.values),
-    updateFn: () => updateNode(contextNode!.uuid, form.values),
-    deleteFn: () => deleteNode(contextNode!.uuid),
+    updateFn: contextNode ? () => updateNode(contextNode.uuid, form.values) : undefined,
+    deleteFn: contextNode ? () => deleteNode(contextNode.uuid) : undefined,
     doUpdate: !!contextNode,
     basePath: '/admin/nodes',
     resourceName: 'Node',
@@ -67,13 +67,13 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
         locationUuid: contextNode.location.uuid,
         backupConfigurationUuid: contextNode.backupConfiguration?.uuid ?? uuidNil,
         name: contextNode.name,
-        public: contextNode.public,
+        deploymentEnabled: contextNode.deploymentEnabled,
+        maintenanceEnabled: contextNode.maintenanceEnabled,
         description: contextNode.description,
         publicUrl: contextNode.publicUrl,
         url: contextNode.url,
         sftpHost: contextNode.sftpHost,
         sftpPort: contextNode.sftpPort,
-        maintenanceMessage: contextNode.maintenanceMessage,
         memory: contextNode.memory,
         disk: contextNode.disk,
       });
@@ -107,7 +107,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
   };
 
   return (
-    <AdminContentContainer title={`${contextNode ? 'Update' : 'Create'} Node`} contentRight={2}>
+    <AdminContentContainer title={`${contextNode ? 'Update' : 'Create'} Node`} titleOrder={2}>
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -203,16 +203,13 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
               onSearchChange={backupConfigurations.setSearch}
               {...form.getInputProps('backupConfigurationUuid')}
             />
-            <TextInput
-              label='Maintenance Message'
-              placeholder='Maintenance Message'
-              {...form.getInputProps('maintenanceMessage')}
-            />
+            <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
           </Group>
 
-          <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
-
-          <Switch label='Public' {...form.getInputProps('public', { type: 'checkbox' })} />
+          <Group grow>
+            <Switch label='Deployment Enabled' {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })} />
+            <Switch label='Maintenance Enabled' {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })} />
+          </Group>
 
           <Group>
             <AdminCan action={contextNode ? 'nodes.update' : 'nodes.create'} cantSave>

@@ -67,7 +67,7 @@ mod get {
         {
             Ok(data) => data,
             Err(wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, err)) => {
-                return ApiResponse::json(ApiError::new_wings_value(err))
+                return ApiResponse::new_serialized(ApiError::new_wings_value(err))
                     .with_status(StatusCode::NOT_FOUND)
                     .ok();
             }

@@ -1,4 +1,4 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import { ModalProps, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -94,14 +94,14 @@ export default function NodeAllocationsCreateModal({
 
         <TagsInput label='Port Ranges' placeholder='Port Ranges' {...form.getInputProps('ports')} />
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button onClick={doCreate} loading={loading} disabled={!form.isValid() || !resolvedPorts.length}>
             Create {resolvedPorts.length}
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Group>
+        </Modal.Footer>
       </Stack>
     </Modal>
   );

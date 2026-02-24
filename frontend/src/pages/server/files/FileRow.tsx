@@ -20,11 +20,10 @@ import downloadFiles from '@/api/server/files/downloadFiles.ts';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
 import { isArchiveType, isEditableFile, isViewableArchive } from '@/lib/files.ts';
 import { bytesToString } from '@/lib/size.ts';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useWindows } from '@/providers/WindowProvider.tsx';
@@ -41,10 +40,11 @@ import FileRenameModal from './modals/FileRenameModal.tsx';
 interface FileRowProps {
   file: DirectoryEntry;
   setChildOpenModal: (open: boolean) => void;
+  dndEnabled?: boolean;
 }
 
 const FileRow = memo(
-  forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({ file, setChildOpenModal }, ref) {
+  forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow({ file, setChildOpenModal, dndEnabled = false }, ref) {
     const { addToast } = useToast();
     const { addWindow } = useWindows();
     const { settings } = useGlobalStore();
@@ -53,9 +53,10 @@ const FileRow = memo(
       browsingDirectory,
       browsingBackup,
       browsingWritableDirectory,
-      movingFileNames,
-      setMovingFiles,
-      isFileSelected,
+      browsingFastDirectory,
+      actingFileNames,
+      selectedFileNames,
+      setActingFiles,
       addSelectedFile,
       removeSelectedFile,
     } = useServerStore();
@@ -111,7 +112,7 @@ const FileRow = memo(
                   file.name,
                   <MemoryRouter
                     initialEntries={[
-                      file.directory || isViewableArchive(file)
+                      file.directory || (isViewableArchive(file) && browsingFastDirectory)
                         ? `/server/${server.uuidShort}/files?${createSearchParams({
                             directory: `${browsingDirectory}/${file.name}`.replace('//', '/'),
                           })}`
@@ -145,7 +146,7 @@ const FileRow = memo(
               icon: faAnglesUp,
               label: 'Move',
               hidden: !!browsingBackup || !browsingWritableDirectory,
-              onClick: () => setMovingFiles([file]),
+              onClick: () => setActingFiles('move', [file]),
               color: 'gray',
               canAccess: useServerCan('files.update'),
             },
@@ -202,12 +203,13 @@ const FileRow = memo(
             <FileTableRow
               file={file}
               ref={ref}
+              dndEnabled={dndEnabled}
               onContextMenu={(e) => {
                 e.preventDefault();
                 openMenu(e.clientX, e.clientY);
               }}
               onClick={(e) => {
-                if ((e.ctrlKey || e.metaKey) && movingFileNames.size === 0) {
+                if ((e.ctrlKey || e.metaKey) && actingFileNames.size === 0) {
                   e.stopPropagation();
                   addSelectedFile(file);
                 }
@@ -217,11 +219,11 @@ const FileRow = memo(
                 <td className='pl-4 relative cursor-pointer w-10 text-center py-2'>
                   <Checkbox
                     id={file.name}
-                    disabled={movingFileNames.size > 0}
-                    checked={isFileSelected(file)}
+                    disabled={actingFileNames.size > 0}
+                    checked={selectedFileNames.has(file.name)}
                     classNames={{ input: 'cursor-pointer!' }}
                     onChange={() => {
-                      if (isFileSelected(file)) {
+                      if (selectedFileNames.has(file.name)) {
                         removeSelectedFile(file);
                       } else {
                         addSelectedFile(file);
@@ -246,9 +248,7 @@ const FileRow = memo(
               </TableData>
 
               <TableData>
-                <Tooltip label={formatDateTime(file.modified)}>
-                  <span className='flex items-center gap-4 leading-[100%]'>{formatTimestamp(file.modified)}</span>
-                </Tooltip>
+                <FormattedTimestamp timestamp={file.modified} />
               </TableData>
 
               <ContextMenuToggle items={items} openMenu={openMenu} />

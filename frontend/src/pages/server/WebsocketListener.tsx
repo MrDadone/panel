@@ -4,10 +4,12 @@ import { transformKeysToCamelCase } from '@/lib/transformers.ts';
 import useWebsocketEvent, { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
+import { useUserStore } from '@/stores/user.ts';
 
 export default function WebsocketListener() {
   const [searchParams, _] = useSearchParams();
   const { addToast } = useToast();
+  const { addServerResourceUsage } = useUserStore();
   const {
     server,
     socketConnected,
@@ -45,7 +47,9 @@ export default function WebsocketListener() {
       return;
     }
 
-    setStats(transformKeysToCamelCase(wsStats) as ResourceUsage);
+    const resourceUsage = transformKeysToCamelCase(wsStats) as ResourceUsage;
+    setStats(resourceUsage);
+    addServerResourceUsage(server.uuid, resourceUsage);
   });
 
   useWebsocketEvent(SocketEvent.IMAGE_PULL_PROGRESS, (id, data) => {
@@ -120,6 +124,10 @@ export default function WebsocketListener() {
     updateServer({ status: null });
   });
 
+  useWebsocketEvent(SocketEvent.INSTALL_STARTED, () => {
+    updateServer({ status: 'installing' });
+  });
+
   useWebsocketEvent(SocketEvent.INSTALL_COMPLETED, (successful) => {
     updateServer({ status: successful === 'true' ? null : 'install_failed' });
   });
@@ -175,6 +183,9 @@ export default function WebsocketListener() {
       case 'copy':
         addToast(`Copied ${fileOperation.path} to ${fileOperation.destinationPath} successfully.`, 'success');
         break;
+      case 'copy_many':
+        addToast(`Copied files from ${fileOperation.path} successfully.`, 'success');
+        break;
       case 'copy_remote':
         if (fileOperation.destinationServer === server.uuid) {
           addToast(`Received files from remote server successfully.`, 'success');
@@ -209,6 +220,9 @@ export default function WebsocketListener() {
         break;
       case 'copy':
         addToast(`Failed to copy ${fileOperation.path} to ${fileOperation.destinationPath}:\n${error}`, 'error');
+        break;
+      case 'copy_many':
+        addToast(`Failed to copy files from ${fileOperation.path}:\n${error}`, 'error');
         break;
       case 'copy_remote':
         if (fileOperation.destinationServer === server.uuid) {

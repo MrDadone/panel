@@ -1,8 +1,8 @@
 import { Divider, Group, Stack, Title } from '@mantine/core';
 import { UseFormReturnType } from '@mantine/form';
 import { z } from 'zod';
-import NumberInput from '@/elements/input/NumberInput.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
+import SizeInput from '@/elements/input/SizeInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { adminBackupConfigurationS3Schema } from '@/lib/schemas/admin/backupConfigurations.ts';
@@ -37,7 +37,14 @@ export default function BackupS3({
 
         <Group grow>
           <TextInput withAsterisk label='Endpoint' placeholder='Endpoint' {...form.getInputProps('endpoint')} />
-          <NumberInput withAsterisk label='Part Size' placeholder='Part Size' {...form.getInputProps('partSize')} />
+          <SizeInput
+            withAsterisk
+            label='Part Size'
+            mode='b'
+            min={0}
+            value={form.values.partSize}
+            onChange={(v) => form.setFieldValue('partSize', v)}
+          />
         </Group>
 
         <Switch

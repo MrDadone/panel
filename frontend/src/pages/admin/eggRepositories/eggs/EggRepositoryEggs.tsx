@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import getEggRepositoryEggs from '@/api/admin/egg-repositories/eggs/getEggRepositoryEggs.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
-import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
 import { eggRepositoryEggTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -16,7 +16,7 @@ export default function EggRepositoryEggs({ contextEggRepository }: { contextEgg
   });
 
   return (
-    <AdminContentContainer title='Egg Repository Eggs' search={search} setSearch={setSearch}>
+    <AdminSubContentContainer title='Egg Repository Eggs' search={search} setSearch={setSearch} titleOrder={2}>
       <Table
         columns={eggRepositoryEggTableColumns}
         loading={loading}
@@ -31,6 +31,6 @@ export default function EggRepositoryEggs({ contextEggRepository }: { contextEgg
           />
         ))}
       </Table>
-    </AdminContentContainer>
+    </AdminSubContentContainer>
   );
 }

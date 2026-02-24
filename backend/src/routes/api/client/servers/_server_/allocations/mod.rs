@@ -53,7 +53,7 @@ mod get {
         Query(params): Query<PaginationParamsWithSearch>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -71,7 +71,7 @@ mod get {
 
         let allocation_uuid = server.0.allocation.map(|a| a.uuid);
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             allocations: Pagination {
                 total: allocations.total,
                 per_page: allocations.per_page,
@@ -169,7 +169,7 @@ mod post {
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             allocation: allocation.into_api_object(server.0.allocation.map(|a| a.uuid)),
         })
         .ok()

@@ -1,7 +1,7 @@
 import { faGear, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Paper, Stack, Text, ThemeIcon, Title } from '@mantine/core';
-import { memo, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updateScheduleStepsOrder from '@/api/server/schedules/steps/updateScheduleStepsOrder.ts';
 import Button from '@/elements/Button.tsx';
@@ -32,12 +32,75 @@ export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) 
     [scheduleSteps],
   );
 
-  const onStepDelete = (stepUuid: string) => {
-    const newSteps = scheduleSteps.filter((step) => step.uuid !== stepUuid);
-    setScheduleSteps(newSteps);
-  };
+  const handleStepUpdate = useCallback(
+    (updatedStep: ScheduleStep) => {
+      setScheduleSteps(scheduleSteps.map((s) => (s.uuid === updatedStep.uuid ? updatedStep : s)));
+    },
+    [scheduleSteps, setScheduleSteps],
+  );
+
+  const handleStepDelete = useCallback(
+    (stepUuid: string) => {
+      setScheduleSteps(scheduleSteps.filter((step) => step.uuid !== stepUuid));
+    },
+    [scheduleSteps, setScheduleSteps],
+  );
+
+  const handleStepCreate = useCallback(
+    (step: ScheduleStep) => {
+      setScheduleSteps([...scheduleSteps, step]);
+    },
+    [scheduleSteps, setScheduleSteps],
+  );
+
+  const handleDragEnd = useCallback(
+    async (reorderedSteps: DndScheduleStep[]) => {
+      const stepsWithNewOrder = reorderedSteps.map((step, index) => ({
+        ...step,
+        order: index + 1,
+      }));
+      setScheduleSteps(stepsWithNewOrder);
+
+      await updateScheduleStepsOrder(
+        server.uuid,
+        schedule.uuid,
+        reorderedSteps.map((s) => s.uuid),
+      ).catch((err) => {
+        addToast(httpErrorToHuman(err), 'error');
+        setScheduleSteps(scheduleSteps);
+      });
+    },
+    [server.uuid, schedule.uuid, scheduleSteps, setScheduleSteps, addToast],
+  );
 
   const sortedSteps = useMemo(() => [...scheduleSteps].sort((a, b) => a.order - b.order), [scheduleSteps]);
+
+  const dndSteps: DndScheduleStep[] = useMemo(
+    () =>
+      sortedSteps.map((step) => ({
+        ...step,
+        id: step.uuid,
+      })),
+    [sortedSteps],
+  );
+
+  const openCreateModal = useCallback(() => setOpenModal('create'), []);
+  const closeModal = useCallback(() => setOpenModal(null), []);
+
+  const renderOverlay = useCallback(
+    (activeStep: DndScheduleStep | null) =>
+      activeStep ? (
+        <div style={{ cursor: 'grabbing' }}>
+          <MemoizedStepCard
+            schedule={schedule}
+            step={activeStep}
+            onStepUpdate={handleStepUpdate}
+            onStepDelete={handleStepDelete}
+          />
+        </div>
+      ) : null,
+    [schedule, handleStepUpdate, handleStepDelete],
+  );
 
   if (!schedule || !scheduleSteps) {
     return (
@@ -47,24 +110,19 @@ export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) 
     );
   }
 
-  const dndSteps: DndScheduleStep[] = sortedSteps.map((step) => ({
-    ...step,
-    id: step.uuid,
-  }));
-
   return (
     <>
       <StepCreateOrUpdateModal
         opened={openModal === 'create'}
-        onClose={() => setOpenModal(null)}
+        onClose={closeModal}
         schedule={schedule}
         nextStepOrder={nextStepOrder}
-        onStepCreate={(step) => setScheduleSteps([...scheduleSteps, step])}
+        onStepCreate={handleStepCreate}
       />
 
       <Stack>
         <Group justify='space-between'>
-          <Button onClick={() => setOpenModal('create')} leftSection={<FontAwesomeIcon icon={faPlus} />}>
+          <Button onClick={openCreateModal} leftSection={<FontAwesomeIcon icon={faPlus} />}>
             Add Step
           </Button>
         </Group>
@@ -80,46 +138,12 @@ export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) 
             <Text c='dimmed' mb='md'>
               This schedule doesn&apos;t have any steps yet. Add some actions to get started.
             </Text>
-            <Button onClick={() => setOpenModal('create')} leftSection={<FontAwesomeIcon icon={faPlus} />}>
+            <Button onClick={openCreateModal} leftSection={<FontAwesomeIcon icon={faPlus} />}>
               Create First Step
             </Button>
           </Paper>
         ) : (
-          <DndContainer
-            items={dndSteps}
-            callbacks={{
-              onDragEnd: async (reorderedSteps) => {
-                const stepsWithNewOrder = reorderedSteps.map((step, index) => ({
-                  ...step,
-                  order: index + 1,
-                }));
-                setScheduleSteps(stepsWithNewOrder);
-
-                await updateScheduleStepsOrder(
-                  server.uuid,
-                  schedule.uuid,
-                  reorderedSteps.map((s) => s.uuid),
-                ).catch((err) => {
-                  addToast(httpErrorToHuman(err), 'error');
-                  setScheduleSteps(scheduleSteps);
-                });
-              },
-            }}
-            renderOverlay={(activeStep) =>
-              activeStep ? (
-                <div style={{ cursor: 'grabbing' }}>
-                  <MemoizedStepCard
-                    schedule={schedule}
-                    step={activeStep}
-                    onStepUpdate={(step) =>
-                      setScheduleSteps(scheduleSteps.map((s) => (s.uuid === step.uuid ? step : s)))
-                    }
-                    onStepDelete={onStepDelete}
-                  />
-                </div>
-              ) : null
-            }
-          >
+          <DndContainer items={dndSteps} callbacks={{ onDragEnd: handleDragEnd }} renderOverlay={renderOverlay}>
             {(items) => (
               <Stack gap='md'>
                 {items.map((step) => (
@@ -131,10 +155,8 @@ export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) 
                         <MemoizedStepCard
                           schedule={schedule}
                           step={step}
-                          onStepUpdate={(step) =>
-                            setScheduleSteps(scheduleSteps.map((s) => (s.uuid === step.uuid ? step : s)))
-                          }
-                          onStepDelete={onStepDelete}
+                          onStepUpdate={handleStepUpdate}
+                          onStepDelete={handleStepDelete}
                         />
                       </div>
                     )}

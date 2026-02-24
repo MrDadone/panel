@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                            DELETE FROM server_allocations\n                            WHERE server_allocations.uuid = ANY($1)\n                            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ed88d6adf17a22d14831ef221babbdefb132cb2339aea6f7171ad4fc9631e2c8"
+}

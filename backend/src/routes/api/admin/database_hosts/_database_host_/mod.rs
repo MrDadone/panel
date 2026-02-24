@@ -75,7 +75,7 @@ mod get {
     ) -> ApiResponseResult {
         permissions.has_admin_permission("database-hosts.read")?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             database_host: database_host.0.into_admin_api_object(),
         })
         .ok()
@@ -126,7 +126,7 @@ mod delete {
                 .ok();
         }
 
-        database_host.delete(&state.database, ()).await?;
+        database_host.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -138,7 +138,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -149,7 +149,7 @@ mod patch {
     use shared::{
         ApiError, GetState,
         models::{admin_activity::GetAdminActivityLogger, user::GetPermissionManager},
-        prelude::SqlxErrorExtension,
+        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
@@ -160,7 +160,9 @@ mod patch {
         #[validate(length(min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: Option<compact_str::CompactString>,
-        public: Option<bool>,
+
+        deployment_enabled: Option<bool>,
+        maintenance_enabled: Option<bool>,
 
         #[validate(length(max = 255))]
         #[schema(max_length = 255)]
@@ -199,10 +201,10 @@ mod patch {
         permissions: GetPermissionManager,
         mut database_host: GetDatabaseHost,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -212,8 +214,11 @@ mod patch {
         if let Some(name) = data.name {
             database_host.name = name;
         }
-        if let Some(public) = data.public {
-            database_host.public = public;
+        if let Some(deployment_enabled) = data.deployment_enabled {
+            database_host.deployment_enabled = deployment_enabled;
+        }
+        if let Some(maintenance_enabled) = data.maintenance_enabled {
+            database_host.maintenance_enabled = maintenance_enabled;
         }
         if let Some(public_host) = data.public_host {
             if public_host.is_empty() {
@@ -244,17 +249,18 @@ mod patch {
 
         match sqlx::query!(
             "UPDATE database_hosts
-            SET name = $1, public = $2, public_host = $3, host = $4, public_port = $5, port = $6, username = $7, password = $8
-            WHERE database_hosts.uuid = $9",
+            SET name = $2, deployment_enabled = $3, maintenance_enabled = $4, public_host = $5, host = $6, public_port = $7, port = $8, username = $9, password = $10
+            WHERE database_hosts.uuid = $1",
+            database_host.uuid,
             &database_host.name,
-            database_host.public,
+            database_host.deployment_enabled,
+            database_host.maintenance_enabled,
             database_host.public_host.as_deref(),
             &database_host.host,
             database_host.public_port,
             database_host.port,
             &database_host.username,
             database_host.password,
-            database_host.uuid,
         )
         .execute(state.database.write())
         .await
@@ -280,8 +286,8 @@ mod patch {
                 serde_json::json!({
                     "uuid": database_host.uuid,
                     "name": database_host.name,
-                    "public": database_host.public,
-                    "type": database_host.r#type,
+                    "deployment_enabled": database_host.deployment_enabled,
+                    "maintenance_enabled": database_host.maintenance_enabled,
 
                     "public_host": database_host.public_host,
                     "host": database_host.host,
@@ -293,7 +299,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

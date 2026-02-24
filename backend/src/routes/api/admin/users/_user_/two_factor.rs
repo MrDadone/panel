@@ -57,7 +57,7 @@ mod delete {
             .log("user:two-factor.disable", serde_json::json!({}))
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

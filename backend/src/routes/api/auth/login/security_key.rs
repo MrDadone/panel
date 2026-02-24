@@ -3,7 +3,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod get {
     use axum::extract::Query;
-    use rustis::commands::{SetCondition, SetExpiration, StringCommands};
+    use rustis::commands::{SetExpiration, StringCommands};
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -67,13 +67,12 @@ mod get {
             .set_with_options(
                 format!("security_key_authentication::{uuid}"),
                 serde_json::to_string(&authentication)?,
-                SetCondition::None,
+                None,
                 SetExpiration::Ex(options.public_key.timeout.unwrap_or(300000) as u64 / 1000),
-                false,
             )
             .await?;
 
-        ApiResponse::json(Response { uuid, options }).ok()
+        ApiResponse::new_serialized(Response { uuid, options }).ok()
     }
 }
 
@@ -111,7 +110,7 @@ mod post {
         ip: shared::GetIp,
         headers: axum::http::HeaderMap,
         cookies: Cookies,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         state
             .cache
@@ -226,7 +225,7 @@ mod post {
             tracing::warn!(user = %user.uuid, "failed to log user activity: {:?}", err);
         }
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             user: user.into_api_full_object(&state.storage.retrieve_urls().await?),
         })
         .ok()

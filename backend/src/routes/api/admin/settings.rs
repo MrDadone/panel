@@ -24,7 +24,7 @@ mod get {
 
         let settings = state.settings.get().await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             settings: &settings,
         })
         .ok()
@@ -78,6 +78,19 @@ mod put {
     }
 
     #[derive(ToSchema, Validate, Deserialize)]
+    pub struct PayloadActivity {
+        #[validate(range(min = 1, max = 3650))]
+        admin_log_retention_days: Option<u16>,
+        #[validate(range(min = 1, max = 3650))]
+        user_log_retention_days: Option<u16>,
+        #[validate(range(min = 1, max = 3650))]
+        server_log_retention_days: Option<u16>,
+
+        server_log_admin_activity: Option<bool>,
+        server_log_schedule_activity: Option<bool>,
+    }
+
+    #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
         oobe_step: Option<compact_str::CompactString>,
 
@@ -91,6 +104,8 @@ mod put {
         webauthn: Option<PayloadWebauthn>,
         #[schema(inline)]
         server: Option<PayloadServer>,
+        #[schema(inline)]
+        activity: Option<PayloadActivity>,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -103,10 +118,10 @@ mod put {
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -187,13 +202,30 @@ mod put {
                 settings.server.allow_editing_startup_command = allow_editing_startup_command;
             }
         }
+        if let Some(activity) = data.activity {
+            if let Some(admin_log_retention_days) = activity.admin_log_retention_days {
+                settings.activity.admin_log_retention_days = admin_log_retention_days;
+            }
+            if let Some(user_log_retention_days) = activity.user_log_retention_days {
+                settings.activity.user_log_retention_days = user_log_retention_days;
+            }
+            if let Some(server_log_retention_days) = activity.server_log_retention_days {
+                settings.activity.server_log_retention_days = server_log_retention_days;
+            }
+            if let Some(server_log_admin_activity) = activity.server_log_admin_activity {
+                settings.activity.server_log_admin_activity = server_log_admin_activity;
+            }
+            if let Some(server_log_schedule_activity) = activity.server_log_schedule_activity {
+                settings.activity.server_log_schedule_activity = server_log_schedule_activity;
+            }
+        }
 
         let settings_json = settings.censored();
         settings.save().await?;
 
         activity_logger.log("settings:update", settings_json).await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

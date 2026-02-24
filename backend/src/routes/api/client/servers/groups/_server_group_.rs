@@ -79,7 +79,7 @@ mod get {
         )
         .await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             servers: servers
                 .try_async_map(|server| server.into_api_object(&state.database, &user))
                 .await?,
@@ -108,8 +108,8 @@ mod patch {
         #[validate(length(min = 2, max = 31))]
         #[schema(min_length = 2, max_length = 31)]
         name: Option<compact_str::CompactString>,
-        #[validate(length(max = 512))]
-        #[schema(max_length = 512)]
+        #[validate(length(max = 100))]
+        #[schema(max_length = 100)]
         server_order: Option<Vec<uuid::Uuid>>,
     }
 
@@ -131,10 +131,10 @@ mod patch {
         user: GetUser,
         activity_logger: GetUserActivityLogger,
         Path(server_group): Path<uuid::Uuid>,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -182,7 +182,7 @@ mod patch {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 
@@ -234,7 +234,7 @@ mod delete {
                 }
             };
 
-        server_group.delete(&state.database, ()).await?;
+        server_group.delete(&state, ()).await?;
 
         activity_logger
             .log(
@@ -246,7 +246,7 @@ mod delete {
             )
             .await;
 
-        ApiResponse::json(Response {}).ok()
+        ApiResponse::new_serialized(Response {}).ok()
     }
 }
 

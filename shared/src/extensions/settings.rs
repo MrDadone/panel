@@ -146,7 +146,7 @@ impl<'a> SettingsDeserializer<'a> {
     pub async fn nest<T: 'static>(
         &mut self,
         nested_prefix: &str,
-        deserializer: &impl SettingsDeserializeExt,
+        deserializer: &(dyn SettingsDeserializeExt + Send + Sync),
     ) -> Result<T, anyhow::Error> {
         let settings_deserializer = SettingsDeserializer::new(
             self.database.clone(),
@@ -157,11 +157,15 @@ impl<'a> SettingsDeserializer<'a> {
         let boxed = deserializer
             .deserialize_boxed(settings_deserializer)
             .await?;
-        let settings = boxed
-            .downcast::<T>()
-            .map_err(|_| anyhow::anyhow!("failed to downcast settings"))?;
 
-        Ok(*settings)
+        match (boxed as Box<dyn std::any::Any + Send + Sync>).downcast::<T>() {
+            Ok(concrete_box) => Ok(*concrete_box),
+            Err(_) => Err(anyhow::anyhow!(
+                "Type mismatch: expected {}, but nested prefix {} returned a different type",
+                std::any::type_name::<T>(),
+                nested_prefix
+            )),
+        }
     }
 }
 
@@ -169,7 +173,7 @@ pub type ExtensionSettings = Box<dyn SettingsSerializeExt + Send + Sync + 'stati
 pub type ExtensionSettingsDeserializer = Arc<dyn SettingsDeserializeExt + Send + Sync + 'static>;
 
 #[async_trait::async_trait]
-pub trait SettingsSerializeExt {
+pub trait SettingsSerializeExt: std::any::Any + Send + Sync {
     async fn serialize(
         &self,
         serializer: SettingsSerializer,
@@ -181,7 +185,7 @@ pub trait SettingsDeserializeExt {
     async fn deserialize_boxed(
         &self,
         deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error>;
+    ) -> Result<ExtensionSettings, anyhow::Error>;
 }
 
 #[async_trait::async_trait]
@@ -199,7 +203,7 @@ impl<T: SettingsDeserializeExt + ?Sized + Send + Sync> SettingsDeserializeExt fo
     async fn deserialize_boxed(
         &self,
         deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error> {
+    ) -> Result<ExtensionSettings, anyhow::Error> {
         (**self).deserialize_boxed(deserializer).await
     }
 }
@@ -221,7 +225,7 @@ impl SettingsDeserializeExt for EmptySettings {
     async fn deserialize_boxed(
         &self,
         _deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error> {
+    ) -> Result<ExtensionSettings, anyhow::Error> {
         Ok(Box::new(EmptySettings))
     }
 }

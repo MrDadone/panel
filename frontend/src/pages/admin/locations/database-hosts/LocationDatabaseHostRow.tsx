@@ -7,9 +7,8 @@ import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
@@ -83,7 +82,7 @@ export default function LocationDatabaseHostRow({
               </Code>
             </TableData>
             <TableData>
-              <Tooltip label={formatDateTime(databaseHost.created)}>{formatTimestamp(databaseHost.created)}</Tooltip>
+              <FormattedTimestamp timestamp={databaseHost.created} />
             </TableData>
 
             <ContextMenuToggle items={items} openMenu={openMenu} />

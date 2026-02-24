@@ -1,4 +1,6 @@
-import { Grid, Group, Stack, Title } from '@mantine/core';
+import { faPlay } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Grid, Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -6,8 +8,8 @@ import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updateAutostart from '@/api/server/settings/updateAutostart.ts';
 import Button from '@/elements/Button.tsx';
-import Card from '@/elements/Card.tsx';
 import Select from '@/elements/input/Select.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { serverSettingsAutostartSchema } from '@/lib/schemas/server/settings.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -42,13 +44,13 @@ export default function AutostartContainer() {
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-      <Card h='100%'>
+      <TitleCard
+        title={t('pages.server.settings.autostart.title', {})}
+        icon={<FontAwesomeIcon icon={faPlay} />}
+        className='h-full'
+      >
         <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack h='100%'>
-            <Title order={2} c='white'>
-              {t('pages.server.settings.autostart.title', {})}
-            </Title>
-
+          <Stack>
             <Select
               withAsterisk
               label={t('pages.server.settings.autostart.form.behavior', {})}
@@ -77,7 +79,7 @@ export default function AutostartContainer() {
             </Group>
           </Stack>
         </form>
-      </Card>
+      </TitleCard>
     </Grid.Col>
   );
 }

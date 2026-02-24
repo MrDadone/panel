@@ -1,4 +1,6 @@
-import { Grid, Group, Stack, Title } from '@mantine/core';
+import { faSkull } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Grid, Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -6,9 +8,9 @@ import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updateAutokill from '@/api/server/settings/updateAutokill.ts';
 import Button from '@/elements/Button.tsx';
-import Card from '@/elements/Card.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { serverSettingsAutokillSchema } from '@/lib/schemas/server/settings.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -44,21 +46,19 @@ export default function AutokillContainer() {
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-      <Card h='100%'>
+      <TitleCard
+        title={t('pages.server.settings.autokill.title', {})}
+        icon={<FontAwesomeIcon icon={faSkull} />}
+        className='h-full'
+      >
         <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack h='100%'>
-            <Title order={2} c='white'>
-              {t('pages.server.settings.autokill.title', {})}
-            </Title>
-
+          <Stack>
             <Switch
               label={t('pages.server.settings.autokill.form.enabled', {})}
               {...form.getInputProps('enabled', { type: 'checkbox' })}
             />
             <NumberInput
               label={t('pages.server.settings.autokill.form.secondsUntilAutoKill', {})}
-              min={0}
-              max={3600}
               {...form.getInputProps('seconds')}
             />
 
@@ -69,7 +69,7 @@ export default function AutokillContainer() {
             </Group>
           </Stack>
         </form>
-      </Card>
+      </TitleCard>
     </Grid.Col>
   );
 }

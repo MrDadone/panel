@@ -1,4 +1,13 @@
-import { Group, ModalProps, Stack } from '@mantine/core';
+import {
+  faChevronDown,
+  faFileAlt,
+  faFolder,
+  faHardDrive,
+  faSearch,
+  faSliders,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Box, Collapse, Flex, Group, ModalProps, Stack, Text, UnstyledButton } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -6,8 +15,6 @@ import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import searchFiles from '@/api/server/files/searchFiles.ts';
 import Button from '@/elements/Button.tsx';
-import Card from '@/elements/Card.tsx';
-import Divider from '@/elements/Divider.tsx';
 import SizeInput from '@/elements/input/SizeInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TagsInput from '@/elements/input/TagsInput.tsx';
@@ -18,14 +25,87 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
 
-export default function FileSearchModal({ opened, onClose }: ModalProps) {
+interface FilterSectionProps {
+  icon: typeof faFolder;
+  title: string;
+  enabled: boolean;
+  onToggle: (enabled: boolean) => void;
+  children: React.ReactNode;
+}
+
+function FilterSection({ icon, title, enabled, onToggle, children }: FilterSectionProps) {
+  return (
+    <Box
+      style={{
+        background: enabled ? 'var(--mantine-color-dark-6)' : 'transparent',
+        border: `1px solid ${enabled ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-dark-5)'}`,
+        borderRadius: 8,
+        overflow: 'hidden',
+        transition: 'all 0.15s ease',
+      }}
+    >
+      <UnstyledButton
+        onClick={() => onToggle(!enabled)}
+        style={{
+          width: '100%',
+          padding: '10px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}
+      >
+        <Box
+          style={{
+            width: 28,
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 6,
+            background: enabled ? 'var(--mantine-color-blue-9)' : 'var(--mantine-color-dark-5)',
+            transition: 'background 0.15s ease',
+          }}
+        >
+          <FontAwesomeIcon
+            icon={icon}
+            size='xs'
+            style={{ color: enabled ? 'var(--mantine-color-blue-2)' : 'var(--mantine-color-gray-5)' }}
+          />
+        </Box>
+        <Text size='sm' fw={500} c={enabled ? 'gray.2' : 'gray.5'} style={{ flex: 1, textAlign: 'left' }}>
+          {title}
+        </Text>
+        <FontAwesomeIcon
+          icon={faChevronDown}
+          size='xs'
+          style={{
+            color: 'var(--mantine-color-gray-6)',
+            transform: enabled ? 'rotate(0deg)' : 'rotate(-90deg)',
+            transition: 'transform 0.15s ease',
+          }}
+        />
+      </UnstyledButton>
+      <Collapse in={enabled}>
+        <Box px='sm' pb='sm' pt={4}>
+          {children}
+        </Box>
+      </Collapse>
+    </Box>
+  );
+}
+
+interface FileSearchModalProps extends ModalProps {
+  onSearchComplete?: (searchInfo: { query?: string; filters: z.infer<typeof serverFilesSearchSchema> }) => void;
+}
+
+export default function FileSearchModal({ opened, onClose, onSearchComplete }: FileSearchModalProps) {
   const { addToast } = useToast();
   const { settings } = useGlobalStore();
   const { server, browsingFastDirectory, browsingDirectory, setBrowsingEntries } = useServerStore();
 
   const [loading, setLoading] = useState(false);
-  const [advanced, setAdvanced] = useState(false);
   const [query, setQuery] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const form = useForm<z.infer<typeof serverFilesSearchSchema>>({
     initialValues: {
@@ -47,23 +127,36 @@ export default function FileSearchModal({ opened, onClose }: ModalProps) {
   }, [form.values.contentFilter]);
 
   useEffect(() => {
-    form.setFieldValue('pathFilter', { include: [`**${query}**`], exclude: [], caseInsensitive: true });
-  }, [query]);
+    if (!opened) {
+      setQuery('');
+      setShowAdvanced(false);
+      form.reset();
+    }
+  }, [opened]);
+
+  const activeFiltersCount = [form.values.pathFilter, form.values.contentFilter, form.values.sizeFilter].filter(
+    Boolean,
+  ).length;
 
   useEffect(() => {
-    form.reset();
-
-    if (!advanced) {
-      form.setFieldValue('pathFilter', { include: [`**${query}**`], exclude: [], caseInsensitive: true });
+    if (activeFiltersCount > 0) {
+      setShowAdvanced(true);
     }
-  }, [advanced]);
+  }, [activeFiltersCount]);
 
   const doSearch = () => {
     setLoading(true);
 
-    searchFiles(server.uuid, { root: browsingDirectory, ...form.values })
+    const searchFilters = {
+      ...form.values,
+      pathFilter:
+        form.values.pathFilter ?? (query ? { include: [`**/*${query}*`], exclude: [], caseInsensitive: true } : null),
+    };
+
+    searchFiles(server.uuid, { root: browsingDirectory, ...searchFilters })
       .then((entries) => {
         setBrowsingEntries({ total: entries.length, page: 1, perPage: entries.length, data: entries });
+        onSearchComplete?.({ query, filters: searchFilters });
         onClose();
       })
       .catch((msg) => {
@@ -75,170 +168,219 @@ export default function FileSearchModal({ opened, onClose }: ModalProps) {
   return (
     <Modal title='Search Files' onClose={onClose} opened={opened} size='lg'>
       <form onSubmit={form.onSubmit(() => doSearch())}>
-        <Stack>
-          <Switch checked={advanced} onChange={(e) => setAdvanced(e.target.checked)} label='Advanced mode toggle' />
+        <Stack gap='md'>
+          <TextInput
+            placeholder='Search for files...'
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            leftSection={<FontAwesomeIcon icon={faSearch} style={{ color: 'var(--mantine-color-gray-5)' }} />}
+            size='md'
+            autoFocus
+          />
 
-          <Divider />
+          <UnstyledButton onClick={() => setShowAdvanced(!showAdvanced)}>
+            <Flex
+              align='center'
+              gap='sm'
+              py='xs'
+              style={{
+                borderRadius: 6,
+                background: showAdvanced ? 'var(--mantine-color-dark-6)' : 'transparent',
+                border: `1px solid ${showAdvanced ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-dark-5)'}`,
+                transition: 'all 0.15s ease',
+                paddingLeft: '14px',
+                paddingRight: '14px',
+              }}
+            >
+              <Box
+                style={{
+                  width: 28,
+                  height: 28,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 5,
+                  background: activeFiltersCount > 0 ? 'var(--mantine-color-blue-9)' : 'var(--mantine-color-dark-5)',
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={faSliders}
+                  size='xs'
+                  style={{
+                    color: activeFiltersCount > 0 ? 'var(--mantine-color-blue-2)' : 'var(--mantine-color-gray-5)',
+                  }}
+                />
+              </Box>
+              <Text size='sm' c={showAdvanced ? 'gray.2' : 'gray.5'} fw={500}>
+                Advanced Filters
+              </Text>
+              {activeFiltersCount > 0 && (
+                <Box
+                  style={{
+                    background: 'var(--mantine-color-blue-9)',
+                    borderRadius: 10,
+                    padding: '2px 8px',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: 'var(--mantine-color-blue-2)',
+                  }}
+                >
+                  {activeFiltersCount}
+                </Box>
+              )}
+              <Box style={{ flex: 1 }} />
+              <FontAwesomeIcon
+                icon={faChevronDown}
+                size='xs'
+                style={{
+                  color: 'var(--mantine-color-gray-6)',
+                  transform: showAdvanced ? 'rotate(0deg)' : 'rotate(-90deg)',
+                  transition: 'transform 0.15s ease',
+                }}
+              />
+            </Flex>
+          </UnstyledButton>
 
-          {!advanced && (
-            <TextInput
-              withAsterisk
-              label='File name'
-              placeholder='Query'
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          )}
-
-          {advanced && (
-            <>
-              <Card>
-                <div className='flex flex-row items-center justify-between'>
-                  File Path filter
-                  <Switch
-                    checked={!!form.values.pathFilter}
-                    onChange={(e) =>
-                      form.setFieldValue(
-                        'pathFilter',
-                        e.target.checked ? { include: ['**/**'], exclude: [], caseInsensitive: true } : null,
-                      )
-                    }
-                  />
-                </div>
-                {form.values.pathFilter && (
-                  <Stack mt='md'>
-                    <Divider />
-
-                    <Group grow align='start'>
-                      <TagsInput
-                        label='Include Patterns'
-                        placeholder='Include Patterns'
-                        {...form.getInputProps('pathFilter.include')}
-                      />
-                      <TagsInput
-                        label='Exclude Patterns'
-                        placeholder='Exclude Patterns'
-                        {...form.getInputProps('pathFilter.exclude')}
-                      />
-                    </Group>
-
-                    <Switch
-                      label='Search Case Insensitive'
-                      description='Search file paths in insensitive mode, "A" will still match "a".'
-                      {...form.getInputProps('pathFilter.caseInsensitive', { type: 'checkbox' })}
-                    />
-                  </Stack>
-                )}
-              </Card>
-
-              {browsingFastDirectory && (
-                <Card>
-                  <div className='flex flex-row items-center justify-between'>
-                    File Content filter
-                    <Switch
-                      checked={!!form.values.contentFilter}
-                      onChange={(e) =>
-                        form.setFieldValue(
-                          'contentFilter',
-                          e.target.checked
-                            ? {
-                                query: '',
-                                maxSearchSize: settings.server.maxFileManagerContentSearchSize,
-                                includeUnmatched: false,
-                                caseInsensitive: true,
-                              }
-                            : null,
-                        )
+          <Collapse in={showAdvanced}>
+            <Stack gap='xs'>
+              <FilterSection
+                icon={faFolder}
+                title='Path Patterns'
+                enabled={!!form.values.pathFilter}
+                onToggle={(enabled) =>
+                  form.setFieldValue('pathFilter', enabled ? { include: [], exclude: [], caseInsensitive: true } : null)
+                }
+              >
+                <Stack gap='sm'>
+                  <Group grow align='start'>
+                    <TagsInput
+                      label='Include'
+                      placeholder='e.g., *.js, src/**'
+                      size='sm'
+                      value={form.values.pathFilter?.include ?? []}
+                      onChange={(value) =>
+                        form.setFieldValue('pathFilter', {
+                          include: value,
+                          exclude: form.values.pathFilter?.exclude ?? [],
+                          caseInsensitive: form.values.pathFilter?.caseInsensitive ?? true,
+                        })
                       }
                     />
-                  </div>
-                  {form.values.contentFilter && (
-                    <Stack mt='md'>
-                      <Divider />
-
-                      <Group grow align='start'>
-                        <TextInput
-                          withAsterisk
-                          label='Query'
-                          placeholder='Query'
-                          className='col-span-3'
-                          {...form.getInputProps('contentFilter.query')}
-                        />
-
-                        <SizeInput
-                          withAsterisk
-                          label='Maximum Search File Size'
-                          mode='b'
-                          min={0}
-                          value={form.values.contentFilter.maxSearchSize}
-                          onChange={(value) => form.setFieldValue('contentFilter.maxSearchSize', value)}
-                        />
-                      </Group>
-
-                      <Group grow align='start'>
-                        <Switch
-                          label='Include Unmatched Files'
-                          description='If a file matches the other filters, but cannot match the content filter due to being too big, still include it.'
-                          {...form.getInputProps('contentFilter.includeUnmatched', { type: 'checkbox' })}
-                        />
-                        <Switch
-                          label='Search Case Insensitive'
-                          description='Search file content using the query in insensitive mode, "A" will still match "a".'
-                          {...form.getInputProps('contentFilter.caseInsensitive', { type: 'checkbox' })}
-                        />
-                      </Group>
-                    </Stack>
-                  )}
-                </Card>
-              )}
-
-              <Card>
-                <div className='flex flex-row items-center justify-between'>
-                  File Size filter
+                    <TagsInput
+                      label='Exclude'
+                      placeholder='e.g., node_modules/**'
+                      size='sm'
+                      value={form.values.pathFilter?.exclude ?? []}
+                      onChange={(value) =>
+                        form.setFieldValue('pathFilter', {
+                          include: form.values.pathFilter?.include ?? [],
+                          exclude: value,
+                          caseInsensitive: form.values.pathFilter?.caseInsensitive ?? true,
+                        })
+                      }
+                    />
+                  </Group>
                   <Switch
-                    checked={!!form.values.sizeFilter}
+                    label='Case insensitive'
+                    checked={form.values.pathFilter?.caseInsensitive ?? true}
                     onChange={(e) =>
-                      form.setFieldValue('sizeFilter', e.target.checked ? { min: 0, max: 100 * 1024 * 1024 } : null)
+                      form.setFieldValue('pathFilter', {
+                        include: form.values.pathFilter?.include ?? [],
+                        exclude: form.values.pathFilter?.exclude ?? [],
+                        caseInsensitive: e.target.checked,
+                      })
                     }
                   />
-                </div>
-                {form.values.sizeFilter && (
-                  <Stack mt='md'>
-                    <Divider />
+                </Stack>
+              </FilterSection>
 
-                    <Group grow>
-                      <SizeInput
-                        withAsterisk
-                        label='Minimum'
-                        mode='b'
-                        min={0}
-                        value={form.values.sizeFilter.min}
-                        onChange={(value) => form.setFieldValue('sizeFilter.min', value)}
+              {browsingFastDirectory && (
+                <FilterSection
+                  icon={faFileAlt}
+                  title='File Content'
+                  enabled={!!form.values.contentFilter}
+                  onToggle={(enabled) =>
+                    form.setFieldValue(
+                      'contentFilter',
+                      enabled
+                        ? {
+                            query: '',
+                            maxSearchSize: settings.server.maxFileManagerContentSearchSize,
+                            includeUnmatched: false,
+                            caseInsensitive: true,
+                          }
+                        : null,
+                    )
+                  }
+                >
+                  <Stack gap='sm'>
+                    <Group grow align='start'>
+                      <TextInput
+                        label='Search text'
+                        placeholder='Text to find in files'
+                        size='sm'
+                        {...form.getInputProps('contentFilter.query')}
                       />
                       <SizeInput
-                        withAsterisk
-                        label='Maximum'
+                        label='Max file size'
                         mode='b'
                         min={0}
-                        value={form.values.sizeFilter.max}
-                        onChange={(value) => form.setFieldValue('sizeFilter.max', value)}
+                        value={form.values.contentFilter?.maxSearchSize ?? 0}
+                        onChange={(value) => form.setFieldValue('contentFilter.maxSearchSize', value)}
+                      />
+                    </Group>
+                    <Group grow>
+                      <Switch
+                        label='Include oversized files'
+                        description='Include files that match other filters but are too large to search'
+                        {...form.getInputProps('contentFilter.includeUnmatched', { type: 'checkbox' })}
+                      />
+                      <Switch
+                        label='Case insensitive'
+                        {...form.getInputProps('contentFilter.caseInsensitive', { type: 'checkbox' })}
                       />
                     </Group>
                   </Stack>
-                )}
-              </Card>
-            </>
-          )}
+                </FilterSection>
+              )}
+
+              <FilterSection
+                icon={faHardDrive}
+                title='File Size'
+                enabled={!!form.values.sizeFilter}
+                onToggle={(enabled) =>
+                  form.setFieldValue('sizeFilter', enabled ? { min: 0, max: 100 * 1024 * 1024 } : null)
+                }
+              >
+                <Group grow>
+                  <SizeInput
+                    label='Minimum'
+                    mode='b'
+                    min={0}
+                    value={form.values.sizeFilter?.min ?? 0}
+                    onChange={(value) => form.setFieldValue('sizeFilter.min', value)}
+                  />
+                  <SizeInput
+                    label='Maximum'
+                    mode='b'
+                    min={0}
+                    value={form.values.sizeFilter?.max ?? 0}
+                    onChange={(value) => form.setFieldValue('sizeFilter.max', value)}
+                  />
+                </Group>
+              </FilterSection>
+            </Stack>
+          </Collapse>
         </Stack>
 
-        <Group mt='md'>
+        <Modal.Footer>
           <Button type='submit' loading={loading}>
             Search
           </Button>
           <Button variant='default' onClick={onClose}>
-            Close
+            Cancel
           </Button>
-        </Group>
+        </Modal.Footer>
       </form>
     </Modal>
   );

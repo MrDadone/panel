@@ -24,13 +24,13 @@ export interface FilesSlice {
   setSelectedFiles: (files: DirectoryEntry[]) => void;
   addSelectedFile: (file: DirectoryEntry) => void;
   removeSelectedFile: (file: DirectoryEntry) => void;
-  isFileSelected: (file: DirectoryEntry) => boolean;
   getSelectedFiles: () => DirectoryEntry[];
 
-  movingFileNames: Set<string>;
-  movingFilesDirectory: string | null;
-  setMovingFiles: (files: DirectoryEntry[]) => void;
-  clearMovingFiles: () => void;
+  actingFileMode: 'copy' | 'move' | null;
+  actingFileNames: Set<string>;
+  actingFilesDirectory: string | null;
+  setActingFiles: (mode: 'copy' | 'move', files: DirectoryEntry[]) => void;
+  clearActingFiles: () => void;
 
   fileOperations: Map<string, FileOperation>;
   setFileOperation: (uuid: string, operation: FileOperation) => void;
@@ -84,22 +84,28 @@ export const createFilesSlice: StateCreator<ServerStore, [], [], FilesSlice> = (
       newSet.delete(file.name);
       return { ...state, selectedFileNames: newSet };
     }),
-  isFileSelected: (file) => get().selectedFileNames.has(file.name),
   getSelectedFiles: () => {
     const state = get();
     return state.browsingEntries.data.filter((entry) => state.selectedFileNames.has(entry.name));
   },
 
-  movingFileNames: new Set<string>(),
-  movingFilesDirectory: null,
-  setMovingFiles: (files) =>
+  actingFileMode: null,
+  actingFileNames: new Set<string>(),
+  actingFilesDirectory: null,
+  setActingFiles: (mode, files) =>
     set((state) => ({
       ...state,
-      movingFileNames: new Set(files.map((f) => f.name)),
-      movingFilesDirectory: state.browsingDirectory,
+      actingFileMode: mode,
+      actingFileNames: new Set(files.map((f) => f.name)),
+      actingFilesDirectory: state.browsingDirectory,
     })),
-  clearMovingFiles: () =>
-    set((state) => ({ ...state, movingFileNames: new Set<string>(), movingFilesDirectory: null })),
+  clearActingFiles: () =>
+    set((state) => ({
+      ...state,
+      actingFileMode: null,
+      actingFileNames: new Set<string>(),
+      actingFilesDirectory: null,
+    })),
 
   fileOperations: new Map<string, FileOperation>(),
   setFileOperation: (uuid, operation) =>

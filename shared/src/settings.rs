@@ -4,7 +4,7 @@ use crate::{
         ExtensionSettings, ExtensionSettingsDeserializer, SettingsDeserializeExt,
         SettingsDeserializer, SettingsSerializeExt, SettingsSerializer,
     },
-    prelude::{AsyncOptionExtension, StringExt},
+    prelude::{AsyncOptionExt, StringExt},
 };
 use compact_str::ToCompactString;
 use serde::{Deserialize, Serialize};
@@ -13,9 +13,12 @@ use std::{
     ops::{Deref, DerefMut},
     path::PathBuf,
     str::FromStr,
-    sync::{Arc, LazyLock},
+    sync::{
+        Arc, LazyLock,
+        atomic::{AtomicUsize, Ordering},
+    },
 };
-use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard, Semaphore, SemaphorePermit};
 use utoipa::ToSchema;
 
 #[derive(ToSchema, Serialize, Deserialize, Clone, Copy)]
@@ -117,6 +120,37 @@ impl CaptchaProvider {
             },
         }
     }
+
+    pub fn to_csp_script_src(&self) -> &'static str {
+        match self {
+            CaptchaProvider::None => "",
+            CaptchaProvider::Turnstile { .. } => "https://challenges.cloudflare.com",
+            CaptchaProvider::Recaptcha { .. } => {
+                "https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/"
+            }
+            CaptchaProvider::Hcaptcha { .. } => "https://hcaptcha.com https://*.hcaptcha.com",
+        }
+    }
+
+    pub fn to_csp_frame_src(&self) -> &'static str {
+        match self {
+            CaptchaProvider::None => "",
+            CaptchaProvider::Turnstile { .. } => "https://challenges.cloudflare.com",
+            CaptchaProvider::Recaptcha { .. } => {
+                "https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/"
+            }
+            CaptchaProvider::Hcaptcha { .. } => "https://hcaptcha.com https://*.hcaptcha.com",
+        }
+    }
+
+    pub fn to_csp_style_src(&self) -> &'static str {
+        match self {
+            CaptchaProvider::None => "",
+            CaptchaProvider::Turnstile { .. } => "",
+            CaptchaProvider::Recaptcha { .. } => "",
+            CaptchaProvider::Hcaptcha { .. } => "https://hcaptcha.com https://*.hcaptcha.com",
+        }
+    }
 }
 
 #[derive(ToSchema, Serialize, Deserialize, Clone)]
@@ -128,7 +162,7 @@ pub enum PublicCaptchaProvider<'a> {
     Hcaptcha { site_key: &'a str },
 }
 
-#[derive(ToSchema, Serialize, Deserialize)]
+#[derive(Clone, ToSchema, Serialize, Deserialize)]
 pub struct AppSettingsApp {
     pub name: compact_str::CompactString,
     pub url: compact_str::CompactString,
@@ -175,7 +209,7 @@ impl SettingsDeserializeExt for AppSettingsAppDeserializer {
     async fn deserialize_boxed(
         &self,
         mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error> {
+    ) -> Result<ExtensionSettings, anyhow::Error> {
         Ok(Box::new(AppSettingsApp {
             name: deserializer
                 .take_raw_setting("name")
@@ -206,7 +240,7 @@ impl SettingsDeserializeExt for AppSettingsAppDeserializer {
     }
 }
 
-#[derive(ToSchema, Serialize, Deserialize)]
+#[derive(Clone, ToSchema, Serialize, Deserialize)]
 pub struct AppSettingsWebauthn {
     pub rp_id: compact_str::CompactString,
     pub rp_origin: compact_str::CompactString,
@@ -231,7 +265,7 @@ impl SettingsDeserializeExt for AppSettingsWebauthnDeserializer {
     async fn deserialize_boxed(
         &self,
         mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error> {
+    ) -> Result<ExtensionSettings, anyhow::Error> {
         Ok(Box::new(AppSettingsWebauthn {
             rp_id: deserializer
                 .take_raw_setting("rp_id")
@@ -243,7 +277,7 @@ impl SettingsDeserializeExt for AppSettingsWebauthnDeserializer {
     }
 }
 
-#[derive(ToSchema, Serialize, Deserialize)]
+#[derive(Clone, ToSchema, Serialize, Deserialize)]
 pub struct AppSettingsServer {
     pub max_file_manager_view_size: u64,
     pub max_file_manager_content_search_size: u64,
@@ -252,6 +286,7 @@ pub struct AppSettingsServer {
 
     pub allow_overwriting_custom_docker_image: bool,
     pub allow_editing_startup_command: bool,
+    pub allow_viewing_installation_logs: bool,
 }
 
 #[async_trait::async_trait]
@@ -286,6 +321,10 @@ impl SettingsSerializeExt for AppSettingsServer {
             .write_raw_setting(
                 "allow_editing_startup_command",
                 self.allow_editing_startup_command.to_compact_string(),
+            )
+            .write_raw_setting(
+                "allow_viewing_installation_logs",
+                self.allow_viewing_installation_logs.to_compact_string(),
             ))
     }
 }
@@ -297,7 +336,7 @@ impl SettingsDeserializeExt for AppSettingsServerDeserializer {
     async fn deserialize_boxed(
         &self,
         mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error> {
+    ) -> Result<ExtensionSettings, anyhow::Error> {
         Ok(Box::new(AppSettingsServer {
             max_file_manager_view_size: deserializer
                 .take_raw_setting("max_file_manager_view_size")
@@ -323,6 +362,83 @@ impl SettingsDeserializeExt for AppSettingsServerDeserializer {
                 .take_raw_setting("allow_editing_startup_command")
                 .map(|s| s == "true")
                 .unwrap_or(false),
+            allow_viewing_installation_logs: deserializer
+                .take_raw_setting("allow_viewing_installation_logs")
+                .map(|s| s == "true")
+                .unwrap_or(true),
+        }))
+    }
+}
+
+#[derive(Clone, ToSchema, Serialize, Deserialize)]
+pub struct AppSettingsActivity {
+    pub admin_log_retention_days: u16,
+    pub user_log_retention_days: u16,
+    pub server_log_retention_days: u16,
+
+    pub server_log_admin_activity: bool,
+    pub server_log_schedule_activity: bool,
+}
+
+#[async_trait::async_trait]
+impl SettingsSerializeExt for AppSettingsActivity {
+    async fn serialize(
+        &self,
+        serializer: SettingsSerializer,
+    ) -> Result<SettingsSerializer, anyhow::Error> {
+        Ok(serializer
+            .write_raw_setting(
+                "admin_log_retention_days",
+                self.admin_log_retention_days.to_compact_string(),
+            )
+            .write_raw_setting(
+                "user_log_retention_days",
+                self.user_log_retention_days.to_compact_string(),
+            )
+            .write_raw_setting(
+                "server_log_retention_days",
+                self.server_log_retention_days.to_compact_string(),
+            )
+            .write_raw_setting(
+                "server_log_admin_activity",
+                self.server_log_admin_activity.to_compact_string(),
+            )
+            .write_raw_setting(
+                "server_log_schedule_activity",
+                self.server_log_schedule_activity.to_compact_string(),
+            ))
+    }
+}
+
+pub struct AppSettingsActivityDeserializer;
+
+#[async_trait::async_trait]
+impl SettingsDeserializeExt for AppSettingsActivityDeserializer {
+    async fn deserialize_boxed(
+        &self,
+        mut deserializer: SettingsDeserializer<'_>,
+    ) -> Result<ExtensionSettings, anyhow::Error> {
+        Ok(Box::new(AppSettingsActivity {
+            admin_log_retention_days: deserializer
+                .take_raw_setting("admin_log_retention_days")
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(180),
+            user_log_retention_days: deserializer
+                .take_raw_setting("user_log_retention_days")
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(180),
+            server_log_retention_days: deserializer
+                .take_raw_setting("server_log_retention_days")
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(90),
+            server_log_admin_activity: deserializer
+                .take_raw_setting("server_log_admin_activity")
+                .map(|s| s == "true")
+                .unwrap_or(true),
+            server_log_schedule_activity: deserializer
+                .take_raw_setting("server_log_schedule_activity")
+                .map(|s| s == "true")
+                .unwrap_or(true),
         }))
     }
 }
@@ -344,6 +460,8 @@ pub struct AppSettings {
     pub webauthn: AppSettingsWebauthn,
     #[schema(inline)]
     pub server: AppSettingsServer,
+    #[schema(inline)]
+    pub activity: AppSettingsActivity,
 
     #[serde(skip)]
     pub extensions: HashMap<&'static str, ExtensionSettings>,
@@ -359,7 +477,7 @@ impl AppSettings {
             .get(ext_identifier)
             .ok_or_else(|| anyhow::anyhow!("failed to find extension settings"))?;
 
-        (ext_settings as &dyn std::any::Any)
+        (&**ext_settings as &dyn std::any::Any)
             .downcast_ref::<T>()
             .ok_or_else(|| anyhow::anyhow!("failed to downcast extension settings"))
     }
@@ -373,14 +491,14 @@ impl AppSettings {
             .get_mut(ext_identifier)
             .ok_or_else(|| anyhow::anyhow!("failed to find extension settings"))?;
 
-        (ext_settings as &mut dyn std::any::Any)
+        (&mut **ext_settings as &mut dyn std::any::Any)
             .downcast_mut::<T>()
             .ok_or_else(|| anyhow::anyhow!("failed to downcast extension settings"))
     }
 
     pub fn find_extension_settings<T: 'static>(&self) -> Result<&T, anyhow::Error> {
         for ext_settings in self.extensions.values() {
-            if let Some(downcasted) = (ext_settings as &dyn std::any::Any).downcast_ref::<T>() {
+            if let Some(downcasted) = (&**ext_settings as &dyn std::any::Any).downcast_ref::<T>() {
                 return Ok(downcasted);
             }
         }
@@ -390,7 +508,9 @@ impl AppSettings {
 
     pub fn find_mut_extension_settings<T: 'static>(&mut self) -> Result<&mut T, anyhow::Error> {
         for ext_settings in self.extensions.values_mut() {
-            if let Some(downcasted) = (ext_settings as &mut dyn std::any::Any).downcast_mut::<T>() {
+            if let Some(downcasted) =
+                (&mut **ext_settings as &mut dyn std::any::Any).downcast_mut::<T>()
+            {
                 return Ok(downcasted);
             }
         }
@@ -574,9 +694,11 @@ impl SettingsSerializeExt for AppSettings {
             .nest("webauthn", &self.webauthn)
             .await?
             .nest("server", &self.server)
+            .await?
+            .nest("activity", &self.activity)
             .await?;
 
-        for (ext_identifier, ext_settings) in &self.extensions {
+        for (ext_identifier, ext_settings) in self.extensions.iter() {
             serializer = serializer.nest(ext_identifier, ext_settings).await?;
         }
 
@@ -595,7 +717,7 @@ impl SettingsDeserializeExt for AppSettingsDeserializer {
     async fn deserialize_boxed(
         &self,
         mut deserializer: SettingsDeserializer<'_>,
-    ) -> Result<Box<dyn std::any::Any + Send>, anyhow::Error> {
+    ) -> Result<ExtensionSettings, anyhow::Error> {
         let mut extensions = HashMap::new();
 
         let extension_deserializers = {
@@ -617,15 +739,7 @@ impl SettingsDeserializeExt for AppSettingsDeserializer {
             let ext_settings = ext_deserializer
                 .deserialize_boxed(settings_deserializer)
                 .await?;
-            extensions.insert(
-                ext_identifier,
-                *ext_settings.downcast::<ExtensionSettings>().map_err(|_| {
-                    anyhow::anyhow!(
-                        "failed to downcast extension settings for {}",
-                        ext_identifier
-                    )
-                })?,
-            );
+            extensions.insert(ext_identifier, ext_settings);
         }
 
         Ok(Box::new(AppSettings {
@@ -635,9 +749,17 @@ impl SettingsDeserializeExt for AppSettingsDeserializer {
             telemetry_cron_schedule: deserializer
                 .take_raw_setting("telemetry_cron_schedule")
                 .and_then(|s| cron::Schedule::from_str(&s).ok()),
-            oobe_step: deserializer
-                .take_raw_setting("oobe_step")
-                .and_then(|s| s.into_optional()),
+            oobe_step: match deserializer.take_raw_setting("oobe_step") {
+                Some(step) if step.is_empty() => None,
+                Some(step) => Some(step),
+                None => {
+                    if crate::models::user::User::count(&deserializer.database).await > 0 {
+                        None
+                    } else {
+                        Some("register".into())
+                    }
+                }
+            },
             storage_driver: match deserializer.take_raw_setting("storage_driver").as_deref() {
                 Some("s3") => StorageDriver::S3 {
                     public_url: deserializer
@@ -795,25 +917,46 @@ impl SettingsDeserializeExt for AppSettingsDeserializer {
             server: deserializer
                 .nest("server", &AppSettingsServerDeserializer)
                 .await?,
+            activity: deserializer
+                .nest("activity", &AppSettingsActivityDeserializer)
+                .await?,
             extensions,
         }))
     }
 }
 
-pub struct SettingsGuard<'a> {
-    database: Arc<crate::database::Database>,
-    settings: RwLockWriteGuard<'a, AppSettings>,
+pub struct SettingsReadGuard<'a> {
+    settings: RwLockReadGuard<'a, SettingsBuffer>,
 }
 
-impl<'a> SettingsGuard<'a> {
-    pub async fn save(self) -> Result<(), crate::database::DatabaseError> {
+impl Deref for SettingsReadGuard<'_> {
+    type Target = AppSettings;
+
+    fn deref(&self) -> &Self::Target {
+        &self.settings.settings
+    }
+}
+
+pub struct SettingsWriteGuard<'a> {
+    parent: &'a Settings,
+    settings: Option<RwLockWriteGuard<'a, SettingsBuffer>>,
+    _writer_token: SemaphorePermit<'a>,
+}
+
+impl<'a> SettingsWriteGuard<'a> {
+    pub async fn save(mut self) -> Result<(), crate::database::DatabaseError> {
+        let mut settings_guard = self.settings.take().ok_or_else(|| {
+            crate::database::DatabaseError::Any(anyhow::anyhow!(
+                "settings have already been saved or dropped"
+            ))
+        })?;
+
         let (keys, values) = SettingsSerializeExt::serialize(
-            &*self.settings,
-            SettingsSerializer::new(self.database.clone(), ""),
+            &settings_guard.settings,
+            SettingsSerializer::new(self.parent.database.clone(), ""),
         )
         .await?
         .into_parts();
-        drop(self.settings);
 
         sqlx::query!(
             "INSERT INTO settings (key, value)
@@ -822,14 +965,22 @@ impl<'a> SettingsGuard<'a> {
             &keys as &[compact_str::CompactString],
             &values as &[compact_str::CompactString]
         )
-        .execute(self.database.write())
+        .execute(self.parent.database.write())
         .await?;
+
+        settings_guard.expires = std::time::Instant::now() + std::time::Duration::from_secs(60);
+
+        let _ = self
+            .parent
+            .cached_index
+            .fetch_update(Ordering::Release, Ordering::Relaxed, |i| Some((i + 1) % 2));
 
         Ok(())
     }
 
     pub fn censored(&self) -> serde_json::Value {
-        let mut json = serde_json::to_value(&*self.settings).unwrap();
+        let settings = self.settings.as_ref().expect("settings have been dropped");
+        let mut json = serde_json::to_value(&settings.settings).unwrap();
 
         fn censor_values(key: &str, value: &mut serde_json::Value) {
             match value {
@@ -853,35 +1004,48 @@ impl<'a> SettingsGuard<'a> {
     }
 }
 
-impl Deref for SettingsGuard<'_> {
+impl Deref for SettingsWriteGuard<'_> {
     type Target = AppSettings;
 
     fn deref(&self) -> &Self::Target {
-        &self.settings
+        &self
+            .settings
+            .as_ref()
+            .expect("settings have been dropped")
+            .settings
     }
 }
 
-impl DerefMut for SettingsGuard<'_> {
+impl DerefMut for SettingsWriteGuard<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.settings
+        &mut self
+            .settings
+            .as_mut()
+            .expect("settings have been dropped")
+            .settings
     }
+}
+
+struct SettingsBuffer {
+    settings: AppSettings,
+    expires: std::time::Instant,
 }
 
 pub struct Settings {
-    cached: RwLock<AppSettings>,
-    cached_expires: RwLock<std::time::Instant>,
+    cached: [RwLock<SettingsBuffer>; 2],
+    cached_index: AtomicUsize,
+    write_serializing: Semaphore,
 
     database: Arc<crate::database::Database>,
 }
 
 impl Settings {
-    async fn fetch_setttings(
+    async fn fetch_settings(
         database: &Arc<crate::database::Database>,
     ) -> Result<AppSettings, anyhow::Error> {
         let rows = sqlx::query!("SELECT * FROM settings")
             .fetch_all(database.read())
-            .await
-            .expect("failed to fetch settings");
+            .await?;
 
         let mut map = HashMap::new();
         for row in rows {
@@ -894,37 +1058,77 @@ impl Settings {
         )
         .await?;
 
-        Ok(*boxed
+        Ok(*(boxed as Box<dyn std::any::Any>)
             .downcast::<AppSettings>()
             .expect("settings has invalid type"))
     }
 
     pub async fn new(database: Arc<crate::database::Database>) -> Result<Self, anyhow::Error> {
-        let cached = RwLock::new(Self::fetch_setttings(&database).await?);
-        let cached_expires =
-            RwLock::new(std::time::Instant::now() + std::time::Duration::from_secs(60));
-
         Ok(Self {
-            cached,
-            cached_expires,
+            cached: [
+                RwLock::new(SettingsBuffer {
+                    settings: Self::fetch_settings(&database).await?,
+                    expires: std::time::Instant::now() + std::time::Duration::from_secs(60),
+                }),
+                RwLock::new(SettingsBuffer {
+                    settings: Self::fetch_settings(&database).await?,
+                    expires: std::time::Instant::now() + std::time::Duration::from_secs(60),
+                }),
+            ],
+            cached_index: AtomicUsize::new(0),
+            write_serializing: Semaphore::new(1),
             database,
         })
     }
 
-    pub async fn get(&self) -> Result<RwLockReadGuard<'_, AppSettings>, anyhow::Error> {
+    pub async fn get(&self) -> Result<SettingsReadGuard<'_>, anyhow::Error> {
         let now = std::time::Instant::now();
-        let cached_expires = self.cached_expires.read().await;
 
-        if now >= *cached_expires {
-            drop(cached_expires);
-
-            let settings = Self::fetch_setttings(&self.database).await?;
-
-            *self.cached.write().await = settings;
-            *self.cached_expires.write().await = now + std::time::Duration::from_secs(60);
+        let index = self.cached_index.load(Ordering::Acquire);
+        {
+            let guard = self.cached[index % 2].read().await;
+            if now < guard.expires {
+                return Ok(SettingsReadGuard { settings: guard });
+            }
         }
 
-        Ok(self.cached.read().await)
+        let _write_token = self.write_serializing.acquire().await?;
+
+        let index = self.cached_index.load(Ordering::Acquire);
+        let current_buffer = &self.cached[index % 2];
+
+        if now < current_buffer.read().await.expires {
+            return Ok(SettingsReadGuard {
+                settings: current_buffer.read().await,
+            });
+        }
+
+        let start = std::time::Instant::now();
+        tracing::info!("settings cache expired, reloading from database");
+
+        let settings = Self::fetch_settings(&self.database).await?;
+        let mut guard = current_buffer.write().await;
+        guard.settings = settings;
+        guard.expires = now + std::time::Duration::from_secs(60);
+
+        drop(guard);
+
+        tracing::info!(
+            "reloaded settings from database in {} ms",
+            start.elapsed().as_millis()
+        );
+
+        Ok(SettingsReadGuard {
+            settings: current_buffer.read().await,
+        })
+    }
+
+    pub async fn get_as<F, T: 'static>(&self, f: F) -> Result<T, anyhow::Error>
+    where
+        F: FnOnce(&AppSettings) -> T,
+    {
+        let settings = self.get().await?;
+        Ok(f(&settings))
     }
 
     pub async fn get_webauthn(&self) -> Result<webauthn_rs::Webauthn, anyhow::Error> {
@@ -938,23 +1142,29 @@ impl Settings {
         .build()?)
     }
 
-    pub async fn get_mut(&self) -> Result<SettingsGuard<'_>, anyhow::Error> {
-        let now = std::time::Instant::now();
+    pub async fn get_mut(&self) -> Result<SettingsWriteGuard<'_>, anyhow::Error> {
+        let writer_token = self.write_serializing.acquire().await?;
 
-        let is_expired = {
-            let guard = self.cached_expires.read().await;
-            now >= *guard
-        };
+        let active_index = self.cached_index.load(Ordering::Acquire);
+        let inactive_index = (active_index + 1) % 2;
+        let inactive_buffer = &self.cached[inactive_index];
 
-        if is_expired {
-            let settings = Self::fetch_setttings(&self.database).await?;
-            *self.cached.write().await = settings;
-            *self.cached_expires.write().await = now + std::time::Duration::from_secs(60);
-        }
+        let mut guard = inactive_buffer.write().await;
 
-        Ok(SettingsGuard {
-            database: Arc::clone(&self.database),
-            settings: self.cached.write().await,
+        guard.settings = Self::fetch_settings(&self.database).await?;
+
+        Ok(SettingsWriteGuard {
+            parent: self,
+            settings: Some(guard),
+            _writer_token: writer_token,
         })
+    }
+
+    pub async fn invalidate_cache(&self) {
+        let Ok(_lock) = self.write_serializing.acquire().await else {
+            return;
+        };
+        let index = self.cached_index.load(Ordering::Acquire);
+        self.cached[index % 2].write().await.expires = std::time::Instant::now();
     }
 }

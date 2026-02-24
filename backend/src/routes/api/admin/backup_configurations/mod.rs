@@ -47,7 +47,7 @@ mod get {
         Query(params): Query<PaginationParamsWithSearch>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -62,7 +62,7 @@ mod get {
         )
         .await?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             backup_configurations: backup_configurations
                 .try_async_map(|backup_configuration| {
                     backup_configuration.into_admin_api_object(&state.database)
@@ -96,6 +96,8 @@ mod post {
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
 
+        maintenance_enabled: bool,
+
         backup_disk: shared::models::server_backup::BackupDisk,
         #[serde(default)]
         backup_configs: shared::models::backup_configurations::BackupConfigs,
@@ -115,10 +117,10 @@ mod post {
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
-        axum::Json(data): axum::Json<Payload>,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::json(ApiError::new_strings_value(errors))
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
                 .with_status(StatusCode::BAD_REQUEST)
                 .ok();
         }
@@ -129,6 +131,7 @@ mod post {
             &state.database,
             &data.name,
             data.description.as_deref(),
+            data.maintenance_enabled,
             data.backup_disk,
             data.backup_configs,
         )
@@ -156,11 +159,13 @@ mod post {
                     "uuid": backup_configuration.uuid,
                     "name": backup_configuration.name,
                     "description": backup_configuration.description,
+
+                    "maintenance_enabled": backup_configuration.maintenance_enabled,
                 }),
             )
             .await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             backup_configuration: backup_configuration
                 .into_admin_api_object(&state.database)
                 .await?,

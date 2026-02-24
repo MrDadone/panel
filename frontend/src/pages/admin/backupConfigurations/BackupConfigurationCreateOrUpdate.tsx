@@ -11,6 +11,7 @@ import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Select from '@/elements/input/Select.tsx';
+import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
@@ -35,6 +36,7 @@ export default function BackupConfigurationCreateOrUpdate({
     initialValues: {
       name: '',
       description: null,
+      maintenanceEnabled: false,
       backupDisk: 'local',
     },
     validateInputOnBlur: true,
@@ -49,7 +51,7 @@ export default function BackupConfigurationCreateOrUpdate({
       region: '',
       endpoint: '',
       pathStyle: true,
-      partSize: 0,
+      partSize: 1024 * 1024 * 1024,
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(adminBackupConfigurationS3Schema),
@@ -75,12 +77,14 @@ export default function BackupConfigurationCreateOrUpdate({
         ...form.values,
         backupConfigs: { s3: backupConfigS3Form.values, restic: backupConfigResticForm.values },
       }),
-    updateFn: () =>
-      updateBackupConfiguration(contextBackupConfiguration!.uuid, {
-        ...form.values,
-        backupConfigs: { s3: backupConfigS3Form.values, restic: backupConfigResticForm.values },
-      }),
-    deleteFn: () => deleteBackupConfiguration(contextBackupConfiguration!.uuid),
+    updateFn: contextBackupConfiguration
+      ? () =>
+          updateBackupConfiguration(contextBackupConfiguration.uuid, {
+            ...form.values,
+            backupConfigs: { s3: backupConfigS3Form.values, restic: backupConfigResticForm.values },
+          })
+      : undefined,
+    deleteFn: contextBackupConfiguration ? () => deleteBackupConfiguration(contextBackupConfiguration.uuid) : undefined,
     doUpdate: !!contextBackupConfiguration,
     basePath: '/admin/backup-configurations',
     resourceName: 'Backup configuration',
@@ -91,6 +95,7 @@ export default function BackupConfigurationCreateOrUpdate({
       form.setValues({
         name: contextBackupConfiguration.name,
         description: contextBackupConfiguration.description,
+        maintenanceEnabled: contextBackupConfiguration.maintenanceEnabled,
         backupDisk: contextBackupConfiguration.backupDisk,
       });
       backupConfigS3Form.setValues(contextBackupConfiguration.backupConfigs.s3);
@@ -125,9 +130,13 @@ export default function BackupConfigurationCreateOrUpdate({
               {...form.getInputProps('backupDisk')}
             />
           </Group>
+
           <Group grow align='start'>
             <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
           </Group>
+
+          <Switch label='Maintenance Enabled' {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })} />
+
           <Group>
             <AdminCan
               action={contextBackupConfiguration ? 'backup-configurations.update' : 'backup-configurations.create'}

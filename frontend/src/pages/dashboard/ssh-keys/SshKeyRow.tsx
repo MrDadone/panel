@@ -7,8 +7,7 @@ import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -68,7 +67,7 @@ export default function SshKeyRow({ sshKey }: { sshKey: UserSshKey }) {
             </TableData>
 
             <TableData>
-              <Tooltip label={formatDateTime(sshKey.created)}>{formatTimestamp(sshKey.created)}</Tooltip>
+              <FormattedTimestamp timestamp={sshKey.created} />
             </TableData>
 
             <ContextMenuToggle items={items} openMenu={openMenu} />

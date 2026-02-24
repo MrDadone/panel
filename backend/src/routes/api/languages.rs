@@ -15,7 +15,7 @@ mod get {
         (status = OK, body = inline(Response)),
     ))]
     pub async fn route() -> ApiResponseResult {
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             languages: &shared::FRONTEND_LANGUAGES,
         })
         .ok()
