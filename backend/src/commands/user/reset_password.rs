@@ -44,7 +44,7 @@ impl shared::extensions::commands::CliCommand<ResetPasswordArgs> for ResetPasswo
                                 "user arg is required when not running in an interactive terminal"
                                     .red()
                             );
-                            std::process::exit(1);
+                            return Ok(1);
                         }
                     }
                 };
@@ -59,7 +59,7 @@ impl shared::extensions::commands::CliCommand<ResetPasswordArgs> for ResetPasswo
 
                 let Some(mut user) = user else {
                     eprintln!("{}", "user not found".red());
-                    std::process::exit(1);
+                    return Ok(1);
                 };
 
                 let password = match args.password {
@@ -72,7 +72,7 @@ impl shared::extensions::commands::CliCommand<ResetPasswordArgs> for ResetPasswo
                             password
                         } else {
                             eprintln!("{}", "password arg is required when not running in an interactive terminal".red());
-                            std::process::exit(1);
+                            return Ok(1);
                         }
                     }
                 };
@@ -85,7 +85,7 @@ impl shared::extensions::commands::CliCommand<ResetPasswordArgs> for ResetPasswo
                     user.uuid.to_compact_string().cyan()
                 );
 
-                Ok(())
+                Ok(0)
             })
         })
     }

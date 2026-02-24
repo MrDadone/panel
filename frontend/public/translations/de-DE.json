@@ -125,8 +125,11 @@
       "na": "N/V",
       "yes": "Ja",
       "no": "Nein",
+      "web": "Web",
+      "api": "API",
       "system": "System",
-      "schedule": "Zeitplan"
+      "schedule": "Zeitplan",
+      "impersonatedBy": "Impersoniert von {username}"
     },
     "pages": {
       "oobe": {
@@ -543,6 +546,9 @@
         },
         "apiKeys": {
           "title": "API-Schlüssel",
+          "button": {
+            "apiDocumentation": "API Dokumentation"
+          },
           "table": {
             "columns": {
               "key": "Schlüssel",
@@ -674,6 +680,7 @@
           "socketConnected": "Verbunden ({ping}ms ping)",
           "socketDisconnected": "Getrennt",
           "tooltip": {
+            "search": "Suchen",
             "commandHistory": "Befehlsverlauf",
             "decreaseFontSize": "Schriftgröße verringern",
             "increaseFontSize": "Schriftgröße erhöhen"

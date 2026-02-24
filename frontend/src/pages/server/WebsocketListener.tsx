@@ -1,5 +1,5 @@
+import { QueryFilters, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { useSearchParams } from 'react-router';
 import { transformKeysToCamelCase } from '@/lib/transformers.ts';
 import useWebsocketEvent, { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -7,7 +7,7 @@ import { useServerStore } from '@/stores/server.ts';
 import { useUserStore } from '@/stores/user.ts';
 
 export default function WebsocketListener() {
-  const [searchParams, _] = useSearchParams();
+  const queryClient = useQueryClient();
   const { addToast } = useToast();
   const { addServerResourceUsage } = useUserStore();
   const {
@@ -28,8 +28,15 @@ export default function WebsocketListener() {
     fileOperations,
     setFileOperation,
     removeFileOperation,
-    refreshFiles,
   } = useServerStore();
+
+  const invalidateCacheKey = (queryKey: QueryFilters['queryKey']) => {
+    queryClient
+      .invalidateQueries({
+        queryKey,
+      })
+      .catch((e) => console.error(e));
+  };
 
   useEffect(() => {
     if (!socketConnected || !socketInstance) {
@@ -117,7 +124,7 @@ export default function WebsocketListener() {
       return;
     }
 
-    setBackupRestoreProgress((wsData.progress / wsData.total) * 100);
+    setBackupRestoreProgress(wsData.progress, wsData.total);
   });
 
   useWebsocketEvent(SocketEvent.BACKUP_RESTORE_COMPLETED, () => {
@@ -197,7 +204,7 @@ export default function WebsocketListener() {
         break;
     }
 
-    refreshFiles(Number(searchParams.get('page')) || 1);
+    invalidateCacheKey(['server', server.uuid, 'files']);
     removeFileOperation(uuid);
   });
 

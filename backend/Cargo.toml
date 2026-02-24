@@ -59,6 +59,7 @@ semver = { workspace = true }
 compact_str = { workspace = true }
 sysinfo = { workspace = true }
 serde_with = { workspace = true }
+minijinja = { workspace = true }
 
 [target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
 tikv-jemallocator = "0.6.0"

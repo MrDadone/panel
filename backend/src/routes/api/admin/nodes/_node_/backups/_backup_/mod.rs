@@ -102,7 +102,7 @@ mod get {
 mod delete {
     use crate::routes::api::admin::nodes::_node_::backups::_backup_::GetServerBackup;
     use axum::http::StatusCode;
-    use serde::Serialize;
+    use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
         models::{
@@ -112,6 +112,11 @@ mod delete {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
+
+    #[derive(ToSchema, Deserialize)]
+    pub struct Payload {
+        force: bool,
+    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -132,13 +137,14 @@ mod delete {
             description = "The backup ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ))]
+    ), request_body = inline(Payload))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         node: GetNode,
         activity_logger: GetAdminActivityLogger,
         backup: GetServerBackup,
+        shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         permissions.has_admin_permission("nodes.backups")?;
 
@@ -148,13 +154,12 @@ mod delete {
                 .ok();
         }
 
-        if let Err(err) = backup.delete(&state, ()).await {
-            tracing::error!(backup = %backup.uuid, "failed to delete detached backup: {:?}", err);
-
-            return ApiResponse::error("failed to delete detached backup")
-                .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                .ok();
-        }
+        backup
+            .delete(
+                &state,
+                shared::models::server_backup::DeleteServerBackupOptions { force: data.force },
+            )
+            .await?;
 
         activity_logger
             .log(

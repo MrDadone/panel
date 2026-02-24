@@ -106,14 +106,16 @@ export default function EggCreateOrUpdate({
     form,
     createFn: () =>
       createEgg(contextNest.uuid, {
-        ...form.values,
+        ...adminEggSchema.parse(form.values),
         configScript: {
           container: 'ghcr.io/ptero-eggs/installers:debian',
           entrypoint: 'bash',
           content: '#!/bin/bash\n\n# Install script content goes here\n',
         },
       }),
-    updateFn: contextEgg ? () => updateEgg(contextNest.uuid, contextEgg.uuid, form.values) : undefined,
+    updateFn: contextEgg
+      ? () => updateEgg(contextNest.uuid, contextEgg.uuid, adminEggSchema.parse(form.values))
+      : undefined,
     deleteFn: contextEgg ? () => deleteEgg(contextNest.uuid, contextEgg.uuid) : undefined,
     doUpdate: !!contextEgg,
     basePath: `/admin/nests/${contextNest.uuid}/eggs`,
@@ -443,12 +445,6 @@ export default function EggCreateOrUpdate({
                                 label='If Value'
                                 placeholder='If Value'
                                 {...form.getInputProps(`configFiles.${index}.replace.${replaceIndex}.ifValue`)}
-                                onChange={(e) =>
-                                  form.setFieldValue(
-                                    `configFiles.${index}.replace.${replaceIndex}.ifValue`,
-                                    e.currentTarget.value || null,
-                                  )
-                                }
                               />
                               <TextInput
                                 withAsterisk

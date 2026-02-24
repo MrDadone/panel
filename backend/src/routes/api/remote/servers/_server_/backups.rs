@@ -52,6 +52,15 @@ mod post {
                 .ok();
         }
 
+        let backups_lock = state
+            .cache
+            .lock(
+                format!("servers::{}::backups", server.uuid),
+                Some(30),
+                Some(5),
+            )
+            .await?;
+
         let backups = ServerBackup::count_by_server_uuid(&state.database, server.uuid).await;
         if backups >= server.backup_limit as i64
             && let Err(err) = ServerBackup::delete_oldest_by_server_uuid(&state, &server).await
@@ -66,29 +75,21 @@ mod post {
         state
             .cache
             .ratelimit(
-                format!("client/servers/{}/backups/create", server.uuid),
+                "client/servers/backups/create",
                 4,
                 300,
-                server.uuid,
+                server.uuid.to_string(),
             )
             .await?;
 
-        let name = data.name.unwrap_or_else(|| {
-            compact_str::format_compact!(
-                "Backup {}",
-                chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
-            )
-        });
-
         let options = shared::models::server_backup::CreateServerBackupOptions {
             server: &server,
-            name,
+            name: data.name.unwrap_or_else(ServerBackup::default_name),
             ignored_files: data.ignored_files,
         };
-        let backup = match ServerBackup::create_raw(&state, options).await {
-            Ok(backup) => backup,
-            Err(err) => return ApiResponse::from(err).ok(),
-        };
+        let backup = ServerBackup::create_raw(&state, options).await?;
+
+        drop(backups_lock);
 
         if let Err(err) = ServerActivity::create(
             &state,

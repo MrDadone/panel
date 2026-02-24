@@ -1873,7 +1873,8 @@ impl ValidateRule for Timezone {
 
     fn validate(&self, key: &str, data: &Validator) -> Result<bool, compact_str::CompactString> {
         if let Some(value) = data.data.get(key).copied()
-            && (value.parse::<chrono::FixedOffset>().is_ok() || value == "UTC")
+            && (value.parse::<chrono::FixedOffset>().is_ok()
+                || value.parse::<chrono_tz::Tz>().is_ok())
         {
             return Ok(false);
         }

@@ -41,14 +41,14 @@ mod post {
         permissions.has_admin_permission("settings.read")?;
 
         let settings = state.settings.get().await?;
-        let mail = shared::mail::MAIL_CONNECTION_TEST.replace("{{app_name}}", &settings.app.name);
 
         state
             .mail
             .send(
                 data.email.to_compact_string(),
                 format!("{} - Email Connection Test", settings.app.name).into(),
-                mail,
+                shared::mail::MAIL_CONNECTION_TEST,
+                minijinja::context! {},
             )
             .await;
         drop(settings);

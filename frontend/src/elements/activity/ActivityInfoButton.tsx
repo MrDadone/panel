@@ -4,7 +4,7 @@ import { ActionIcon } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import Button from '../Button.tsx';
 import HljsCode from '../HljsCode.tsx';
-import Modal from '../modals/Modal.tsx';
+import { Modal, ModalFooter } from '../modals/Modal.tsx';
 
 export default function ActivityInfoButton({ activity }: { activity: AdminActivity | UserActivity | ServerActivity }) {
   const [openModal, setOpenModal] = useState<'view' | null>(null);
@@ -18,11 +18,11 @@ export default function ActivityInfoButton({ activity }: { activity: AdminActivi
           {JSON.stringify(activity.data, null, 2)}
         </HljsCode>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button variant='default' onClick={() => setOpenModal(null)}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Modal>
 
       <ActionIcon onClick={() => setOpenModal('view')}>

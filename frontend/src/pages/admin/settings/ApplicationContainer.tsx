@@ -60,7 +60,7 @@ export default function ApplicationContainer() {
 
   const doUpdate = () => {
     setLoading(true);
-    updateApplicationSettings(form.values)
+    updateApplicationSettings(adminSettingsApplicationSchema.parse(form.values))
       .then(() => {
         addToast('Application settings updated.', 'success');
       })

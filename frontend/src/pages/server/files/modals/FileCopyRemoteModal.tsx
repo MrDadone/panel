@@ -10,9 +10,10 @@ import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesCopyRemoteSchema } from '@/lib/schemas/server/files.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -20,9 +21,10 @@ type Props = ModalProps & {
   files: DirectoryEntry[];
 };
 
-export default function FileCopyModal({ files, opened, onClose }: Props) {
+export default function FileCopyRemoteModal({ files, opened, onClose }: Props) {
   const { addToast } = useToast();
-  const { server, browsingDirectory, setSelectedFiles } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory, doSelectFiles } = useFileManager();
 
   const [loading, setLoading] = useState(false);
 
@@ -44,11 +46,11 @@ export default function FileCopyModal({ files, opened, onClose }: Props) {
 
     copyFilesRemote(server.uuid, {
       ...form.values,
-      root: browsingDirectory!,
+      root: browsingDirectory,
       files: files.map((f) => f.name),
     })
       .then(() => {
-        setSelectedFiles([]);
+        doSelectFiles([]);
         addToast('File copying has started.', 'success');
         onClose();
       })
@@ -100,14 +102,14 @@ export default function FileCopyModal({ files, opened, onClose }: Props) {
           </Code>
         </p>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading}>
             Copy
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

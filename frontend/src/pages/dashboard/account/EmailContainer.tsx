@@ -10,6 +10,7 @@ import updateEmail from '@/api/me/account/updateEmail.ts';
 import Button from '@/elements/Button.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import Spinner from '@/elements/Spinner.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import { dashboardEmailSchema } from '@/lib/schemas/dashboard.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
@@ -34,12 +35,16 @@ export default function EmailContainer({ blurred }: AccountCardProps) {
   });
 
   useEffect(() => {
-    form.setValues({
-      email: user?.email,
-    });
+    if (user) {
+      form.setValues({
+        email: user.email,
+      });
+    }
   }, [user]);
 
   const doUpdate = () => {
+    if (!user) return;
+
     setLoading(true);
 
     updateEmail({
@@ -57,6 +62,10 @@ export default function EmailContainer({ blurred }: AccountCardProps) {
       })
       .finally(() => setLoading(false));
   };
+
+  if (!user) {
+    return <Spinner.Centered />;
+  }
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>

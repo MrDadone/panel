@@ -578,6 +578,9 @@
         },
         "apiKeys": {
           "title": "API Keys",
+          "button": {
+            "apiDocumentation": "API Documentation"
+          },
           "table": {
             "columns": {
               "key": "Key",
@@ -645,6 +648,7 @@
             "layer": "Layer"
           },
           "tooltip": {
+            "search": "Search",
             "commandHistory": "Command History",
             "decreaseFontSize": "Decrease Font Size",
             "increaseFontSize": "Increase Font Size"

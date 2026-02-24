@@ -26,7 +26,7 @@ impl shared::extensions::commands::CliCommand<VersionArgs> for VersionCommand {
                     chrono::Local::now().year()
                 );
 
-                Ok(())
+                Ok(0)
             })
         })
     }

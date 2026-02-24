@@ -1,4 +1,4 @@
-import { Ref, startTransition, useCallback, useState } from 'react';
+import { Ref, useCallback, useRef, useState } from 'react';
 import getEggRepositoryEggs from '@/api/admin/egg-repositories/eggs/getEggRepositoryEggs.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
@@ -13,23 +13,18 @@ import EggRepositoryEggRow from './EggRepositoryEggRow.tsx';
 export default function EggRepositoryEggs({ contextEggRepository }: { contextEggRepository: AdminEggRepository }) {
   const [eggRepositoryEggs, setEggRepositoryEggs] = useState(getEmptyPaginationSet<AdminEggRepositoryEgg>());
   const [selectedEggs, setSelectedEggs] = useState<Set<string>>(new Set());
-  const [selectedEggsPrevious, setSelectedEggsPrevious] = useState<Set<string>>(new Set());
+  const selectedEggsPreviousRef = useRef<Set<string>>(new Set());
 
   const onSelectedStart = useCallback(
     (event: React.MouseEvent | MouseEvent) => {
-      setSelectedEggsPrevious(event.shiftKey ? selectedEggs : new Set());
+      selectedEggsPreviousRef.current = event.shiftKey ? selectedEggs : new Set();
     },
     [selectedEggs],
   );
 
-  const onSelected = useCallback(
-    (selected: string[]) => {
-      startTransition(() => {
-        setSelectedEggs(new Set([...selectedEggsPrevious, ...selected]));
-      });
-    },
-    [selectedEggsPrevious],
-  );
+  const onSelected = useCallback((selected: string[]) => {
+    setSelectedEggs(new Set([...selectedEggsPreviousRef.current, ...selected]));
+  }, []);
 
   const handleEggSelectionChange = useCallback((eggUuid: string, selected: boolean) => {
     setSelectedEggs((prev) => {

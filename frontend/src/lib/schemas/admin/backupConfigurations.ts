@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { nullableString } from '@/lib/transformers.ts';
 
 export const adminBackupConfigurationResticSchema = z.object({
   repository: z.string(),
@@ -18,7 +19,7 @@ export const adminBackupConfigurationS3Schema = z.object({
 
 export const adminBackupConfigurationSchema = z.object({
   name: z.string().min(3).max(255),
-  description: z.string().max(1024).nullable(),
+  description: z.preprocess(nullableString, z.string().max(1024).nullable()),
   maintenanceEnabled: z.boolean(),
   backupDisk: z.enum(['local', 's3', 'ddup-bak', 'btrfs', 'zfs', 'restic']),
 });

@@ -10,10 +10,11 @@ import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { archiveFormatLabelMapping } from '@/lib/enums.ts';
 import { generateArchiveName } from '@/lib/files.ts';
 import { serverFilesArchiveCreateSchema } from '@/lib/schemas/server/files.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -23,7 +24,8 @@ type Props = ModalProps & {
 
 export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
   const { addToast } = useToast();
-  const { server, browsingDirectory, setSelectedFiles } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory, doSelectFiles } = useFileManager();
 
   const [loading, setLoading] = useState(false);
 
@@ -44,11 +46,11 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
         ? form.values.name.concat(archiveFormatLabelMapping[form.values.format as ArchiveFormat])
         : generateArchiveName(archiveFormatLabelMapping[form.values.format as ArchiveFormat]),
       format: form.values.format,
-      root: browsingDirectory!,
+      root: browsingDirectory,
       files: files.map((f) => f.name),
     })
       .then(() => {
-        setSelectedFiles([]);
+        doSelectFiles([]);
         addToast('Archive creation has begun.', 'success');
         onClose();
       })
@@ -80,7 +82,7 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
               /home/container/
               <span className='text-cyan-200'>
                 {join(
-                  browsingDirectory!,
+                  browsingDirectory,
                   form.values.name
                     ? `${form.values.name}${archiveFormatLabelMapping[form.values.format as ArchiveFormat]}`
                     : generateArchiveName(archiveFormatLabelMapping[form.values.format as ArchiveFormat]),
@@ -89,14 +91,14 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
             </Code>
           </p>
 
-          <Modal.Footer>
+          <ModalFooter>
             <Button type='submit' loading={loading}>
               Create
             </Button>
             <Button variant='default' onClick={onClose}>
               Close
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Stack>
       </form>
     </Modal>

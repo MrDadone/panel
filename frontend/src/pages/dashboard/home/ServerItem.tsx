@@ -19,27 +19,12 @@ import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import Divider from '@/elements/Divider.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
-import { formatAllocation } from '@/lib/server.ts';
+import { formatAllocation, statusToColor } from '@/lib/server.ts';
 import { bytesToString, mbToBytes } from '@/lib/size.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useUserStore } from '@/stores/user.ts';
 import ServerAddGroupModal from './modals/ServerAddGroupModal.tsx';
-
-export const statusToColor = (status: ServerPowerState | undefined) => {
-  switch (status) {
-    case 'running':
-      return 'bg-green-500';
-    case 'starting':
-      return 'bg-yellow-500';
-    case 'stopping':
-      return 'bg-red-500';
-    case 'offline':
-      return 'bg-red-500';
-    default:
-      return 'bg-gray-500';
-  }
-};
 
 export default function ServerItem({
   server,

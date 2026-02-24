@@ -195,6 +195,15 @@ mod post {
             }
         };
 
+        let databases_lock = state
+            .cache
+            .lock(
+                format!("servers::{}::databases", server.uuid),
+                Some(30),
+                Some(5),
+            )
+            .await?;
+
         let databases = ServerDatabase::count_by_server_uuid(&state.database, server.uuid).await;
         if databases >= server.database_limit as i64 {
             return ApiResponse::error("maximum number of databases reached")
@@ -224,6 +233,8 @@ mod post {
             }
             Err(err) => return ApiResponse::from(err).ok(),
         };
+
+        drop(databases_lock);
 
         activity_logger
             .log(

@@ -4,7 +4,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import rotateDatabasePassword from '@/api/server/databases/rotateDatabasePassword.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -70,14 +70,14 @@ export default function DatabaseDetailsModal({ database, opened, onClose }: Prop
           readOnly
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button color='red' onClick={onRotatePassword} loading={loading} disabled={database.isLocked}>
             {t('pages.server.databases.button.rotatePassword', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

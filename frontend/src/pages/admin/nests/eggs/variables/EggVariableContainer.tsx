@@ -70,7 +70,12 @@ export default function EggVariableContainer({
     setLoading(true);
 
     if (contextVariable?.uuid) {
-      updateEggVariable(contextNest.uuid, contextEgg.uuid, contextVariable.uuid, form.values)
+      updateEggVariable(
+        contextNest.uuid,
+        contextEgg.uuid,
+        contextVariable.uuid,
+        adminEggVariableSchema.parse(form.values),
+      )
         .then(() => {
           addToast('Egg variable updated.', 'success');
         })
@@ -81,7 +86,7 @@ export default function EggVariableContainer({
           setLoading(false);
         });
     } else {
-      createEggVariable(contextNest.uuid, contextEgg.uuid, form.values)
+      createEggVariable(contextNest.uuid, contextEgg.uuid, adminEggVariableSchema.parse(form.values))
         .then((variable) => {
           setEggVariables([...eggVariables.filter((v) => v.uuid || v.order !== contextVariable!.order), variable]);
           addToast('Egg variable created.', 'success');

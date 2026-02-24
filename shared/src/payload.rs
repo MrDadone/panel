@@ -11,7 +11,7 @@ pub struct PayloadRejection(anyhow::Error);
 
 impl IntoResponse for PayloadRejection {
     fn into_response(self) -> axum::response::Response {
-        ApiResponse::error(&format!("invalid payload: {}", self.0))
+        ApiResponse::error(format!("invalid payload: {}", self.0))
             .with_status(axum::http::StatusCode::BAD_REQUEST)
             .into_response()
     }

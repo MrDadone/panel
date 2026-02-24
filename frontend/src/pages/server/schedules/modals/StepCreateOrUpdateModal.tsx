@@ -7,7 +7,7 @@ import createScheduleStep from '@/api/server/schedules/steps/createScheduleStep.
 import updateScheduleStep from '@/api/server/schedules/steps/updateScheduleStep.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { scheduleStepDefaultMapping, scheduleStepLabelMapping } from '@/lib/enums.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -146,14 +146,14 @@ export default function StepCreateOrUpdateModal({
           <Text c='dimmed'>Select an action type to configure</Text>
         )}
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doCreateOrUpdate} leftSection={<FontAwesomeIcon icon={faSave} />} loading={loading}>
             {propStep ? 'Update' : 'Create'}
           </Button>
           <Button variant='default' onClick={onClose}>
             Cancel
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

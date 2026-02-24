@@ -53,7 +53,7 @@ impl shared::extensions::commands::CliCommand<UpdateArgs> for UpdateCommand {
                             .bright_red(),
                         "but the current panel version is incompatible.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 if tokio::fs::metadata(".sqlx")
@@ -67,7 +67,7 @@ impl shared::extensions::commands::CliCommand<UpdateArgs> for UpdateCommand {
                         ".sqlx".bright_red(),
                         "directory, make sure you are in the panel root.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let installed_extensions = tokio::task::spawn_blocking(move || {
@@ -86,7 +86,7 @@ impl shared::extensions::commands::CliCommand<UpdateArgs> for UpdateCommand {
                         format!("panel-rs extensions add {}", args.file).bright_red(),
                         "instead.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let frontend_path = Path::new("frontend/extensions")
@@ -122,7 +122,7 @@ impl shared::extensions::commands::CliCommand<UpdateArgs> for UpdateCommand {
                         "failed to resync internal extension list:".red(),
                         err.to_string().red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 println!(
@@ -139,7 +139,7 @@ impl shared::extensions::commands::CliCommand<UpdateArgs> for UpdateCommand {
                     "panel-rs extensions apply".bright_black(),
                 );
 
-                Ok(())
+                Ok(0)
             })
         })
     }

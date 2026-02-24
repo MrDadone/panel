@@ -2,13 +2,15 @@ import {
   faAnglesDown,
   faAnglesUp,
   faArchive,
+  faBan,
+  faClone,
   faCopy,
   faFileDownload,
   faTrash,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { join } from 'pathe';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import copyFiles from '@/api/server/files/copyFiles.ts';
@@ -17,32 +19,30 @@ import renameFiles from '@/api/server/files/renameFiles.ts';
 import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import { useFileKeyboardActions } from './hooks/useFileKeyboardActions.ts';
-import ArchiveCreateModal from './modals/ArchiveCreateModal.tsx';
-import CopyFileRemoteModal from './modals/FileCopyRemoteModal.tsx';
-import FileDeleteModal from './modals/FileDeleteModal.tsx';
 
-export default function FileActionBar() {
-  const [searchParams] = useSearchParams();
+function FileActionBar() {
+  const [_searchParams, _] = useSearchParams();
   const { addToast } = useToast();
+  const { server } = useServerStore();
   const {
-    server,
+    actingMode,
+    actingFiles,
+    selectedFiles,
+    actingFilesSource,
     browsingDirectory,
     browsingWritableDirectory,
-    selectedFileNames,
-    setSelectedFiles,
-    actingFileMode,
-    actingFileNames,
-    actingFilesDirectory,
-    setActingFiles,
+    doActFiles,
+    doSelectFiles,
     clearActingFiles,
-    getSelectedFiles,
-    refreshFiles,
-  } = useServerStore();
+    doOpenModal,
+    invalidateFilemanager,
+  } = useFileManager();
 
-  const [openModal, setOpenModal] = useState<'copy-remote' | 'archive' | 'delete' | null>(null);
   const [loading, setLoading] = useState(false);
 
   const doCopy = () => {
@@ -51,16 +51,13 @@ export default function FileActionBar() {
     copyFiles({
       uuid: server.uuid,
       root: '/',
-      files: [...actingFileNames].map((f) => ({
-        from: join(actingFilesDirectory!, f),
-        to: join(browsingDirectory!, f),
+      files: [...actingFiles].map((f) => ({
+        from: join(actingFilesSource!, f.name),
+        to: join(browsingDirectory, f.name),
       })),
     })
       .then(() => {
-        addToast(
-          `${actingFileNames.size} File${actingFileNames.size === 1 ? ' has' : 's have'} started copying.`,
-          'success',
-        );
+        addToast(`${actingFiles.size} File${actingFiles.size === 1 ? ' has' : 's have'} started copying.`, 'success');
         clearActingFiles();
       })
       .catch((msg) => {
@@ -75,9 +72,9 @@ export default function FileActionBar() {
     renameFiles({
       uuid: server.uuid,
       root: '/',
-      files: [...actingFileNames].map((f) => ({
-        from: join(actingFilesDirectory!, f),
-        to: join(browsingDirectory!, f),
+      files: [...actingFiles].map((f) => ({
+        from: join(actingFilesSource!, f.name),
+        to: join(browsingDirectory, f.name),
       })),
     })
       .then(({ renamed }) => {
@@ -88,7 +85,7 @@ export default function FileActionBar() {
 
         addToast(`${renamed} File${renamed === 1 ? ' has' : 's have'} moved.`, 'success');
         clearActingFiles();
-        refreshFiles(Number(searchParams.get('page')) || 1);
+        invalidateFilemanager();
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
@@ -99,12 +96,11 @@ export default function FileActionBar() {
   const doDownload = () => {
     setLoading(true);
 
-    const selectedFiles = getSelectedFiles();
     downloadFiles(
       server.uuid,
-      browsingDirectory!,
-      selectedFiles.map((f) => f.name),
-      selectedFiles.length === 1 ? selectedFiles[0].directory : false,
+      browsingDirectory,
+      [...selectedFiles].map((f) => f.name),
+      selectedFiles.size === 1 ? [...selectedFiles][0].directory : false,
       'zip',
     )
       .then(({ url }) => {
@@ -118,94 +114,89 @@ export default function FileActionBar() {
   };
 
   useFileKeyboardActions({
-    onDelete: () => setOpenModal('delete'),
-    onPaste: () => (actingFileMode === 'copy' ? doCopy() : doMove()),
+    onDelete: () => doOpenModal('delete', [...selectedFiles]),
+    onPaste: () => (actingMode === 'copy' ? doCopy() : doMove()),
   });
-
-  const selectedFiles = getSelectedFiles();
 
   return (
     <>
-      <CopyFileRemoteModal
-        key='CopyFileRemoteModal'
-        files={[...selectedFiles]}
-        opened={openModal === 'copy-remote'}
-        onClose={() => setOpenModal(null)}
-      />
-      <ArchiveCreateModal
-        key='ArchiveCreateModal'
-        files={[...selectedFiles]}
-        opened={openModal === 'archive'}
-        onClose={() => setOpenModal(null)}
-      />
-      <FileDeleteModal
-        key='FileDeleteModal'
-        files={[...selectedFiles]}
-        opened={openModal === 'delete'}
-        onClose={() => setOpenModal(null)}
-      />
-      <ActionBar opened={actingFileNames.size > 0 || selectedFileNames.size > 0}>
-        {actingFileNames.size > 0 ? (
+      <ActionBar opened={actingFiles.size > 0 || selectedFiles.size > 0}>
+        {actingFiles.size > 0 ? (
           <>
-            {actingFileMode === 'copy' ? (
-              <Button onClick={doCopy} loading={loading}>
-                <FontAwesomeIcon icon={faAnglesDown} className='mr-2' /> Copy {actingFileNames.size} File
-                {actingFileNames.size === 1 ? '' : 's'} Here
-              </Button>
+            {actingMode === 'copy' ? (
+              <Tooltip label={`Copy ${actingFiles.size} file${actingFiles.size === 1 ? '' : 's'} here`}>
+                <Button onClick={doCopy} loading={loading}>
+                  <FontAwesomeIcon icon={faAnglesDown} />
+                </Button>
+              </Tooltip>
             ) : (
-              <Button onClick={doMove} loading={loading}>
-                <FontAwesomeIcon icon={faAnglesDown} className='mr-2' /> Move {actingFileNames.size} File
-                {actingFileNames.size === 1 ? '' : 's'} Here
-              </Button>
+              <Tooltip label={`Move ${actingFiles.size} file${actingFiles.size === 1 ? '' : 's'} here`}>
+                <Button onClick={doMove} loading={loading}>
+                  <FontAwesomeIcon icon={faAnglesDown} />
+                </Button>
+              </Tooltip>
             )}
-            <Button variant='default' onClick={clearActingFiles}>
-              Cancel
-            </Button>
+            <Tooltip label='Cancel'>
+              <Button variant='default' onClick={clearActingFiles}>
+                <FontAwesomeIcon icon={faBan} />
+              </Button>
+            </Tooltip>
           </>
         ) : (
           <>
             <ServerCan action='files.read-content'>
-              <Button onClick={doDownload} loading={loading}>
-                <FontAwesomeIcon icon={faFileDownload} className='mr-2' /> Download
-              </Button>
+              <Tooltip label='Download'>
+                <Button onClick={doDownload} loading={loading}>
+                  <FontAwesomeIcon icon={faFileDownload} />
+                </Button>
+              </Tooltip>
             </ServerCan>
             <ServerCan action='files.read'>
-              <Button onClick={() => setOpenModal('copy-remote')}>
-                <FontAwesomeIcon icon={faCopy} className='mr-2' /> Remote Copy
-              </Button>
+              <Tooltip label='Remote Copy'>
+                <Button onClick={() => doOpenModal('copy-remote', [...selectedFiles])}>
+                  <FontAwesomeIcon icon={faClone} />
+                </Button>
+              </Tooltip>
             </ServerCan>
             <ServerCan action='files.create'>
-              <Button
-                onClick={() => {
-                  setActingFiles('copy', selectedFiles);
-                  setSelectedFiles([]);
-                }}
-              >
-                <FontAwesomeIcon icon={faCopy} className='mr-2' /> Copy
-              </Button>
+              <Tooltip label='Copy'>
+                <Button
+                  onClick={() => {
+                    doActFiles('copy', [...selectedFiles]);
+                    doSelectFiles([]);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faCopy} />
+                </Button>
+              </Tooltip>
             </ServerCan>
             {browsingWritableDirectory && (
               <>
                 <ServerCan action='files.archive'>
-                  <Button onClick={() => setOpenModal('archive')}>
-                    <FontAwesomeIcon icon={faArchive} className='mr-2' /> Archive
-                  </Button>
+                  <Tooltip label='Archive'>
+                    <Button onClick={() => doOpenModal('archive', [...selectedFiles])}>
+                      <FontAwesomeIcon icon={faArchive} />
+                    </Button>
+                  </Tooltip>
                 </ServerCan>
                 <ServerCan action='files.update'>
-                  <Button
-                    onClick={() => {
-                      setActingFiles('move', selectedFiles);
-                      setSelectedFiles([]);
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faAnglesUp} className='mr-2' /> Move
-                  </Button>
+                  <Tooltip label='Move'>
+                    <Button
+                      onClick={() => {
+                        doActFiles('move', [...selectedFiles]);
+                        doSelectFiles([]);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faAnglesUp} />
+                    </Button>
+                  </Tooltip>
                 </ServerCan>
                 <ServerCan action='files.delete'>
-                  <Button color='red' onClick={() => setOpenModal('delete')}>
-                    <FontAwesomeIcon icon={faTrash} className='mr-2' />
-                    Delete
-                  </Button>
+                  <Tooltip label='Delete'>
+                    <Button color='red' onClick={() => doOpenModal('delete', [...selectedFiles])}>
+                      <FontAwesomeIcon icon={faTrash} />
+                    </Button>
+                  </Tooltip>
                 </ServerCan>
               </>
             )}
@@ -215,3 +206,5 @@ export default function FileActionBar() {
     </>
   );
 }
+
+export default memo(FileActionBar);

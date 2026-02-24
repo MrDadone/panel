@@ -11,6 +11,7 @@ rustis = { workspace = true }
 rust-s3 = { workspace = true }
 reqwest = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true }
 utoipa = { workspace = true }
 anyhow = { workspace = true }
 axum = { workspace = true }
@@ -66,3 +67,6 @@ accept-header = "0.2.3"
 mime = "0.3.17"
 moka = { version = "0.12.12", features = ["future"] }
 serde_with = { workspace = true }
+minijinja = { workspace = true }
+sntpc-net-tokio = "1.0.1"
+sntpc = { version = "0.8.1", features = ["std"] }

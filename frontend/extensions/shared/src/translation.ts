@@ -1,6 +1,7 @@
-import { createContext, useContext } from 'react';
+import { createContext, RefObject, useContext } from "react";
 
 interface TranslationContextType {
+  globalTranslationHandle: RefObject<never>;
   language: string;
   setLanguage: (language: string) => void;
 
@@ -70,6 +71,7 @@ export class DefinedTranslations<
     const namespace = this.namespace;
 
     return {
+      globalTranslationHandle: context.globalTranslationHandle,
       language: context.language,
       setLanguage: context.setLanguage,
       t<K extends keyof P>(

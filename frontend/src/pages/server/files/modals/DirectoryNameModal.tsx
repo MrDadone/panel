@@ -10,15 +10,17 @@ import createDirectory from '@/api/server/files/createDirectory.ts';
 import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesDirectoryCreateSchema } from '@/lib/schemas/server/files.ts';
+import { useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 export default function DirectoryNameModal({ opened, onClose }: ModalProps) {
   const [_, setSearchParams] = useSearchParams();
   const { addToast } = useToast();
-  const { server, browsingDirectory } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory } = useFileManager();
 
   const [loading, setLoading] = useState(false);
 
@@ -33,10 +35,10 @@ export default function DirectoryNameModal({ opened, onClose }: ModalProps) {
   const makeDirectory = () => {
     setLoading(true);
 
-    createDirectory(server.uuid, browsingDirectory!, form.values.name)
+    createDirectory(server.uuid, browsingDirectory, form.values.name)
       .then(() => {
         onClose();
-        setSearchParams({ directory: join(browsingDirectory!, form.values.name) });
+        setSearchParams({ directory: join(browsingDirectory, form.values.name) });
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
@@ -54,19 +56,19 @@ export default function DirectoryNameModal({ opened, onClose }: ModalProps) {
           <Code>
             /home/container/
             <span className='text-cyan-200'>
-              {join(browsingDirectory!, form.values.name).replace(/^(\.\.\/|\/)+/, '')}
+              {join(browsingDirectory, form.values.name).replace(/^(\.\.\/|\/)+/, '')}
             </span>
           </Code>
         </p>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading} disabled={!form.isValid()}>
             Create
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

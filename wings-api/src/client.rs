@@ -1,8 +1,14 @@
 // This file is auto-generated from OpenAPI spec. Do not edit manually.
 use super::*;
+use futures_util::TryStreamExt;
 use reqwest::{Client, Method, StatusCode};
 use serde::de::DeserializeOwned;
-use std::sync::LazyLock;
+use std::{
+    pin::Pin,
+    sync::LazyLock,
+    task::{Context, Poll},
+};
+use tokio::io::AsyncRead;
 
 static CLIENT: LazyLock<Client> = LazyLock::new(|| {
     Client::builder()
@@ -29,6 +35,27 @@ impl From<ApiHttpError> for anyhow::Error {
             ApiHttpError::MsgpackEncode(err) => anyhow::anyhow!(err),
             ApiHttpError::MsgpackDecode(err) => anyhow::anyhow!(err),
         }
+    }
+}
+
+pub struct AsyncResponseReader(Box<dyn AsyncRead + Send + Unpin>);
+
+impl AsyncRead for AsyncResponseReader {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut tokio::io::ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        Pin::new(&mut self.0).poll_read(cx, buf)
+    }
+}
+
+impl<'de> Deserialize<'de> for AsyncResponseReader {
+    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Self(Box::new(tokio::io::empty())))
     }
 }
 
@@ -69,18 +96,16 @@ async fn request_impl<T: DeserializeOwned + 'static>(
     match request.send().await {
         Ok(response) => {
             if response.status().is_success() {
-                if std::any::type_name::<T>() == std::any::type_name::<String>() {
-                    return match response.text().await {
-                        Ok(text) => Ok(*(Box::new(text) as Box<dyn std::any::Any>)
-                            .downcast::<T>()
-                            .unwrap()),
-                        Err(err) => Err(ApiHttpError::Http(
-                            StatusCode::PRECONDITION_FAILED,
-                            super::ApiError {
-                                error: err.to_string().into(),
-                            },
-                        )),
-                    };
+                if std::any::type_name::<T>() == std::any::type_name::<AsyncResponseReader>() {
+                    let stream = response.bytes_stream().map_err(|err| {
+                        std::io::Error::other(format!("failed to read multipart field: {err}"))
+                    });
+                    let stream_reader = tokio_util::io::StreamReader::new(stream);
+
+                    return Ok(*(Box::new(AsyncResponseReader(Box::new(stream_reader)))
+                        as Box<dyn std::any::Any>)
+                        .downcast::<T>()
+                        .unwrap());
                 }
 
                 match response.bytes().await {
@@ -624,11 +649,12 @@ impl WingsClient {
     pub async fn get_servers_server_logs_install(
         &self,
         server: uuid::Uuid,
+        lines: u64,
     ) -> Result<super::servers_server_logs_install::get::Response, ApiHttpError> {
         request_impl(
             self,
             Method::GET,
-            format!("/api/servers/{server}/logs/install"),
+            format!("/api/servers/{server}/logs/install?lines={lines}"),
             None::<&()>,
             None,
         )
@@ -848,11 +874,12 @@ impl WingsClient {
     pub async fn get_system_logs_file(
         &self,
         file: &str,
+        lines: u64,
     ) -> Result<super::system_logs_file::get::Response, ApiHttpError> {
         request_impl(
             self,
             Method::GET,
-            format!("/api/system/logs/{file}"),
+            format!("/api/system/logs/{file}?lines={lines}"),
             None::<&()>,
             None,
         )

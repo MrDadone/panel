@@ -1,15 +1,16 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import createBackup from '@/api/server/backups/createBackup.ts';
 import Button from '@/elements/Button.tsx';
 import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverBackupCreateSchema } from '@/lib/schemas/server/backups.ts';
+import { generateBackupName } from '@/lib/server.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -29,6 +30,13 @@ export default function BackupCreateModal({ opened, onClose }: ModalProps) {
     validateInputOnBlur: true,
     validate: zod4Resolver(serverBackupCreateSchema),
   });
+
+  useEffect(() => {
+    form.setValues({
+      name: generateBackupName(),
+      ignoredFiles: [],
+    });
+  }, []);
 
   const doCreate = () => {
     setLoading(true);
@@ -62,14 +70,14 @@ export default function BackupCreateModal({ opened, onClose }: ModalProps) {
             {...form.getInputProps('ignoredFiles')}
           />
 
-          <Modal.Footer>
+          <ModalFooter>
             <Button type='submit' loading={loading} disabled={!form.isValid()}>
               {t('common.button.create', {})}
             </Button>
             <Button variant='default' onClick={onClose}>
               {t('common.button.close', {})}
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Stack>
       </form>
     </Modal>

@@ -46,7 +46,7 @@ export default function EggInstallationScriptContainer({
   const doUpdate = () => {
     setLoading(true);
 
-    updateEggScript(contextNest.uuid, contextEgg.uuid, form.values)
+    updateEggScript(contextNest.uuid, contextEgg.uuid, adminEggScriptSchema.parse(form.values))
       .then(() => {
         addToast('Egg script updated.', 'success');
         contextEgg.configScript = form.values;

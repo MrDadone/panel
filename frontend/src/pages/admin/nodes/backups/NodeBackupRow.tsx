@@ -1,24 +1,21 @@
 import { faFileArrowDown, faRotateLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
 import { NavLink } from 'react-router';
-import deleteNodeBackup from '@/api/admin/nodes/backups/deleteNodeBackup.ts';
 import downloadNodeBackup from '@/api/admin/nodes/backups/downloadNodeBackup.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
-import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
-import { useAdminStore } from '@/stores/admin.tsx';
+import NodeBackupsDeleteModal from './modals/NodeBackupsDeleteModal.tsx';
 import NodeBackupsRestoreModal from './modals/NodeBackupsRestoreModal.tsx';
 
 export default function NodeBackupRow({ node, backup }: { node: Node; backup: AdminServerBackup }) {
   const { addToast } = useToast();
-  const { removeNodeBackup } = useAdminStore();
 
   const [openModal, setOpenModal] = useState<'restore' | 'delete' | null>(null);
 
@@ -33,18 +30,6 @@ export default function NodeBackupRow({ node, backup }: { node: Node; backup: Ad
       });
   };
 
-  const doDelete = async () => {
-    await deleteNodeBackup(node.uuid, backup.uuid)
-      .then(() => {
-        addToast('Backup deleted.', 'success');
-        setOpenModal(null);
-        removeNodeBackup(backup);
-      })
-      .catch((msg) => {
-        addToast(httpErrorToHuman(msg), 'error');
-      });
-  };
-
   return (
     <>
       <NodeBackupsRestoreModal
@@ -53,16 +38,12 @@ export default function NodeBackupRow({ node, backup }: { node: Node; backup: Ad
         opened={openModal === 'restore'}
         onClose={() => setOpenModal(null)}
       />
-
-      <ConfirmationModal
+      <NodeBackupsDeleteModal
+        node={node}
+        backup={backup}
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
-        title='Confirm Backup Deletion'
-        confirm='Delete'
-        onConfirmed={doDelete}
-      >
-        Are you sure you want to delete <Code>{backup.name}</Code> from this node?
-      </ConfirmationModal>
+      />
 
       <ContextMenu
         items={[

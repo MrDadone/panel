@@ -8,7 +8,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import installServer from '@/api/server/settings/installServer.ts';
 import Button from '@/elements/Button.tsx';
 import Switch from '@/elements/input/Switch.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverSettingssReinstallSchema } from '@/lib/schemas/server/settings.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -55,14 +55,14 @@ export default function SettingsReinstallModal({ opened, onClose }: ModalProps) 
           {...form.getInputProps('truncateDirectory', { type: 'checkbox' })}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button color='red' type='submit' loading={loading} disabled={!form.isValid()}>
             {t('pages.server.settings.reinstall.modal.button', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

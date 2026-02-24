@@ -65,12 +65,7 @@ mod post {
 
         state
             .cache
-            .ratelimit(
-                format!("client/servers/{}/files/pull", server.uuid),
-                5,
-                60,
-                server.uuid,
-            )
+            .ratelimit("client/servers/files/pull", 5, 60, server.uuid.to_string())
             .await?;
 
         if let Some(name) = &data.name
@@ -94,6 +89,7 @@ mod post {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .post_servers_server_files_pull(server.uuid, &request_body)
             .await
         {

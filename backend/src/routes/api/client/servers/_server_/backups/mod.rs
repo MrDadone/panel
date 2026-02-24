@@ -105,7 +105,7 @@ mod post {
     pub struct Payload {
         #[validate(length(min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
-        name: compact_str::CompactString,
+        name: Option<compact_str::CompactString>,
 
         ignored_files: Vec<compact_str::CompactString>,
     }
@@ -141,6 +141,15 @@ mod post {
 
         permissions.has_server_permission("backups.create")?;
 
+        let backups_lock = state
+            .cache
+            .lock(
+                format!("servers::{}::backups", server.uuid),
+                Some(30),
+                Some(5),
+            )
+            .await?;
+
         let backups = ServerBackup::count_by_server_uuid(&state.database, server.uuid).await;
         if backups >= server.backup_limit as i64 {
             return ApiResponse::error("maximum number of backups reached")
@@ -151,19 +160,21 @@ mod post {
         state
             .cache
             .ratelimit(
-                format!("client/servers/{}/backups/create", server.uuid),
+                "client/servers/backups/create",
                 4,
                 300,
-                server.uuid,
+                server.uuid.to_string(),
             )
             .await?;
 
         let options = shared::models::server_backup::CreateServerBackupOptions {
             server: &server,
-            name: data.name,
+            name: data.name.unwrap_or_else(ServerBackup::default_name),
             ignored_files: data.ignored_files,
         };
         let backup = ServerBackup::create(&state, options).await?;
+
+        drop(backups_lock);
 
         activity_logger
             .log(

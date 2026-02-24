@@ -5,7 +5,7 @@ import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
-import { statusToColor } from '@/pages/dashboard/home/ServerItem.tsx';
+import { statusToColor } from '@/lib/server.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
 

@@ -3,6 +3,7 @@ import stripAnsi from 'strip-ansi';
 import { axiosInstance, httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
+import NumberInput from '@/elements/input/NumberInput.tsx';
 import Select from '@/elements/input/Select.tsx';
 import MonacoEditor from '@/elements/MonacoEditor.tsx';
 import Spinner from '@/elements/Spinner.tsx';
@@ -19,6 +20,7 @@ export default function AdminNodeLogs({ node }: { node: Node }) {
   const { addToast } = useToast();
 
   const [logs, setLogs] = useState<NodeLog[]>([]);
+  const [lines, setLines] = useState(1000);
   const [selectedLog, setSelectedLog] = useState<NodeLog | null>(null);
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -81,7 +83,7 @@ export default function AdminNodeLogs({ node }: { node: Node }) {
     setLoading(true);
 
     axiosInstance
-      .get(`${new URL(node.publicUrl ?? node.url).origin}/api/system/logs/${selectedLog.name}`, {
+      .get(`${new URL(node.publicUrl ?? node.url).origin}/api/system/logs/${selectedLog.name}?lines=${lines}`, {
         headers: {
           Authorization: `Bearer ${node.token}`,
         },
@@ -102,22 +104,33 @@ export default function AdminNodeLogs({ node }: { node: Node }) {
         <Spinner.Centered />
       ) : (
         <div className='flex flex-col'>
-          <div className='grid md:grid-cols-3 grid-cols-2 grid-rows-1 gap-2'>
-            <Select
-              label='Log File'
-              placeholder='Log File'
-              value={selectedLog?.name || ''}
-              className='w-full'
-              onChange={(value) => setSelectedLog(logs.find((log) => log.name === value) ?? null)}
-              data={logs.map((log) => ({
-                label: `${log.name} (${bytesToString(log.size)})`,
-                value: log.name,
-              }))}
-            />
+          <div className='grid md:grid-cols-4 grid-cols-2 grid-rows-1 gap-2'>
+            <div className='flex flex-row space-x-2 col-span-2'>
+              <Select
+                withAsterisk
+                label='Log File'
+                placeholder='Log File'
+                value={selectedLog?.name || ''}
+                className='w-full'
+                onChange={(value) => setSelectedLog(logs.find((log) => log.name === value) ?? null)}
+                data={logs.map((log) => ({
+                  label: `${log.name} (${bytesToString(log.size)})`,
+                  value: log.name,
+                }))}
+              />
+              <NumberInput
+                withAsterisk
+                label='Lines'
+                placeholder='Lines'
+                value={lines}
+                className='w-full'
+                onChange={(value) => setLines(Number(value))}
+              />
+            </div>
 
             <div className='flex flex-row items-end'>
               <Button onClick={doDownload} disabled={!selectedLog} loading={loading}>
-                Download
+                Download Full Log
               </Button>
               <Button className='ml-2' onClick={doView} variant='outline' disabled={!selectedLog} loading={loading}>
                 View

@@ -1,0 +1,75 @@
+use super::State;
+use utoipa_axum::{router::OpenApiRouter, routes};
+
+mod get {
+    use axum::{extract::Query, http::StatusCode};
+    use serde::Deserialize;
+    use shared::{
+        ApiError, GetState,
+        models::{server::GetServer, user::GetPermissionManager},
+        response::{ApiResponse, ApiResponseResult},
+    };
+    use utoipa::ToSchema;
+    use validator::Validate;
+
+    fn default_lines() -> u64 {
+        100
+    }
+
+    #[derive(ToSchema, Validate, Deserialize)]
+    pub struct Params {
+        #[validate(range(min = 1, max = 1000))]
+        #[serde(default = "default_lines")]
+        pub lines: u64,
+    }
+
+    #[utoipa::path(get, path = "/", responses(
+        (status = OK, body = String),
+    ), params(
+        (
+            "server" = uuid::Uuid,
+            description = "The server ID",
+            example = "123e4567-e89b-12d3-a456-426614174000",
+        ),
+        (
+            "lines" = i64, Query,
+            description = "The amount of server log lines to tail",
+            example = "100",
+            minimum = 1,
+            maximum = 1000,
+        ),
+    ))]
+    pub async fn route(
+        state: GetState,
+        permissions: GetPermissionManager,
+        server: GetServer,
+        Query(params): Query<Params>,
+    ) -> ApiResponseResult {
+        if let Err(errors) = shared::utils::validate_data(&params) {
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
+                .with_status(StatusCode::BAD_REQUEST)
+                .ok();
+        }
+
+        permissions.has_server_permission("control.read-console")?;
+
+        let logs = server
+            .node
+            .fetch_cached(&state.database)
+            .await?
+            .api_client(&state.database)
+            .await?
+            .get_servers_server_logs(server.uuid, params.lines)
+            .await?;
+
+        ApiResponse::new_stream(logs)
+            .with_header("Content-Type", "text/plain")
+            .ok()
+    }
+}
+
+pub fn router(state: &State) -> OpenApiRouter<State> {
+    OpenApiRouter::new()
+        .routes(routes!(get::route))
+        .with_state(state.clone())
+}

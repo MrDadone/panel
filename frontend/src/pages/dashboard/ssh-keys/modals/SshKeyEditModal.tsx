@@ -7,7 +7,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import updateSshKey from '@/api/me/ssh-keys/updateSshKey.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -67,14 +67,14 @@ export default function SshKeyEditModal({ sshKey, opened, onClose }: Props) {
           {...form.getInputProps('name')}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doUpdate} loading={loading} disabled={!form.isValid()}>
             {t('common.button.edit', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

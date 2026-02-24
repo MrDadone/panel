@@ -1,19 +1,21 @@
-export function isArchiveType(mimetype: string) {
-  return [
-    'application/vnd.rar', // .rar
-    'application/x-rar-compressed', // .rar (2)
-    'application/x-tar', // .tar
-    'application/x-br', // .tar.br
-    'application/x-bzip2', // .tar.bz2, .bz2
-    'application/gzip', // .tar.gz, .gz
-    'application/x-gzip',
-    'application/x-lz4', // .tar.lz4, .lz4
-    'application/x-xz', // .tar.xz, .xz
-    'application/x-lzip', // .tar.lz, .lz
-    'application/zstd', // .tar.zst, .zst
-    'application/zip', // .zip
-    'application/x-7z-compressed', // .7z
-  ].includes(mimetype);
+export function isArchiveType(file: DirectoryEntry) {
+  return (
+    [
+      'application/vnd.rar', // .rar
+      'application/x-rar-compressed', // .rar (2)
+      'application/x-tar', // .tar
+      'application/x-br', // .tar.br
+      'application/x-bzip2', // .tar.bz2, .bz2
+      'application/gzip', // .tar.gz, .gz
+      'application/x-gzip',
+      'application/x-lz4', // .tar.lz4, .lz4
+      'application/x-xz', // .tar.xz, .xz
+      'application/x-lzip', // .tar.lz, .lz
+      'application/zstd', // .tar.zst, .zst
+      'application/zip', // .zip
+      'application/x-7z-compressed', // .7z
+    ].includes(file.mime) || file.name.endsWith('.ddup')
+  );
 }
 
 export function isViewableArchive(file: DirectoryEntry) {
@@ -25,7 +27,11 @@ export function isViewableArchive(file: DirectoryEntry) {
   );
 }
 
-export function isEditableFile(mimetype: string) {
+export function isViewableImage(file: DirectoryEntry) {
+  return file.mime.startsWith('image/') && file.mime !== 'image/svg+xml';
+}
+
+export function isEditableFile(file: DirectoryEntry) {
   const matches = [
     'application/jar',
     'application/octet-stream',
@@ -34,9 +40,9 @@ export function isEditableFile(mimetype: string) {
     /^image\/(?!svg\+xml)/,
   ];
 
-  if (isArchiveType(mimetype)) return false;
+  if (isArchiveType(file)) return false;
 
-  return matches.every((m) => !mimetype.match(m));
+  return matches.every((m) => !file.mime.match(m));
 }
 
 export function permissionStringToNumber(mode: string) {
@@ -67,10 +73,8 @@ export function permissionStringToNumber(mode: string) {
 }
 
 export function generateArchiveName(extension: string) {
-  // Get current date
   const now = new Date();
 
-  // Format the date to match Rust's chrono::Local::now().format("%Y-%m-%dT%H%M%S%z")
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
@@ -78,16 +82,11 @@ export function generateArchiveName(extension: string) {
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');
 
-  // Get timezone offset in minutes
   const tzOffset = now.getTimezoneOffset();
   const tzSign = tzOffset <= 0 ? '+' : '-';
   const tzHours = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
   const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
   const tzFormatted = `${tzSign}${tzHours}${tzMinutes}`;
 
-  // Create the formatted date string
-  const formattedDate = `${year}-${month}-${day}T${hours}${minutes}${seconds}${tzFormatted}`;
-
-  // Return the filename
-  return `archive-${formattedDate}${extension}`;
+  return `archive-${year}-${month}-${day}T${hours}${minutes}${seconds}${tzFormatted}${extension}`;
 }

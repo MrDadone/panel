@@ -12,8 +12,9 @@ export interface BackupsSlice {
   setBackupProgress: (uuid: string, progress: number, total: number) => void;
 
   backupRestoreProgress: number;
+  backupRestoreTotal: number;
 
-  setBackupRestoreProgress: (progress: number) => void;
+  setBackupRestoreProgress: (progress: number, total: number) => void;
 }
 
 export const createBackupsSlice: StateCreator<ServerStore, [], [], BackupsSlice> = (set): BackupsSlice => ({
@@ -52,6 +53,8 @@ export const createBackupsSlice: StateCreator<ServerStore, [], [], BackupsSlice>
     })),
 
   backupRestoreProgress: 0,
+  backupRestoreTotal: 0,
 
-  setBackupRestoreProgress: (progress) => set((state) => ({ ...state, backupRestoreProgress: progress })),
+  setBackupRestoreProgress: (progress, total) =>
+    set((state) => ({ ...state, backupRestoreProgress: progress, backupRestoreTotal: total })),
 });

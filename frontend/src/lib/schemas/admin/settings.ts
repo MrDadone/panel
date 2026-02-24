@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { nullableString } from '@/lib/transformers.ts';
 
 export const adminSettingsApplicationSchema = z.object({
   name: z.string().min(1).max(64),
@@ -55,25 +56,25 @@ export const adminSettingsEmailSmtpSchema = z.object({
   type: z.literal('smtp'),
   host: z.string(),
   port: z.number(),
-  username: z.string().nullable(),
-  password: z.string().nullable(),
+  username: z.preprocess(nullableString, z.string().nullable()),
+  password: z.preprocess(nullableString, z.string().nullable()),
   useTls: z.boolean(),
   fromAddress: z.email(),
-  fromName: z.string().nullable(),
+  fromName: z.preprocess(nullableString, z.string().nullable()),
 });
 
 export const adminSettingsEmailSendmailSchema = z.object({
   type: z.literal('sendmail'),
   command: z.string(),
   fromAddress: z.email(),
-  fromName: z.string().nullable(),
+  fromName: z.preprocess(nullableString, z.string().nullable()),
 });
 
 export const adminSettingsEmailFilesystemSchema = z.object({
   type: z.literal('filesystem'),
   path: z.string(),
   fromAddress: z.email(),
-  fromName: z.string().nullable(),
+  fromName: z.preprocess(nullableString, z.string().nullable()),
 });
 
 export const adminSettingsEmailSchema = z.discriminatedUnion('type', [

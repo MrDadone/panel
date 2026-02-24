@@ -11,7 +11,7 @@ import Button from '@/elements/Button.tsx';
 import DateTimePicker from '@/elements/input/DateTimePicker.tsx';
 import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import PermissionSelector from '@/elements/PermissionSelector.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -168,14 +168,14 @@ export default function ApiKeyCreateOrUpdateModal({ contextApiKey, opened, onClo
           />
         )}
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doCreateOrUpdate} loading={loading} disabled={!form.isValid()}>
             {t('common.button.save', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

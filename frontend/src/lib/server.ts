@@ -6,11 +6,24 @@ export function formatAllocation(allocation?: ServerAllocation | NodeAllocation 
     : 'No Allocation';
 }
 
+export function statusToColor(status: ServerPowerState | undefined) {
+  switch (status) {
+    case 'running':
+      return 'bg-green-500';
+    case 'starting':
+      return 'bg-yellow-500';
+    case 'stopping':
+      return 'bg-red-500';
+    case 'offline':
+      return 'bg-red-500';
+    default:
+      return 'bg-gray-500';
+  }
+}
+
 export function generateBackupName() {
-  // Get current date
   const now = new Date();
 
-  // Format the date to match Rust's chrono::Local::now().format("%Y-%m-%dT%H%M%S%z")
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
@@ -18,16 +31,11 @@ export function generateBackupName() {
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');
 
-  // Get timezone offset in minutes
   const tzOffset = now.getTimezoneOffset();
   const tzSign = tzOffset <= 0 ? '+' : '-';
   const tzHours = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
   const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
   const tzFormatted = `${tzSign}${tzHours}${tzMinutes}`;
 
-  // Create the formatted date string
-  const formattedDate = `${year}-${month}-${day}T${hours}${minutes}${seconds}${tzFormatted}`;
-
-  // Return the filename
-  return `backup-${formattedDate}`;
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} ${tzFormatted}`;
 }

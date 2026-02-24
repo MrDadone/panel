@@ -1,272 +1,186 @@
-import { ChangeEvent, RefObject, startTransition, useCallback, useMemo, useRef, useState } from 'react';
-import { axiosInstance } from '@/api/axios.ts';
-import getFileUploadUrl from '@/api/server/files/getFileUploadUrl.ts';
+import { AxiosRequestConfig } from 'axios';
+import { ChangeEvent, RefObject, useCallback, useMemo, useRef, useState } from 'react';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
+type UploadStatus = 'pending' | 'uploading' | 'completed' | 'cancelled' | 'error';
+
 interface FileUploadProgress {
-  fileName: string;
+  filePath: string;
   progress: number;
   size: number;
   uploaded: number;
   batchId: string;
-  status: 'pending' | 'uploading' | 'completed' | 'cancelled' | 'error';
+  status: UploadStatus;
 }
 
-interface BatchInfo {
-  controller: AbortController;
-  fileIndices: number[];
-  status: 'pending' | 'uploading' | 'completed' | 'cancelled' | 'error';
-  files: File[];
+export interface AggregatedUploadProgress {
+  totalSize: number;
+  uploadedSize: number;
+  fileCount: number;
+  completedCount: number;
+  pendingCount: number;
+}
+
+export interface FileUploader {
+  uploadingFiles: Map<string, FileUploadProgress>;
+  aggregatedUploadProgress: Map<string, AggregatedUploadProgress>;
+  totalUploadProgress: number;
+  uploadFiles: (files: File[]) => Promise<void>;
+  cancelFileUpload: (fileKey: string) => void;
+  cancelFolderUpload: (folderName: string) => void;
+  handleFileSelect: (event: ChangeEvent<HTMLInputElement>, inputRef: RefObject<HTMLInputElement | null>) => void;
+  handleFolderSelect: (event: ChangeEvent<HTMLInputElement>, inputRef: RefObject<HTMLInputElement | null>) => void;
 }
 
 const MAX_CONCURRENT_BATCHES = 4;
 const BATCH_SIZE = 2;
-const CLEANUP_DELAY = 2000;
+const CLEANUP_DELAY_MS = 2000;
 
-export function useFileUpload(serverUuid: string, directory: string, onUploadComplete: () => void) {
+export function useFileUpload(
+  uploadFunction: (form: FormData, config: AxiosRequestConfig) => unknown,
+  onUploadComplete: () => void,
+): FileUploader {
   const { addToast } = useToast();
+
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, FileUploadProgress>>(new Map());
-  const [uploadBatches, setUploadBatches] = useState<Map<string, BatchInfo>>(new Map());
 
   const fileIndexCounter = useRef(0);
   const activeBatchCount = useRef(0);
   const uploadQueue = useRef<Array<{ files: File[]; indices: number[]; batchId: string }>>([]);
   const isProcessingQueue = useRef(false);
-  const cleanupTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
-  const batchControllers = useRef<Map<string, AbortController>>(new Map());
+  const controllers = useRef<Map<string, AbortController>>(new Map());
+  const cleanupTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  const clearCleanupTimeout = useCallback((key: string) => {
-    const timeout = cleanupTimeouts.current.get(key);
-    if (timeout) {
-      clearTimeout(timeout);
-      cleanupTimeouts.current.delete(key);
+  const scheduleCleanup = useCallback((fileKey: string) => {
+    const timer = setTimeout(() => {
+      setUploadingFiles((prev) => {
+        const next = new Map(prev);
+        next.delete(fileKey);
+        return next;
+      });
+      cleanupTimers.current.delete(fileKey);
+    }, CLEANUP_DELAY_MS);
+    cleanupTimers.current.set(fileKey, timer);
+  }, []);
+
+  const cancelCleanup = useCallback((fileKey: string) => {
+    const timer = cleanupTimers.current.get(fileKey);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      cleanupTimers.current.delete(fileKey);
     }
   }, []);
 
+  const updateFileStatuses = useCallback(
+    (indices: number[], updater: (prev: FileUploadProgress) => FileUploadProgress) => {
+      setUploadingFiles((prev) => {
+        const next = new Map(prev);
+        indices.forEach((idx) => {
+          const key = `file-${idx}`;
+          const entry = next.get(key);
+          if (entry) next.set(key, updater(entry));
+        });
+        return next;
+      });
+    },
+    [],
+  );
+
   const processBatch = useCallback(
-    async (batchId: string, batch: { files: File[]; indices: number[]; batchId: string }) => {
-      const controller = batchControllers.current.get(batchId);
-      if (!controller) {
-        return;
-      }
+    async (batchId: string, files: File[], indices: number[]) => {
+      const controller = controllers.current.get(batchId);
+      if (!controller) return;
 
       activeBatchCount.current++;
 
       try {
-        startTransition(() => {
-          setUploadBatches((prev) => {
-            const updated = new Map(prev);
-            const info = updated.get(batchId);
-            if (info && info.status === 'pending') {
-              updated.set(batchId, { ...info, status: 'uploading' });
-            }
-            return updated;
-          });
-
-          setUploadingFiles((prev) => {
-            const updated = new Map(prev);
-            batch.indices.forEach((idx) => {
-              const key = `file-${idx}`;
-              const file = updated.get(key);
-              if (file && file.status === 'pending') {
-                updated.set(key, { ...file, status: 'uploading' });
-              }
-            });
-            return updated;
-          });
-        });
-
-        const { url } = await getFileUploadUrl(serverUuid, directory);
+        updateFileStatuses(indices, (f) => (f.status === 'pending' ? { ...f, status: 'uploading' } : f));
 
         const formData = new FormData();
-        batch.files.forEach((file) => {
-          const path = file.webkitRelativePath || file.name;
-          formData.append('files', file, path);
+        files.forEach((file) => {
+          formData.append('files', file, file.webkitRelativePath || file.name);
         });
 
-        const batchTotalSize = batch.files.reduce((sum, file) => sum + file.size, 0);
-        let lastTotalLoaded = 0;
+        const batchTotalSize = files.reduce((sum, f) => sum + f.size, 0);
+        let lastLoaded = 0;
 
-        await axiosInstance.post(url, formData, {
+        const config: AxiosRequestConfig = {
           signal: controller.signal,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent) => {
-            const currentTotalLoaded = progressEvent.loaded || 0;
-            const deltaLoaded = currentTotalLoaded - lastTotalLoaded;
-            lastTotalLoaded = currentTotalLoaded;
-
-            if (deltaLoaded <= 0) return;
+          headers: { 'Content-Type': 'multipart/form-data' },
+          onUploadProgress: (event) => {
+            const loaded = event.loaded ?? 0;
+            const delta = loaded - lastLoaded;
+            lastLoaded = loaded;
+            if (delta <= 0) return;
 
             setUploadingFiles((prev) => {
-              const updated = new Map(prev);
-              batch.indices.forEach((index, i) => {
-                const fileKey = `file-${index}`;
-                const file = batch.files[i];
-                const fileProgress = updated.get(fileKey);
+              const next = new Map(prev);
+              indices.forEach((idx, i) => {
+                const key = `file-${idx}`;
+                const entry = next.get(key);
+                if (!entry || entry.status !== 'uploading') return;
 
-                if (fileProgress && fileProgress.status === 'uploading') {
-                  const fileRatio = file.size / batchTotalSize;
-                  const fileDelta = deltaLoaded * fileRatio;
-                  const newUploaded = Math.min(fileProgress.uploaded + fileDelta, file.size);
-
-                  updated.set(fileKey, {
-                    ...fileProgress,
-                    uploaded: newUploaded,
-                    progress: (newUploaded / file.size) * 100,
-                  });
-                }
+                const ratio = files[i].size / batchTotalSize;
+                const newUploaded = Math.min(entry.uploaded + delta * ratio, files[i].size);
+                next.set(key, {
+                  ...entry,
+                  uploaded: newUploaded,
+                  progress: (newUploaded / files[i].size) * 100,
+                });
               });
-              return updated;
+              return next;
             });
           },
-        });
+        };
 
-        startTransition(() => {
-          setUploadingFiles((prev) => {
-            const updated = new Map(prev);
-            batch.indices.forEach((index) => {
-              const fileKey = `file-${index}`;
-              const fileProgress = updated.get(fileKey);
-              if (fileProgress && fileProgress.status === 'uploading') {
-                updated.set(fileKey, {
-                  ...fileProgress,
-                  progress: 100,
-                  uploaded: fileProgress.size,
-                  status: 'completed',
-                });
+        await uploadFunction(formData, config);
 
-                const timeout = setTimeout(() => {
-                  setUploadingFiles((prev) => {
-                    const updated = new Map(prev);
-                    updated.delete(fileKey);
-                    return updated;
-                  });
-                  cleanupTimeouts.current.delete(fileKey);
-                }, CLEANUP_DELAY);
-
-                cleanupTimeouts.current.set(fileKey, timeout);
-              }
-            });
-            return updated;
-          });
-
-          setUploadBatches((prev) => {
-            const updated = new Map(prev);
-            const info = updated.get(batchId);
-            if (info) {
-              updated.set(batchId, { ...info, status: 'completed' });
+        setUploadingFiles((prev) => {
+          const next = new Map(prev);
+          indices.forEach((idx) => {
+            const key = `file-${idx}`;
+            const entry = next.get(key);
+            if (entry?.status === 'uploading') {
+              next.set(key, { ...entry, progress: 100, uploaded: entry.size, status: 'completed' });
+              scheduleCleanup(key);
             }
-            return updated;
           });
+          return next;
         });
-      } catch (error) {
-        if (
-          error &&
+      } catch (error: unknown) {
+        const isCancelled =
+          error != null &&
           typeof error === 'object' &&
           'code' in error &&
-          (error.code === 'CanceledError' || error.code === 'ERR_CANCELED')
-        ) {
-          startTransition(() => {
-            setUploadingFiles((prev) => {
-              const updated = new Map(prev);
-              batch.indices.forEach((index) => {
-                const fileKey = `file-${index}`;
-                const fileProgress = updated.get(fileKey);
-                if (fileProgress && fileProgress.status !== 'completed') {
-                  updated.set(fileKey, { ...fileProgress, status: 'cancelled' });
+          (error.code === 'CanceledError' || error.code === 'ERR_CANCELED');
 
-                  const timeout = setTimeout(() => {
-                    setUploadingFiles((prev) => {
-                      const updated = new Map(prev);
-                      updated.delete(fileKey);
-                      return updated;
-                    });
-                    cleanupTimeouts.current.delete(fileKey);
-                  }, CLEANUP_DELAY);
-
-                  cleanupTimeouts.current.set(fileKey, timeout);
-                }
-              });
-              return updated;
-            });
-
-            setUploadBatches((prev) => {
-              const updated = new Map(prev);
-              const info = updated.get(batchId);
-              if (info) {
-                updated.set(batchId, { ...info, status: 'cancelled' });
-              }
-              return updated;
-            });
-          });
-        } else {
+        if (!isCancelled) {
           console.error('Upload error:', error);
-
-          startTransition(() => {
-            setUploadingFiles((prev) => {
-              const updated = new Map(prev);
-              batch.indices.forEach((index) => {
-                const fileKey = `file-${index}`;
-                const fileProgress = updated.get(fileKey);
-                if (fileProgress && fileProgress.status !== 'completed') {
-                  updated.set(fileKey, { ...fileProgress, status: 'error' });
-                }
-              });
-              return updated;
-            });
-
-            setUploadBatches((prev) => {
-              const updated = new Map(prev);
-              const info = updated.get(batchId);
-              if (info) {
-                updated.set(batchId, { ...info, status: 'error' });
-              }
-              return updated;
-            });
-          });
-
-          addToast(
-            `Failed to upload batch: ${(error && typeof error === 'object' && 'message' in error && error?.message) || 'Unknown error'}`,
-            'error',
-          );
+          updateFileStatuses(indices, (f) => (f.status !== 'completed' ? { ...f, status: 'error' } : f));
+          const message =
+            error != null && typeof error === 'object' && 'message' in error ? String(error.message) : 'Unknown error';
+          addToast(`Upload failed: ${message}`, 'error');
         }
       } finally {
         activeBatchCount.current--;
-        batchControllers.current.delete(batchId);
-
-        setTimeout(() => {
-          setUploadBatches((prev) => {
-            const updated = new Map(prev);
-            updated.delete(batchId);
-            return updated;
-          });
-        }, CLEANUP_DELAY);
+        controllers.current.delete(batchId);
 
         if (uploadQueue.current.length === 0 && activeBatchCount.current === 0) {
           setTimeout(() => {
             setUploadingFiles((prev) => {
-              const hasActiveUploads = Array.from(prev.values()).some(
-                (f) => f.status === 'uploading' || f.status === 'pending',
-              );
-              if (!hasActiveUploads) {
-                onUploadComplete();
-              }
+              const hasActive = [...prev.values()].some((f) => f.status === 'uploading' || f.status === 'pending');
+              if (!hasActive) onUploadComplete();
               return prev;
             });
           }, 100);
         }
       }
     },
-    [serverUuid, directory, onUploadComplete, addToast],
+    [uploadFunction, onUploadComplete, updateFileStatuses, scheduleCleanup],
   );
 
   const processQueue = useCallback(async () => {
-    if (isProcessingQueue.current) {
-      return;
-    }
-
+    if (isProcessingQueue.current) return;
     isProcessingQueue.current = true;
 
     while (uploadQueue.current.length > 0) {
@@ -277,12 +191,10 @@ export function useFileUpload(serverUuid: string, directory: string, onUploadCom
       const batch = uploadQueue.current.shift();
       if (!batch) break;
 
-      const controller = batchControllers.current.get(batch.batchId);
-      if (!controller || controller.signal.aborted) {
-        continue;
-      }
+      const controller = controllers.current.get(batch.batchId);
+      if (!controller || controller.signal.aborted) continue;
 
-      processBatch(batch.batchId, batch).catch(console.error);
+      processBatch(batch.batchId, batch.files, batch.indices).catch(console.error);
     }
 
     isProcessingQueue.current = false;
@@ -298,231 +210,164 @@ export function useFileUpload(serverUuid: string, directory: string, onUploadCom
       const batches: Array<{ files: File[]; indices: number[]; batchId: string }> = [];
       for (let i = 0; i < files.length; i += BATCH_SIZE) {
         const batchFiles = files.slice(i, i + BATCH_SIZE);
-        const indices = Array.from({ length: batchFiles.length }, (_, j) => startIndex + i + j);
-        const batchId = `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${i}`;
-        const controller = new AbortController();
-
-        batchControllers.current.set(batchId, controller);
-
+        const indices = batchFiles.map((_, j) => startIndex + i + j);
+        const batchId = `batch-${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${i}`;
+        controllers.current.set(batchId, new AbortController());
         batches.push({ files: batchFiles, indices, batchId });
       }
 
-      setUploadBatches((prev) => {
-        const updated = new Map(prev);
-        batches.forEach((batch) => {
-          const controller = batchControllers.current.get(batch.batchId);
-          if (controller) {
-            updated.set(batch.batchId, {
-              controller,
-              fileIndices: batch.indices,
-              status: 'pending',
-              files: batch.files,
-            });
-          }
-        });
-        return updated;
-      });
-
       setUploadingFiles((prev) => {
-        const updated = new Map(prev);
-        batches.forEach((batch) => {
-          batch.files.forEach((file, index) => {
-            const path = file.name;
-            const fileKey = `file-${batch.indices[index]}`;
-            updated.set(fileKey, {
-              fileName: path,
+        const next = new Map(prev);
+        batches.forEach(({ files: batchFiles, indices, batchId }) => {
+          batchFiles.forEach((file, j) => {
+            next.set(`file-${indices[j]}`, {
+              filePath: file.webkitRelativePath || file.name,
               progress: 0,
               size: file.size,
               uploaded: 0,
-              batchId: batch.batchId,
+              batchId,
               status: 'pending',
             });
           });
         });
-        return updated;
+        return next;
       });
 
       uploadQueue.current.push(...batches);
-
       processQueue();
 
-      addToast(`Started uploading ${files.length} file(s)`, 'info');
+      addToast(`Uploading ${files.length} file${files.length !== 1 ? 's' : ''}…`, 'info');
     },
     [processQueue, addToast],
   );
 
   const cancelFileUpload = useCallback(
     (fileKey: string) => {
-      const file = uploadingFiles.get(fileKey);
-      if (!file) return;
+      setUploadingFiles((prev) => {
+        const entry = prev.get(fileKey);
+        if (!entry) return prev;
 
-      const batchId = file.batchId;
-      if (!batchId) {
-        setUploadingFiles((prev) => {
-          const updated = new Map(prev);
-          updated.delete(fileKey);
-          return updated;
+        const { batchId } = entry;
+
+        const controller = controllers.current.get(batchId);
+        controller?.abort();
+
+        uploadQueue.current = uploadQueue.current.filter((b) => b.batchId !== batchId);
+
+        const next = new Map(prev);
+        prev.forEach((f, k) => {
+          if (f.batchId === batchId) {
+            next.delete(k);
+            cancelCleanup(k);
+          }
         });
-        clearCleanupTimeout(fileKey);
-        return;
-      }
-
-      const controller = batchControllers.current.get(batchId);
-      if (controller) {
-        controller.abort();
-      }
-
-      uploadQueue.current = uploadQueue.current.filter((b) => b.batchId !== batchId);
-
-      setUploadBatches((prev) => {
-        const updated = new Map(prev);
-        const info = updated.get(batchId);
-        if (info) {
-          updated.set(batchId, { ...info, status: 'cancelled' });
-        }
-        return updated;
+        return next;
       });
-
-      const batch = uploadBatches.get(batchId);
-      if (batch) {
-        setUploadingFiles((prev) => {
-          const updated = new Map(prev);
-          batch.fileIndices.forEach((idx) => {
-            const key = `file-${idx}`;
-            updated.delete(key);
-            clearCleanupTimeout(key);
-          });
-          return updated;
-        });
-      }
     },
-    [uploadingFiles, uploadBatches, clearCleanupTimeout],
+    [cancelCleanup],
   );
 
   const cancelFolderUpload = useCallback(
     (folderName: string) => {
-      const batchesToCancel = new Set<string>();
-      const filesToCancel: string[] = [];
-
-      uploadingFiles.forEach((file, key) => {
-        const isInFolder =
-          file.fileName.startsWith(folderName + '/') ||
-          file.fileName === folderName ||
-          file.fileName.split('/')[0] === folderName;
-
-        if (isInFolder) {
-          filesToCancel.push(key);
-          if (file.batchId) {
-            batchesToCancel.add(file.batchId);
-          }
-        }
-      });
-
-      if (filesToCancel.length === 0) {
-        return;
-      }
-
-      batchesToCancel.forEach((batchId) => {
-        const controller = batchControllers.current.get(batchId);
-        if (controller) {
-          controller.abort();
-        }
-      });
-
-      uploadQueue.current = uploadQueue.current.filter((b) => !batchesToCancel.has(b.batchId));
-
-      setUploadBatches((prev) => {
-        const updated = new Map(prev);
-        batchesToCancel.forEach((batchId) => {
-          updated.delete(batchId);
-          batchControllers.current.delete(batchId);
-        });
-        return updated;
-      });
-
       setUploadingFiles((prev) => {
-        const updated = new Map(prev);
-        filesToCancel.forEach((key) => {
-          updated.delete(key);
-          clearCleanupTimeout(key);
-        });
-        return updated;
-      });
+        const batchesToAbort = new Set<string>();
+        const keysToRemove: string[] = [];
 
-      addToast(`Cancelled ${filesToCancel.length} file(s) from folder: ${folderName}`, 'info');
+        prev.forEach((file, key) => {
+          const topFolder = file.filePath.split('/')[0];
+          if (topFolder === folderName) {
+            keysToRemove.push(key);
+            batchesToAbort.add(file.batchId);
+          }
+        });
+
+        if (keysToRemove.length === 0) return prev;
+
+        batchesToAbort.forEach((batchId) => {
+          controllers.current.get(batchId)?.abort();
+          uploadQueue.current = uploadQueue.current.filter((b) => b.batchId !== batchId);
+        });
+
+        const next = new Map(prev);
+        keysToRemove.forEach((key) => {
+          next.delete(key);
+          cancelCleanup(key);
+        });
+
+        addToast(`Cancelled ${keysToRemove.length} file(s) from "${folderName}"`, 'info');
+        return next;
+      });
     },
-    [uploadingFiles, addToast, clearCleanupTimeout],
+    [cancelCleanup, addToast],
   );
 
   const aggregatedUploadProgress = useMemo(() => {
-    const folderMap = new Map<
-      string,
-      {
-        totalSize: number;
-        uploadedSize: number;
-        fileCount: number;
-        completedCount: number;
-        pendingCount: number;
-      }
-    >();
+    const map = new Map<string, AggregatedUploadProgress>();
 
     uploadingFiles.forEach((file) => {
-      const pathParts = file.fileName.split('/');
-      if (pathParts.length > 1) {
-        const folderName = pathParts[0];
-        const existing = folderMap.get(folderName) || {
-          totalSize: 0,
-          uploadedSize: 0,
-          fileCount: 0,
-          completedCount: 0,
-          pendingCount: 0,
-        };
+      const parts = file.filePath.split('/');
+      if (parts.length < 2) return;
 
-        folderMap.set(folderName, {
-          totalSize: existing.totalSize + file.size,
-          uploadedSize: existing.uploadedSize + file.uploaded,
-          fileCount: existing.fileCount + 1,
-          completedCount: existing.completedCount + (file.status === 'completed' ? 1 : 0),
-          pendingCount: existing.pendingCount + (file.status === 'pending' ? 1 : 0),
-        });
-      }
+      const folder = parts[0];
+      const prev = map.get(folder) ?? {
+        totalSize: 0,
+        uploadedSize: 0,
+        fileCount: 0,
+        completedCount: 0,
+        pendingCount: 0,
+      };
+
+      map.set(folder, {
+        totalSize: prev.totalSize + file.size,
+        uploadedSize: prev.uploadedSize + file.uploaded,
+        fileCount: prev.fileCount + 1,
+        completedCount: prev.completedCount + (file.status === 'completed' ? 1 : 0),
+        pendingCount: prev.pendingCount + (file.status === 'pending' ? 1 : 0),
+      });
     });
 
-    return folderMap;
+    return map;
+  }, [uploadingFiles]);
+
+  const totalUploadProgress = useMemo(() => {
+    if (uploadingFiles.size === 0) return 0;
+
+    let totalSize = 0;
+    let totalUploaded = 0;
+
+    uploadingFiles.forEach((file) => {
+      totalSize += file.size;
+      totalUploaded += file.uploaded;
+    });
+
+    return totalSize === 0 ? 0 : (totalUploaded / totalSize) * 100;
   }, [uploadingFiles]);
 
   const handleFileSelect = useCallback(
     (event: ChangeEvent<HTMLInputElement>, inputRef: RefObject<HTMLInputElement | null>) => {
-      const files = Array.from(event.target.files || []);
-      if (files.length > 0) {
-        uploadFiles(files);
-      }
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
+      const files = Array.from(event.target.files ?? []);
+      if (files.length > 0) uploadFiles(files);
+      if (inputRef.current) inputRef.current.value = '';
     },
     [uploadFiles],
   );
 
   const handleFolderSelect = useCallback(
     (event: ChangeEvent<HTMLInputElement>, inputRef: RefObject<HTMLInputElement | null>) => {
-      const files = Array.from(event.target.files || []);
-      if (files.length > 0) {
-        uploadFiles(files);
-      }
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
+      const files = Array.from(event.target.files ?? []);
+      if (files.length > 0) uploadFiles(files);
+      if (inputRef.current) inputRef.current.value = '';
     },
     [uploadFiles],
   );
 
   return {
     uploadingFiles,
+    aggregatedUploadProgress,
+    totalUploadProgress,
     uploadFiles,
     cancelFileUpload,
     cancelFolderUpload,
-    aggregatedUploadProgress,
     handleFileSelect,
     handleFolderSelect,
   };

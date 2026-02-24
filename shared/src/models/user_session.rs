@@ -145,6 +145,40 @@ impl UserSession {
         .rows_affected())
     }
 
+    pub async fn update_last_used(
+        &self,
+        database: &Arc<crate::database::Database>,
+        ip: impl Into<sqlx::types::ipnetwork::IpNetwork>,
+        user_agent: &str,
+    ) {
+        let uuid = self.uuid;
+        let now = chrono::Utc::now().naive_utc();
+        let user_agent = crate::utils::slice_up_to(user_agent, 255).to_string();
+        let ip = ip.into();
+
+        database
+            .batch_action("update_user_session", uuid, {
+                let database = database.clone();
+
+                async move {
+                    sqlx::query!(
+                        "UPDATE user_sessions
+		                    SET ip = $2, user_agent = $3, last_used = $4
+		                    WHERE user_sessions.uuid = $1",
+                        uuid,
+                        ip,
+                        user_agent,
+                        now
+                    )
+                    .execute(database.write())
+                    .await?;
+
+                    Ok(())
+                }
+            })
+            .await;
+    }
+
     #[inline]
     pub fn into_api_object(self, auth: &GetAuthMethod) -> ApiUserSession {
         ApiUserSession {

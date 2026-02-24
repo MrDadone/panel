@@ -5,7 +5,7 @@ import getServers from '@/api/admin/servers/getServers.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -74,14 +74,14 @@ export default function NodeBackupsRestoreModal({ node, backup, opened, onClose 
         />
       </Stack>
 
-      <Modal.Footer>
+      <ModalFooter>
         <Button color={truncate ? 'red' : undefined} onClick={doRestore} loading={loading}>
           Restore
         </Button>
         <Button variant='default' onClick={onClose}>
           Close
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

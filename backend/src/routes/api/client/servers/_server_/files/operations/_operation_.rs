@@ -48,6 +48,7 @@ mod delete {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .delete_servers_server_files_operations_operation(server.uuid, operation)
             .await
         {

@@ -47,10 +47,10 @@ mod post {
         state
             .cache
             .ratelimit(
-                format!("client/servers/{}/files/pull/query", server.uuid),
+                "client/servers/files/pull/query",
                 10,
                 60,
-                server.uuid,
+                server.uuid.to_string(),
             )
             .await?;
 
@@ -59,6 +59,7 @@ mod post {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .post_servers_server_files_pull_query(
                 server.uuid,
                 &wings_api::servers_server_files_pull_query::post::RequestBody { url: data.url },

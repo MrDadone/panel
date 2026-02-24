@@ -30,7 +30,7 @@ export function useFileMoveHandler(onSuccess?: () => void) {
       try {
         await renameFiles({
           uuid: server.uuid,
-          root: browsingDirectory!,
+          root: browsingDirectory,
           files: filesToMove.map((fileName) => ({
             from: fileName,
             to: `${targetFolder.name}/${fileName}`,

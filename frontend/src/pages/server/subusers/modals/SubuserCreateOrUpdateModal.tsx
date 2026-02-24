@@ -6,7 +6,7 @@ import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import Captcha, { CaptchaRef } from '@/elements/Captcha.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import PermissionSelector from '@/elements/PermissionSelector.tsx';
 import { serverSubuserCreateSchema } from '@/lib/schemas/server/subusers.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -101,14 +101,14 @@ export default function SubuserCreateOrUpdateModal({ subuser, onCreate, onUpdate
 
           {!subuser && <Captcha ref={captchaRef} />}
 
-          <Modal.Footer>
+          <ModalFooter>
             <Button type='submit' disabled={!form.isValid()}>
               {subuser ? t('common.button.update', {}) : t('common.button.create', {})}
             </Button>
             <Button variant='default' onClick={onClose}>
               {t('common.button.close', {})}
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Stack>
       </form>
     </Modal>

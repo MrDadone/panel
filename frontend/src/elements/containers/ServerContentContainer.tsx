@@ -1,44 +1,110 @@
+import { faCancel } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Title } from '@mantine/core';
-import { Dispatch, ReactNode, SetStateAction } from 'react';
+import { Dispatch, ReactNode, SetStateAction, useEffect, useState } from 'react';
 import { ContainerRegistry } from 'shared';
+import { httpErrorToHuman } from '@/api/axios.ts';
+import cancelServerInstall from '@/api/server/settings/cancelServerInstall.ts';
 import TextInput from '@/elements/input/TextInput.tsx';
+import { bytesToString } from '@/lib/size.ts';
 import { useCurrentWindow } from '@/providers/CurrentWindowProvider.tsx';
+import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
+import Button from '../Button.tsx';
+import { ServerCan } from '../Can.tsx';
+import Notification from '../Notification.tsx';
+import Progress from '../Progress.tsx';
+import Tooltip from '../Tooltip.tsx';
 import ContentContainer from './ContentContainer.tsx';
 
-interface Props {
+export interface Props {
   title: string;
   subtitle?: string;
   hideTitleComponent?: boolean;
   search?: string;
   setSearch?: Dispatch<SetStateAction<string>>;
   contentRight?: ReactNode;
-  registry?: ContainerRegistry;
+  registry?: ContainerRegistry<Props>;
   children: ReactNode;
   fullscreen?: boolean;
 }
 
-export default function ServerContentContainer({
-  title,
-  subtitle,
-  hideTitleComponent = false,
-  search,
-  setSearch,
-  contentRight,
-  registry,
-  children,
-  fullscreen = false,
-}: Props) {
+export default function ServerContentContainer(props: Props) {
+  const {
+    title,
+    subtitle,
+    hideTitleComponent = false,
+    search,
+    setSearch,
+    contentRight,
+    registry,
+    children,
+    fullscreen = false,
+  } = props;
+
   const { t } = useTranslations();
-  const { server } = useServerStore();
+  const { server, updateServer, backupRestoreProgress, backupRestoreTotal } = useServerStore();
   const { id } = useCurrentWindow();
+  const { addToast } = useToast();
+
+  const [abortLoading, setAbortLoading] = useState(false);
+
+  useEffect(() => {
+    if (!server?.status && abortLoading) {
+      addToast(t('pages.server.console.toast.installCancelled', {}), 'success');
+      setAbortLoading(false);
+    }
+  }, [abortLoading, server?.status]);
+
+  const doAbortInstall = () => {
+    setAbortLoading(true);
+
+    cancelServerInstall(server.uuid)
+      .then((instantCancel) => {
+        if (instantCancel) {
+          updateServer({ status: null });
+        }
+      })
+      .catch((err) => addToast(httpErrorToHuman(err), 'error'));
+  };
 
   return (
     <ContentContainer title={`${title} | ${server.name}`}>
+      {fullscreen ? null : server.status === 'restoring_backup' ? (
+        <div className='mt-2 px-4 lg:px-6 mb-4'>
+          <Notification loading>
+            {t('pages.server.console.notification.restoringBackup', {})}
+            <Tooltip
+              label={`${bytesToString(backupRestoreProgress)} / ${bytesToString(backupRestoreTotal)}`}
+              innerClassName='w-full'
+            >
+              <Progress value={backupRestoreTotal > 0 ? (backupRestoreProgress / backupRestoreTotal) * 100 : 0} />
+            </Tooltip>
+          </Notification>
+        </div>
+      ) : server.status === 'installing' ? (
+        <div className='mt-2 px-4 lg:px-6 mb-4'>
+          <Notification loading>
+            {t('pages.server.console.notification.installing', {})}
+            <ServerCan action='settings.cancel-install'>
+              <Button
+                className='ml-2'
+                leftSection={<FontAwesomeIcon icon={faCancel} />}
+                variant='subtle'
+                loading={abortLoading}
+                onClick={doAbortInstall}
+              >
+                {t('common.button.cancel', {})}
+              </Button>
+            </ServerCan>
+          </Notification>
+        </div>
+      ) : null}
+
       <div className={`${fullscreen || id ? 'mb-4' : 'px-4 lg:px-6 mb-4 lg:mt-6'}`}>
         {registry?.prependedComponents.map((Component, index) => (
-          <Component key={`prepended-${index}`} />
+          <Component key={`prepended-${index}`} {...props} />
         ))}
 
         {hideTitleComponent ? null : setSearch ? (
@@ -78,13 +144,13 @@ export default function ServerContentContainer({
           </div>
         )}
         {registry?.prependedContentComponents.map((Component, index) => (
-          <Component key={`prepended-content-${index}`} />
+          <Component key={`prepended-content-${index}`} {...props} />
         ))}
 
         {children}
 
         {registry?.appendedContentComponents.map((Component, index) => (
-          <Component key={`appended-content-${index}`} />
+          <Component key={`appended-content-${index}`} {...props} />
         ))}
       </div>
     </ContentContainer>

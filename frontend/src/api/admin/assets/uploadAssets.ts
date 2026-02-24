@@ -1,10 +1,5 @@
+import { AxiosRequestConfig } from 'axios';
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (form: FormData): Promise<StorageAsset[]> => {
-  return new Promise((resolve, reject) => {
-    axiosInstance
-      .putForm('/api/admin/assets', form)
-      .then(({ data }) => resolve(data.assets))
-      .catch(reject);
-  });
-};
+export default async (form: FormData, config: AxiosRequestConfig): Promise<unknown> =>
+  axiosInstance.putForm('/api/admin/assets', form, config);

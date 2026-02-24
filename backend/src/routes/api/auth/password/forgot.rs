@@ -88,18 +88,6 @@ mod post {
                 }
             };
 
-            let mail = shared::mail::MAIL_PASSWORD_RESET
-                .replace("{{app_name}}", &settings.app.name)
-                .replace("{{user_username}}", &user.username)
-                .replace(
-                    "{{reset_link}}",
-                    &format!(
-                        "{}/auth/reset-password?token={}",
-                        settings.app.url,
-                        urlencoding::encode(&token),
-                    ),
-                );
-
             if let Err(err) = UserActivity::create(
                 &state,
                 shared::models::user_activity::CreateUserActivityOptions {
@@ -129,9 +117,17 @@ mod post {
             state
                 .mail
                 .send(
-                    user.email,
+                    user.email.clone(),
                     format!("{} - Password Reset", settings.app.name).into(),
-                    mail,
+                    shared::mail::MAIL_PASSWORD_RESET,
+                    minijinja::context! {
+                        user => user,
+                        reset_link => format!(
+                            "{}/auth/reset-password?token={}",
+                            settings.app.url,
+                            urlencoding::encode(&token),
+                        )
+                    },
                 )
                 .await;
         });

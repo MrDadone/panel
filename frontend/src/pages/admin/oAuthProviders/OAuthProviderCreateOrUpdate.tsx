@@ -66,8 +66,10 @@ export default function OAuthProviderCreateOrUpdate({
     AdminOAuthProvider
   >({
     form,
-    createFn: () => createOAuthProvider(form.values),
-    updateFn: contextOAuthProvider ? () => updateOAuthProvider(contextOAuthProvider.uuid, form.values) : undefined,
+    createFn: () => createOAuthProvider(adminOAuthProviderSchema.parse(form.values)),
+    updateFn: contextOAuthProvider
+      ? () => updateOAuthProvider(contextOAuthProvider.uuid, adminOAuthProviderSchema.parse(form.values))
+      : undefined,
     deleteFn: contextOAuthProvider ? () => deleteOAuthProvider(contextOAuthProvider.uuid) : undefined,
     doUpdate: !!contextOAuthProvider,
     basePath: '/admin/oauth-providers',
@@ -228,7 +230,6 @@ export default function OAuthProviderCreateOrUpdate({
               {...form.getInputProps('emailPath')}
             />
             <TextInput
-              withAsterisk
               label='Username Path'
               placeholder='Username Path'
               description='The Path to use to extract the username from the Info URL response (https://serdejsonpath.live)'

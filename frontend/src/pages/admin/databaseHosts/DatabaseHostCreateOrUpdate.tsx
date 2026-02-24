@@ -53,8 +53,10 @@ export default function DatabaseHostCreateOrUpdate({
     AdminDatabaseHost
   >({
     form,
-    createFn: () => createDatabaseHost(form.values),
-    updateFn: contextDatabaseHost ? () => updateDatabaseHost(contextDatabaseHost.uuid, form.values) : undefined,
+    createFn: () => createDatabaseHost(adminDatabaseHostCreateSchema.parse(form.values)),
+    updateFn: contextDatabaseHost
+      ? () => updateDatabaseHost(contextDatabaseHost.uuid, adminDatabaseHostUpdateSchema.parse(form.values))
+      : undefined,
     deleteFn: contextDatabaseHost ? () => deleteDatabaseHost(contextDatabaseHost.uuid) : undefined,
     doUpdate: !!contextDatabaseHost,
     basePath: '/admin/database-hosts',
@@ -130,7 +132,6 @@ export default function DatabaseHostCreateOrUpdate({
               placeholder='Password'
               type='password'
               {...form.getInputProps('password')}
-              onChange={(e) => form.setFieldValue('password', e.target.value || null)}
             />
           </Group>
 
@@ -141,14 +142,7 @@ export default function DatabaseHostCreateOrUpdate({
 
           <Group grow>
             <TextInput label='Public Host' placeholder='Public Host' {...form.getInputProps('publicHost')} />
-            <NumberInput
-              label='Public Port'
-              placeholder='Public Port'
-              min={0}
-              {...form.getInputProps('publicPort')}
-              value={form.values.publicPort || ''}
-              onChange={(v) => form.setFieldValue('publicPort', Number(v) || 0)}
-            />
+            <NumberInput label='Public Port' placeholder='Public Port' min={0} {...form.getInputProps('publicPort')} />
           </Group>
 
           <Group grow>

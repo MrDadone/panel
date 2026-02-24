@@ -18,6 +18,7 @@ import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Progress from '@/elements/Progress.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
 import { bytesToString } from '@/lib/size.ts';
@@ -143,7 +144,12 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
               <TableData>{bytesToString(backup.bytes)}</TableData>
             ) : (
               <TableData colSpan={2}>
-                <Progress value={((backup.progress?.progress || 0) / (backup.progress?.total || 1)) * 100} />
+                <Tooltip
+                  label={`${bytesToString(backup.progress?.progress || 0)} / ${bytesToString(backup.progress?.total || 0)}`}
+                  innerClassName='w-full'
+                >
+                  <Progress value={((backup.progress?.progress || 0) / (backup.progress?.total || 1)) * 100} />
+                </Tooltip>
               </TableData>
             )}
 

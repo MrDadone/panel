@@ -4,7 +4,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import getFileContent from '@/api/server/files/getFileContent.ts';
 import saveFileContent from '@/api/server/files/saveFileContent.ts';
 import Button from '@/elements/Button.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import useWebsocketEvent, { SocketEvent } from '@/plugins/useWebsocketEvent.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -30,7 +30,7 @@ export default function EulaModal() {
     try {
       let content: string;
       try {
-        content = await getFileContent(server.uuid, '/eula.txt');
+        content = await getFileContent(server.uuid, '/eula.txt').then((c) => c.text());
       } catch {
         content = 'eula=false';
       }
@@ -58,14 +58,14 @@ export default function EulaModal() {
         {t('pages.server.console.feature.eula.contentDetails', {}).md()}
       </Text>
 
-      <Modal.Footer>
+      <ModalFooter>
         <Button color='green' loading={loading} onClick={acceptEula}>
           {t('pages.server.console.feature.eula.button.accept', {})}
         </Button>
         <Button variant='default' onClick={() => setOpened(false)}>
           {t('common.button.cancel', {})}
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

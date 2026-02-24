@@ -41,7 +41,7 @@ export default function ActivityContainer() {
   const doUpdate = () => {
     setLoading(true);
 
-    updateActivitySettings(form.values)
+    updateActivitySettings(adminSettingsActivitySchema.parse(form.values))
       .then(() => {
         addToast('Activity settings updated.', 'success');
       })

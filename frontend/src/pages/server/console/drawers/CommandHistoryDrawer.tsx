@@ -104,9 +104,8 @@ export default function CommandHistoryDrawer({ opened, onClose, ...props }: Draw
                   }}
                 />
                 <span>
-                  {(selectedCommand.user ?? selectedCommand.isSchedule)
-                    ? t('common.schedule', {})
-                    : t('common.system', {})}
+                  {selectedCommand.user ??
+                    (selectedCommand.isSchedule ? t('common.schedule', {}) : t('common.system', {}))}
                 </span>
                 <span>•</span>
                 <FormattedTimestamp timestamp={selectedCommand.created} />

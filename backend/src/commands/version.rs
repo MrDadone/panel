@@ -15,10 +15,8 @@ impl shared::extensions::commands::CliCommand<VersionArgs> for VersionCommand {
         Box::new(|_env, _arg_matches| {
             Box::pin(async move {
                 println!(
-                    "github.com/calagopus/panel(backend) {}:{}@{} ({})",
-                    shared::VERSION,
-                    shared::GIT_COMMIT,
-                    shared::GIT_BRANCH,
+                    "github.com/calagopus/panel(backend) {} ({})",
+                    shared::full_version(),
                     shared::TARGET
                 );
                 println!(
@@ -26,7 +24,7 @@ impl shared::extensions::commands::CliCommand<VersionArgs> for VersionCommand {
                     chrono::Local::now().year()
                 );
 
-                Ok(())
+                Ok(1)
             })
         })
     }

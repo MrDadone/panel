@@ -4,11 +4,34 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="darkreader-lock" />
-    <title>Panel API Docs</title>
+    <title>{{ settings.app.name }} API Documentation</title>
   </head>
 
   <body>
-    <script id="api-reference" data-url="/openapi.json"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.33.0"></script>
+    <div id="app"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.44.20"></script>
+
+    {% autoescape false %}
+    <script>
+      Scalar.createApiReference('#app', {
+        url: '/openapi.json',
+        telemetry: false,
+        hideClientButton: true,
+        servers: [
+          {
+            url: '{{ settings.app.url }}'.replace(/\/$/, ''),
+            description: '{{ settings.app.name }} API',
+          }
+        ],
+        tagsSorter: (a, b) => {
+          const tagOrder = ['/api/auth', '/api/client', '/api/admin', '/api/remote'];
+          const tagComparison = tagOrder.indexOf(a.name) - tagOrder.indexOf(b.name);
+
+          return tagComparison;
+        },
+      });
+    </script>
+    {% endautoescape %}
   </body>
 </html>

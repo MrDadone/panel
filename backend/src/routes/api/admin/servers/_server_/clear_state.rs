@@ -40,31 +40,25 @@ mod post {
 
             let (allocations, _) = tokio::try_join!(
                 sqlx::query!(
-                    r#"
-                    SELECT server_allocations.uuid FROM server_allocations
+                    "SELECT server_allocations.uuid FROM server_allocations
                     JOIN node_allocations ON node_allocations.uuid = server_allocations.allocation_uuid
-                    WHERE server_allocations.server_uuid = $1 AND node_allocations.node_uuid != $2
-                    "#,
+                    WHERE server_allocations.server_uuid = $1 AND node_allocations.node_uuid != $2",
                     server.uuid,
                     server.node.uuid
                 )
                 .fetch_all(state.database.read()),
                 sqlx::query!(
-                    r#"
-                    UPDATE servers
+                    "UPDATE servers
                     SET destination_allocation_uuid = NULL, destination_node_uuid = NULL
-                    WHERE servers.uuid = $1
-                    "#,
+                    WHERE servers.uuid = $1",
                     server.uuid
                 )
                 .execute(&mut *transaction)
             )?;
 
             sqlx::query!(
-                r#"
-                DELETE FROM server_allocations
-                WHERE server_allocations.uuid = ANY($1)
-                "#,
+                "DELETE FROM server_allocations
+                WHERE server_allocations.uuid = ANY($1)",
                 &allocations.into_iter().map(|a| a.uuid).collect::<Vec<_>>()
             )
             .execute(&mut *transaction)
@@ -72,6 +66,7 @@ mod post {
 
             if let Err(err) = destination_node
                 .api_client(&state.database)
+                .await?
                 .delete_servers_server(server.uuid)
                 .await
             {
@@ -80,11 +75,9 @@ mod post {
         }
 
         sqlx::query!(
-            r#"
-            UPDATE servers
+            "UPDATE servers
             SET status = NULL
-            WHERE servers.uuid = $1
-            "#,
+            WHERE servers.uuid = $1",
             server.uuid
         )
         .execute(&mut *transaction)

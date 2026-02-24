@@ -26,6 +26,7 @@ interface SelectionAreaProps<T> {
   className?: string;
   style?: CSSProperties;
   disabled?: boolean;
+  fireEvents?: boolean;
 }
 
 interface SelectionAreaState {
@@ -194,7 +195,7 @@ class SelectionArea<T> extends Component<SelectionAreaProps<T>, SelectionAreaSta
     window.removeEventListener('mousemove', this.handleMouseMove);
     window.removeEventListener('mouseup', this.handleMouseUp);
 
-    if (!this.state.isSelecting && this.mouseDown) {
+    if (!this.state.isSelecting && this.mouseDown && this.props.fireEvents) {
       const target = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
       if (target && !(target instanceof HTMLInputElement)) {
         const newEvent = new MouseEvent('click', {

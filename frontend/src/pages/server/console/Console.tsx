@@ -1,10 +1,21 @@
-import { faArrowDown, faClockRotateLeft, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowDown,
+  faArrowUp,
+  faClockRotateLeft,
+  faMagnifyingGlass,
+  faMinus,
+  faPlus,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon } from '@mantine/core';
-import { AnsiUp } from 'ansi_up';
+import { FitAddon } from '@xterm/addon-fit';
+import { SearchAddon } from '@xterm/addon-search';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import { WebglAddon } from '@xterm/addon-webgl';
+import { Terminal as XTerm } from '@xterm/xterm';
 import classNames from 'classnames';
-import DOMPurify from 'dompurify';
-import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -16,82 +27,148 @@ import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import CommandHistoryDrawer from './drawers/CommandHistoryDrawer.tsx';
 import FeatureProvider from './features/FeatureProvider.tsx';
-
-const ansiUp = new AnsiUp();
-const MAX_LINES = 1000;
-
-const configureDOMPurify = () => {
-  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-    if (node.tagName === 'A') {
-      node.setAttribute('target', '_blank');
-      node.setAttribute('rel', 'noopener noreferrer');
-      node.setAttribute('class', 'hover:text-blue-300 underline cursor-pointer');
-    }
-  });
-};
-
-configureDOMPurify();
-
-const URL_REGEX = /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)/gi;
-
-const linkifyText = (html: string): string => {
-  const linked = html.replace(URL_REGEX, (url) => {
-    try {
-      const urlObj = new URL(url);
-      if (!['http:', 'https:'].includes(urlObj.protocol)) {
-        return url;
-      }
-    } catch {
-      return url;
-    }
-
-    const escapedHref = url
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    return `<a href="${escapedHref}">${url}</a>`;
-  });
-
-  return DOMPurify.sanitize(linked, {
-    ALLOWED_TAGS: ['a', 'span', 'div'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
-    ALLOWED_URI_REGEXP: /^https?:\/\//i,
-  });
-};
+import '@xterm/xterm/css/xterm.css';
+import './xterm.css';
+import Popover from '@/elements/Popover.tsx';
+import { useKeyboardShortcut } from '@/plugins/useKeyboardShortcuts.ts';
 
 const RAW_PRELUDE = '\u001b[1m\u001b[33mcontainer@calagopus~ \u001b[0m';
-const PRELUDE_HTML = linkifyText(ansiUp.ansi_to_html(RAW_PRELUDE));
-
-interface TerminalLine {
-  id: number;
-  html: string;
-  content: string;
-}
 
 export default function Terminal() {
   const { t } = useTranslations();
   const { server, imagePulls, socketConnected, socketInstance, state } = useServerStore();
 
-  const [lines, setLines] = useState<TerminalLine[]>([]);
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [searchText, setSearchText] = useState('');
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [websocketPing, setWebsocketPing] = useState(0);
   const [consoleFontSize, setConsoleFontSize] = useState(14);
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [openModal, setOpenModal] = useState<'search' | 'commandHistory' | null>(null);
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const xtermInstance = useRef<XTerm | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
+  const searchAddonRef = useRef<SearchAddon | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const isAutoScrolling = useRef(false);
-  const isInitialLoad = useRef(true);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lineIdCounter = useRef(0);
+  const isFirstLine = useRef(true);
 
   const HISTORY_STORAGE_KEY = `terminal_command_history_${server.uuid}`;
   const CONSOLE_FONT_SIZE_KEY = 'terminal_console_font_size';
+
+  useEffect(() => {
+    const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
+    if (savedHistory) {
+      try {
+        const parsed = JSON.parse(savedHistory);
+        if (Array.isArray(parsed)) setHistory(parsed);
+      } catch (e) {
+        console.error('Failed to parse terminal history:', e);
+      }
+    }
+    const savedFontSize = localStorage.getItem(CONSOLE_FONT_SIZE_KEY);
+    if (savedFontSize) {
+      const size = parseInt(savedFontSize, 10);
+      if (!isNaN(size)) setConsoleFontSize(size);
+    }
+  }, [HISTORY_STORAGE_KEY, CONSOLE_FONT_SIZE_KEY]);
+
+  useEffect(() => {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+  }, [history, HISTORY_STORAGE_KEY]);
+
+  useEffect(() => {
+    localStorage.setItem(CONSOLE_FONT_SIZE_KEY, consoleFontSize.toString());
+    if (xtermInstance.current) {
+      xtermInstance.current.options.fontSize = consoleFontSize;
+      fitAddonRef.current?.fit();
+    }
+  }, [consoleFontSize, CONSOLE_FONT_SIZE_KEY]);
+
+  useEffect(() => {
+    if (!terminalRef.current) return;
+
+    const term = new XTerm({
+      fontSize: consoleFontSize,
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+      theme: {
+        background: '#00000000',
+        cursor: '#00000000',
+        cursorAccent: '#00000000',
+        selectionBackground: '#FFFFFF4D',
+        selectionInactiveBackground: '#FFFFFF80',
+      },
+      allowTransparency: true,
+      lineHeight: 1.2,
+      disableStdin: true,
+      convertEol: true,
+      smoothScrollDuration: 250,
+      allowProposedApi: true,
+      fontWeightBold: '500',
+      rescaleOverlappingGlyphs: true,
+    });
+
+    const fitAddon = new FitAddon();
+    const searchAddon = new SearchAddon();
+
+    term.loadAddon(fitAddon);
+    term.loadAddon(searchAddon);
+    term.loadAddon(new WebLinksAddon());
+    term.loadAddon(new WebglAddon());
+    term.loadAddon(new Unicode11Addon());
+
+    term.unicode.activeVersion = '11';
+
+    term.open(terminalRef.current);
+    fitAddon.fit();
+
+    // prevent cursor
+    term.write('\x1b[?25l');
+
+    document.fonts.ready.then(() => {
+      if (fitAddonRef.current) {
+        fitAddonRef.current.fit();
+      }
+    });
+
+    xtermInstance.current = term;
+    fitAddonRef.current = fitAddon;
+    searchAddonRef.current = searchAddon;
+
+    const resizeObserver = new ResizeObserver(() => {
+      fitAddon.fit();
+    });
+    resizeObserver.observe(terminalRef.current);
+
+    term.onScroll(() => {
+      setIsAtBottom(term.buffer.active.viewportY === term.buffer.active.baseY);
+    });
+
+    term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        if (term.hasSelection()) {
+          navigator.clipboard.writeText(term.getSelection());
+          term.clearSelection();
+
+          return false;
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        return false;
+      }
+
+      return true;
+    });
+
+    return () => {
+      resizeObserver.disconnect();
+      term.dispose();
+      xtermInstance.current = null;
+      fitAddonRef.current = null;
+      searchAddonRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     let pingInterval: NodeJS.Timeout;
@@ -106,9 +183,7 @@ export default function Terminal() {
           const latency = Date.now() - start;
           setWebsocketPing(latency);
           socketInstance.removeListener(SocketEvent.PONG, handlePong);
-          if (timeout) {
-            clearTimeout(timeout);
-          }
+          if (timeout) clearTimeout(timeout);
         };
 
         timeout = setTimeout(() => {
@@ -123,147 +198,44 @@ export default function Terminal() {
     }
 
     return () => {
-      if (pingInterval) {
-        clearInterval(pingInterval);
-      }
+      if (pingInterval) clearInterval(pingInterval);
     };
   }, [socketConnected, socketInstance]);
 
-  useEffect(() => {
-    const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
-    if (savedHistory) {
-      try {
-        const parsed = JSON.parse(savedHistory);
-        if (Array.isArray(parsed)) {
-          setHistory(parsed);
-        }
-      } catch (e) {
-        console.error('Failed to parse terminal history:', e);
-      }
-    }
-  }, [HISTORY_STORAGE_KEY]);
-
-  useEffect(() => {
-    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
-  }, [history, HISTORY_STORAGE_KEY]);
-
-  useEffect(() => {
-    const savedFontSize = localStorage.getItem(CONSOLE_FONT_SIZE_KEY);
-    if (savedFontSize) {
-      const size = parseInt(savedFontSize, 10);
-      if (!isNaN(size)) {
-        setConsoleFontSize(size);
-      }
-    }
-  }, [CONSOLE_FONT_SIZE_KEY]);
-
-  useEffect(() => {
-    localStorage.setItem(CONSOLE_FONT_SIZE_KEY, consoleFontSize.toString());
-  }, [consoleFontSize, CONSOLE_FONT_SIZE_KEY]);
-
-  const checkIfAtBottom = useCallback(() => {
-    if (!containerRef.current) return true;
-
-    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-    const threshold = 50;
-    return scrollHeight - scrollTop - clientHeight < threshold;
-  }, []);
-
-  const handleScroll = useCallback(() => {
-    if (isAutoScrolling.current || isInitialLoad.current) return;
-
-    const atBottom = checkIfAtBottom();
-    setIsAtBottom(atBottom);
-  }, [checkIfAtBottom]);
-
   const scrollToBottom = useCallback(() => {
-    if (containerRef.current) {
-      isAutoScrolling.current = true;
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    if (xtermInstance.current) {
+      xtermInstance.current.scrollToBottom();
       setIsAtBottom(true);
-
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      scrollTimeoutRef.current = setTimeout(() => {
-        isAutoScrolling.current = false;
-        scrollTimeoutRef.current = null;
-      }, 100);
     }
   }, []);
 
-  const addLine = useCallback(
-    (text: string, prelude = false) => {
-      if (text.includes('container@pterodactyl~')) {
-        text = text.replace('container@pterodactyl~', 'container@calagopus~');
-      }
+  const addLine = useCallback((text: string, prelude = false) => {
+    if (!xtermInstance.current) return;
 
-      const processed = text.replace(/(?:\r\n|\r|\n)$/im, '');
-      const ansiHtml = ansiUp.ansi_to_html(processed);
-      let html = linkifyText(ansiHtml);
+    let processed = text.replaceAll('\x1b[?25h', '').replaceAll('\x1b[?25l', '');
 
-      if (prelude && !processed.includes('\u001b[1m\u001b[41m')) {
-        html = PRELUDE_HTML + html;
-      }
-
-      startTransition(() => {
-        setLines((prev) => {
-          const newLine: TerminalLine = {
-            id: lineIdCounter.current++,
-            html,
-            content: processed,
-          };
-
-          const updated = [...prev, newLine];
-          return updated.length > MAX_LINES ? updated.slice(-MAX_LINES) : updated;
-        });
-      });
-
-      if (isInitialLoad.current) {
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
-
-        scrollTimeoutRef.current = setTimeout(() => {
-          isInitialLoad.current = false;
-          scrollToBottom();
-          scrollTimeoutRef.current = null;
-        }, 100);
-      }
-    },
-    [scrollToBottom],
-  );
-
-  useEffect(() => {
-    if (isInitialLoad.current || lines.length === 0) return;
-
-    if (isAtBottom && containerRef.current) {
-      isAutoScrolling.current = true;
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      requestAnimationFrame(() => {
-        if (containerRef.current) {
-          containerRef.current.scrollTop = containerRef.current.scrollHeight;
-
-          scrollTimeoutRef.current = setTimeout(() => {
-            isAutoScrolling.current = false;
-            scrollTimeoutRef.current = null;
-          }, 100);
-        }
-      });
+    if (processed.includes('container@pterodactyl~')) {
+      processed = processed.replace('container@pterodactyl~', 'container@calagopus~');
     }
-  }, [lines, isAtBottom]);
+
+    if (prelude && !processed.includes('\u001b[1m\u001b[41m')) {
+      processed = RAW_PRELUDE.concat(processed);
+    }
+
+    if (isFirstLine.current) {
+      xtermInstance.current.write(processed);
+      isFirstLine.current = false;
+    } else {
+      xtermInstance.current.write('\n'.concat(processed));
+    }
+  }, []);
 
   useEffect(() => {
-    if (!socketConnected || !socketInstance) return;
+    if (!socketConnected || !socketInstance || !xtermInstance.current) return;
 
-    setLines([]);
-    lineIdCounter.current = 0;
-    isInitialLoad.current = true;
+    xtermInstance.current.clear();
     setIsAtBottom(true);
+    isFirstLine.current = true;
 
     const listeners: Record<string, (msg: string) => void> = {
       [SocketEvent.STATUS]: (s) =>
@@ -297,11 +269,14 @@ export default function Terminal() {
 
     return () => {
       Object.entries(listeners).forEach(([k, fn]) => socketInstance.removeListener(k, fn));
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
     };
-  }, [socketConnected, socketInstance, addLine]);
+  }, [socketConnected, socketInstance]);
+
+  useEffect(() => {
+    if (!openModal) {
+      searchAddonRef.current?.clearDecorations();
+    }
+  }, [openModal]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -336,18 +311,18 @@ export default function Terminal() {
     [history, historyIndex, socketInstance],
   );
 
-  const MemoizedLines = useMemo(
-    () =>
-      lines.map((line) => (
-        <div
-          key={line.id}
-          className='whitespace-pre-wrap break-all'
-          dangerouslySetInnerHTML={{
-            __html: line.html,
-          }}
-        />
-      )),
-    [lines],
+  useKeyboardShortcut(
+    'f',
+    () => {
+      if (openModal && openModal !== 'search') return;
+
+      setOpenModal(openModal ? null : 'search');
+    },
+    {
+      modifiers: ['ctrlOrMeta'],
+      allowWhenInputFocused: true,
+      deps: [openModal],
+    },
   );
 
   return (
@@ -364,7 +339,9 @@ export default function Terminal() {
               )}
             />
             {socketConnected && socketInstance
-              ? t('pages.server.console.socketConnected', { ping: websocketPing })
+              ? t('pages.server.console.socketConnected', {
+                  ping: websocketPing,
+                })
               : t('pages.server.console.socketDisconnected', {})}
             {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderLeftComponents.map(
               (Component, idx) => (
@@ -378,8 +355,58 @@ export default function Terminal() {
                 <Component key={idx} />
               ),
             )}
+            <Popover
+              trapFocus
+              opened={openModal === 'search'}
+              onChange={(opened) => setOpenModal(opened ? 'search' : null)}
+            >
+              <Popover.Target>
+                <Tooltip label={t('pages.server.console.tooltip.search', {})}>
+                  <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setOpenModal('search')}>
+                    <FontAwesomeIcon icon={faMagnifyingGlass} />
+                  </ActionIcon>
+                </Tooltip>
+              </Popover.Target>
+              <Popover.Dropdown className='flex flex-row space-x-2'>
+                <TextInput
+                  placeholder={t('common.input.search', {})}
+                  value={searchText}
+                  onChange={(e) => {
+                    setSearchText(e.currentTarget.value);
+                    searchAddonRef.current?.findNext(e.currentTarget.value, {
+                      incremental: true,
+                    });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (e.shiftKey) {
+                        searchAddonRef.current?.findPrevious(searchText);
+                      } else {
+                        searchAddonRef.current?.findNext(searchText);
+                      }
+                    }
+                  }}
+                />
+                <ActionIcon
+                  size='input-sm'
+                  variant='light'
+                  color='gray'
+                  onClick={() => searchAddonRef.current?.findPrevious(searchText)}
+                >
+                  <FontAwesomeIcon icon={faArrowUp} />
+                </ActionIcon>
+                <ActionIcon
+                  size='input-sm'
+                  variant='light'
+                  color='gray'
+                  onClick={() => searchAddonRef.current?.findNext(searchText)}
+                >
+                  <FontAwesomeIcon icon={faArrowDown} />
+                </ActionIcon>
+              </Popover.Dropdown>
+            </Popover>
             <Tooltip label={t('pages.server.console.tooltip.commandHistory', {})}>
-              <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setHistoryModalOpen(true)}>
+              <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setOpenModal('commandHistory')}>
                 <FontAwesomeIcon icon={faClockRotateLeft} />
               </ActionIcon>
             </Tooltip>
@@ -413,13 +440,8 @@ export default function Terminal() {
 
         {!socketConnected && <Spinner.Centered />}
 
-        <div
-          ref={containerRef}
-          className='flex-1 overflow-auto custom-scrollbar space-y-1 select-text'
-          style={{ fontSize: `${consoleFontSize}px` }}
-          onScroll={handleScroll}
-        >
-          {MemoizedLines}
+        <div className='flex-1 relative overflow-hidden'>
+          <div ref={terminalRef} className='absolute inset-0' />
         </div>
 
         {imagePulls.size > 0 && (
@@ -442,7 +464,7 @@ export default function Terminal() {
         )}
 
         {!isAtBottom && (
-          <div className='absolute bottom-2 right-2 z-90 w-fit'>
+          <div className='absolute bottom-16 right-4 z-90 w-fit'>
             <Button onClick={scrollToBottom} variant='transparent'>
               <FontAwesomeIcon icon={faArrowDown} />
             </Button>
@@ -468,7 +490,7 @@ export default function Terminal() {
         </div>
       </Card>
 
-      <CommandHistoryDrawer opened={historyModalOpen} onClose={() => setHistoryModalOpen(false)} />
+      <CommandHistoryDrawer opened={openModal === 'commandHistory'} onClose={() => setOpenModal(null)} />
     </>
   );
 }

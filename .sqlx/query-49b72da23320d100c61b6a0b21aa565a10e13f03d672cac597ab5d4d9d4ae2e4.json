@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE user_api_keys\n                        SET last_used = $2\n                        WHERE user_api_keys.uuid = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamp"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "49b72da23320d100c61b6a0b21aa565a10e13f03d672cac597ab5d4d9d4ae2e4"
+}

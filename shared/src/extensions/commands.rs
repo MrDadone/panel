@@ -1,10 +1,10 @@
-use clap::{ArgMatches, Args, Command};
+use clap::{Arg, ArgMatches, Args, Command};
 use std::{collections::HashMap, pin::Pin, sync::Arc};
 
 pub type ExecutorFunc = dyn Fn(
         Option<Arc<crate::env::Env>>,
         ArgMatches,
-    ) -> Pin<Box<dyn Future<Output = Result<(), anyhow::Error>>>>
+    ) -> Pin<Box<dyn Future<Output = Result<i32, anyhow::Error>>>>
     + Send;
 
 pub enum CommandMapEntry {
@@ -20,7 +20,19 @@ pub struct CliCommandGroupBuilder {
 impl CliCommandGroupBuilder {
     pub fn new(name: &'static str, about: &'static str) -> Self {
         Self {
-            command: Command::new(name).about(about),
+            command: Command::new(name)
+                .arg(
+                    Arg::new("debug")
+                        .help("pass in order to run in debug mode")
+                        .num_args(0)
+                        .short('d')
+                        .long("debug")
+                        .default_value("false")
+                        .value_parser(clap::value_parser!(bool))
+                        .global(true)
+                        .required(false),
+                )
+                .about(about),
             map: HashMap::new(),
         }
     }

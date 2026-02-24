@@ -1,6 +1,5 @@
 import { create, StoreApi } from 'zustand';
 import { createContext } from 'zustand-utils';
-import { AssetsSlice, createAssetsSlice } from '@/stores/slices/admin/assets.ts';
 import {
   BackupConfigurationsSlice,
   createBackupConfigurationsSlice,
@@ -19,8 +18,7 @@ import { createUsersSlice, UsersSlice } from '@/stores/slices/admin/users.ts';
 import { createEggRepositoriesSlice, EggRepositoriesSlice } from './slices/admin/eggRepositories.ts';
 
 export interface AdminStore
-  extends AssetsSlice,
-    BackupConfigurationsSlice,
+  extends BackupConfigurationsSlice,
     DatabaseHostsSlice,
     OAuthProvidersSlice,
     EggsSlice,
@@ -38,7 +36,6 @@ const { Provider, useStore } = createContext<StoreApi<AdminStore>>();
 
 export const createAdminStore = () =>
   create<AdminStore>()((...a) => ({
-    ...createAssetsSlice(...a),
     ...createBackupConfigurationsSlice(...a),
     ...createDatabaseHostsSlice(...a),
     ...createOAuthProvidersSlice(...a),

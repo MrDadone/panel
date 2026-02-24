@@ -28,6 +28,7 @@ pub mod extract;
 pub mod jwt;
 pub mod mail;
 pub mod models;
+pub mod ntp;
 pub mod payload;
 pub mod permissions;
 pub mod prelude;
@@ -43,6 +44,16 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GIT_COMMIT: &str = env!("CARGO_GIT_COMMIT");
 pub const GIT_BRANCH: &str = env!("CARGO_GIT_BRANCH");
 pub const TARGET: &str = env!("CARGO_TARGET");
+
+pub fn full_version() -> String {
+    if GIT_BRANCH == "unknown" {
+        VERSION.to_string()
+    } else {
+        format!("{VERSION}:{GIT_COMMIT}@{GIT_BRANCH}")
+    }
+}
+
+pub const BUFFER_SIZE: usize = 32 * 1024;
 
 pub type GetIp = axum::extract::Extension<std::net::IpAddr>;
 
@@ -95,6 +106,7 @@ pub struct AppState {
     pub shutdown_handlers: Arc<extensions::shutdown_handlers::ShutdownHandlerManager>,
     pub settings: Arc<settings::Settings>,
     pub jwt: Arc<jwt::Jwt>,
+    pub ntp: Arc<ntp::Ntp>,
     pub storage: Arc<storage::Storage>,
     pub captcha: Arc<captcha::Captcha>,
     pub mail: Arc<mail::Mail>,
@@ -117,7 +129,8 @@ impl AppState {
         };
 
         let jwt = Arc::new(jwt::Jwt::new(&env));
-        let cache = Arc::new(cache::Cache::new(&env).await);
+        let ntp = ntp::Ntp::new();
+        let cache = cache::Cache::new(&env).await;
         let database = Arc::new(database::Database::new(&env, cache.clone()).await);
 
         let background_tasks =
@@ -141,7 +154,7 @@ impl AppState {
                 Ok(_) => AppContainerType::Unknown,
                 Err(_) => AppContainerType::None,
             },
-            version: format!("{}:{}@{}", VERSION, GIT_COMMIT, GIT_BRANCH),
+            version: full_version(),
 
             client: reqwest::ClientBuilder::new()
                 .user_agent(format!("github.com/calagopus/panel {}", VERSION))
@@ -153,6 +166,7 @@ impl AppState {
             shutdown_handlers: shutdown_handlers.clone(),
             settings: settings.clone(),
             jwt,
+            ntp,
             storage,
             captcha,
             mail,

@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { ContainerRegistry, Registry } from 'shared';
+import type { Props as ContainerProps } from '@/elements/containers/ServerContentContainer.tsx';
 
 interface ConsoleFeatureDefinition {
   filter?: (features: string[]) => boolean;
@@ -18,7 +19,7 @@ export class ConsoleRegistry implements Registry {
     return this;
   }
 
-  public container: ContainerRegistry = new ContainerRegistry();
+  public container: ContainerRegistry<ContainerProps> = new ContainerRegistry();
 
   public features: ConsoleFeatureDefinition[] = [];
   public statCards: FC[] = [];
@@ -27,7 +28,7 @@ export class ConsoleRegistry implements Registry {
   public terminalHeaderRightComponents: FC[] = [];
   public terminalInputRowComponents: FC[] = [];
 
-  public enterContainer(callback: (registry: ContainerRegistry) => unknown): this {
+  public enterContainer(callback: (registry: ContainerRegistry<ContainerProps>) => unknown): this {
     callback(this.container);
     return this;
   }

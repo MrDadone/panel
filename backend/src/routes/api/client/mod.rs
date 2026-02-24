@@ -50,45 +50,26 @@ pub async fn auth(
                 .into_response());
         }
 
-        let (auth_user, session) = match User::by_session(&state.database, session_id.value()).await
-        {
-            Ok(Some(data)) => data,
-            Ok(None) => {
-                return Ok(ApiResponse::error("invalid session")
-                    .with_status(StatusCode::UNAUTHORIZED)
-                    .into_response());
-            }
-            Err(err) => return Ok(ApiResponse::from(err).into_response()),
-        };
-
-        state
-            .database
-            .batch_action("update_user_session", session.uuid, {
-                let state = state.clone();
-                let user_agent = shared::utils::slice_up_to(
-                    req.headers()
-                        .get("User-Agent")
-                        .and_then(|ua| ua.to_str().ok())
-                        .unwrap_or("unknown"),
-                    255,
-                )
-                .to_string();
-
-                async move {
-                    sqlx::query!(
-                        "UPDATE user_sessions
-                        SET ip = $1, user_agent = $2, last_used = NOW()
-                        WHERE user_sessions.uuid = $3",
-                        sqlx::types::ipnetwork::IpNetwork::from(ip.0),
-                        user_agent,
-                        session.uuid,
-                    )
-                    .execute(state.database.write())
-                    .await?;
-
-                    Ok(())
+        let (auth_user, session) =
+            match User::by_session_cached(&state.database, session_id.value()).await {
+                Ok(Some(data)) => data,
+                Ok(None) => {
+                    return Ok(ApiResponse::error("invalid session")
+                        .with_status(StatusCode::UNAUTHORIZED)
+                        .into_response());
                 }
-            })
+                Err(err) => return Ok(ApiResponse::from(err).into_response()),
+            };
+
+        session
+            .update_last_used(
+                &state.database,
+                ip.0,
+                req.headers()
+                    .get("User-Agent")
+                    .and_then(|ua| ua.to_str().ok())
+                    .unwrap_or("unknown"),
+            )
             .await;
 
         let settings = match state.settings.get().await {
@@ -180,7 +161,7 @@ pub async fn auth(
             .to_str()
             .unwrap_or("")
             .trim_start_matches("Bearer ");
-        let (auth_user, api_key) = match User::by_api_key(&state.database, api_token).await {
+        let (auth_user, api_key) = match User::by_api_key_cached(&state.database, api_token).await {
             Ok(Some(data)) => data,
             Ok(None) => {
                 return Ok(ApiResponse::error("invalid api key")
@@ -203,25 +184,7 @@ pub async fn auth(
             );
         }
 
-        state
-            .database
-            .batch_action("update_user_api_key", api_key.uuid, {
-                let state = state.clone();
-
-                async move {
-                    sqlx::query!(
-                        "UPDATE user_api_keys
-                        SET last_used = NOW()
-                        WHERE user_api_keys.uuid = $1",
-                        api_key.uuid,
-                    )
-                    .execute(state.database.write())
-                    .await?;
-
-                    Ok(())
-                }
-            })
-            .await;
+        api_key.update_last_used(&state.database).await;
 
         let settings = match state.settings.get().await {
             Ok(settings) => settings,

@@ -37,7 +37,7 @@ export default function WebauthnContainer() {
 
   const doUpdate = () => {
     setLoading(true);
-    updateWebauthnSettings(form.values)
+    updateWebauthnSettings(adminSettingsWebauthnSchema.parse(form.values))
       .then(() => {
         addToast('Webauthn settings updated.', 'success');
       })

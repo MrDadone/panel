@@ -1,45 +1,34 @@
 import { Popover, Text, UnstyledButton } from '@mantine/core';
 import { memo, useMemo } from 'react';
+import { httpErrorToHuman } from '@/api/axios.ts';
+import cancelOperation from '@/api/server/files/cancelOperation.ts';
 import CloseButton from '@/elements/CloseButton.tsx';
 import Progress from '@/elements/Progress.tsx';
 import RingProgress from '@/elements/RingProgress.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
+import { bytesToString } from '@/lib/size.ts';
+import { useToast } from '@/providers/contexts/toastContext.ts';
+import { useFileManager } from '@/providers/FileManagerProvider.tsx';
+import { useServerStore } from '@/stores/server.ts';
 
-interface FileUploadInfo {
-  fileName: string;
-  progress: number;
-  size: number;
-  uploaded: number;
-  status: 'pending' | 'uploading' | 'completed' | 'cancelled' | 'error';
-}
+function FileOperationsProgress() {
+  const { addToast } = useToast();
+  const { server, fileOperations, removeFileOperation } = useServerStore();
+  const { fileUploader } = useFileManager();
+  const { uploadingFiles, cancelFileUpload, cancelFolderUpload, aggregatedUploadProgress } = fileUploader;
 
-interface FileOperationsProgressProps {
-  serverUuid: string;
-  uploadingFiles: Map<string, FileUploadInfo>;
-  fileOperations: Map<string, FileOperation>;
-  aggregatedUploadProgress: Map<
-    string,
-    {
-      totalSize: number;
-      uploadedSize: number;
-      fileCount: number;
-      completedCount: number;
-      pendingCount: number;
-    }
-  >;
-  onCancelFileUpload: (key: string) => void;
-  onCancelFolderUpload: (folderName: string) => void;
-  onCancelOperation: (uuid: string) => void;
-}
+  const doCancelOperation = (uuid: string) => {
+    removeFileOperation(uuid);
 
-const FileOperationsProgress = memo(function FileOperationsProgress({
-  serverUuid,
-  uploadingFiles,
-  fileOperations,
-  aggregatedUploadProgress,
-  onCancelFileUpload,
-  onCancelFolderUpload,
-  onCancelOperation,
-}: FileOperationsProgressProps) {
+    cancelOperation(server.uuid, uuid)
+      .then(() => {
+        addToast('Operation cancelled', 'success');
+      })
+      .catch((msg) => {
+        addToast(httpErrorToHuman(msg), 'error');
+      });
+  };
+
   const hasOperations = fileOperations.size > 0 || uploadingFiles.size > 0;
 
   const averageOperationProgress = useMemo(() => {
@@ -100,15 +89,20 @@ const FileOperationsProgress = memo(function FileOperationsProgress({
             <div key={folderName} className='flex flex-row items-center mb-3'>
               <div className='flex flex-col grow'>
                 <p className='break-all mb-1'>{statusText}</p>
-                <Progress value={progress} />
+                <Tooltip
+                  label={`${bytesToString(info.uploadedSize)} / ${bytesToString(info.totalSize)}`}
+                  innerClassName='w-full'
+                >
+                  <Progress value={progress} />
+                </Tooltip>
               </div>
-              <CloseButton className='ml-3' onClick={() => onCancelFolderUpload(folderName)} />
+              <CloseButton className='ml-3' onClick={() => cancelFolderUpload(folderName)} />
             </div>
           );
         })}
 
         {Array.from(uploadingFiles).map(([key, file]) => {
-          if (aggregatedUploadProgress.size > 0 && file.fileName.includes('/')) {
+          if (aggregatedUploadProgress.size > 0 && file.filePath.includes('/')) {
             return null;
           }
 
@@ -117,11 +111,16 @@ const FileOperationsProgress = memo(function FileOperationsProgress({
               <div className='flex flex-col grow'>
                 <p className='break-all mb-1 text-sm'>
                   {file.status === 'pending' ? 'Waiting: ' : 'Uploading: '}
-                  {file.fileName}
+                  {file.filePath}
                 </p>
-                <Progress value={file.progress} />
+                <Tooltip
+                  label={`${bytesToString(file.uploaded)} / ${bytesToString(file.size)}`}
+                  innerClassName='w-full'
+                >
+                  <Progress value={file.progress} />
+                </Tooltip>
               </div>
-              <CloseButton className='ml-3' onClick={() => onCancelFileUpload(key)} />
+              <CloseButton className='ml-3' onClick={() => cancelFileUpload(key)} />
             </div>
           );
         })}
@@ -144,20 +143,25 @@ const FileOperationsProgress = memo(function FileOperationsProgress({
                           : operation.type === 'copy_many'
                             ? `Copying ${operation.files.length} files`
                             : operation.type === 'copy_remote'
-                              ? operation.destinationServer === serverUuid
+                              ? operation.destinationServer === server.uuid
                                 ? `Receiving ${operation.files.length} files from remote server`
                                 : `Sending ${operation.files.length} files to remote server`
                               : null}
                 </p>
-                <Progress value={progress} />
+                <Tooltip
+                  label={`${bytesToString(operation.progress)} / ${bytesToString(operation.total)}`}
+                  innerClassName='w-full'
+                >
+                  <Progress value={progress} />
+                </Tooltip>
               </div>
-              <CloseButton className='ml-3' onClick={() => onCancelOperation(uuid)} />
+              <CloseButton className='ml-3' onClick={() => doCancelOperation(uuid)} />
             </div>
           );
         })}
       </Popover.Dropdown>
     </Popover>
   );
-});
+}
 
-export default FileOperationsProgress;
+export default memo(FileOperationsProgress);

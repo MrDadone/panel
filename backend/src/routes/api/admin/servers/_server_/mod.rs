@@ -14,6 +14,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod allocations;
 mod clear_state;
+mod logs;
 mod mounts;
 mod transfer;
 mod variables;
@@ -143,7 +144,7 @@ mod delete {
         {
             tracing::error!("failed to delete server: {:?}", err);
 
-            return ApiResponse::error(&format!("failed to delete server: {err}"))
+            return ApiResponse::error(format!("failed to delete server: {err}"))
                 .with_status(StatusCode::EXPECTATION_FAILED)
                 .ok();
         }
@@ -152,11 +153,11 @@ mod delete {
             for backup in backups {
                 let backup_uuid = backup.uuid;
 
-                if let Err(err) = backup.delete(&state, ()).await {
+                if let Err(err) = backup.delete(&state, Default::default()).await {
                     tracing::error!(server = %server.uuid, backup = %backup_uuid, "failed to delete backup: {:?}", err);
 
                     if !data.force {
-                        return ApiResponse::error(&format!("failed to delete backup: {err}"))
+                        return ApiResponse::error(format!("failed to delete backup: {err}"))
                             .with_status(StatusCode::EXPECTATION_FAILED)
                             .ok();
                     }
@@ -274,6 +275,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
         .nest("/transfer", transfer::router(state))
         .nest("/allocations", allocations::router(state))
         .nest("/clear-state", clear_state::router(state))
+        .nest("/logs", logs::router(state))
         .route_layer(axum::middleware::from_fn_with_state(state.clone(), auth))
         .with_state(state.clone())
 }

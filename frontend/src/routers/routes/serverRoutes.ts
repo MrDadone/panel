@@ -15,8 +15,10 @@ import type { ServerRouteDefinition } from 'shared';
 import ServerActivity from '@/pages/server/activity/ServerActivity.tsx';
 import ServerBackups from '@/pages/server/backups/ServerBackups.tsx';
 import ServerDatabases from '@/pages/server/databases/ServerDatabases.tsx';
+import ServerFilesEditor from '@/pages/server/files/FileEditor.tsx';
 import ServerFiles from '@/pages/server/files/ServerFiles.tsx';
-import ServerFilesNew from '@/pages/server/filesnew/ServerFiles.tsx';
+import ServerFilesEditorOld from '@/pages/server/filesold/FileEditor.tsx';
+import ServerFilesOld from '@/pages/server/filesold/ServerFiles.tsx';
 import ServerNetwork from '@/pages/server/network/ServerNetwork.tsx';
 import ScheduleView from '@/pages/server/schedules/ScheduleView.tsx';
 import ServerSchedules from '@/pages/server/schedules/ServerSchedules.tsx';
@@ -26,7 +28,6 @@ import ServerSubusers from '@/pages/server/subusers/ServerSubusers.tsx';
 import { getTranslations } from '@/providers/TranslationProvider.tsx';
 
 const ServerConsole = lazy(() => import('@/pages/server/console/ServerConsole.tsx'));
-const FileEditor = lazy(() => import('@/pages/server/files/FileEditor.tsx'));
 
 const routes: ServerRouteDefinition[] = [
   {
@@ -47,14 +48,20 @@ const routes: ServerRouteDefinition[] = [
   {
     name: undefined,
     path: '/files/:action',
-    element: FileEditor,
+    element: ServerFilesEditor,
     permission: 'files.read',
   },
   {
-    name: 'Files New',
+    name: 'Files Old',
     icon: faFolderOpen,
-    path: '/files-new',
-    element: ServerFilesNew,
+    path: '/files-old',
+    element: ServerFilesOld,
+    permission: 'files.read',
+  },
+  {
+    name: undefined,
+    path: '/files-old/:action',
+    element: ServerFilesEditorOld,
     permission: 'files.read',
   },
   {

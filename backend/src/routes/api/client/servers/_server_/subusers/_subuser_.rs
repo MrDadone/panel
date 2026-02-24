@@ -13,7 +13,6 @@ mod delete {
         },
         response::{ApiResponse, ApiResponseResult},
     };
-    use std::sync::Arc;
     use utoipa::ToSchema;
 
     #[derive(ToSchema, Serialize)]
@@ -68,50 +67,53 @@ mod delete {
             )
             .await;
 
-        tokio::spawn({
-            let database = Arc::clone(&state.database);
+        tokio::spawn(async move {
+            tracing::debug!(server = %server.uuid, "removing subuser permissions in wings");
 
-            async move {
-                tracing::debug!(server = %server.uuid, "removing subuser permissions in wings");
+            let node = match server.node.fetch_cached(&state.database).await {
+                Ok(node) => node,
+                Err(err) => {
+                    tracing::error!(server = %server.uuid, "failed to remove subuser permissions in wings: {:?}", err);
 
-                let node = match server.node.fetch_cached(&state.database).await {
-                    Ok(node) => node,
-                    Err(err) => {
-                        tracing::error!(server = %server.uuid, "failed to remove subuser permissions in wings: {:?}", err);
+                    return;
+                }
+            };
 
-                        return;
+            let api_client = match node.api_client(&state.database).await {
+                Ok(api_client) => api_client,
+                Err(err) => {
+                    tracing::error!(server = %server.uuid, "failed to remove subuser permissions in wings: {:?}", err);
+
+                    return;
+                }
+            };
+
+            if let Err(err) = api_client
+               	.post_servers_server_ws_permissions(
+                    server.uuid,
+                    &wings_api::servers_server_ws_permissions::post::RequestBody {
+                        user_permissions: vec![wings_api::servers_server_ws_permissions::post::RequestBodyUserPermissions {
+                            user: subuser.user.uuid,
+                            permissions: Vec::new(),
+                            ignored_files: Vec::new(),
+                        }]
                     }
-                };
+                )
+                .await
+            {
+                tracing::error!(server = %server.uuid, "failed to remove subuser permissions in wings: {:?}", err);
+            }
 
-                if let Err(err) = node
-                    .api_client(&database)
-                    .post_servers_server_ws_permissions(
-                        server.uuid,
-                        &wings_api::servers_server_ws_permissions::post::RequestBody {
-                            user_permissions: vec![wings_api::servers_server_ws_permissions::post::RequestBodyUserPermissions {
-                                user: subuser.user.uuid,
-                                permissions: Vec::new(),
-                                ignored_files: Vec::new(),
-                            }]
-                        }
-                    )
-                    .await
-                {
-                    tracing::error!(server = %server.uuid, "failed to remove subuser permissions in wings: {:?}", err);
-                }
-
-                if let Err(err) = node
-                    .api_client(&database)
-                    .post_servers_server_ws_deny(
-                        server.uuid,
-                        &wings_api::servers_server_ws_deny::post::RequestBody {
-                            jtis: vec![subuser.user.uuid.to_string().into()],
-                        },
-                    )
-                    .await
-                {
-                    tracing::error!(server = %server.uuid, "failed to remove subuser permissions in wings: {:?}", err);
-                }
+            if let Err(err) = api_client
+                .post_servers_server_ws_deny(
+                    server.uuid,
+                    &wings_api::servers_server_ws_deny::post::RequestBody {
+                        jtis: vec![subuser.user.uuid.to_string().into()],
+                    },
+                )
+                .await
+            {
+                tracing::error!(server = %server.uuid, "failed to remove subuser permissions in wings: {:?}", err);
             }
         });
 
@@ -131,7 +133,6 @@ mod patch {
         },
         response::{ApiResponse, ApiResponseResult},
     };
-    use std::sync::Arc;
     use utoipa::ToSchema;
     use validator::Validate;
 
@@ -238,46 +239,50 @@ mod patch {
             )
             .await;
 
-        tokio::spawn({
-            let database = Arc::clone(&state.database);
+        tokio::spawn(async move {
+            tracing::debug!(server = %server.uuid, "updating subuser permissions in wings");
 
-            async move {
-                tracing::debug!(server = %server.uuid, "updating subuser permissions in wings");
-
-                let node = match server.node.fetch_cached(&state.database).await {
-                    Ok(node) => node,
-                    Err(err) => {
-                        tracing::error!(server = %server.uuid, "failed to update subuser permissions in wings: {:?}", err);
-
-                        return;
-                    }
-                };
-
-                if let Err(err) = node
-                    .api_client(&database)
-                    .post_servers_server_ws_permissions(
-                        server.uuid,
-                        &wings_api::servers_server_ws_permissions::post::RequestBody {
-                            user_permissions: vec![wings_api::servers_server_ws_permissions::post::RequestBodyUserPermissions {
-                                user: subuser.user.uuid,
-                                permissions: server.wings_subuser_permissions(
-                                    match &state.settings.get().await {
-                                        Ok(settings) => settings,
-                                        Err(_) => return,
-                                    },
-                                    &subuser
-                                )
-                                    .into_iter()
-                                    .map(compact_str::CompactString::from)
-                                    .collect(),
-                                ignored_files: subuser.ignored_files,
-                            }]
-                        }
-                    )
-                    .await
-                {
+            let node = match server.node.fetch_cached(&state.database).await {
+                Ok(node) => node,
+                Err(err) => {
                     tracing::error!(server = %server.uuid, "failed to update subuser permissions in wings: {:?}", err);
+
+                    return;
                 }
+            };
+
+            let api_client = match node.api_client(&state.database).await {
+                Ok(api_client) => api_client,
+                Err(err) => {
+                    tracing::error!(server = %server.uuid, "failed to update subuser permissions in wings: {:?}", err);
+
+                    return;
+                }
+            };
+
+            if let Err(err) = api_client
+                .post_servers_server_ws_permissions(
+                    server.uuid,
+                    &wings_api::servers_server_ws_permissions::post::RequestBody {
+                        user_permissions: vec![wings_api::servers_server_ws_permissions::post::RequestBodyUserPermissions {
+                            user: subuser.user.uuid,
+                            permissions: server.wings_subuser_permissions(
+                                match &state.settings.get().await {
+                                    Ok(settings) => settings,
+                                    Err(_) => return,
+                                },
+                                &subuser
+                            )
+                                .into_iter()
+                                .map(compact_str::CompactString::from)
+                                .collect(),
+                            ignored_files: subuser.ignored_files,
+                        }]
+                    }
+                )
+                .await
+            {
+                tracing::error!(server = %server.uuid, "failed to update subuser permissions in wings: {:?}", err);
             }
         });
 

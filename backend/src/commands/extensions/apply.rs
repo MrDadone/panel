@@ -75,7 +75,7 @@ impl shared::extensions::commands::CliCommand<ApplyArgs> for ApplyCommand {
                         ".sqlx".bright_red(),
                         "directory, make sure you are in the panel root.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let cargo_bin = which("cargo")
@@ -119,7 +119,7 @@ impl shared::extensions::commands::CliCommand<ApplyArgs> for ApplyCommand {
                         "does not match requirement".red(),
                         node_req.to_string().bright_red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let pnpm_bin = which("pnpm")
@@ -145,7 +145,7 @@ impl shared::extensions::commands::CliCommand<ApplyArgs> for ApplyCommand {
                         "does not match requirement".red(),
                         pnpm_req.to_string().bright_red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 println!();
@@ -165,7 +165,7 @@ impl shared::extensions::commands::CliCommand<ApplyArgs> for ApplyCommand {
                         "pnpm install".bright_red(),
                         "did not run successfully, aborting process".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 println!();
@@ -181,7 +181,7 @@ impl shared::extensions::commands::CliCommand<ApplyArgs> for ApplyCommand {
                         "pnpm build".bright_red(),
                         "did not run successfully, aborting process".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let filesystem =
@@ -221,7 +221,7 @@ impl shared::extensions::commands::CliCommand<ApplyArgs> for ApplyCommand {
                             .bright_red(),
                         "did not run successfully, aborting process".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 #[cfg(not(windows))]
@@ -273,7 +273,7 @@ impl shared::extensions::commands::CliCommand<ApplyArgs> for ApplyCommand {
                     }
                 }
 
-                Ok(())
+                Ok(0)
             })
         })
     }

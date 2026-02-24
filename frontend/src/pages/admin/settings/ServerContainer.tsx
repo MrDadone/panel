@@ -44,7 +44,7 @@ export default function ServerContainer() {
   const doUpdate = () => {
     setLoading(true);
 
-    updateServerSettings(form.values)
+    updateServerSettings(adminSettingsServerSchema.parse(form.values))
       .then(() => {
         addToast('Server settings updated.', 'success');
       })

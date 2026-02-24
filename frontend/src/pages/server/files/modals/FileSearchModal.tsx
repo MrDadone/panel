@@ -19,8 +19,9 @@ import SizeInput from '@/elements/input/SizeInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
@@ -101,7 +102,8 @@ interface FileSearchModalProps extends ModalProps {
 export default function FileSearchModal({ opened, onClose, onSearchComplete }: FileSearchModalProps) {
   const { addToast } = useToast();
   const { settings } = useGlobalStore();
-  const { server, browsingFastDirectory, browsingDirectory, setBrowsingEntries } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory, browsingFastDirectory, setBrowsingEntries, setSearchInfo } = useFileManager();
 
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
@@ -156,7 +158,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
     searchFiles(server.uuid, { root: browsingDirectory, ...searchFilters })
       .then((entries) => {
         setBrowsingEntries({ total: entries.length, page: 1, perPage: entries.length, data: entries });
-        onSearchComplete?.({ query, filters: searchFilters });
+        setSearchInfo({ query, filters: searchFilters });
         onClose();
       })
       .catch((msg) => {
@@ -373,14 +375,14 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
           </Collapse>
         </Stack>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading}>
             Search
           </Button>
           <Button variant='default' onClick={onClose}>
             Cancel
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

@@ -22,6 +22,7 @@ mod backups;
 mod command;
 mod databases;
 mod files;
+mod logs;
 mod mounts;
 mod power;
 mod resources;
@@ -148,6 +149,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
         .routes(routes!(get::route))
         .nest("/activity", activity::router(state))
         .nest("/resources", resources::router(state))
+        .nest("/logs", logs::router(state))
         .nest("/websocket", websocket::router(state))
         .nest("/command", command::router(state))
         .nest("/power", power::router(state))

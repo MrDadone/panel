@@ -1,10 +1,11 @@
 import { z } from 'zod';
+import { nullableString } from '@/lib/transformers.ts';
 
 export const adminEggSchema = z.object({
   eggRepositoryEggUuid: z.uuid().nullable(),
   author: z.string().min(2).max(255),
   name: z.string().min(3).max(255),
-  description: z.string().max(1024).nullable(),
+  description: z.preprocess(nullableString, z.string().max(1024).nullable()),
   configFiles: z.array(
     z.object({
       file: z.string(),
@@ -12,7 +13,7 @@ export const adminEggSchema = z.object({
       replace: z.array(
         z.object({
           match: z.string(),
-          ifValue: z.string().nullable(),
+          ifValue: z.preprocess(nullableString, z.string().nullable()),
           replaceWith: z.string(),
         }),
       ),
@@ -24,7 +25,7 @@ export const adminEggSchema = z.object({
   }),
   configStop: z.object({
     type: z.string(),
-    value: z.string().nullable(),
+    value: z.preprocess(nullableString, z.string().nullable()),
   }),
   configAllocations: z.object({
     userSelfAssign: z.object({
@@ -50,10 +51,10 @@ export const adminEggScriptSchema = z.object({
 
 export const adminEggVariableSchema = z.object({
   name: z.string().min(3).max(255),
-  description: z.string().max(1024).nullable(),
+  description: z.preprocess(nullableString, z.string().max(1024).nullable()),
   order: z.number(),
   envVariable: z.string().min(1).max(255),
-  defaultValue: z.string().max(1024).nullable(),
+  defaultValue: z.preprocess(nullableString, z.string().max(1024).nullable()),
   userViewable: z.boolean(),
   userEditable: z.boolean(),
   secret: z.boolean(),

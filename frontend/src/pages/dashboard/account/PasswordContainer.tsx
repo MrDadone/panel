@@ -9,6 +9,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import updatePassword from '@/api/me/account/updatePassword.ts';
 import Button from '@/elements/Button.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
+import Spinner from '@/elements/Spinner.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import { dashboardPasswordSchema } from '@/lib/schemas/dashboard.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
@@ -34,6 +35,8 @@ export default function PasswordContainer({ blurred }: AccountCardProps) {
   });
 
   const doUpdate = () => {
+    if (!user) return;
+
     setLoading(true);
 
     updatePassword({
@@ -53,6 +56,10 @@ export default function PasswordContainer({ blurred }: AccountCardProps) {
       })
       .finally(() => setLoading(false));
   };
+
+  if (!user) {
+    return <Spinner.Centered />;
+  }
 
   return (
     <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>

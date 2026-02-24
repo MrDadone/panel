@@ -21,6 +21,8 @@ use utoipa::ToSchema;
 
 pub mod client;
 mod extra;
+
+use client::AsyncResponseReader;
 pub use extra::*;
 
 `)
@@ -29,9 +31,15 @@ const clientOutput = fs.createWriteStream('../src/client.rs', { flags: 'w' })
 
 clientOutput.write(`// This file is auto-generated from OpenAPI spec. Do not edit manually.
 use super::*;
+use futures_util::TryStreamExt;
 use reqwest::{Client, Method, StatusCode};
 use serde::de::DeserializeOwned;
-use std::sync::LazyLock;
+use std::{
+    pin::Pin,
+    sync::LazyLock,
+    task::{Context, Poll},
+};
+use tokio::io::AsyncRead;
 
 static CLIENT: LazyLock<Client> = LazyLock::new(|| {
     Client::builder()
@@ -58,6 +66,27 @@ impl From<ApiHttpError> for anyhow::Error {
             ApiHttpError::MsgpackEncode(err) => anyhow::anyhow!(err),
             ApiHttpError::MsgpackDecode(err) => anyhow::anyhow!(err),
         }
+    }
+}
+
+pub struct AsyncResponseReader(Box<dyn AsyncRead + Send + Unpin>);
+
+impl AsyncRead for AsyncResponseReader {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut tokio::io::ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        Pin::new(&mut self.0).poll_read(cx, buf)
+    }
+}
+
+impl<'de> Deserialize<'de> for AsyncResponseReader {
+    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Self(Box::new(tokio::io::empty())))
     }
 }
 
@@ -98,18 +127,16 @@ async fn request_impl<T: DeserializeOwned + 'static>(
     match request.send().await {
         Ok(response) => {
             if response.status().is_success() {
-                if std::any::type_name::<T>() == std::any::type_name::<String>() {
-                    return match response.text().await {
-                        Ok(text) => Ok(*(Box::new(text) as Box<dyn std::any::Any>)
-                            .downcast::<T>()
-                            .unwrap()),
-                        Err(err) => Err(ApiHttpError::Http(
-                            StatusCode::PRECONDITION_FAILED,
-                            super::ApiError {
-                                error: err.to_string().into(),
-                            },
-                        )),
-                    };
+                if std::any::type_name::<T>() == std::any::type_name::<AsyncResponseReader>() {
+                    let stream = response.bytes_stream().map_err(|err| {
+                        std::io::Error::other(format!("failed to read multipart field: {err}"))
+                    });
+                    let stream_reader = tokio_util::io::StreamReader::new(stream);
+
+                    return Ok(*(Box::new(AsyncResponseReader(Box::new(stream_reader)))
+                        as Box<dyn std::any::Any>)
+                        .downcast::<T>()
+                        .unwrap());
                 }
 
                 match response.bytes().await {
@@ -227,7 +254,7 @@ for (const [path, route] of Object.entries(openapi.paths ?? {})) {
                 output.write(`        pub type Response${code} = ${schema.$ref.split('/').at(-1)};\n\n`)
             } else {
                 if ((schema as oas31.SchemaObject).type !== 'object') {
-                    output.write(`        pub type Response${code} = ${convertType(schema as any)};\n\n`.replace('compact_str::CompactString', 'String'))
+                    output.write(`        pub type Response${code} = ${convertType(schema as any)};\n\n`.replace('compact_str::CompactString', 'String').replace('String', 'AsyncResponseReader'))
                 } else {
                     generateSchemaObject(output, 8, null, `Response${code}`, schema as any)
                 }

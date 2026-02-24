@@ -74,19 +74,25 @@ export default function BackupConfigurationCreateOrUpdate({
     form,
     createFn: () =>
       createBackupConfiguration({
-        ...form.values,
+        ...adminBackupConfigurationSchema.parse(form.values),
         backupConfigs: {
-          s3: backupConfigS3Form.isDirty() ? backupConfigS3Form.values : null,
-          restic: backupConfigResticForm.isDirty() ? backupConfigResticForm.values : null,
+          s3: backupConfigS3Form.isDirty() ? adminBackupConfigurationS3Schema.parse(backupConfigS3Form.values) : null,
+          restic: backupConfigResticForm.isDirty()
+            ? adminBackupConfigurationResticSchema.parse(backupConfigResticForm.values)
+            : null,
         },
       }),
     updateFn: contextBackupConfiguration
       ? () =>
           updateBackupConfiguration(contextBackupConfiguration.uuid, {
-            ...form.values,
+            ...adminBackupConfigurationSchema.parse(form.values),
             backupConfigs: {
-              s3: backupConfigS3Form.isDirty() ? backupConfigS3Form.values : null,
-              restic: backupConfigResticForm.isDirty() ? backupConfigResticForm.values : null,
+              s3: backupConfigS3Form.isDirty()
+                ? adminBackupConfigurationS3Schema.parse(backupConfigS3Form.values)
+                : null,
+              restic: backupConfigResticForm.isDirty()
+                ? adminBackupConfigurationResticSchema.parse(backupConfigResticForm.values)
+                : null,
             },
           })
       : undefined,

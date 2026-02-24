@@ -47,8 +47,8 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
 
   const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminUserSchema>, User>({
     form,
-    createFn: () => createUser(form.values),
-    updateFn: contextUser ? () => updateUser(contextUser.uuid, form.values) : undefined,
+    createFn: () => createUser(adminUserSchema.parse(form.values)),
+    updateFn: contextUser ? () => updateUser(contextUser.uuid, adminUserSchema.parse(form.values)) : undefined,
     deleteFn: contextUser ? () => deleteUser(contextUser.uuid) : undefined,
     doUpdate: !!contextUser,
     basePath: '/admin/users',
@@ -162,7 +162,6 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
             placeholder='Password'
             type='password'
             {...form.getInputProps('password')}
-            onChange={(e) => form.setFieldValue('password', e.target.value || null)}
           />
 
           <Switch label='Admin' {...form.getInputProps('admin', { type: 'checkbox' })} />

@@ -1,8 +1,6 @@
 use super::{GetState, State};
-use axum::{
-    http::{HeaderMap, StatusCode},
-    routing::get,
-};
+use axum::routing::get;
+use shared::response::ApiResponse;
 use utoipa_axum::router::OpenApiRouter;
 
 pub mod admin;
@@ -16,16 +14,22 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
     OpenApiRouter::new()
         .route(
             "/",
-            get(|| async move {
-                let mut headers = HeaderMap::new();
+            get(|state: GetState| async move {
+                let settings = state.settings.get().await?;
 
-                headers.insert("Content-Type", "text/html".parse().unwrap());
+                let mut environment = minijinja::Environment::new();
+                environment.set_auto_escape_callback(|_| minijinja::AutoEscape::Html);
+                environment.add_global("settings", minijinja::Value::from_serialize(&*settings));
+                drop(settings);
 
-                (
-                    StatusCode::OK,
-                    headers,
+                let api_html = environment.render_str(
                     include_str!("../../../static/api.html"),
-                )
+                    minijinja::Value::default(),
+                )?;
+
+                ApiResponse::new(axum::body::Body::from(api_html))
+                    .with_header("Content-Type", "text/html")
+                    .ok()
             }),
         )
         .nest("/settings", settings::router(state))

@@ -32,7 +32,7 @@ impl shared::extensions::commands::CliCommand<DiagnosticsArgs> for DiagnosticsCo
                     Some(env) => env,
                     None => {
                         eprintln!("{}", "no env found".red());
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
 
@@ -48,11 +48,7 @@ impl shared::extensions::commands::CliCommand<DiagnosticsArgs> for DiagnosticsCo
                 writeln!(output, "panel-rs - diagnostics report").unwrap();
 
                 write_header(&mut output, "versions");
-                write_line(
-                    &mut output,
-                    "panel-rs",
-                    &format!("{}:{}", shared::VERSION, shared::GIT_COMMIT),
-                );
+                write_line(&mut output, "panel-rs", &shared::full_version());
                 write_line(&mut output, "target", shared::TARGET);
                 write_line(&mut output, "os", std::env::consts::OS);
 
@@ -90,7 +86,7 @@ impl shared::extensions::commands::CliCommand<DiagnosticsArgs> for DiagnosticsCo
                     "timezone",
                     &format!("{}", chrono::Local::now().offset()),
                 );
-                write_line(&mut output, "debug mode", &env.app_debug.to_string());
+                write_line(&mut output, "debug mode", &env.is_debug().to_string());
 
                 write_header(&mut output, "latest panel-rs logs");
                 if let Some(app_log_directory) = &env.app_log_directory {
@@ -105,17 +101,15 @@ impl shared::extensions::commands::CliCommand<DiagnosticsArgs> for DiagnosticsCo
                                 Ok(n) => n,
                                 Err(err) => {
                                     eprintln!("{}: {err}", "failed to read wings log file".red());
-                                    std::process::exit(1);
+                                    return Ok(1);
                                 }
                             } > 0
                             {
-                                if !line.trim().is_empty() {
-                                    if all_lines.len() == args.log_lines {
-                                        all_lines.pop_front();
-                                    }
-                                    all_lines.push_back(line.clone());
+                                if all_lines.len() == args.log_lines {
+                                    all_lines.pop_front();
                                 }
-                                line.clear();
+                                let out_line = std::mem::take(&mut line);
+                                all_lines.push_back(out_line);
                             }
 
                             for line in all_lines {
@@ -141,7 +135,7 @@ impl shared::extensions::commands::CliCommand<DiagnosticsArgs> for DiagnosticsCo
                         }
                         Err(err) => {
                             eprintln!("{}: {err}", "failed to read wings log file".red());
-                            std::process::exit(1);
+                            return Ok(1);
                         }
                     }
                 } else {
@@ -162,7 +156,7 @@ impl shared::extensions::commands::CliCommand<DiagnosticsArgs> for DiagnosticsCo
                         .unwrap();
 
                     if !confirm {
-                        return Ok(());
+                        return Ok(0);
                     }
                 }
 
@@ -182,7 +176,7 @@ impl shared::extensions::commands::CliCommand<DiagnosticsArgs> for DiagnosticsCo
                     Ok(response) => response,
                     Err(err) => {
                         eprintln!("{}: {err}", "failed to upload diagnostics report".red());
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
                 let response: Response = match response.json().await {
@@ -192,7 +186,7 @@ impl shared::extensions::commands::CliCommand<DiagnosticsArgs> for DiagnosticsCo
                             "{}: {err}",
                             "failed to parse response from pastes.dev".red()
                         );
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
 
@@ -206,7 +200,7 @@ impl shared::extensions::commands::CliCommand<DiagnosticsArgs> for DiagnosticsCo
                     response.key
                 );
 
-                Ok(())
+                Ok(0)
             })
         })
     }

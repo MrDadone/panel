@@ -11,6 +11,8 @@ use utoipa::ToSchema;
 
 pub mod client;
 mod extra;
+
+use client::AsyncResponseReader;
 pub use extra::*;
 
 nestify::nest! {
@@ -842,7 +844,7 @@ pub mod servers_server_files_contents {
     pub mod get {
         use super::*;
 
-        pub type Response200 = String;
+        pub type Response200 = AsyncResponseReader;
 
         pub type Response404 = ApiError;
 
@@ -1388,8 +1390,12 @@ pub mod servers_server_install_abort {
     }
 }
 pub mod servers_server_logs {
+    use super::*;
+
     pub mod get {
-        pub type Response200 = String;
+        use super::*;
+
+        pub type Response200 = AsyncResponseReader;
 
         pub type Response = Response200;
     }
@@ -1400,7 +1406,7 @@ pub mod servers_server_logs_install {
     pub mod get {
         use super::*;
 
-        pub type Response200 = String;
+        pub type Response200 = AsyncResponseReader;
 
         pub type Response404 = ApiError;
 
@@ -2144,7 +2150,7 @@ pub mod system_logs_file {
     pub mod get {
         use super::*;
 
-        pub type Response200 = String;
+        pub type Response200 = AsyncResponseReader;
 
         pub type Response404 = ApiError;
 
@@ -2161,6 +2167,8 @@ pub mod system_overview {
             #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
                 #[schema(inline)]
                 pub version: compact_str::CompactString,
+                #[schema(inline)]
+                pub local_time: chrono::DateTime<chrono::Utc>,
                 #[schema(inline)]
                 pub container_type: AppContainerType,
                 #[schema(inline)]
@@ -2248,6 +2256,8 @@ pub mod system_upgrade {
 
         nestify::nest! {
             #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response202 {
+                #[schema(inline)]
+                pub applied: bool,
             }
         }
 
