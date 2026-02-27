@@ -51,7 +51,7 @@ export function useSearchablePaginatedTable<T>({
 
           if (res.total === 0 && res.page !== 1) {
             setPage(1);
-          } else if (p > totalPages) {
+          } else if (p > totalPages && totalPages !== 0) {
             setPage(totalPages);
           } else {
             setStoreData(res);
