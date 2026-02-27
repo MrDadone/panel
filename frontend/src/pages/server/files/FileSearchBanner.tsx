@@ -4,12 +4,12 @@ import { Alert } from '@mantine/core';
 import { bytesToString } from '@/lib/size.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 
-export default function FileSearchBanner() {
-  const { browsingEntries, searchInfo, setSearchInfo, invalidateFilemanager } = useFileManager();
+export default function FileSearchBanner({ resetEntries }: { resetEntries: () => void }) {
+  const { browsingEntries, searchInfo, setSearchInfo } = useFileManager();
 
   const closeSearch = async () => {
     setSearchInfo(null);
-    invalidateFilemanager();
+    resetEntries();
   };
 
   if (!searchInfo) return null;
