@@ -1,4 +1,4 @@
-import { createContext, RefObject, useContext } from "react";
+import { createContext, RefObject, useContext } from 'react';
 
 interface TranslationContextType {
   globalTranslationHandle: RefObject<never>;
