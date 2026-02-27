@@ -6,7 +6,7 @@ mod mass_import;
 pub fn commands(cli: CliCommandGroupBuilder) -> CliCommandGroupBuilder {
     cli.add_command(
         "create",
-        "Creates a new user for the Panel.",
+        "Creates a new nest for the Panel.",
         create::CreateCommand,
     )
     .add_command(

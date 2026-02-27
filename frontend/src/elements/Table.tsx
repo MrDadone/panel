@@ -154,7 +154,7 @@ export default ({ columns, loading, pagination, onPageSelect, allowSelect = true
       >
         <TableHead>
           {columns.map((column, index) => (
-            <TableHeader name={column} key={`column-${index}`} />
+            <TableHeader key={`column-${index}`} name={column} />
           ))}
         </TableHead>
         <Table.Tbody>

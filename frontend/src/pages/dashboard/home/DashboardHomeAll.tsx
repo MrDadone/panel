@@ -116,7 +116,10 @@ export default function DashboardHomeAll() {
           <Switch
             label={t('pages.account.home.tabs.allServers.page.input.showOtherUsersServers', {})}
             checked={serverListShowOthers}
-            onChange={(e) => setServerListShowOthers(e.currentTarget.checked)}
+            onChange={(e) => {
+              setPage(1);
+              setServerListShowOthers(e.currentTarget.checked);
+            }}
           />
         </AdminCan>
       </Group>

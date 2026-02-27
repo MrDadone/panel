@@ -1,4 +1,4 @@
-import { MantineProvider } from '@mantine/core';
+import { MantineProvider, type MantineThemeOverride } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createBrowserHistory } from 'history';
@@ -29,7 +29,7 @@ const queryClient = new QueryClient({
 
 const browserHistory = createBrowserHistory();
 
-export default function App() {
+export default function App({ theme }: { theme: MantineThemeOverride }) {
   const { settings, setSettings, setLanguages } = useGlobalStore();
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function App() {
 
   return Object.keys(settings).length > 0 ? (
     <ErrorBoundary>
-      <MantineProvider forceColorScheme='dark'>
+      <MantineProvider theme={theme} forceColorScheme='dark'>
         <QueryClientProvider client={queryClient}>
           <ToastProvider>
             <WindowProvider>

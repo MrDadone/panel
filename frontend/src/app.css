@@ -15,10 +15,10 @@
   --color-neutral-850: oklch(25.4% 0 0);
 
   /* Server status colors - for status indicators (circles, cards, etc.) */
-  --color-server-status-running: #22c55e; /* Green - server is running */
-  --color-server-status-offline: #ef4444; /* Red - server is offline */
-  --color-server-status-starting: #eab308; /* Yellow - server is starting */
-  --color-server-status-stopping: #eab308; /* Yellow - server is stopping */
+  --color-server-status-running: #22c55e;
+  --color-server-status-offline: #ef4444;
+  --color-server-status-starting: #eab308;
+  --color-server-status-stopping: #eab308;
 }
 
 /* Custom utility classes for server status colors */

@@ -10,7 +10,7 @@ export interface CustomBlocker {
   proceed: () => void;
 }
 
-export function useBlocker(when: boolean): CustomBlocker {
+export function useBlocker(when: boolean, ignoreQueryChanges: boolean = false): CustomBlocker {
   const history = useHistory();
   const [state, setState] = useState<BlockerState>('idle');
 
@@ -23,16 +23,32 @@ export function useBlocker(when: boolean): CustomBlocker {
       return;
     }
 
-    const unblock = history.block((transition: Transition) => {
+    let unblock: () => void;
+
+    const handleBlock = (transition: Transition) => {
+      if (ignoreQueryChanges && history.location.pathname === transition.location.pathname) {
+        unblock();
+        transition.retry();
+
+        unblock = history.block(handleBlock);
+        unblockRef.current = unblock;
+        return;
+      }
+
       txRef.current = transition;
       unblockRef.current = unblock;
       setState('blocked');
-    });
+    };
+
+    unblock = history.block(handleBlock);
+    unblockRef.current = unblock;
 
     return () => {
-      unblock();
+      if (unblockRef.current) {
+        unblockRef.current();
+      }
     };
-  }, [history, when]);
+  }, [history, when, ignoreQueryChanges]);
 
   const proceed = useCallback(() => {
     if (txRef.current && unblockRef.current) {
