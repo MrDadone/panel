@@ -62,7 +62,7 @@ export function SortableItem({
     style: {
       cursor: isDragging ? 'grabbing' : 'grab',
       touchAction: 'none' as const,
-    },
+    } satisfies CSSProperties,
   };
 
   return (

@@ -479,6 +479,8 @@ const baseTranslations = defineTranslations({
             title: 'File Manager',
             selectAll: 'Select all files',
             cutFiles: 'Cut selected files',
+            copyFiles: 'Copy selected files',
+            duplicateFile: 'Duplicate selected file',
             pasteFiles: 'Paste files',
             searchFiles: 'Search files',
             moveUpDirectory: 'Move Up a directory',

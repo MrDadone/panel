@@ -58,6 +58,8 @@ export interface FileManagerContextType {
   setClickOnce: (state: boolean) => void;
   editorMinimap: boolean;
   setEditorMinimap: (state: boolean) => void;
+  imageViewerSmoothing: boolean;
+  setImageViewerSmoothing: (state: boolean) => void;
 
   invalidateFilemanager: () => void;
   fileUploader: FileUploader;

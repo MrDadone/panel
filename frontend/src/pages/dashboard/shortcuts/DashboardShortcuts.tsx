@@ -110,6 +110,8 @@ export default function DashboardShortcuts() {
   const fileManagerShortcuts: ShortcutItemProps[] = [
     { keys: [modKey, 'A'], description: t('pages.account.shortcuts.fileManager.selectAll', {}) },
     { keys: [modKey, 'X'], description: t('pages.account.shortcuts.fileManager.cutFiles', {}) },
+    { keys: [modKey, 'C'], description: t('pages.account.shortcuts.fileManager.copyFiles', {}) },
+    { keys: [modKey, 'D'], description: t('pages.account.shortcuts.fileManager.duplicateFile', {}) },
     { keys: [modKey, 'V'], description: t('pages.account.shortcuts.fileManager.pasteFiles', {}) },
     { keys: [modKey, 'F'], description: t('pages.account.shortcuts.fileManager.searchFiles', {}) },
     { keys: ['Alt', { icon: faArrowUp }], description: t('pages.account.shortcuts.fileManager.moveUpDirectory', {}) },

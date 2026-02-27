@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { join } from 'pathe';
 import { type Ref, useCallback, useEffect, useRef } from 'react';
 import { createSearchParams, useNavigate, useSearchParams } from 'react-router';
+import { httpErrorToHuman } from '@/api/axios.ts';
+import copyFile from '@/api/server/files/copyFile.ts';
 import loadDirectory from '@/api/server/files/loadDirectory.ts';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
@@ -23,6 +25,7 @@ import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { FileManagerProvider } from '@/providers/FileManagerProvider.tsx';
+import { useToast } from '@/providers/ToastProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -34,6 +37,7 @@ function ServerFilesComponent() {
     browsingDirectory,
     browsingEntries,
     page,
+    openModal,
     browsingFastDirectory,
     setSelectedFiles,
     setBrowsingEntries,
@@ -41,6 +45,7 @@ function ServerFilesComponent() {
     setBrowsingFastDirectory,
     doOpenModal,
   } = useFileManager();
+  const { addToast } = useToast();
   const [_, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const canOpenFile = useServerCan('files.read-content');
@@ -161,6 +166,22 @@ function ServerFilesComponent() {
           }),
       },
       {
+        key: 'd',
+        callback: () => {
+          if (selectedFiles.size === 1) {
+            const file = [...selectedFiles.keys()][0];
+
+            copyFile(server.uuid, join(browsingDirectory, file.name), null)
+              .then(() => {
+                addToast('File copying has started.', 'success');
+              })
+              .catch((msg) => {
+                addToast(httpErrorToHuman(msg), 'error');
+              });
+          }
+        },
+      },
+      {
         key: 'f2',
         callback: () => {
           if (selectedFiles.size === 1) {
@@ -171,7 +192,7 @@ function ServerFilesComponent() {
       {
         key: 'Enter',
         callback: () => {
-          if (selectedFiles.size === 1) {
+          if (selectedFiles.size === 1 && openModal === null) {
             handleOpen([...selectedFiles.keys()][0]);
           }
         },

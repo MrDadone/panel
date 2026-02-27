@@ -21,6 +21,7 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import FileBreadcrumbs from './FileBreadcrumbs.tsx';
 import FileEditorSettings from './FileEditorSettings.tsx';
+import FileImageViewerSettings from './FileImageViewerSettings.tsx';
 import FileNameModal from './modals/FileNameModal.tsx';
 
 function FileEditorComponent() {
@@ -30,7 +31,8 @@ function FileEditorComponent() {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const server = useServerStore((state) => state.server);
-  const { editorMinimap, browsingWritableDirectory, browsingDirectory, setBrowsingDirectory } = useFileManager();
+  const { editorMinimap, imageViewerSmoothing, browsingWritableDirectory, browsingDirectory, setBrowsingDirectory } =
+    useFileManager();
 
   const [loading, setLoading] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -107,7 +109,11 @@ function FileEditorComponent() {
         <Group>
           <Title>{title}</Title>
 
-          {(params.action === 'new' || params.action === 'edit') && <FileEditorSettings />}
+          {params.action === 'new' || params.action === 'edit' ? (
+            <FileEditorSettings />
+          ) : params.action === 'image' ? (
+            <FileImageViewerSettings />
+          ) : null}
         </Group>
         <div hidden={!browsingWritableDirectory || params.action === 'image'}>
           {params.action === 'edit' ? (
@@ -157,7 +163,11 @@ function FileEditorComponent() {
                 <div className='h-full w-full flex flex-row justify-center'>
                   <TransformWrapper minScale={0.5}>
                     <TransformComponent wrapperClass='w-[calc(100%-4rem)]! h-7/8! rounded-md'>
-                      <img src={content} alt='test' />
+                      <img
+                        src={content}
+                        alt={fileName}
+                        style={{ imageRendering: imageViewerSmoothing ? undefined : 'pixelated' }}
+                      />
                     </TransformComponent>
                   </TransformWrapper>
                 </div>

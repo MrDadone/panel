@@ -8,7 +8,7 @@ mod get {
     };
     use serde::Serialize;
     use shared::{
-        GetState,
+        ApiError, GetState,
         models::{
             Pagination, PaginationParamsWithSearch,
             server::Server,
@@ -55,6 +55,12 @@ mod get {
         Query(params): Query<PaginationParamsWithSearch>,
         Path(server_group): Path<uuid::Uuid>,
     ) -> ApiResponseResult {
+        if let Err(errors) = shared::utils::validate_data(&params) {
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
+                .with_status(StatusCode::BAD_REQUEST)
+                .ok();
+        }
+
         permissions.has_user_permission("servers.read")?;
 
         let server_group =

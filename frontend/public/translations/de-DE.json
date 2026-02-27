@@ -597,6 +597,8 @@
             "title": "Dateimanager",
             "selectAll": "Alle Dateien auswählen",
             "cutFiles": "Ausgewählte Dateien ausschneiden",
+            "copyFiles": "Ausgewählte Dateien kopieren",
+            "duplicateFile": "Ausgewählte Datei duplizieren",
             "pasteFiles": "Dateien einfügen",
             "searchFiles": "Dateien suchen",
             "moveUpDirectory": "Ein Verzeichnis nach oben",

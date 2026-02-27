@@ -6,12 +6,12 @@ import Button from '@/elements/Button.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
 
-export default function FileEditorSettings() {
-  const { editorMinimap, setEditorMinimap } = useFileManager();
+export default function FileImageViewerSettings() {
+  const { imageViewerSmoothing, setImageViewerSmoothing } = useFileManager();
 
   useEffect(() => {
-    localStorage.setItem('file_editor_minimap', String(editorMinimap));
-  }, [editorMinimap]);
+    localStorage.setItem('file_image_viewer_smoothing', String(imageViewerSmoothing));
+  }, [imageViewerSmoothing]);
 
   return (
     <Popover position='bottom' withArrow shadow='md'>
@@ -22,9 +22,9 @@ export default function FileEditorSettings() {
       </Popover.Target>
       <Popover.Dropdown>
         <Checkbox
-          label='Show File Minimap'
-          checked={editorMinimap}
-          onChange={(e) => setEditorMinimap(e.target.checked)}
+          label='Smoothen Images (Anti-Aliasing)'
+          checked={imageViewerSmoothing}
+          onChange={(e) => setImageViewerSmoothing(e.target.checked)}
         />
       </Popover.Dropdown>
     </Popover>

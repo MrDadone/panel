@@ -29,8 +29,11 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const [modalDirectoryEntries, setModalDirectoryEntries] = useState<DirectoryEntry[]>([]);
   const [searchInfo, setSearchInfo] = useState<SearchInfo | null>(null);
-  const [clickOnce, setClickOnce] = useState(localStorage.getItem('file_click_once') === 'true');
+  const [clickOnce, setClickOnce] = useState(localStorage.getItem('file_click_once') !== 'false');
   const [editorMinimap, setEditorMinimap] = useState(localStorage.getItem('file_editor_minimap') === 'true');
+  const [imageViewerSmoothing, setImageViewerSmoothing] = useState(
+    localStorage.getItem('file_image_viewer_smoothing') !== 'false',
+  );
 
   const invalidateFilemanager = () => {
     queryClient
@@ -135,6 +138,8 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         setClickOnce,
         editorMinimap,
         setEditorMinimap,
+        imageViewerSmoothing,
+        setImageViewerSmoothing,
 
         invalidateFilemanager,
         fileUploader,
