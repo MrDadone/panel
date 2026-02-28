@@ -33,12 +33,14 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
   const clickCount = useRef(0);
   const clickTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent<HTMLTableRowElement>) => {
     clickCount.current += 1;
 
     if (clickTimer.current) return;
 
-    if (isSelected) {
+    if (e.shiftKey) {
+      addSelectedFile(file);
+    } else if (isSelected) {
       if (multipleSelected) {
         doSelectFiles([file]);
       } else {
@@ -93,7 +95,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
             if (clickOnce) {
               handleOpen();
             } else {
-              handleClick();
+              handleClick(e);
             }
           }}
         >
