@@ -83,7 +83,7 @@ function Link({ to, end, icon, name, title = name }: LinkProps) {
     e.preventDefault();
     addWindow(
       faWindowRestore,
-      title,
+      title!,
       <MemoryRouter initialEntries={[to]}>
         <RouterRoutes isNormal={false} />
       </MemoryRouter>,

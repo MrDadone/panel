@@ -156,7 +156,7 @@ export const serverScheduleStepSleepSchema = z.object({
 
 export const serverScheduleStepEnsureSchema = z.object({
   type: z.literal('ensure'),
-  condition: serverScheduleConditionSchema,
+  condition: serverSchedulePreConditionSchema,
 });
 
 export const serverScheduleStepFormatSchema = z.object({
