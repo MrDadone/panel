@@ -36,7 +36,7 @@ class CalagopusVersionInfo {
   public isNewerThan(version: string | CalagopusVersionInfo) {
     const parsedVersion = parseVersion(version);
 
-    return this.release.compare(parsedVersion.release) !== -1;
+    return this.release.compare(parsedVersion.release) === 1;
   }
 }
 

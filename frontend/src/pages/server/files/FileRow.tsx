@@ -124,7 +124,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
             </span>
           </TableData>
 
-          <TableData className='hidden md:table-cell'>
+          <TableData>
             <span className='flex items-center gap-4 leading-[100%]'>{bytesToString(file.size)}</span>
           </TableData>
 

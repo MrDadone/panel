@@ -236,7 +236,7 @@ function ServerFilesComponent() {
         <SelectionArea onSelectedStart={onSelectedStart} onSelected={onSelected} fireEvents={false} className='h-full'>
           <ContextMenuProvider>
             <Table
-              columns={window.innerWidth < 768 ? ['', 'Name', ''] : ['', 'Name', 'Size', 'Modified', '']}
+              columns={window.innerWidth < 768 ? ['', 'Name', 'Size', ''] : ['', 'Name', 'Size', 'Modified', '']}
               pagination={browsingEntries}
               onPageSelect={onPageSelect}
               allowSelect={false}
