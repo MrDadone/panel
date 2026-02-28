@@ -96,7 +96,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
           }}
           onClick={(e) => {
             e.preventDefault();
-            if (clickOnce || window.innerWidth < 768) {
+            if (clickOnce) {
               handleOpen();
             } else {
               handleClick(e);
