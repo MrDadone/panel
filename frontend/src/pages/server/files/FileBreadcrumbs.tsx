@@ -85,7 +85,7 @@ export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; 
   ];
 
   return (
-    <div className='flex flex-row items-center justify-between'>
+    <div className='flex flex-col gap-4 sm:gap-0 sm:flex-row sm:items-center sm:justify-between'>
       <Breadcrumbs separatorMargin='xs'>
         <Checkbox
           disabled={actingFiles.size > 0}

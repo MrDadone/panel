@@ -16,11 +16,12 @@ interface FileRowProps {
   file: DirectoryEntry;
   handleOpen: () => void;
   isSelected: boolean;
+  isActing: boolean;
   multipleSelected: boolean;
 }
 
 const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
-  { file, handleOpen, isSelected, multipleSelected },
+  { file, handleOpen, isSelected, isActing, multipleSelected },
   ref,
 ) {
   const canOpenActionBar = useServerCan(['files.read-content', 'files.archive', 'files.update', 'files.delete'], true);
@@ -65,6 +66,9 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
     // if (isOver && isValidDropTarget) {
     //   return 'var(--mantine-color-green-light)';
     // }
+    if (isActing) {
+      return 'var(--mantine-color-orange-light)';
+    }
     if (isSelected) {
       return 'var(--mantine-color-blue-light)';
     }
@@ -92,7 +96,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
           }}
           onClick={(e) => {
             e.preventDefault();
-            if (clickOnce) {
+            if (clickOnce || window.innerWidth < 768) {
               handleOpen();
             } else {
               handleClick(e);
@@ -120,11 +124,11 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
             </span>
           </TableData>
 
-          <TableData>
+          <TableData className='hidden md:table-cell'>
             <span className='flex items-center gap-4 leading-[100%]'>{bytesToString(file.size)}</span>
           </TableData>
 
-          <TableData>
+          <TableData className='hidden md:table-cell'>
             <FormattedTimestamp timestamp={file.modified} />
           </TableData>
 

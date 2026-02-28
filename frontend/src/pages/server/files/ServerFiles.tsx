@@ -33,6 +33,7 @@ function ServerFilesComponent() {
   const { settings } = useGlobalStore();
   const { server } = useServerStore();
   const {
+    actingFiles,
     selectedFiles,
     browsingDirectory,
     browsingEntries,
@@ -233,7 +234,7 @@ function ServerFilesComponent() {
         <SelectionArea onSelectedStart={onSelectedStart} onSelected={onSelected} fireEvents={false} className='h-full'>
           <ContextMenuProvider>
             <Table
-              columns={['', 'Name', 'Size', 'Modified', '']}
+              columns={window.innerWidth < 768 ? ['', 'Name', ''] : ['', 'Name', 'Size', 'Modified', '']}
               pagination={browsingEntries}
               onPageSelect={onPageSelect}
               allowSelect={false}
@@ -246,6 +247,7 @@ function ServerFilesComponent() {
                       file={entry}
                       handleOpen={() => handleOpen(entry)}
                       isSelected={selectedFiles.has(entry)}
+                      isActing={actingFiles.has(entry)}
                       multipleSelected={selectedFiles.size > 1}
                     />
                   )}
