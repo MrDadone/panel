@@ -11,6 +11,7 @@ import { AdminCan } from '@/elements/Can.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { eggTableColumns } from '@/lib/tableColumns.ts';
 import EggView from '@/pages/admin/nests/eggs/EggView.tsx';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
@@ -27,10 +28,10 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
   const { addToast } = useToast();
   const { eggs, setEggs, addEgg } = useAdminStore();
 
-  const selectedEggsPreviousRef = useRef(new Set<string>());
+  const selectedEggsPreviousRef = useRef<AdminNestEgg[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [selectedEggs, setSelectedEggs] = useState(new Set<string>());
+  const [selectedEggs, setSelectedEggs] = useState(new ObjectSet<AdminNestEgg, 'uuid'>('uuid'));
 
   const { loading, refetch, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getEggs(contextNest.uuid, page, search),
@@ -68,30 +69,30 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
 
   const onSelectedStart = useCallback(
     (event: ReactMouseEvent | MouseEvent) => {
-      selectedEggsPreviousRef.current = new Set(event.shiftKey ? selectedEggs : []);
+      selectedEggsPreviousRef.current = event.shiftKey ? selectedEggs.values() : [];
     },
     [selectedEggs],
   );
 
-  const onSelected = useCallback((selected: string[]) => {
-    setSelectedEggs(new Set([...selectedEggsPreviousRef.current, ...selected]));
+  const onSelected = useCallback((selected: AdminNestEgg[]) => {
+    setSelectedEggs(new ObjectSet('uuid', [...selectedEggsPreviousRef.current, ...selected]));
   }, []);
 
   useEffect(() => {
-    setSelectedEggs(new Set([]));
+    setSelectedEggs(new ObjectSet('uuid'));
   }, []);
 
-  const addSelectedEgg = (eggUuid: string) =>
+  const addSelectedEgg = (egg: AdminNestEgg) =>
     setSelectedEggs((prev) => {
-      const next = new Set(prev);
-      next.add(eggUuid);
+      const next = new ObjectSet('uuid', prev.values());
+      next.add(egg);
       return next;
     });
 
-  const removeSelectedEgg = (eggUuid: string) =>
+  const removeSelectedEgg = (egg: AdminNestEgg) =>
     setSelectedEggs((prev) => {
-      const next = new Set(prev);
-      next.delete(eggUuid);
+      const next = new ObjectSet('uuid', prev.values());
+      next.delete(egg);
       return next;
     });
 
@@ -100,11 +101,11 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
       {
         key: 'a',
         modifiers: ['ctrlOrMeta'],
-        callback: () => setSelectedEggs(new Set(eggs?.data.map((a) => a.uuid) ?? [])),
+        callback: () => setSelectedEggs(new ObjectSet('uuid', eggs?.data)),
       },
       {
         key: 'Escape',
-        callback: () => setSelectedEggs(new Set([])),
+        callback: () => setSelectedEggs(new ObjectSet('uuid')),
       },
     ],
     deps: [eggs],
@@ -144,7 +145,7 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
         nest={contextNest}
         selectedEggs={selectedEggs}
         invalidateEggs={() => {
-          setSelectedEggs(new Set());
+          setSelectedEggs(new ObjectSet('uuid'));
           refetch();
         }}
       />
@@ -152,7 +153,7 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
       <SelectionArea onSelectedStart={onSelectedStart} onSelected={onSelected}>
         <Table columns={eggTableColumns} loading={loading} pagination={eggs} onPageSelect={setPage} allowSelect={false}>
           {eggs.data.map((egg) => (
-            <SelectionArea.Selectable key={egg.uuid} item={egg.uuid}>
+            <SelectionArea.Selectable key={egg.uuid} item={egg}>
               {(innerRef: Ref<HTMLElement>) => (
                 <EggRow
                   key={egg.uuid}
@@ -160,7 +161,7 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
                   egg={egg}
                   showSelection
                   isSelected={selectedEggs.has(egg.uuid)}
-                  onSelectionChange={(selected) => (selected ? addSelectedEgg(egg.uuid) : removeSelectedEgg(egg.uuid))}
+                  onSelectionChange={(selected) => (selected ? addSelectedEgg(egg) : removeSelectedEgg(egg))}
                   ref={innerRef as Ref<HTMLTableRowElement>}
                 />
               )}

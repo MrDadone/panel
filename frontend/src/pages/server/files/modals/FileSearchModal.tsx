@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Box, Collapse, Flex, Group, ModalProps, Stack, Text, UnstyledButton } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import searchFiles from '@/api/server/files/searchFiles.ts';
@@ -104,7 +104,7 @@ export default function FileSearchModal({ opened, onClose }: ModalProps) {
     browsingFastDirectory,
     setBrowsingEntries,
     setSearchInfo,
-    setSelectedFiles,
+    doSelectFiles,
     clearActingFiles,
   } = useFileManager();
 
@@ -160,10 +160,12 @@ export default function FileSearchModal({ opened, onClose }: ModalProps) {
 
     searchFiles(server.uuid, { root: browsingDirectory, ...searchFilters })
       .then((entries) => {
-        setBrowsingEntries({ total: entries.length, page: 1, perPage: entries.length, data: entries });
-        setSearchInfo({ query, filters: searchFilters });
-        setSelectedFiles(new Set());
-        clearActingFiles();
+        startTransition(() => {
+          setBrowsingEntries({ total: entries.length, page: 1, perPage: entries.length, data: entries });
+          setSearchInfo({ query, filters: searchFilters });
+          doSelectFiles([]);
+          clearActingFiles();
+        });
         onClose();
       })
       .catch((msg) => {

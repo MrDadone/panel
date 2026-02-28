@@ -49,7 +49,7 @@ function FileActionBar() {
     copyFiles({
       uuid: server.uuid,
       root: '/',
-      files: [...actingFiles].map((f) => ({
+      files: actingFiles.values().map((f) => ({
         from: join(actingFilesSource!, f.name),
         to: join(browsingDirectory, f.name),
       })),
@@ -70,7 +70,7 @@ function FileActionBar() {
     renameFiles({
       uuid: server.uuid,
       root: '/',
-      files: [...actingFiles].map((f) => ({
+      files: actingFiles.values().map((f) => ({
         from: join(actingFilesSource!, f.name),
         to: join(browsingDirectory, f.name),
       })),
@@ -97,8 +97,8 @@ function FileActionBar() {
     downloadFiles(
       server.uuid,
       browsingDirectory,
-      [...selectedFiles].map((f) => f.name),
-      selectedFiles.size === 1 ? [...selectedFiles][0].directory : false,
+      selectedFiles.keys(),
+      selectedFiles.size === 1 ? selectedFiles.values()[0].directory : false,
       'zip',
     )
       .then(({ url }) => {
@@ -125,7 +125,7 @@ function FileActionBar() {
         modifiers: ['ctrlOrMeta'],
         callback: () => {
           if (actingFiles.size === 0 && selectedFiles.size > 0 && browsingWritableDirectory) {
-            doActFiles('move', [...selectedFiles]);
+            doActFiles('move', selectedFiles.values());
             doSelectFiles([]);
           }
         },
@@ -135,7 +135,7 @@ function FileActionBar() {
         modifiers: ['ctrlOrMeta'],
         callback: () => {
           if (actingFiles.size === 0 && selectedFiles.size > 0) {
-            doActFiles('copy', [...selectedFiles]);
+            doActFiles('copy', selectedFiles.values());
             doSelectFiles([]);
           }
         },
@@ -157,7 +157,7 @@ function FileActionBar() {
         key: 'Delete',
         callback: () => {
           if (actingFiles.size === 0 && selectedFiles.size > 0 && browsingWritableDirectory) {
-            doOpenModal('delete', [...selectedFiles]);
+            doOpenModal('delete', selectedFiles.values());
           }
         },
       },
@@ -200,7 +200,7 @@ function FileActionBar() {
             </ServerCan>
             <ServerCan action='files.read'>
               <Tooltip label='Remote Copy'>
-                <Button onClick={() => doOpenModal('copy-remote', [...selectedFiles])}>
+                <Button onClick={() => doOpenModal('copy-remote', selectedFiles.values())}>
                   <FontAwesomeIcon icon={faClone} />
                 </Button>
               </Tooltip>
@@ -209,7 +209,7 @@ function FileActionBar() {
               <Tooltip label='Copy'>
                 <Button
                   onClick={() => {
-                    doActFiles('copy', [...selectedFiles]);
+                    doActFiles('copy', selectedFiles.values());
                     doSelectFiles([]);
                   }}
                 >
@@ -221,7 +221,7 @@ function FileActionBar() {
               <>
                 <ServerCan action='files.archive'>
                   <Tooltip label='Archive'>
-                    <Button onClick={() => doOpenModal('archive', [...selectedFiles])}>
+                    <Button onClick={() => doOpenModal('archive', selectedFiles.values())}>
                       <FontAwesomeIcon icon={faArchive} />
                     </Button>
                   </Tooltip>
@@ -230,7 +230,7 @@ function FileActionBar() {
                   <Tooltip label='Move'>
                     <Button
                       onClick={() => {
-                        doActFiles('move', [...selectedFiles]);
+                        doActFiles('move', selectedFiles.values());
                         doSelectFiles([]);
                       }}
                     >
@@ -240,7 +240,7 @@ function FileActionBar() {
                 </ServerCan>
                 <ServerCan action='files.delete'>
                   <Tooltip label='Delete'>
-                    <Button color='red' onClick={() => doOpenModal('delete', [...selectedFiles])}>
+                    <Button color='red' onClick={() => doOpenModal('delete', selectedFiles.values())}>
                       <FontAwesomeIcon icon={faTrash} />
                     </Button>
                   </Tooltip>

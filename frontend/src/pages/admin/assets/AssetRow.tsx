@@ -10,22 +10,22 @@ interface AssetRowProps {
   asset: StorageAsset;
   isSelected: boolean;
 
-  addSelectedAsset: (name: string) => void;
-  removeSelectedAsset: (name: string) => void;
+  addSelectedAsset: (asset: StorageAsset) => void;
+  removeSelectedAsset: (asset: StorageAsset) => void;
 }
 
 const AssetRow = forwardRef<HTMLTableRowElement, AssetRowProps>(function AssetRow(
   { asset, isSelected, addSelectedAsset, removeSelectedAsset },
   ref,
 ) {
-  const toggleSelected = () => (isSelected ? removeSelectedAsset(asset.name) : addSelectedAsset(asset.name));
+  const toggleSelected = () => (isSelected ? removeSelectedAsset(asset) : addSelectedAsset(asset));
 
   return (
     <TableRow
       bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}
       onClick={(e) => {
         if (e.ctrlKey || e.metaKey) {
-          addSelectedAsset(asset.name);
+          addSelectedAsset(asset);
           return true;
         }
 

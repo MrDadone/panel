@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import EggRepositoryEggsInstallModal from './modals/EggRepositoryEggsInstallModal.tsx';
 
 export default function EggActionBar({
@@ -11,8 +12,8 @@ export default function EggActionBar({
   setSelectedEggs,
 }: {
   eggRepository: AdminEggRepository;
-  selectedEggs: Set<string>;
-  setSelectedEggs: (eggs: Set<string>) => void;
+  selectedEggs: ObjectSet<AdminEggRepositoryEgg, 'uuid'>;
+  setSelectedEggs: (eggs: ObjectSet<AdminEggRepositoryEgg, 'uuid'>) => void;
 }) {
   const [openModal, setOpenModal] = useState<'install' | null>(null);
 

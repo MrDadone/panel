@@ -20,7 +20,7 @@ export default function NodeAllocationsUpdateModal({
   const mostCommonIp = useMemo(() => {
     const ipCounts = new Map<string, number>();
 
-    for (const allocation of selectedNodeAllocations) {
+    for (const allocation of selectedNodeAllocations.values()) {
       if (ipCounts.get(allocation.ip)) {
         ipCounts.set(allocation.ip, ipCounts.get(allocation.ip)! + 1);
       } else {
@@ -44,7 +44,7 @@ export default function NodeAllocationsUpdateModal({
   const mostCommonIpAlias = useMemo(() => {
     const ipAliasCounts = new Map<string, number>();
 
-    for (const allocation of selectedNodeAllocations) {
+    for (const allocation of selectedNodeAllocations.values()) {
       if (!allocation.ipAlias) {
         continue;
       }

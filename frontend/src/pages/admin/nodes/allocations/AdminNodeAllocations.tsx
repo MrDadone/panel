@@ -23,7 +23,7 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
   const [openModal, setOpenModal] = useState<'create' | null>(null);
   const [ipFilter, setIpFilter] = useState('');
   const [portFilter, setPortFilter] = useState('');
-  const selectedNodeAllocationsPreviousRef = useRef(selectedNodeAllocations);
+  const selectedNodeAllocationsPreviousRef = useRef(selectedNodeAllocations.values());
 
   const uniqueIps = useMemo(() => {
     const ips = new Set<string>();
@@ -64,7 +64,7 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
 
   const onSelectedStart = useCallback(
     (event: ReactMouseEvent | MouseEvent) => {
-      selectedNodeAllocationsPreviousRef.current = event.shiftKey ? selectedNodeAllocations : [];
+      selectedNodeAllocationsPreviousRef.current = event.shiftKey ? selectedNodeAllocations.values() : [];
     },
     [selectedNodeAllocations],
   );
@@ -137,7 +137,7 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
             <ActionIcon
               variant='subtle'
               onClick={handleClearSelection}
-              disabled={selectedNodeAllocations.length === 0}
+              disabled={selectedNodeAllocations.size === 0}
               color='gray'
             >
               <FontAwesomeIcon icon={faX} />

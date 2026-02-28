@@ -10,6 +10,7 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { useBulkPowerActions } from '@/plugins/useBulkPowerActions.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useServerStats } from '@/plugins/useServerStats.ts';
@@ -27,7 +28,7 @@ export default function DashboardHomeAll() {
   const { serverListShowOthers, setServerListShowOthers } = useGlobalStore();
   const { addToast } = useToast();
 
-  const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set());
+  const [selectedServers, setSelectedServers] = useState(new ObjectSet<Server, 'uuid'>('uuid'));
   const [sKeyPressed, setSKeyPressed] = useState(false);
 
   const { handleBulkPowerAction, bulkActionLoading } = useBulkPowerActions();
@@ -75,30 +76,29 @@ export default function DashboardHomeAll() {
     deps: [serverListShowOthers],
   });
 
-  const handleServerSelectionChange = (serverUuid: string, selected: boolean) => {
+  const handleServerSelectionChange = (server: Server, selected: boolean) => {
     setSelectedServers((prev) => {
-      const newSet = new Set(prev);
+      const newSet = new ObjectSet('uuid', prev.values());
       if (selected) {
-        newSet.add(serverUuid);
+        newSet.add(server);
       } else {
-        newSet.delete(serverUuid);
+        newSet.delete(server);
       }
       return newSet;
     });
   };
 
-  const handleServerClick = (serverUuid: string, event: React.MouseEvent) => {
+  const handleServerClick = (server: Server, event: React.MouseEvent) => {
     if (sKeyPressed) {
       event.preventDefault();
       event.stopPropagation();
-      handleServerSelectionChange(serverUuid, !selectedServers.has(serverUuid));
+      handleServerSelectionChange(server, !selectedServers.has(server));
     }
   };
 
   const onBulkAction = async (action: ServerPowerAction) => {
-    const serverUuids = Array.from(selectedServers);
-    await handleBulkPowerAction(serverUuids, action);
-    setSelectedServers(new Set());
+    await handleBulkPowerAction(selectedServers.keys(), action);
+    setSelectedServers(new ObjectSet('uuid'));
   };
 
   return (
@@ -141,8 +141,8 @@ export default function DashboardHomeAll() {
               server={server}
               showGroupAddButton={!serverListShowOthers}
               isSelected={selectedServers.has(server.uuid)}
-              onSelectionChange={(selected) => handleServerSelectionChange(server.uuid, selected)}
-              onClick={(e) => handleServerClick(server.uuid, e)}
+              onSelectionChange={(selected) => handleServerSelectionChange(server, selected)}
+              onClick={(e) => handleServerClick(server, e)}
               sKeyPressed={sKeyPressed}
             />
           ))}
@@ -150,7 +150,7 @@ export default function DashboardHomeAll() {
       )}
       <BulkActionBar
         selectedCount={selectedServers.size}
-        onClear={() => setSelectedServers(new Set())}
+        onClear={() => setSelectedServers(new ObjectSet('uuid'))}
         onAction={onBulkAction}
         loading={bulkActionLoading}
       />

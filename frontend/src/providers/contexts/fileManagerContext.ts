@@ -1,5 +1,6 @@
 import { createContext, RefObject, useContext } from 'react';
 import { z } from 'zod';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
 import { FileUploader } from '@/plugins/useFileUpload.ts';
 
@@ -28,13 +29,9 @@ export interface FileManagerContextType {
   folderInputRef: RefObject<HTMLInputElement | null>;
 
   actingMode: ActingFileMode | null;
-  setActingMode: (actingMode: ActingFileMode, files: DirectoryEntry[]) => void;
-  actingFiles: Set<DirectoryEntry>;
-  setActingFiles: (files: Set<DirectoryEntry>) => void;
+  actingFiles: ObjectSet<DirectoryEntry, 'name'>;
   actingFilesSource: string | null;
-  setActingFilesSource: (directory: string | null) => void;
-  selectedFiles: Set<DirectoryEntry>;
-  setSelectedFiles: (files: Set<DirectoryEntry>) => void;
+  selectedFiles: ObjectSet<DirectoryEntry, 'name'>;
   browsingBackup: ServerBackup | null;
   setBrowsingBackup: (backup: ServerBackup | null) => void;
   browsingDirectory: string;

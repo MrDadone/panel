@@ -6,6 +6,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -15,7 +16,7 @@ export default function EggsMoveModal({
   invalidateEggs,
   opened,
   onClose,
-}: ModalProps & { nest: AdminNest; selectedEggs: Set<string>; invalidateEggs: () => void }) {
+}: ModalProps & { nest: AdminNest; selectedEggs: ObjectSet<AdminNestEgg, 'uuid'>; invalidateEggs: () => void }) {
   const { addToast } = useToast();
 
   const [loading, setLoading] = useState(false);
@@ -30,7 +31,7 @@ export default function EggsMoveModal({
 
     setLoading(true);
 
-    moveEggs(nest.uuid, [...selectedEggs], selectedNest.uuid)
+    moveEggs(nest.uuid, selectedEggs.keys(), selectedNest.uuid)
       .then(({ moved }) => {
         addToast(`${moved} Egg${moved == 1 ? '' : 's'} moved.`, 'success');
         invalidateEggs();

@@ -1,9 +1,10 @@
-import { Ref, useCallback, useRef, useState } from 'react';
+import { Ref, useCallback, useEffect, useRef, useState } from 'react';
 import getEggRepositoryEggs from '@/api/admin/egg-repositories/eggs/getEggRepositoryEggs.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { eggRepositoryEggTableColumns } from '@/lib/tableColumns.ts';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -12,27 +13,31 @@ import EggRepositoryEggRow from './EggRepositoryEggRow.tsx';
 
 export default function EggRepositoryEggs({ contextEggRepository }: { contextEggRepository: AdminEggRepository }) {
   const [eggRepositoryEggs, setEggRepositoryEggs] = useState(getEmptyPaginationSet<AdminEggRepositoryEgg>());
-  const [selectedEggs, setSelectedEggs] = useState<Set<string>>(new Set());
-  const selectedEggsPreviousRef = useRef<Set<string>>(new Set());
+  const [selectedEggs, setSelectedEggs] = useState(new ObjectSet<AdminEggRepositoryEgg, 'uuid'>('uuid'));
+  const selectedEggsPreviousRef = useRef<AdminEggRepositoryEgg[]>([]);
+
+  useEffect(() => {
+    setSelectedEggs(new ObjectSet('uuid'));
+  }, []);
 
   const onSelectedStart = useCallback(
     (event: React.MouseEvent | MouseEvent) => {
-      selectedEggsPreviousRef.current = event.shiftKey ? selectedEggs : new Set();
+      selectedEggsPreviousRef.current = event.shiftKey ? selectedEggs.values() : [];
     },
     [selectedEggs],
   );
 
-  const onSelected = useCallback((selected: string[]) => {
-    setSelectedEggs(new Set([...selectedEggsPreviousRef.current, ...selected]));
+  const onSelected = useCallback((selected: AdminEggRepositoryEgg[]) => {
+    setSelectedEggs(new ObjectSet('uuid', [...selectedEggsPreviousRef.current, ...selected.values()]));
   }, []);
 
-  const handleEggSelectionChange = useCallback((eggUuid: string, selected: boolean) => {
+  const handleEggSelectionChange = useCallback((egg: AdminEggRepositoryEgg, selected: boolean) => {
     setSelectedEggs((prev) => {
-      const newSet = new Set(prev);
+      const newSet = new ObjectSet('uuid', prev.values());
       if (selected) {
-        newSet.add(eggUuid);
+        newSet.add(egg);
       } else {
-        newSet.delete(eggUuid);
+        newSet.delete(egg);
       }
       return newSet;
     });
@@ -48,11 +53,11 @@ export default function EggRepositoryEggs({ contextEggRepository }: { contextEgg
       {
         key: 'a',
         modifiers: ['ctrlOrMeta'],
-        callback: () => setSelectedEggs(new Set(eggRepositoryEggs.data.map((egg) => egg.uuid))),
+        callback: () => setSelectedEggs(new ObjectSet('uuid', eggRepositoryEggs.data)),
       },
       {
         key: 'Escape',
-        callback: () => setSelectedEggs(new Set()),
+        callback: () => setSelectedEggs(new ObjectSet('uuid')),
       },
     ],
     deps: [eggRepositoryEggs.data],
@@ -75,7 +80,7 @@ export default function EggRepositoryEggs({ contextEggRepository }: { contextEgg
           allowSelect={false}
         >
           {eggRepositoryEggs.data.map((eggRepositoryEgg) => (
-            <SelectionArea.Selectable key={eggRepositoryEgg.uuid} item={eggRepositoryEgg.uuid}>
+            <SelectionArea.Selectable key={eggRepositoryEgg.uuid} item={eggRepositoryEgg}>
               {(innerRef: Ref<HTMLElement>) => (
                 <EggRepositoryEggRow
                   key={eggRepositoryEgg.uuid}
@@ -83,7 +88,7 @@ export default function EggRepositoryEggs({ contextEggRepository }: { contextEgg
                   egg={eggRepositoryEgg}
                   ref={innerRef as Ref<HTMLTableRowElement>}
                   isSelected={selectedEggs.has(eggRepositoryEgg.uuid)}
-                  onSelectionChange={(selected) => handleEggSelectionChange(eggRepositoryEgg.uuid, selected)}
+                  onSelectionChange={(selected) => handleEggSelectionChange(eggRepositoryEgg, selected)}
                 />
               )}
             </SelectionArea.Selectable>

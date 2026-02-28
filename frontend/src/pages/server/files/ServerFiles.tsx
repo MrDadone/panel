@@ -40,7 +40,7 @@ function ServerFilesComponent() {
     page,
     openModal,
     browsingFastDirectory,
-    setSelectedFiles,
+    doSelectFiles,
     setBrowsingEntries,
     setBrowsingWritableDirectory,
     setBrowsingFastDirectory,
@@ -73,11 +73,11 @@ function ServerFilesComponent() {
   const previousSelected = useRef<DirectoryEntry[]>([]);
 
   const onSelectedStart = (event: React.MouseEvent | MouseEvent) => {
-    previousSelected.current = event.shiftKey ? [...selectedFiles] : [];
+    previousSelected.current = event.shiftKey ? selectedFiles.values() : [];
   };
 
   const onSelected = (selected: DirectoryEntry[]) => {
-    setSelectedFiles(new Set([...previousSelected.current, ...selected]));
+    doSelectFiles([...previousSelected.current, ...selected.values()]);
   };
 
   const onPageSelect = (page: number) => setSearchParams({ directory: browsingDirectory, page: page.toString() });
@@ -113,7 +113,7 @@ function ServerFilesComponent() {
       {
         key: 'a',
         modifiers: ['ctrlOrMeta'],
-        callback: () => setSelectedFiles(new Set(browsingEntries.data)),
+        callback: () => doSelectFiles(browsingEntries.data),
       },
       {
         key: 'f',
@@ -125,8 +125,9 @@ function ServerFilesComponent() {
         callback: () => {
           if (selectedFiles.size === 0) return;
 
-          const selectedIndices = [...selectedFiles.keys()]
-            .map((file) => browsingEntries.data.findIndex((value) => value.name === file.name))
+          const selectedIndices = selectedFiles
+            .keys()
+            .map((file) => browsingEntries.data.findIndex((value) => value.name === file))
             .filter((index) => index !== -1);
 
           if (selectedIndices.length === 0) return;
@@ -136,7 +137,7 @@ function ServerFilesComponent() {
 
           const nextFiles = selectedIndices.map((index) => browsingEntries.data[index - 1]);
 
-          setSelectedFiles(new Set(nextFiles));
+          doSelectFiles(nextFiles);
         },
       },
       {
@@ -144,8 +145,9 @@ function ServerFilesComponent() {
         callback: () => {
           if (selectedFiles.size === 0) return;
 
-          const selectedIndices = [...selectedFiles.keys()]
-            .map((file) => browsingEntries.data.findIndex((value) => value.name === file.name))
+          const selectedIndices = selectedFiles
+            .keys()
+            .map((file) => browsingEntries.data.findIndex((value) => value.name === file))
             .filter((index) => index !== -1);
 
           if (selectedIndices.length === 0) return;
@@ -155,7 +157,7 @@ function ServerFilesComponent() {
 
           const nextFiles = selectedIndices.map((index) => browsingEntries.data[index + 1]);
 
-          setSelectedFiles(new Set(nextFiles));
+          doSelectFiles(nextFiles);
         },
       },
       {
@@ -170,7 +172,7 @@ function ServerFilesComponent() {
         key: 'd',
         callback: () => {
           if (selectedFiles.size === 1) {
-            const file = [...selectedFiles.keys()][0];
+            const file = selectedFiles.values()[0];
 
             copyFile(server.uuid, join(browsingDirectory, file.name), null)
               .then(() => {
@@ -186,7 +188,7 @@ function ServerFilesComponent() {
         key: 'f2',
         callback: () => {
           if (selectedFiles.size === 1) {
-            doOpenModal('rename', [[...selectedFiles.keys()][0]]);
+            doOpenModal('rename', [selectedFiles.values()[0]]);
           }
         },
       },
@@ -194,7 +196,7 @@ function ServerFilesComponent() {
         key: 'Enter',
         callback: () => {
           if (selectedFiles.size === 1 && openModal === null) {
-            handleOpen([...selectedFiles.keys()][0]);
+            handleOpen(selectedFiles.values()[0]);
           }
         },
       },

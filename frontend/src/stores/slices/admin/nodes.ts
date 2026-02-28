@@ -1,5 +1,6 @@
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface NodesSlice {
@@ -7,7 +8,7 @@ export interface NodesSlice {
   nodeMounts: Pagination<NodeMount>;
   nodeBackups: Pagination<AdminServerBackup>;
   nodeAllocations: Pagination<NodeAllocation>;
-  selectedNodeAllocations: NodeAllocation[];
+  selectedNodeAllocations: ObjectSet<NodeAllocation, 'uuid'>;
 
   setNodes: (nodes: Pagination<Node>) => void;
   addNode: (node: Node) => void;
@@ -33,7 +34,7 @@ export const createNodesSlice: StateCreator<AdminStore, [], [], NodesSlice> = (s
   nodeMounts: getEmptyPaginationSet<NodeMount>(),
   nodeBackups: getEmptyPaginationSet<AdminServerBackup>(),
   nodeAllocations: getEmptyPaginationSet<NodeAllocation>(),
-  selectedNodeAllocations: [],
+  selectedNodeAllocations: new ObjectSet('uuid'),
 
   setNodes: (value) => set((state) => ({ ...state, nodes: value })),
   addNode: (node) =>
@@ -91,17 +92,18 @@ export const createNodesSlice: StateCreator<AdminStore, [], [], NodesSlice> = (s
       },
     })),
 
-  setSelectedNodeAllocations: (value) => set((state) => ({ ...state, selectedNodeAllocations: value })),
+  setSelectedNodeAllocations: (value) =>
+    set((state) => ({ ...state, selectedNodeAllocations: new ObjectSet('uuid', value) })),
   addSelectedNodeAllocation: (value) =>
     set((state) => {
-      if (state.selectedNodeAllocations.every((a) => a.uuid !== value.uuid)) {
-        return { ...state, selectedNodeAllocations: [...state.selectedNodeAllocations, value] };
-      }
-
-      return { ...state };
+      const next = new ObjectSet('uuid', state.selectedNodeAllocations.values());
+      next.add(value);
+      return { ...state, selectedNodeAllocations: next };
     }),
   removeSelectedNodeAllocation: (value) =>
     set((state) => {
-      return { ...state, selectedNodeAllocations: state.selectedNodeAllocations.filter((a) => a.uuid !== value.uuid) };
+      const next = new ObjectSet('uuid', state.selectedNodeAllocations.values());
+      next.delete(value);
+      return { ...state, selectedNodeAllocations: next };
     }),
 });

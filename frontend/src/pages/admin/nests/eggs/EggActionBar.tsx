@@ -8,6 +8,7 @@ import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import EggsMoveModal from './modals/EggsMoveModal.tsx';
@@ -18,7 +19,7 @@ export default function EggActionBar({
   invalidateEggs,
 }: {
   nest: AdminNest;
-  selectedEggs: Set<string>;
+  selectedEggs: ObjectSet<AdminNestEgg, 'uuid'>;
   invalidateEggs: () => void;
 }) {
   const { addToast } = useToast();
@@ -26,7 +27,7 @@ export default function EggActionBar({
   const [openModal, setOpenModal] = useState<'move' | 'delete' | null>(null);
 
   const doDelete = async () => {
-    await deleteEggs(nest.uuid, [...selectedEggs])
+    await deleteEggs(nest.uuid, selectedEggs.keys())
       .then(({ deleted }) => {
         invalidateEggs();
 
