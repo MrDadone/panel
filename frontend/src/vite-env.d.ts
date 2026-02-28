@@ -874,6 +874,7 @@ declare global {
     path: string;
     files: string[];
 
+    startTime: Date;
     progress: number;
     total: number;
   }
@@ -883,6 +884,7 @@ declare global {
     path: string;
     destinationPath: string;
 
+    startTime: Date;
     progress: number;
     total: number;
   }
@@ -891,6 +893,7 @@ declare global {
     type: 'pull';
     path: string;
 
+    startTime: Date;
     progress: number;
     total: number;
   }
@@ -900,6 +903,7 @@ declare global {
     path: string;
     destinationPath: string;
 
+    startTime: Date;
     progress: number;
     total: number;
   }
@@ -909,6 +913,7 @@ declare global {
     path: string;
     files: { from: string; to: string }[];
 
+    startTime: Date;
     progress: number;
     total: number;
   }
@@ -921,6 +926,7 @@ declare global {
     destinationServer: string;
     destinationPath: string;
 
+    startTime: Date;
     progress: number;
     total: number;
   }
