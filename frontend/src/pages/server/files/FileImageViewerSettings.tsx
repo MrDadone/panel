@@ -22,7 +22,7 @@ export default function FileImageViewerSettings() {
       </Popover.Target>
       <Popover.Dropdown>
         <Checkbox
-          label='Smoothen Images (Anti-Aliasing)'
+          label='Smoothen Image (Anti-Aliasing)'
           checked={imageViewerSmoothing}
           onChange={(e) => setImageViewerSmoothing(e.target.checked)}
         />

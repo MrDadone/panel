@@ -24,14 +24,12 @@ export default function ActionStep({ step, isActive }: ActionStepProps) {
         )
       }
       title={
-        <Group gap='sm'>
-          <Text fw={600}>
-            Step {step.order}: {step.action.type.replace(/_/g, ' ').toUpperCase()}{' '}
-          </Text>
+        <Group gap='sm' align='start'>
+          <Text fw={600}>{step.action.type.replace(/_/g, ' ').toUpperCase()} </Text>
           {isActive && <Badge ml='md'>Running</Badge>}
           {step.error && (
             <Tooltip label={step.error}>
-              <ThemeIcon size='sm' color='red'>
+              <ThemeIcon size='sm' color='red' className='cursor-help'>
                 <FontAwesomeIcon icon={faExclamationTriangle} size='xs' />
               </ThemeIcon>
             </Tooltip>

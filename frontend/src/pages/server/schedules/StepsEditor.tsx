@@ -87,9 +87,6 @@ export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) 
     [sortedSteps],
   );
 
-  const openCreateModal = useCallback(() => setOpenModal('create'), []);
-  const closeModal = useCallback(() => setOpenModal(null), []);
-
   const renderOverlay = useCallback(
     (activeStep: DndScheduleStep | null) =>
       activeStep ? (
@@ -117,19 +114,13 @@ export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) 
     <>
       <StepCreateOrUpdateModal
         opened={openModal === 'create'}
-        onClose={closeModal}
+        onClose={() => setOpenModal(null)}
         schedule={schedule}
         nextStepOrder={nextStepOrder}
         onStepCreate={handleStepCreate}
       />
 
       <Stack>
-        <Group justify='space-between'>
-          <Button onClick={openCreateModal} leftSection={<FontAwesomeIcon icon={faPlus} />}>
-            Add Step
-          </Button>
-        </Group>
-
         {sortedSteps.length === 0 ? (
           <Paper withBorder p='xl' radius='md' style={{ textAlign: 'center' }}>
             <ThemeIcon size='xl' mb='md' color='gray'>
@@ -141,7 +132,7 @@ export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) 
             <Text c='dimmed' mb='md'>
               This schedule doesn&apos;t have any steps yet. Add some actions to get started.
             </Text>
-            <Button onClick={openCreateModal} leftSection={<FontAwesomeIcon icon={faPlus} />}>
+            <Button onClick={() => setOpenModal('create')} leftSection={<FontAwesomeIcon icon={faPlus} />}>
               Create First Step
             </Button>
           </Paper>
@@ -169,6 +160,12 @@ export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) 
             )}
           </DndContainer>
         )}
+
+        <Group justify='center'>
+          <Button onClick={() => setOpenModal('create')} leftSection={<FontAwesomeIcon icon={faPlus} />}>
+            Add Step
+          </Button>
+        </Group>
       </Stack>
     </>
   );

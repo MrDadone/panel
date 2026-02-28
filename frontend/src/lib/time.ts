@@ -15,13 +15,14 @@ export function formatMiliseconds(uptime: number) {
   return `${days}d ${hours}h ${minutes}m ${seconds}s`;
 }
 
-export function formatDateTime(timestamp: string | number | Date) {
+export function formatDateTime(timestamp: string | number | Date, precise?: boolean) {
   return new Date(timestamp).toLocaleString(getTranslations().language, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
     minute: 'numeric',
+    second: precise ? 'numeric' : undefined,
   });
 }
 
