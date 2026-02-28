@@ -108,7 +108,7 @@ export default function ServerStartup() {
 
   return (
     <ServerContentContainer title={t('pages.server.startup.title', {})}>
-      <div className='grid grid-cols-3 gap-4'>
+      <div className='grid grid-cols-3 gap-4 mt-2.5'>
         <TitleCard
           title={t('pages.server.startup.form.startupCommand', {})}
           icon={<FontAwesomeIcon icon={faPlay} />}
