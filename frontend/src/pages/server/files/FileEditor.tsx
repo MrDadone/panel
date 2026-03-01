@@ -31,8 +31,14 @@ function FileEditorComponent() {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const server = useServerStore((state) => state.server);
-  const { editorMinimap, imageViewerSmoothing, browsingWritableDirectory, browsingDirectory, setBrowsingDirectory } =
-    useFileManager();
+  const {
+    editorMinimap,
+    editorLineOverflow,
+    imageViewerSmoothing,
+    browsingWritableDirectory,
+    browsingDirectory,
+    setBrowsingDirectory,
+  } = useFileManager();
 
   const [loading, setLoading] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -182,6 +188,7 @@ function FileEditorComponent() {
                     readOnly: !browsingWritableDirectory,
                     stickyScroll: { enabled: false },
                     minimap: { enabled: editorMinimap },
+                    wordWrap: editorLineOverflow ? 'on' : 'off',
                     codeLens: false,
                     scrollBeyondLastLine: false,
                     smoothScrolling: true,

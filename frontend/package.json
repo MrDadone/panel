@@ -99,7 +99,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260216.1",
     "@vitejs/plugin-react": "^5.1.4",
     "babel-plugin-react-compiler": "^1.0.0",
-    "globals": "^17.3.0",
+    "globals": "^17.4.0",
     "monaco-editor": "^0.55.1",
     "tsx": "^4.21.0",
     "typedoc": "^0.28.17",

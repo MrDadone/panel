@@ -32,6 +32,9 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [searchInfo, setSearchInfo] = useState<SearchInfo | null>(null);
   const [clickOnce, setClickOnce] = useState(localStorage.getItem('file_click_once') !== 'false');
   const [editorMinimap, setEditorMinimap] = useState(localStorage.getItem('file_editor_minimap') === 'true');
+  const [editorLineOverflow, setEditorLineOverflow] = useState(
+    localStorage.getItem('file_editor_lineoverflow') === 'true',
+  );
   const [imageViewerSmoothing, setImageViewerSmoothing] = useState(
     localStorage.getItem('file_image_viewer_smoothing') !== 'false',
   );
@@ -135,6 +138,8 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         setClickOnce,
         editorMinimap,
         setEditorMinimap,
+        editorLineOverflow,
+        setEditorLineOverflow,
         imageViewerSmoothing,
         setImageViewerSmoothing,
 

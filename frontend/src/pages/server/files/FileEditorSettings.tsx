@@ -7,7 +7,7 @@ import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
 
 export default function FileEditorSettings() {
-  const { editorMinimap, setEditorMinimap } = useFileManager();
+  const { editorMinimap, editorLineOverflow, setEditorMinimap, setEditorLineOverflow } = useFileManager();
 
   useEffect(() => {
     localStorage.setItem('file_editor_minimap', String(editorMinimap));
@@ -25,6 +25,12 @@ export default function FileEditorSettings() {
           label='Show File Minimap'
           checked={editorMinimap}
           onChange={(e) => setEditorMinimap(e.target.checked)}
+        />
+        <Checkbox
+          label='Wrap Line Overflow'
+          className='mt-2'
+          checked={editorLineOverflow}
+          onChange={(e) => setEditorLineOverflow(e.target.checked)}
         />
       </Popover.Dropdown>
     </Popover>
