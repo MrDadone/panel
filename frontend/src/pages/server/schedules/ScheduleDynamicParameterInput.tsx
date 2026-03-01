@@ -64,8 +64,6 @@ export default function ScheduleDynamicParameterInput<N extends boolean = false,
     return [...outputVariables];
   }, [schedule, scheduleSteps]);
 
-  console.log(value);
-
   return (
     <div className={classNames('grid grid-cols-6 gap-2', className)}>
       {value && typeof value === 'object' ? (

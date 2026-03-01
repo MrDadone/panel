@@ -1,13 +1,14 @@
 import { Stack } from '@mantine/core';
+import { UseFormReturnType } from '@mantine/form';
+import { z } from 'zod';
 import Switch from '@/elements/input/Switch.tsx';
+import { serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 export default function StepUpdateStartupCommand({
-  action,
-  setAction,
+  form,
 }: {
-  action: ScheduleActionUpdateStartupCommand;
-  setAction: (action: ScheduleActionUpdateStartupCommand) => void;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepSchema>>;
 }) {
   return (
     <Stack>
@@ -15,19 +16,10 @@ export default function StepUpdateStartupCommand({
         withAsterisk
         label='Startup Command'
         placeholder='java -jar server.jar'
-        value={action.command}
-        onChange={(v) => setAction({ ...action, command: v })}
+        value={form.getInputProps('action.command').value}
+        onChange={(v) => form.setFieldValue('action.command', v)}
       />
-      <Switch
-        label='Ignore Failure'
-        checked={action.ignoreFailure}
-        onChange={(e) =>
-          setAction({
-            ...action,
-            ignoreFailure: e.target.checked,
-          })
-        }
-      />
+      <Switch label='Ignore Failure' {...form.getInputProps('action.ignoreFailure', { type: 'checkbox' })} />
     </Stack>
   );
 }

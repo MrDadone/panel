@@ -774,7 +774,7 @@ declare global {
   interface ScheduleActionCopyFile {
     type: 'copy_file';
     ignoreFailure: boolean;
-    foreground: boolean;
+    append: boolean;
     file: ScheduleDynamicParameter;
     destination: ScheduleDynamicParameter;
   }
