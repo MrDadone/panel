@@ -64,6 +64,8 @@ export default function ScheduleDynamicParameterInput<N extends boolean = false,
     return [...outputVariables];
   }, [schedule, scheduleSteps]);
 
+  console.log(value);
+
   return (
     <div className={classNames('grid grid-cols-6 gap-2', className)}>
       {value && typeof value === 'object' ? (
@@ -90,8 +92,9 @@ export default function ScheduleDynamicParameterInput<N extends boolean = false,
       <Select
         label='Input Type'
         description='Data type to send'
+        placeholder='Select Type'
         className='col-span-2'
-        value={value === null ? 'null' : typeof value === 'string' ? 'raw' : 'variable'}
+        value={value === undefined ? null : value === null ? 'null' : typeof value === 'string' ? 'raw' : 'variable'}
         data={[
           ...(allowNull
             ? [
