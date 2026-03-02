@@ -12,7 +12,7 @@ export default function MonacoEditor(props: ComponentProps<typeof Editor>) {
     <Editor
       {...props}
       onMount={(e, m) => {
-        for (const handler of window.extensionContext.extensionRegistry.components.monacoEditor.onMountHandlers) {
+        for (const handler of window.extensionContext.extensionRegistry.elements.monacoEditor.onMountHandlers) {
           handler(e, m);
         }
 

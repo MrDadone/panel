@@ -1,7 +1,7 @@
 import { Registry } from 'shared';
 import { MonacoEditorRegistry } from './monacoEditor.ts';
 
-export class ComponentRegistry implements Registry {
+export class ElementsRegistry implements Registry {
   public mergeFrom(other: this): this {
     this.monacoEditor.mergeFrom(other.monacoEditor);
 

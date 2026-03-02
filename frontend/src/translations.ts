@@ -31,7 +31,6 @@ const baseTranslations = defineTranslations({
         cancel: 'Cancel',
         continue: 'Continue',
         skip: 'Skip',
-        logout: 'Logout',
         back: 'Back',
         next: 'Next',
         install: 'Install',
@@ -112,6 +111,7 @@ const baseTranslations = defineTranslations({
         },
       },
       unlimited: 'Unlimited',
+      readOnly: 'Read-Only',
       na: 'N/A',
       yes: 'Yes',
       no: 'No',
@@ -120,6 +120,52 @@ const baseTranslations = defineTranslations({
       system: 'System',
       schedule: 'Schedule',
       impersonatedBy: 'Impersonated by {username}',
+    },
+    elements: {
+      errorBoundary: {
+        message: 'An error was encountered by the application while rendering this view. Try refreshing the page.',
+        hideDetails: 'Hide Details',
+        showDetails: 'Show Details',
+        errorMessage: 'Error Message:',
+        stackTrace: 'Stack Trace:',
+        componentStack: 'Component Stack:',
+      },
+      copyOnClick: {
+        toast: {
+          copied: 'Copied to clipboard.',
+          failed: 'Failed to copy to clipboard.',
+          copyManual: 'Copy to clipboard: Ctrl+C or Command+C, Enter',
+        },
+      },
+      container: {
+        alert: {
+          impersonating:
+            'You are currently impersonating a user. Please be aware that your actions may affect the impersonated user\'s account. To exit impersonation mode, click the "Stop Impersonating" button in the bottom left corner.',
+        },
+      },
+      sidebar: {
+        button: {
+          logout: 'Logout',
+          stopImpersonating: 'Stop Impersonating',
+        },
+      },
+      permissionSelector: {
+        selectedPermissions: 'Selected Permissions ({count})',
+        noPermissions: 'No permissions selected.',
+      },
+      can: {
+        tooltip: {
+          cantSave: 'You do not have permission to save.',
+          cantDelete: 'You do not have permission to delete.',
+        },
+      },
+      activityInfoButton: {
+        modal: {
+          info: {
+            title: 'Activity Details',
+          },
+        },
+      },
     },
     pages: {
       oobe: {

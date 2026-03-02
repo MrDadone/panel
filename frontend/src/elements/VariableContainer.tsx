@@ -7,7 +7,7 @@ import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 interface Props {
   variable: ServerVariable;
@@ -26,6 +26,8 @@ export default function VariableContainer({
   value,
   setValue,
 }: Props) {
+  const { t } = useTranslations();
+
   return (
     <TitleCard title={variable.name} icon={<FontAwesomeIcon icon={faCog} />}>
       <div className='flex flex-row w-full justify-between items-start'>
@@ -99,15 +101,7 @@ export default function VariableContainer({
           )}
           <p className='text-gray-400 text-sm mt-4'>{variable.description?.md()}</p>
         </div>
-        {!variable.isEditable && overrideReadonly ? (
-          <Tooltip label='This field is not editable by a user, but you can override it.' className='min-w-fit ml-4'>
-            <Badge color='orange' className='min-w-fit'>
-              Override Read Only
-            </Badge>
-          </Tooltip>
-        ) : !variable.isEditable ? (
-          <Badge className='min-w-fit ml-4'>Read Only</Badge>
-        ) : null}
+        {!variable.isEditable ? <Badge className='min-w-fit ml-4'>{t('common.readOnly', {})}</Badge> : null}
       </div>
     </TitleCard>
   );
