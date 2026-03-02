@@ -26,7 +26,10 @@ export default function DashboardSecurityKeys() {
   });
 
   return (
-    <AccountContentContainer title={t('pages.account.securityKeys.title', {})}>
+    <AccountContentContainer
+      title={t('pages.account.securityKeys.title', {})}
+      registry={window.extensionContext.extensionRegistry.pages.dashboard.securityKeys.container}
+    >
       <SecurityKeyCreateModal opened={openModal === 'create'} onClose={() => setOpenModal(null)} />
 
       <Group justify='space-between' align='start' mb='md'>

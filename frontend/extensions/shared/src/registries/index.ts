@@ -1,3 +1,4 @@
+import { ComponentRegistry } from './components/index.ts';
 import { PageRegistry } from './pages/index.ts';
 import { PermissionIconRegistry } from './permission-icons.ts';
 import { RouteRegistry } from './routes.ts';
@@ -15,11 +16,17 @@ export class ExtensionRegistry implements Registry {
   }
 
   public pages: PageRegistry = new PageRegistry();
+  public components: ComponentRegistry = new ComponentRegistry();
   public routes: RouteRegistry = new RouteRegistry();
   public permissionIcons: PermissionIconRegistry = new PermissionIconRegistry();
 
   public enterPages(callback: (registry: PageRegistry) => unknown): this {
     callback(this.pages);
+    return this;
+  }
+
+  public enterComponents(callback: (registry: ComponentRegistry) => unknown): this {
+    callback(this.components);
     return this;
   }
 

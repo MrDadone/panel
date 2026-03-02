@@ -53,6 +53,8 @@ export default function SessionRow({ session }: { session: UserSession }) {
             canAccess: !session.isUsing,
           },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.dashboard.sessions.sessionContextMenu}
+        registryProps={{ session }}
       >
         {({ items, openMenu }) => (
           <TableRow

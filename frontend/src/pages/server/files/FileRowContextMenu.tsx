@@ -171,6 +171,8 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
           canAccess: useServerCan('files.delete'),
         },
       ]}
+      registry={window.extensionContext.extensionRegistry.pages.server.files.fileContextMenu}
+      registryProps={{ file }}
     >
       {children}
     </ContextMenu>

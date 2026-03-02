@@ -21,17 +21,32 @@ export default function FileEditorSettings() {
         </Button>
       </Popover.Target>
       <Popover.Dropdown>
-        <Checkbox
-          label='Show File Minimap'
-          checked={editorMinimap}
-          onChange={(e) => setEditorMinimap(e.target.checked)}
-        />
-        <Checkbox
-          label='Wrap Line Overflow'
-          className='mt-2'
-          checked={editorLineOverflow}
-          onChange={(e) => setEditorLineOverflow(e.target.checked)}
-        />
+        <div className='flex flex-col space-y-2'>
+          {window.extensionContext.extensionRegistry.pages.server.files.fileEditorSettings.prependedComponents.map(
+            (Component, i) => (
+              <Component key={`files-editorSettings-prepended-${i}`} />
+            ),
+          )}
+
+          <Checkbox
+            label='Show File Minimap'
+            className='order-10'
+            checked={editorMinimap}
+            onChange={(e) => setEditorMinimap(e.target.checked)}
+          />
+          <Checkbox
+            label='Wrap Line Overflow'
+            className='order-20'
+            checked={editorLineOverflow}
+            onChange={(e) => setEditorLineOverflow(e.target.checked)}
+          />
+
+          {window.extensionContext.extensionRegistry.pages.server.files.fileEditorSettings.appendedComponents.map(
+            (Component, i) => (
+              <Component key={`files-editorSettings-appended-${i}`} />
+            ),
+          )}
+        </div>
       </Popover.Dropdown>
     </Popover>
   );

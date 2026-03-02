@@ -62,6 +62,8 @@ export default function SecurityKeyRow({ securityKey }: { securityKey: UserSecur
             color: 'red',
           },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.dashboard.securityKeys.securityKeyContextMenu}
+        registryProps={{ securityKey }}
       >
         {({ items, openMenu }) => (
           <TableRow

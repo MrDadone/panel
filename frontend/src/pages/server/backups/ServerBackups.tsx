@@ -51,6 +51,7 @@ export default function ServerBackups() {
           </ConditionalTooltip>
         </ServerCan>
       }
+      registry={window.extensionContext.extensionRegistry.pages.server.backups.container}
     >
       <BackupCreateModal opened={openModal === 'create'} onClose={() => setOpenModal(null)} />
 

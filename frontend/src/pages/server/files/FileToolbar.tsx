@@ -23,6 +23,11 @@ export default function FileToolbar() {
 
   return (
     <Group>
+      {window.extensionContext.extensionRegistry.pages.server.files.fileToolbar.prependedComponents.map(
+        (Component, i) => (
+          <Component key={`files-fileToolbar-prepended-${i}`} />
+        ),
+      )}
       <ServerCan action='files.sftp'>
         <Button
           variant='outline'
@@ -71,6 +76,8 @@ export default function FileToolbar() {
                   color: 'gray',
                 },
               ]}
+              registry={window.extensionContext.extensionRegistry.pages.server.files.newFileContextMenu}
+              registryProps={{}}
             >
               {({ openMenu }) => (
                 <Button
@@ -88,6 +95,11 @@ export default function FileToolbar() {
             </ContextMenu>
           </ContextMenuProvider>
         </ServerCan>
+      )}
+      {window.extensionContext.extensionRegistry.pages.server.files.fileToolbar.appendedComponents.map(
+        (Component, i) => (
+          <Component key={`files-fileToolbar-appended-${i}`} />
+        ),
       )}
     </Group>
   );

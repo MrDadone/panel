@@ -1,6 +1,6 @@
 import { faPlay } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Grid, Group, Stack } from '@mantine/core';
+import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -43,43 +43,41 @@ export default function AutostartContainer() {
   };
 
   return (
-    <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-      <TitleCard
-        title={t('pages.server.settings.autostart.title', {})}
-        icon={<FontAwesomeIcon icon={faPlay} />}
-        className='h-full'
-      >
-        <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack>
-            <Select
-              withAsterisk
-              label={t('pages.server.settings.autostart.form.behavior', {})}
-              placeholder={t('pages.server.settings.autostart.form.behavior', {})}
-              data={[
-                {
-                  label: t('common.enum.serverAutoStartBehavior.always', {}),
-                  value: 'always',
-                },
-                {
-                  label: t('common.enum.serverAutoStartBehavior.unlessStopped', {}),
-                  value: 'unless_stopped',
-                },
-                {
-                  label: t('common.enum.serverAutoStartBehavior.never', {}),
-                  value: 'never',
-                },
-              ]}
-              {...form.getInputProps('behavior')}
-            />
+    <TitleCard
+      title={t('pages.server.settings.autostart.title', {})}
+      icon={<FontAwesomeIcon icon={faPlay} />}
+      className='h-full order-30'
+    >
+      <form onSubmit={form.onSubmit(() => doUpdate())}>
+        <Stack>
+          <Select
+            withAsterisk
+            label={t('pages.server.settings.autostart.form.behavior', {})}
+            placeholder={t('pages.server.settings.autostart.form.behavior', {})}
+            data={[
+              {
+                label: t('common.enum.serverAutoStartBehavior.always', {}),
+                value: 'always',
+              },
+              {
+                label: t('common.enum.serverAutoStartBehavior.unlessStopped', {}),
+                value: 'unless_stopped',
+              },
+              {
+                label: t('common.enum.serverAutoStartBehavior.never', {}),
+                value: 'never',
+              },
+            ]}
+            {...form.getInputProps('behavior')}
+          />
 
-            <Group mt='auto'>
-              <Button type='submit' loading={loading} disabled={!form.isValid()}>
-                {t('common.button.save', {})}
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </TitleCard>
-    </Grid.Col>
+          <Group mt='auto'>
+            <Button type='submit' loading={loading} disabled={!form.isValid()}>
+              {t('common.button.save', {})}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </TitleCard>
   );
 }

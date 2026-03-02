@@ -57,6 +57,10 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
 
       <div id='dashboard-root' className={isNormal ? 'max-w-[100vw] flex-1 lg:ml-0' : 'flex-1 lg:ml-0 overflow-auto'}>
         <Container isNormal={isNormal}>
+          {window.extensionContext.extensionRegistry.pages.dashboard.prependedComponents.map((Component, i) => (
+            <Component key={`dashboard-prepended-component-${i}`} />
+          ))}
+
           <Suspense fallback={<Spinner.Centered />}>
             <Routes>
               {user?.startOnGroupedServers ? (
@@ -78,6 +82,10 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
               <Route path='*' element={<NotFound />} />
             </Routes>
           </Suspense>
+
+          {window.extensionContext.extensionRegistry.pages.dashboard.appendedComponents.map((Component, i) => (
+            <Component key={`dashboard-appended-component-${i}`} />
+          ))}
         </Container>
       </div>
     </div>

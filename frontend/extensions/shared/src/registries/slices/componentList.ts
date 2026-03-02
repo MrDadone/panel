@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { Registry } from 'shared';
 
-export class ComponentListRegistry implements Registry {
+export class ComponentListRegistry<Props = {}> implements Registry {
   public mergeFrom(other: this): this {
     this.prependedComponents.push(...other.prependedComponents);
     this.appendedComponents.push(...other.appendedComponents);
@@ -9,15 +9,15 @@ export class ComponentListRegistry implements Registry {
     return this;
   }
 
-  public prependedComponents: FC[] = [];
-  public appendedComponents: FC[] = [];
+  public prependedComponents: FC<Props>[] = [];
+  public appendedComponents: FC<Props>[] = [];
 
-  public prependComponent(component: FC): this {
+  public prependComponent(component: FC<Props>): this {
     this.prependedComponents.push(component);
     return this;
   }
 
-  public appendComponent(component: FC): this {
+  public appendComponent(component: FC<Props>): this {
     this.appendedComponents.push(component);
     return this;
   }

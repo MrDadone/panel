@@ -13,24 +13,25 @@ import { SearchAddon } from '@xterm/addon-search';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
-import { Terminal as XTerm } from '@xterm/xterm';
+import { ITerminalInitOnlyOptions, ITerminalOptions, Terminal as XTerm } from '@xterm/xterm';
 import classNames from 'classnames';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import Popover from '@/elements/Popover.tsx';
 import Progress from '@/elements/Progress.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import { useKeyboardShortcut } from '@/plugins/useKeyboardShortcuts.ts';
 import { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import CommandHistoryDrawer from './drawers/CommandHistoryDrawer.tsx';
 import FeatureProvider from './features/FeatureProvider.tsx';
+
 import '@xterm/xterm/css/xterm.css';
 import './xterm.css';
-import Popover from '@/elements/Popover.tsx';
-import { useKeyboardShortcut } from '@/plugins/useKeyboardShortcuts.ts';
 
 const RAW_PRELUDE = '\u001b[1m\u001b[33mcontainer@calagopus~ \u001b[0m';
 
@@ -88,7 +89,7 @@ export default function Terminal() {
   useEffect(() => {
     if (!terminalRef.current) return;
 
-    const term = new XTerm({
+    const initOptions: ITerminalOptions & ITerminalInitOnlyOptions = {
       fontSize: consoleFontSize,
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
       theme: {
@@ -106,7 +107,17 @@ export default function Terminal() {
       allowProposedApi: true,
       fontWeightBold: '500',
       rescaleOverlappingGlyphs: true,
-    });
+    };
+
+    for (const handler of window.extensionContext.extensionRegistry.pages.server.console.xterm.initHandlers) {
+      handler(initOptions, {});
+    }
+
+    const term = new XTerm(initOptions);
+
+    for (const handler of window.extensionContext.extensionRegistry.pages.server.console.xterm.beforePluginsHandlers) {
+      handler(term, {});
+    }
 
     const fitAddon = new FitAddon();
     const searchAddon = new SearchAddon();
@@ -119,8 +130,16 @@ export default function Terminal() {
 
     term.unicode.activeVersion = '11';
 
+    for (const handler of window.extensionContext.extensionRegistry.pages.server.console.xterm.afterPluginsHandlers) {
+      handler(term, {});
+    }
+
     term.open(terminalRef.current);
     fitAddon.fit();
+
+    for (const handler of window.extensionContext.extensionRegistry.pages.server.console.xterm.afterOpenHandlers) {
+      handler(term, {});
+    }
 
     // prevent cursor
     term.write('\x1b[?25l');
@@ -167,6 +186,10 @@ export default function Terminal() {
       xtermInstance.current = null;
       fitAddonRef.current = null;
       searchAddonRef.current = null;
+
+      for (const handler of window.extensionContext.extensionRegistry.pages.server.console.xterm.onUnmountHandlers) {
+        handler(term, {});
+      }
     };
   }, []);
 
@@ -304,7 +327,7 @@ export default function Terminal() {
           setHistory((prev) => [command, ...prev].slice(0, 32));
         }
         setHistoryIndex(-1);
-        socketInstance?.send('send command', command);
+        socketInstance?.send(SocketRequest.SEND_COMMAND, command);
         inputRef.current.value = '';
       }
     },
@@ -332,6 +355,11 @@ export default function Terminal() {
       <Card className='h-full flex flex-col font-mono text-sm relative p-2!'>
         <div className='flex flex-row justify-between items-center mb-2 text-xs'>
           <div className='flex flex-row items-center'>
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderLeftComponents.prependedComponents.map(
+              (Component, i) => (
+                <Component key={`console-terminalHeaderLeft-prepended-${i}`} />
+              ),
+            )}
             <span
               className={classNames(
                 'rounded-full size-3 animate-pulse mr-2',
@@ -343,16 +371,16 @@ export default function Terminal() {
                   ping: websocketPing,
                 })
               : t('pages.server.console.socketDisconnected', {})}
-            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderLeftComponents.map(
-              (Component, idx) => (
-                <Component key={idx} />
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderLeftComponents.appendedComponents.map(
+              (Component, i) => (
+                <Component key={`console-terminalHeaderLeft-appended-${i}`} />
               ),
             )}
           </div>
           <div className='flex flex-row items-center gap-2'>
-            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderRightComponents.map(
-              (Component, idx) => (
-                <Component key={idx} />
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderRightComponents.prependedComponents.map(
+              (Component, i) => (
+                <Component key={`console-terminalHeaderRight-prepended-${i}`} />
               ),
             )}
             <Popover
@@ -435,6 +463,11 @@ export default function Terminal() {
                 </ActionIcon>
               </Tooltip>
             </div>
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderRightComponents.appendedComponents.map(
+              (Component, i) => (
+                <Component key={`console-terminalHeaderRight-appended-${i}`} />
+              ),
+            )}
           </div>
         </div>
 
@@ -483,8 +516,8 @@ export default function Terminal() {
             className='w-full'
           />
           {window.extensionContext.extensionRegistry.pages.server.console.terminalInputRowComponents.map(
-            (Component, idx) => (
-              <Component key={idx} />
+            (Component, i) => (
+              <Component key={`console-terminalInputRow-${i}`} />
             ),
           )}
         </div>

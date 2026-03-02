@@ -110,7 +110,12 @@ function FileEditorComponent() {
   const title = fileName ? (params.action === 'image' ? `Viewing ${fileName}` : `Editing ${fileName}`) : 'New File';
 
   return (
-    <ServerContentContainer hideTitleComponent fullscreen title={title}>
+    <ServerContentContainer
+      hideTitleComponent
+      fullscreen
+      title={title}
+      registry={window.extensionContext.extensionRegistry.pages.server.files.editorContainer}
+    >
       <div className='flex justify-between items-center lg:p-4 lg:pb-0 mx-5'>
         <Group>
           <Title>{title}</Title>

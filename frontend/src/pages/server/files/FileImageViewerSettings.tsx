@@ -21,11 +21,26 @@ export default function FileImageViewerSettings() {
         </Button>
       </Popover.Target>
       <Popover.Dropdown>
-        <Checkbox
-          label='Smoothen Image (Anti-Aliasing)'
-          checked={imageViewerSmoothing}
-          onChange={(e) => setImageViewerSmoothing(e.target.checked)}
-        />
+        <div className='flex flex-col space-y-2'>
+          {window.extensionContext.extensionRegistry.pages.server.files.fileImageViewierSettings.prependedComponents.map(
+            (Component, i) => (
+              <Component key={`files-imageViewerSettings-prepended-${i}`} />
+            ),
+          )}
+
+          <Checkbox
+            label='Smoothen Image (Anti-Aliasing)'
+            className='order-10'
+            checked={imageViewerSmoothing}
+            onChange={(e) => setImageViewerSmoothing(e.target.checked)}
+          />
+
+          {window.extensionContext.extensionRegistry.pages.server.files.fileImageViewierSettings.appendedComponents.map(
+            (Component, i) => (
+              <Component key={`files-imageViewerSettings-appended-${i}`} />
+            ),
+          )}
+        </div>
       </Popover.Dropdown>
     </Popover>
   );

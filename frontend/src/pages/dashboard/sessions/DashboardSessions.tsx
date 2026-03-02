@@ -19,7 +19,10 @@ export default function DashboardSessions() {
   });
 
   return (
-    <AccountContentContainer title={t('pages.account.sessions.title', {})}>
+    <AccountContentContainer
+      title={t('pages.account.sessions.title', {})}
+      registry={window.extensionContext.extensionRegistry.pages.dashboard.sessions.container}
+    >
       <Group justify='space-between' mb='md'>
         <Title order={1} c='white'>
           {t('pages.account.sessions.title', {})}

@@ -62,6 +62,7 @@ export default function ServerNetwork() {
           </ConditionalTooltip>
         </ServerCan>
       }
+      registry={window.extensionContext.extensionRegistry.pages.server.network.container}
     >
       <ContextMenuProvider>
         <Table

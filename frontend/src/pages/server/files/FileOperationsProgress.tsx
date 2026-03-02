@@ -95,6 +95,12 @@ function FileOperationsProgress() {
           </UnstyledButton>
         </Popover.Target>
         <Popover.Dropdown className='md:min-w-xl max-w-screen max-h-96 overflow-y-auto'>
+          {window.extensionContext.extensionRegistry.pages.server.files.fileOperationsProgress.prependedComponents.map(
+            (Component, i) => (
+              <Component key={`files-operationProgress-prepended-${i}`} />
+            ),
+          )}
+
           {Array.from(aggregatedUploadProgress).map(([folderName, info]) => {
             const progress = info.totalSize > 0 ? (info.uploadedSize / info.totalSize) * 100 : 0;
             const statusText =
@@ -176,6 +182,12 @@ function FileOperationsProgress() {
               </div>
             );
           })}
+
+          {window.extensionContext.extensionRegistry.pages.server.files.fileOperationsProgress.appendedComponents.map(
+            (Component, i) => (
+              <Component key={`files-operationProgress-appended-${i}`} />
+            ),
+          )}
         </Popover.Dropdown>
       </Popover>
     </>

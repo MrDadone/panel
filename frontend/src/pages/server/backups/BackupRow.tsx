@@ -128,6 +128,8 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
             canAccess: useServerCan('backups.delete'),
           },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.server.backups.backupContextMenu}
+        registryProps={{ backup }}
       >
         {({ items, openMenu }) => (
           <TableRow

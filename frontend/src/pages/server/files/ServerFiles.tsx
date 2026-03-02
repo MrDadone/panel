@@ -265,7 +265,11 @@ function ServerFilesComponent() {
 
 export default function ServerFiles() {
   return (
-    <ServerContentContainer title='Files' hideTitleComponent>
+    <ServerContentContainer
+      title='Files'
+      hideTitleComponent
+      registry={window.extensionContext.extensionRegistry.pages.server.files.container}
+    >
       <FileManagerProvider>
         <ServerFilesComponent />
       </FileManagerProvider>

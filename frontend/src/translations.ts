@@ -10,6 +10,7 @@ try {
 const baseTranslations = defineTranslations({
   items: {
     user: defineEnglishItem('User', 'Users'),
+    file: defineEnglishItem('File', 'Files'),
     server: defineEnglishItem('Server', 'Servers'),
     sshKey: defineEnglishItem('SSH Key', 'SSH Keys'),
   },

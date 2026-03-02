@@ -1,6 +1,6 @@
 import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Grid, Group, Stack } from '@mantine/core';
+import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -46,36 +46,34 @@ export default function RenameContainer() {
   };
 
   return (
-    <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-      <TitleCard
-        title={t('pages.server.settings.rename.title', {})}
-        icon={<FontAwesomeIcon icon={faPenToSquare} />}
-        className='h-full'
-      >
-        <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack>
-            <TextInput
-              withAsterisk
-              label={t('pages.server.settings.rename.form.serverName', {})}
-              placeholder={t('pages.server.settings.rename.form.serverName', {})}
-              {...form.getInputProps('name')}
-            />
+    <TitleCard
+      title={t('pages.server.settings.rename.title', {})}
+      icon={<FontAwesomeIcon icon={faPenToSquare} />}
+      className='h-full order-10'
+    >
+      <form onSubmit={form.onSubmit(() => doUpdate())}>
+        <Stack>
+          <TextInput
+            withAsterisk
+            label={t('pages.server.settings.rename.form.serverName', {})}
+            placeholder={t('pages.server.settings.rename.form.serverName', {})}
+            {...form.getInputProps('name')}
+          />
 
-            <TextArea
-              label={t('common.form.description', {})}
-              placeholder={t('common.form.description', {})}
-              rows={3}
-              {...form.getInputProps('description')}
-            />
+          <TextArea
+            label={t('common.form.description', {})}
+            placeholder={t('common.form.description', {})}
+            rows={3}
+            {...form.getInputProps('description')}
+          />
 
-            <Group mt='auto'>
-              <Button type='submit' loading={loading} disabled={!form.isValid()}>
-                {t('common.button.save', {})}
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </TitleCard>
-    </Grid.Col>
+          <Group mt='auto'>
+            <Button type='submit' loading={loading} disabled={!form.isValid()}>
+              {t('common.button.save', {})}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </TitleCard>
   );
 }

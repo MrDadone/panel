@@ -168,6 +168,12 @@ function FileActionBar() {
   return (
     <>
       <ActionBar opened={actingFiles.size > 0 || selectedFiles.size > 0}>
+        {window.extensionContext.extensionRegistry.pages.server.files.fileActionBar.prependedComponents.map(
+          (Component, i) => (
+            <Component key={`files-actionBar-prepended-${i}`} />
+          ),
+        )}
+
         {actingFiles.size > 0 ? (
           <>
             {actingMode === 'copy' ? (
@@ -248,6 +254,12 @@ function FileActionBar() {
               </>
             )}
           </>
+        )}
+
+        {window.extensionContext.extensionRegistry.pages.server.files.fileActionBar.appendedComponents.map(
+          (Component, i) => (
+            <Component key={`files-actionBar-appended-${i}`} />
+          ),
         )}
       </ActionBar>
     </>
