@@ -8,6 +8,14 @@
       "many": "{count} Users",
       "other": "{count} Users"
     },
+    "file": {
+      "zero": "{count} Files",
+      "one": "{count} File",
+      "two": "{count} Files",
+      "few": "{count} Files",
+      "many": "{count} Files",
+      "other": "{count} Files"
+    },
     "server": {
       "zero": "{count} Servers",
       "one": "{count} Server",
