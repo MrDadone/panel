@@ -1,6 +1,6 @@
-import { ReactNode, RefObject, startTransition, useEffect, useRef, useState } from 'react';
+import { ReactNode, startTransition, useEffect, useState } from 'react';
 import Markdown from 'react-markdown';
-import { getTranslationMapping, TranslationContext, TranslationItemRecord } from 'shared';
+import { getTranslationMapping, setGlobalTranslationHandle, TranslationContext, TranslationItemRecord } from 'shared';
 import { z } from 'zod';
 import { $ZodConfig } from 'zod/v4/core';
 import { axiosInstance } from '@/api/axios.ts';
@@ -25,7 +25,6 @@ String.prototype.md = function (): ReactNode {
 };
 
 const TranslationProvider = ({ children }: { children: ReactNode }) => {
-  const globalTranslationHandle: RefObject<never> = useRef(null as never);
   const [language, setLanguage] = useState('en-US');
   const [languageData, setLanguageData] = useState<LanguageData | null>(null);
 
@@ -112,12 +111,10 @@ const TranslationProvider = ({ children }: { children: ReactNode }) => {
     return translationItem[rules.select(count)].replaceAll('{count}', count.toString());
   };
 
-  globalTranslationHandle.current = { language, setLanguage, t, tItem } as never;
+  setGlobalTranslationHandle({ language, setLanguage, t, tItem });
 
   return (
-    <TranslationContext.Provider value={{ globalTranslationHandle, language, setLanguage, t, tItem }}>
-      {children}
-    </TranslationContext.Provider>
+    <TranslationContext.Provider value={{ language, setLanguage, t, tItem }}>{children}</TranslationContext.Provider>
   );
 };
 

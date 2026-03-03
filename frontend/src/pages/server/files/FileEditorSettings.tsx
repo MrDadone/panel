@@ -5,8 +5,10 @@ import { useEffect } from 'react';
 import Button from '@/elements/Button.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 export default function FileEditorSettings() {
+  const { t } = useTranslations();
   const { editorMinimap, editorLineOverflow, setEditorMinimap, setEditorLineOverflow } = useFileManager();
 
   useEffect(() => {
@@ -29,13 +31,13 @@ export default function FileEditorSettings() {
           )}
 
           <Checkbox
-            label='Show File Minimap'
+            label={t('pages.server.files.settings.editorMinimap', {})}
             className='order-10'
             checked={editorMinimap}
             onChange={(e) => setEditorMinimap(e.target.checked)}
           />
           <Checkbox
-            label='Wrap Line Overflow'
+            label={t('pages.server.files.settings.editorLineOverflow', {})}
             className='order-20'
             checked={editorLineOverflow}
             onChange={(e) => setEditorLineOverflow(e.target.checked)}

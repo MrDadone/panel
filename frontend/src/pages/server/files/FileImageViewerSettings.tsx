@@ -5,8 +5,10 @@ import { useEffect } from 'react';
 import Button from '@/elements/Button.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 export default function FileImageViewerSettings() {
+  const { t } = useTranslations();
   const { imageViewerSmoothing, setImageViewerSmoothing } = useFileManager();
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function FileImageViewerSettings() {
           )}
 
           <Checkbox
-            label='Smoothen Image (Anti-Aliasing)'
+            label={t('pages.server.files.settings.imageViewerSmoothing', {})}
             className='order-10'
             checked={imageViewerSmoothing}
             onChange={(e) => setImageViewerSmoothing(e.target.checked)}

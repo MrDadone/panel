@@ -15,6 +15,7 @@ import { serverFilesCopyRemoteSchema } from '@/lib/schemas/server/files.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
@@ -22,6 +23,7 @@ type Props = ModalProps & {
 };
 
 export default function FileCopyRemoteModal({ files, opened, onClose }: Props) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
   const { server } = useServerStore();
   const { browsingDirectory, doSelectFiles } = useFileManager();
@@ -51,7 +53,7 @@ export default function FileCopyRemoteModal({ files, opened, onClose }: Props) {
     })
       .then(() => {
         doSelectFiles([]);
-        addToast('File copying has started.', 'success');
+        addToast(t('pages.server.files.toast.fileCopyingStarted', {}), 'success');
         onClose();
       })
       .catch((msg) => {
@@ -61,13 +63,13 @@ export default function FileCopyRemoteModal({ files, opened, onClose }: Props) {
   };
 
   return (
-    <Modal title='Remote Copy Files' onClose={onClose} opened={opened}>
+    <Modal title={t('pages.server.files.modal.copyRemote.title', {})} onClose={onClose} opened={opened}>
       <form onSubmit={form.onSubmit(() => doCopy())}>
         <Stack>
           <Select
             withAsterisk
-            label='Server'
-            placeholder='Server'
+            label={t('pages.server.files.modal.copyRemote.form.server', {})}
+            placeholder={t('pages.server.files.modal.copyRemote.form.server', {})}
             data={servers.items.reduce(
               (acc, server) => {
                 const group = acc.find((g) => g.group === server.nodeName);
@@ -91,11 +93,15 @@ export default function FileCopyRemoteModal({ files, opened, onClose }: Props) {
             onChange={(value) => form.setFieldValue('destinationServer', value || '')}
           />
 
-          <TextInput label='Destination' placeholder='Destination' {...form.getInputProps('destination')} />
+          <TextInput
+            label={t('pages.server.files.modal.copyRemote.form.destination', {})}
+            placeholder={t('pages.server.files.modal.copyRemote.form.destination', {})}
+            {...form.getInputProps('destination')}
+          />
         </Stack>
 
         <p className='mt-2 text-sm md:text-base break-all'>
-          <span className='text-neutral-200'>These files will be created on the remote server under&nbsp;</span>
+          <span className='text-neutral-200'>{t('pages.server.files.modal.copyRemote.createdAs', {})}</span>
           <Code>
             /home/container/
             <span className='text-cyan-200'>{form.values.destination.replace(/^(\.\.\/|\/)+/, '')}</span>
@@ -104,10 +110,10 @@ export default function FileCopyRemoteModal({ files, opened, onClose }: Props) {
 
         <ModalFooter>
           <Button type='submit' loading={loading}>
-            Copy
+            {t('pages.server.files.button.copy', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
-            Close
+            {t('common.button.close', {})}
           </Button>
         </ModalFooter>
       </form>

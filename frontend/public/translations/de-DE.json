@@ -8,13 +8,13 @@
       "many": "{count} Benutzer",
       "other": "{count} Benutzer"
     },
-    "sshKey": {
-      "zero": "{count} SSH-Schlüssel",
-      "one": "{count} SSH-Schlüssel",
-      "two": "{count} SSH-Schlüssel",
-      "few": "{count} SSH-Schlüssel",
-      "many": "{count} SSH-Schlüssel",
-      "other": "{count} SSH-Schlüssel"
+    "file": {
+      "zero": "{count} Dateien",
+      "one": "{count} Datei",
+      "two": "{count} Dateien",
+      "few": "{count} Dateien",
+      "many": "{count} Dateien",
+      "other": "{count} Dateien"
     },
     "server": {
       "zero": "{count} Server",
@@ -23,6 +23,14 @@
       "few": "{count} Server",
       "many": "{count} Server",
       "other": "{count} Server"
+    },
+    "sshKey": {
+      "zero": "{count} SSH-Schlüssel",
+      "one": "{count} SSH-Schlüssel",
+      "two": "{count} SSH-Schlüssel",
+      "few": "{count} SSH-Schlüssel",
+      "many": "{count} SSH-Schlüssel",
+      "other": "{count} SSH-Schlüssel"
     }
   },
   "translations": {
@@ -42,12 +50,13 @@
         "cancel": "Abbrechen",
         "continue": "Weiter",
         "skip": "Überspringen",
-        "logout": "Abmelden",
         "back": "Zurück",
         "next": "Weiter",
         "install": "Installieren",
         "selectAll": "Alle auswählen",
-        "deselectAll": "Alle abwählen"
+        "deselectAll": "Alle abwählen",
+        "download": "Herunterladen",
+        "downloadAs": "Als {format} herunterladen"
       },
       "input": {
         "search": "Suchen..."
@@ -122,6 +131,7 @@
         }
       },
       "unlimited": "Unendlich",
+      "readOnly": "Schreibgeschützt",
       "na": "N/V",
       "yes": "Ja",
       "no": "Nein",
@@ -130,6 +140,51 @@
       "system": "System",
       "schedule": "Zeitplan",
       "impersonatedBy": "Impersoniert von {username}"
+    },
+    "elements": {
+      "errorBoundary": {
+        "message": "Beim Rendern dieser Ansicht ist in der Anwendung ein Fehler aufgetreten. Versuche, die Seite neu zu laden.",
+        "hideDetails": "Details ausblenden",
+        "showDetails": "Details einblenden",
+        "errorMessage": "Fehlermeldung:",
+        "stackTrace": "Stack-Trace:",
+        "componentStack": "Komponenten-Stack:"
+      },
+      "copyOnClick": {
+        "toast": {
+          "copied": "In die Zwischenablage kopiert.",
+          "failed": "Kopieren in die Zwischenablage fehlgeschlagen.",
+          "copyManual": "In die Zwischenablage kopieren: Strg+C oder Cmd+C, Eingabe"
+        }
+      },
+      "container": {
+        "alert": {
+          "impersonating": "Du impersonierst derzeit einen Benutzer. Bitte beachte, dass deine Aktionen das Konto des impersonierten Benutzers beeinflussen können. Um den Impersonation-Modus zu beenden, klicke unten links auf die Schaltfläche \"Impersonierung beenden\"."
+        }
+      },
+      "sidebar": {
+        "button": {
+          "logout": "Abmelden",
+          "stopImpersonating": "Impersonierung beenden"
+        }
+      },
+      "permissionSelector": {
+        "selectedPermissions": "Ausgewählte Berechtigungen ({count})",
+        "noPermissions": "Keine Berechtigungen ausgewählt."
+      },
+      "can": {
+        "tooltip": {
+          "cantSave": "Du hast keine Berechtigung zum Speichern.",
+          "cantDelete": "Du hast keine Berechtigung zum Löschen."
+        }
+      },
+      "activityInfoButton": {
+        "modal": {
+          "info": {
+            "title": "Aktivitätsdetails"
+          }
+        }
+      }
     },
     "pages": {
       "oobe": {
@@ -264,7 +319,7 @@
       "auth": {},
       "account": {
         "home": {
-          "title": "Server",
+          "title": "Servers",
           "tooltip": {
             "removeFromGroup": "Aus der Gruppe entfernen",
             "addToGroup": "Zur Gruppe hinzufügen",
@@ -326,7 +381,6 @@
               }
             }
           },
-          "noServers": "Es konnten keine Server gefunden werden, Zeit, einen hinzuzufügen?",
           "bulkActions": {
             "selectionMode": "Auswahlmodus",
             "select": "Server auswählen",
@@ -334,7 +388,8 @@
             "success": "Erfolgreich {servers} {action}.",
             "partial": "Erfolgreich {successfulServers} {action}. {failedServers} fehlgeschlagen.",
             "groupActions": "Gruppen-Aktionen"
-          }
+          },
+          "noServers": "Es konnten keine Server gefunden werden, Zeit, einen hinzuzufügen?"
         },
         "admin": {
           "title": "Admin"
@@ -474,6 +529,44 @@
             }
           }
         },
+        "shortcuts": {
+          "title": "Tastaturkürzel",
+          "description": "Verwende diese Tastaturkürzel, um effizienter durch das Panel zu navigieren und damit zu interagieren.",
+          "detectedMac": "macOS erkannt",
+          "detectedWindows": "Windows/Linux erkannt",
+          "fileManager": {
+            "title": "Dateimanager",
+            "selectAll": "Alle Dateien auswählen",
+            "cutFiles": "Ausgewählte Dateien ausschneiden",
+            "copyFiles": "Ausgewählte Dateien kopieren",
+            "duplicateFile": "Ausgewählte Datei duplizieren",
+            "pasteFiles": "Dateien einfügen",
+            "searchFiles": "Dateien suchen",
+            "moveUpDirectory": "Ein Verzeichnis nach oben",
+            "moveUpSelection": "Auswahl nach oben verschieben",
+            "moveDownSelection": "Auswahl nach unten verschieben",
+            "renameFile": "Datei umbenennen",
+            "deselectAll": "Alle Dateien abwählen",
+            "deleteFiles": "Ausgewählte Dateien löschen"
+          },
+          "table": {
+            "title": "Tabellen-Navigation",
+            "previousPage": "Vorherige Seite",
+            "nextPage": "Nächste Seite",
+            "firstPage": "Erste Seite",
+            "lastPage": "Letzte Seite"
+          },
+          "console": {
+            "title": "Server Konsole",
+            "searchContent": "Konsolenausgabe durchsuchen",
+            "previousCommand": "Vorheriger Befehl im Verlauf",
+            "nextCommand": "Nächster Befehl im Verlauf"
+          },
+          "serverList": {
+            "title": "Server Liste",
+            "selectServer": "Halte S und klicke, um Server auszuwählen/abzuwählen"
+          }
+        },
         "sshKeys": {
           "title": "SSH-Schlüssel",
           "button": {
@@ -587,44 +680,6 @@
         },
         "activity": {
           "title": "Aktivität"
-        },
-        "shortcuts": {
-          "title": "Tastaturkürzel",
-          "description": "Verwende diese Tastaturkürzel, um effizienter durch das Panel zu navigieren und damit zu interagieren.",
-          "detectedMac": "macOS erkannt",
-          "detectedWindows": "Windows/Linux erkannt",
-          "fileManager": {
-            "title": "Dateimanager",
-            "selectAll": "Alle Dateien auswählen",
-            "cutFiles": "Ausgewählte Dateien ausschneiden",
-            "copyFiles": "Ausgewählte Dateien kopieren",
-            "duplicateFile": "Ausgewählte Datei duplizieren",
-            "pasteFiles": "Dateien einfügen",
-            "searchFiles": "Dateien suchen",
-            "moveUpDirectory": "Ein Verzeichnis nach oben",
-            "moveUpSelection": "Auswahl nach oben verschieben",
-            "moveDownSelection": "Auswahl nach unten verschieben",
-            "renameFile": "Datei umbenennen",
-            "deselectAll": "Alle Dateien abwählen",
-            "deleteFiles": "Ausgewählte Dateien löschen"
-          },
-          "table": {
-            "title": "Tabellen-Navigation",
-            "previousPage": "Vorherige Seite",
-            "nextPage": "Nächste Seite",
-            "firstPage": "Erste Seite",
-            "lastPage": "Letzte Seite"
-          },
-          "console": {
-            "title": "Server Konsole",
-            "searchContent": "Konsolenausgabe durchsuchen",
-            "previousCommand": "Vorheriger Befehl im Verlauf",
-            "nextCommand": "Nächster Befehl im Verlauf"
-          },
-          "serverList": {
-            "title": "Server Liste",
-            "selectServer": "Halte S und klicke, um Server auszuwählen/abzuwählen"
-          }
         }
       },
       "admin": {},
@@ -652,6 +707,35 @@
             "pulling": "Wird heruntergeladen",
             "extracting": "Wird entpackt",
             "layer": "Layer"
+          },
+          "tooltip": {
+            "search": "Suchen",
+            "commandHistory": "Befehlsverlauf",
+            "decreaseFontSize": "Schriftgröße verringern",
+            "increaseFontSize": "Schriftgröße erhöhen"
+          },
+          "drawer": {
+            "commandHistory": {
+              "title": "Befehlsverlauf",
+              "detailTitle": "Befehlsdetails",
+              "noCommands": "Keine Befehle gefunden.",
+              "copyButton": "Befehl kopieren",
+              "sendButton": "Befehl senden",
+              "commandSent": "Befehl erfolgreich gesendet."
+            }
+          },
+          "feature": {
+            "eula": {
+              "title": "Minecraft EULA Vereinbarung",
+              "content": "Der Minecraft-Server erfordert, dass du die [Minecraft End User License Agreement](https://minecraft.net/eula) akzeptierst, bevor er starten kann.",
+              "contentDetails": "Indem du auf \"EULA Akzeptieren\" klickst, stimmst du den Bedingungen der Minecraft EULA zu und die Datei **eula.txt** wird auf **eula=true** aktualisiert.",
+              "toast": {
+                "accepted": "EULA erfolgreich akzeptiert."
+              },
+              "button": {
+                "accept": "EULA Akzeptieren"
+              }
+            }
           },
           "details": {
             "address": "Adresse",
@@ -684,39 +768,198 @@
             "outbound": "Ausgehend"
           },
           "socketConnected": "Verbunden ({ping}ms ping)",
-          "socketDisconnected": "Getrennt",
-          "tooltip": {
-            "search": "Suchen",
-            "commandHistory": "Befehlsverlauf",
-            "decreaseFontSize": "Schriftgröße verringern",
-            "increaseFontSize": "Schriftgröße erhöhen"
-          },
-          "drawer": {
-            "commandHistory": {
-              "title": "Befehlsverlauf",
-              "detailTitle": "Befehlsdetails",
-              "noCommands": "Keine Befehle gefunden.",
-              "copyButton": "Befehl kopieren",
-              "sendButton": "Befehl senden",
-              "commandSent": "Befehl erfolgreich gesendet."
-            }
-          },
-          "feature": {
-            "eula": {
-              "title": "Minecraft EULA Vereinbarung",
-              "content": "Der Minecraft-Server erfordert, dass du die [Minecraft End User License Agreement](https://minecraft.net/eula) akzeptierst, bevor er starten kann.",
-              "contentDetails": "Indem du auf \"EULA Akzeptieren\" klickst, stimmst du den Bedingungen der Minecraft EULA zu und die Datei **eula.txt** wird auf **eula=true** aktualisiert.",
-              "toast": {
-                "accepted": "EULA erfolgreich akzeptiert."
-              },
-              "button": {
-                "accept": "EULA Akzeptieren"
-              }
-            }
-          }
+          "socketDisconnected": "Getrennt"
         },
         "files": {
-          "title": "Dateien"
+          "title": "Dateien",
+          "titleEditorViewing": "Betrachte {file}",
+          "titleEditorEditing": "Bearbeite {file}",
+          "titleEditorNew": "Neue Datei",
+          "table": {
+            "columns": {
+              "modified": "Geändert"
+            }
+          },
+          "button": {
+            "new": "Neu",
+            "sftpDetails": "SFTP-Details",
+            "openInNewWindow": "In neuem Fenster öffnen",
+            "rename": "Umbenennen",
+            "copy": "Kopieren",
+            "move": "Verschieben",
+            "permissions": "Berechtigungen",
+            "unarchive": "Entpacken",
+            "archive": "Archivieren",
+            "remoteCopy": "Remote-Kopie",
+            "search": "Suchen",
+            "exitBackup": "Backup verlassen",
+            "fileFromEditor": "Datei aus Editor",
+            "directory": "Verzeichnis",
+            "fileFromPull": "Datei aus Pull",
+            "fileFromUpload": "Datei aus Upload",
+            "directoryFromUpload": "Verzeichnis aus Upload"
+          },
+          "actionBar": {
+            "copyHere": "Kopiere {files} hierhin",
+            "moveHere": "Verschiebe {files} hierhin"
+          },
+          "searchBanner": {
+            "resultsTitle": "Suchergebnisse ({files} gefunden)",
+            "query": "Suchbegriff:",
+            "excluded": "Ausgeschlossen:",
+            "content": "Inhalt:",
+            "size": "Größe:",
+            "min": "Min:",
+            "max": "Max:"
+          },
+          "operations": {
+            "uploadingFolder": "Verzeichnis wird hochgeladen: {folder} ({current}/{total} Dateien)",
+            "waiting": "Warten: ",
+            "uploading": "Wird hochgeladen: ",
+            "compressing": "Komprimiere {files} von {path}",
+            "decompressing": "Entpacke {path}",
+            "pulling": "Lade {path} herunter",
+            "copying": "Kopiere {path} nach {destination}",
+            "copyingMany": "Kopiere {files}",
+            "receivingRemote": "Empfange {files} vom Remote-Server",
+            "sendingRemote": "Sende {files} an Remote-Server"
+          },
+          "settings": {
+            "clickOnce": "Klicke einmal auf eine Datei oder ein Verzeichnis, um es zu öffnen",
+            "editorMinimap": "Datei Minimap",
+            "editorLineOverflow": "Zeilenumbruch für lange Zeilen im Editor",
+            "imageViewerSmoothing": "Bildglättung (Anti-Aliasing)"
+          },
+          "toast": {
+            "operationCancelled": "Vorgang abgebrochen",
+            "copyingStarted": "Kopieren von {files} gestartet.",
+            "filesCouldNotBeMoved": "Dateien konnten nicht verschoben werden.",
+            "filesMoved": "{files} verschoben.",
+            "downloadStarted": "Download gestartet.",
+            "filesDeleted": "Dateien wurden gelöscht.",
+            "archiveCreationStarted": "Archiverstellung hat begonnen.",
+            "fileCopyingStarted": "Dateikopiervorgang hat begonnen.",
+            "fileInfoRetrieved": "Dateiinformationen erfolgreich abgerufen.",
+            "filePullingStarted": "Datei-Pull hat begonnen.",
+            "fileRenamed": "Datei wurde umbenannt.",
+            "fileCouldNotBeRenamed": "Datei konnte nicht umbenannt werden.",
+            "permissionsUpdated": "Berechtigungen wurden aktualisiert.",
+            "fileSaved": "Datei wurde gespeichert."
+          },
+          "modal": {
+            "activeUploads": {
+              "title": "Aktive Uploads",
+              "content": "Bist du sicher, dass du diese Seite verlassen möchtest? Du hast {files} aktive Datei-Uploads. Wenn du diese Seite verlässt, werden die Uploads abgebrochen.",
+              "button": {
+                "leave": "Seite verlassen"
+              }
+            },
+            "unsavedChanges": {
+              "title": "Ungespeicherte Änderungen",
+              "content": "Du hast ungespeicherte Änderungen im Editor. Bist du sicher, dass du diese Seite verlassen möchtest? Wenn du die Seite verlässt, gehen deine Änderungen verloren.",
+              "button": {
+                "leave": "Seite verlassen"
+              }
+            },
+            "createArchive": {
+              "title": "Archiv erstellen",
+              "form": {
+                "archiveName": "Archivname",
+                "format": "Format"
+              },
+              "createdAs": "Dieses Archiv wird erstellt als "
+            },
+            "createDirectory": {
+              "title": "Verzeichnis erstellen",
+              "form": {
+                "directoryName": "Verzeichnisname"
+              },
+              "createdAs": "Dieses Verzeichnis wird erstellt als "
+            },
+            "copyFile": {
+              "title": "Datei kopieren",
+              "form": {
+                "fileName": "Dateiname"
+              },
+              "createdAs": "Diese Datei wird erstellt als "
+            },
+            "copyRemote": {
+              "title": "Remote kopieren",
+              "form": {
+                "server": "Server",
+                "destination": "Ziel"
+              },
+              "createdAs": "Diese Dateien werden auf dem Remote-Server erstellt unter "
+            },
+            "deleteFile": {
+              "title": "Datei löschen",
+              "singleFileWarning": "Du wirst den Inhalt von {file} nach dem Löschen nicht mehr wiederherstellen können.",
+              "multipleFilesWarning": "Du wirst den Inhalt der folgenden Dateien nach dem Löschen nicht mehr wiederherstellen können."
+            },
+            "createFile": {
+              "title": "Datei erstellen",
+              "form": {
+                "fileName": "Dateiname"
+              }
+            },
+            "filePermissions": {
+              "title": "Dateiberechtigungen",
+              "symbolic": "Symbolisch:",
+              "octal": "Oktal:",
+              "owner": "Besitzer (Owner)",
+              "group": "Gruppe (Group)",
+              "other": "Andere (Other)",
+              "breakdown": "Berechtigungs-Aufschlüsselung",
+              "readPermission": "Leseberechtigung (4)",
+              "writePermission": "Schreibberechtigung (2)",
+              "executePermission": "Ausführungsberechtigung (1)"
+            },
+            "renameFile": {
+              "title": "Datei umbenennen",
+              "form": {
+                "fileName": "Dateiname"
+              }
+            },
+            "searchFiles": {
+              "title": "Dateien suchen",
+              "placeholder": "Suchen...",
+              "advancedFilters": "Erweiterte Filter",
+              "pathPatterns": "Pfadmuster",
+              "include": "Einschließen",
+              "exclude": "Ausschließen",
+              "caseInsensitive": "Groß-/Kleinschreibung ignorieren",
+              "fileContent": "Dateiinhalte",
+              "searchText": "Suchtext",
+              "maxFileSize": "Maximale Dateigröße",
+              "includeOversized": "Übergroße einschließen",
+              "includeOversizedDescription": "Schließt Dateien ein, die auf andere Filter passen, aber zu groß zum Durchsuchen sind",
+              "fileSize": "Dateigröße",
+              "minimum": "Minimum",
+              "maximum": "Maximum"
+            },
+            "pullFile": {
+              "title": "Datei herunterladen (Pull)",
+              "form": {
+                "fileUrl": "Datei-URL",
+                "query": "Suchanfrage",
+                "fileName": "Dateiname"
+              },
+              "createdAs": "Diese Datei wird erstellt als ",
+              "pull": "Herunterladen (Pull)"
+            },
+            "sftpDetails": {
+              "title": "SFTP-Details",
+              "form": {
+                "protocol": "Protokoll",
+                "port": "Port",
+                "host": "Host",
+                "username": "Benutzername",
+                "password": "Passwort",
+                "yourPassword": "Dein Control Panel Passwort"
+              },
+              "launch": "Starten"
+            }
+          }
         },
         "databases": {
           "title": "Datenbanken",
@@ -829,8 +1072,6 @@
           },
           "button": {
             "browse": "Durchsuchen",
-            "download": "Herunterladen",
-            "downloadAs": "Als {format} herunterladen",
             "restore": "Wiederherstellen"
           },
           "toast": {

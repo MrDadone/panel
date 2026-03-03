@@ -3,8 +3,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Alert } from '@mantine/core';
 import { bytesToString } from '@/lib/size.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 export default function FileSearchBanner({ resetEntries }: { resetEntries: () => void }) {
+  const { t, tItem } = useTranslations();
   const { browsingEntries, searchInfo, setSearchInfo } = useFileManager();
 
   const closeSearch = async () => {
@@ -18,7 +20,7 @@ export default function FileSearchBanner({ resetEntries }: { resetEntries: () =>
     <Alert
       icon={<FontAwesomeIcon icon={faSearch} />}
       color='blue'
-      title={`Search Results (${browsingEntries.total} files found)`}
+      title={t('pages.server.files.searchBanner.resultsTitle', { files: tItem('file', browsingEntries.total) })}
       onClose={closeSearch}
       withCloseButton
       mb='md'
@@ -30,32 +32,36 @@ export default function FileSearchBanner({ resetEntries }: { resetEntries: () =>
         <div className='flex flex-col gap-1 text-sm'>
           {searchInfo.query && (
             <div>
-              <span className='font-medium text-white/80'>Query:</span>{' '}
+              <span className='font-medium text-white/80'>{t('pages.server.files.searchBanner.query', {})}</span>{' '}
               <span className='text-white/60'>&quot;{searchInfo.query}&quot;</span>
             </div>
           )}
           {searchInfo.filters.pathFilter?.exclude && searchInfo.filters.pathFilter.exclude.length > 0 && (
             <div>
-              <span className='font-medium text-white/80'>Excluded:</span>{' '}
+              <span className='font-medium text-white/80'>{t('pages.server.files.searchBanner.excluded', {})}</span>{' '}
               <span className='text-white/60'>{searchInfo.filters.pathFilter.exclude.join(', ')}</span>
             </div>
           )}
           {searchInfo.filters.contentFilter && (
             <div>
-              <span className='font-medium text-white/80'>Content:</span>{' '}
+              <span className='font-medium text-white/80'>{t('pages.server.files.searchBanner.content', {})}</span>{' '}
               <span className='text-white/60'>{searchInfo.filters.contentFilter.query || '(empty)'}</span>
             </div>
           )}
           {searchInfo.filters.sizeFilter && (
             <div>
-              <span className='font-medium text-white/80'>Size:</span>{' '}
+              <span className='font-medium text-white/80'>{t('pages.server.files.searchBanner.size', {})}</span>{' '}
               <span className='text-white/60'>
                 {searchInfo.filters.sizeFilter.min > 0 && (
-                  <span>Min: {bytesToString(searchInfo.filters.sizeFilter.min)}</span>
+                  <span>
+                    {t('pages.server.files.searchBanner.min', {})} {bytesToString(searchInfo.filters.sizeFilter.min)}
+                  </span>
                 )}
                 {searchInfo.filters.sizeFilter.min > 0 && searchInfo.filters.sizeFilter.max > 0 && ', '}
                 {searchInfo.filters.sizeFilter.max > 0 && (
-                  <span>Max: {bytesToString(searchInfo.filters.sizeFilter.max)}</span>
+                  <span>
+                    {t('pages.server.files.searchBanner.max', {})} {bytesToString(searchInfo.filters.sizeFilter.max)}
+                  </span>
                 )}
               </span>
             </div>

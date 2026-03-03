@@ -10,9 +10,11 @@ import Button from '@/elements/Button.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; inFileEditor?: boolean }) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
   const { server } = useServerStore();
   const {
@@ -107,12 +109,12 @@ export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; 
 
       <NavLink to={`/server/${server?.uuidShort}/files`} hidden={!browsingBackup || inFileEditor}>
         <Button variant='light' leftSection={<FontAwesomeIcon icon={faDoorOpen} />}>
-          Exit Backup
+          {t('pages.server.files.button.exitBackup', {})}
         </Button>
       </NavLink>
       <span hidden={!!browsingBackup || inFileEditor}>
         <Button variant='light' leftSection={<FontAwesomeIcon icon={faSearch} />} onClick={() => doOpenModal('search')}>
-          Search
+          {t('pages.server.files.button.search', {})}
         </Button>
       </span>
     </div>

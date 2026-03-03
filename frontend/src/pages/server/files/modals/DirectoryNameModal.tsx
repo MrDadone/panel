@@ -14,9 +14,11 @@ import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesDirectoryCreateSchema } from '@/lib/schemas/server/files.ts';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 export default function DirectoryNameModal({ opened, onClose }: ModalProps) {
+  const { t } = useTranslations();
   const [_, setSearchParams] = useSearchParams();
   const { addToast } = useToast();
   const { server } = useServerStore();
@@ -47,12 +49,17 @@ export default function DirectoryNameModal({ opened, onClose }: ModalProps) {
   };
 
   return (
-    <Modal title='Create Directory' onClose={onClose} opened={opened}>
+    <Modal title={t('pages.server.files.modal.createDirectory.title', {})} onClose={onClose} opened={opened}>
       <form onSubmit={form.onSubmit(() => makeDirectory())}>
-        <TextInput withAsterisk label='Directory Name' placeholder='Directory Name' {...form.getInputProps('name')} />
+        <TextInput
+          withAsterisk
+          label={t('pages.server.files.modal.createDirectory.form.directoryName', {})}
+          placeholder={t('pages.server.files.modal.createDirectory.form.directoryName', {})}
+          {...form.getInputProps('name')}
+        />
 
         <p className='mt-2 text-sm md:text-base break-all'>
-          <span className='text-neutral-200'>This directory will be created as&nbsp;</span>
+          <span className='text-neutral-200'>{t('pages.server.files.modal.createDirectory.createdAs', {})}</span>
           <Code>
             /home/container/
             <span className='text-cyan-200'>
@@ -63,10 +70,10 @@ export default function DirectoryNameModal({ opened, onClose }: ModalProps) {
 
         <ModalFooter>
           <Button type='submit' loading={loading} disabled={!form.isValid()}>
-            Create
+            {t('common.button.create', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
-            Close
+            {t('common.button.close', {})}
           </Button>
         </ModalFooter>
       </form>

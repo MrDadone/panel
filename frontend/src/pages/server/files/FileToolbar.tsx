@@ -14,9 +14,11 @@ import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 export default function FileToolbar() {
+  const { t } = useTranslations();
   const navigate = useNavigate();
   const { server } = useServerStore();
   const { fileInputRef, folderInputRef, browsingDirectory, browsingWritableDirectory, doOpenModal } = useFileManager();
@@ -34,7 +36,7 @@ export default function FileToolbar() {
           leftSection={<FontAwesomeIcon icon={faServer} />}
           onClick={() => doOpenModal('sftpDetails')}
         >
-          SFTP Details
+          {t('pages.server.files.button.sftpDetails', {})}
         </Button>
       </ServerCan>
       {browsingWritableDirectory && (
@@ -44,7 +46,7 @@ export default function FileToolbar() {
               items={[
                 {
                   icon: faFileCirclePlus,
-                  label: 'File from Editor',
+                  label: t('pages.server.files.button.fileFromEditor', {}),
                   onClick: () =>
                     navigate(
                       `/server/${server.uuidShort}/files/new?${createSearchParams({ directory: browsingDirectory })}`,
@@ -53,25 +55,25 @@ export default function FileToolbar() {
                 },
                 {
                   icon: faFolderPlus,
-                  label: 'Directory',
+                  label: t('pages.server.files.button.directory', {}),
                   onClick: () => doOpenModal('nameDirectory'),
                   color: 'gray',
                 },
                 {
                   icon: faDownload,
-                  label: 'File from Pull',
+                  label: t('pages.server.files.button.fileFromPull', {}),
                   onClick: () => doOpenModal('pullFile'),
                   color: 'gray',
                 },
                 {
                   icon: faFileUpload,
-                  label: 'File from Upload',
+                  label: t('pages.server.files.button.fileFromUpload', {}),
                   onClick: () => fileInputRef.current?.click(),
                   color: 'gray',
                 },
                 {
                   icon: faFolderOpen,
-                  label: 'Directory from Upload',
+                  label: t('pages.server.files.button.directoryFromUpload', {}),
                   onClick: () => folderInputRef.current?.click(),
                   color: 'gray',
                 },
@@ -89,7 +91,7 @@ export default function FileToolbar() {
                   color='blue'
                   rightSection={<FontAwesomeIcon icon={faChevronDown} />}
                 >
-                  New
+                  {t('pages.server.files.button.new', {})}
                 </Button>
               )}
             </ContextMenu>

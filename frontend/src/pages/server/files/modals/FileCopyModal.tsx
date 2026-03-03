@@ -13,6 +13,7 @@ import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesCopySchema } from '@/lib/schemas/server/files.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
@@ -20,6 +21,7 @@ type Props = ModalProps & {
 };
 
 export default function FileCopyModal({ file, opened, onClose }: Props) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
   const { server } = useServerStore();
   const { browsingDirectory, browsingEntries } = useFileManager();
@@ -37,7 +39,7 @@ export default function FileCopyModal({ file, opened, onClose }: Props) {
   useEffect(() => {
     if (file) {
       form.setValues({
-        name: file.name,
+        name: '',
       });
     }
   }, [file]);
@@ -92,7 +94,7 @@ export default function FileCopyModal({ file, opened, onClose }: Props) {
 
     copyFile(server.uuid, join(browsingDirectory, file.name), form.values.name || null)
       .then(() => {
-        addToast('File copying has started.', 'success');
+        addToast(t('pages.server.files.toast.fileCopyingStarted', {}), 'success');
         onClose();
       })
       .catch((msg) => {
@@ -102,12 +104,16 @@ export default function FileCopyModal({ file, opened, onClose }: Props) {
   };
 
   return (
-    <Modal title='Copy File' onClose={onClose} opened={opened}>
+    <Modal title={t('pages.server.files.modal.copyFile.title', {})} onClose={onClose} opened={opened}>
       <form onSubmit={form.onSubmit(() => doCopy())}>
-        <TextInput label='File Name' placeholder='File Name' {...form.getInputProps('name')} />
+        <TextInput
+          label={t('pages.server.files.modal.copyFile.form.fileName', {})}
+          placeholder={t('pages.server.files.modal.copyFile.form.fileName', {})}
+          {...form.getInputProps('name')}
+        />
 
         <p className='mt-2 text-sm md:text-base break-all'>
-          <span className='text-neutral-200'>This file will be created as&nbsp;</span>
+          <span className='text-neutral-200'>{t('pages.server.files.modal.copyFile.createdAs', {})}</span>
           <Code>
             /home/container/
             <span className='text-cyan-200'>
@@ -118,10 +124,10 @@ export default function FileCopyModal({ file, opened, onClose }: Props) {
 
         <ModalFooter>
           <Button type='submit' loading={loading}>
-            Copy
+            {t('pages.server.files.button.copy', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
-            Close
+            {t('common.button.close', {})}
           </Button>
         </ModalFooter>
       </form>
