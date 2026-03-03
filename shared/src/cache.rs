@@ -76,11 +76,11 @@ impl Cache {
         });
 
         let local = moka::future::Cache::builder()
-            .max_capacity(16_384)
+            .max_capacity(16384)
             .expire_after(DataExpiry)
             .build();
 
-        let local_locks = moka::future::Cache::builder().max_capacity(4_096).build();
+        let local_locks = moka::future::Cache::builder().max_capacity(4096).build();
 
         let instance = Arc::new(Self {
             client,

@@ -13,7 +13,6 @@ import { Pagination } from '@/elements/Table.tsx';
 import { ObjectSet } from '@/lib/objectSet.ts';
 import { useBulkPowerActions } from '@/plugins/useBulkPowerActions.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
-import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
@@ -32,7 +31,6 @@ export default function DashboardHomeAll() {
   const [sKeyPressed, setSKeyPressed] = useState(false);
 
   const { handleBulkPowerAction, bulkActionLoading } = useBulkPowerActions();
-  const loadingStats = useServerStats(servers.data);
 
   useEffect(() => {
     getServerGroups()
@@ -129,7 +127,7 @@ export default function DashboardHomeAll() {
           <Divider my='md' />
         </>
       )}
-      {loading || loadingStats ? (
+      {loading ? (
         <Spinner.Centered />
       ) : servers.total === 0 ? (
         <p className='text-gray-400'>{t('pages.account.home.noServers', {})}</p>

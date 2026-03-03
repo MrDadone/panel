@@ -4,33 +4,42 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import getNodeResources from '@/api/me/servers/resources/getNodeResources.ts';
 import { UserStore } from '@/stores/user.ts';
 
+const CACHE_TTL_MS = 1000 * 30;
+
 export interface ServerSlice {
   servers: Pagination<Server>;
-  serverResourceUsage: QuickLRU<string, ResourceUsage>;
-  serverResourceUsagePendingNodes: Set<string>;
   serverGroups: UserServerGroup[];
 
+  serverResourceUsage: QuickLRU<string, ResourceUsage>;
+  resourceUsageTick: number;
+
+  _nodeFetchTimestamps: Map<string, number>;
+  _pendingNodeFetches: Map<string, Promise<void>>;
+
   setServers: (servers: Pagination<Server>) => void;
-  addServerResourceUsage: (uuid: string, usage: ResourceUsage) => void;
-  getServerResourceUsage: (uuid: string, nodeUuid: string) => ResourceUsage | undefined;
   setServerGroups: (serverGroups: UserServerGroup[]) => void;
   addServerGroup: (serverGroup: UserServerGroup) => void;
   removeServerGroup: (serverGroup: UserServerGroup) => void;
   updateServerGroup: (uuid: string, data: { name?: string; serverOrder?: string[] }) => void;
+
+  addServerResourceUsage: (serverUuid: string, usage: ResourceUsage) => void;
+  getServerResourceUsage: (uuid: string) => ResourceUsage | undefined;
+  fetchNodeResources: (nodeUuid: string) => Promise<void>;
 }
 
-export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = (set, get): ServerSlice => ({
+export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = (set, get) => ({
   servers: getEmptyPaginationSet<Server>(),
-  serverResourceUsage: new QuickLRU<string, ResourceUsage>({ maxSize: 100, maxAge: 1000 * 30 }),
-  serverResourceUsagePendingNodes: new Set<string>(),
   serverGroups: [],
 
-  setServers: (value) => set((state) => ({ ...state, servers: value })),
-  setServerGroups: (value) => set((state) => ({ ...state, serverGroups: value })),
-  addServerGroup: (serverGroup) =>
-    set((state) => ({
-      serverGroups: [...state.serverGroups, serverGroup],
-    })),
+  serverResourceUsage: new QuickLRU<string, ResourceUsage>({ maxSize: 100, maxAge: CACHE_TTL_MS }),
+  resourceUsageTick: 0,
+
+  _nodeFetchTimestamps: new Map(),
+  _pendingNodeFetches: new Map(),
+
+  setServers: (value) => set({ servers: value }),
+  setServerGroups: (value) => set({ serverGroups: value }),
+  addServerGroup: (serverGroup) => set((state) => ({ serverGroups: [...state.serverGroups, serverGroup] })),
   removeServerGroup: (serverGroup) =>
     set((state) => ({
       serverGroups: state.serverGroups.filter((g) => g.uuid !== serverGroup.uuid),
@@ -40,64 +49,50 @@ export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = 
       serverGroups: state.serverGroups.map((g) => (g.uuid === uuid ? { ...g, ...data } : g)),
     })),
 
-  addServerResourceUsage: (uuid, usage) =>
+  addServerResourceUsage: (serverUuid, usage) => {
     set((state) => {
-      state.serverResourceUsage.set(uuid, usage);
-      return { ...state, serverResourceUsage: state.serverResourceUsage };
-    }),
-  getServerResourceUsage: (uuid, nodeUuid) => {
-    const state = get();
-    const usage = state.serverResourceUsage.get(uuid);
-
-    if (usage) return usage;
-    if (state.serverResourceUsagePendingNodes.has(nodeUuid)) return undefined;
-
-    let shouldFetch = false;
-
-    set((state) => {
-      if (state.serverResourceUsagePendingNodes.has(nodeUuid)) {
-        return state;
-      }
-
-      shouldFetch = true;
-
-      const newPending = new Set(state.serverResourceUsagePendingNodes);
-      newPending.add(nodeUuid);
-
-      return { ...state, serverResourceUsagePendingNodes: newPending };
+      state.serverResourceUsage.set(serverUuid, usage);
+      return { resourceUsageTick: state.resourceUsageTick + 1 };
     });
+  },
 
-    if (shouldFetch) {
-      getNodeResources(nodeUuid)
-        .then((usages) => {
-          set((state) => {
-            for (const [serverId, resources] of Object.entries(usages)) {
-              state.serverResourceUsage.set(serverId, resources);
-            }
+  getServerResourceUsage: (uuid) => {
+    return get().serverResourceUsage.get(uuid);
+  },
 
-            const newPending = new Set(state.serverResourceUsagePendingNodes);
-            newPending.delete(nodeUuid);
+  fetchNodeResources: async (nodeUuid) => {
+    const state = get();
+    const now = Date.now();
 
-            return {
-              ...state,
-              serverResourceUsage: state.serverResourceUsage,
-              serverResourceUsagePendingNodes: newPending,
-            };
-          });
-        })
-        .catch((err) => {
-          console.error(`Failed to fetch resources for node ${nodeUuid}:`, err);
-
-          setTimeout(() => {
-            set((state) => {
-              const newPending = new Set(state.serverResourceUsagePendingNodes);
-              newPending.delete(nodeUuid);
-              return { ...state, serverResourceUsagePendingNodes: newPending };
-            });
-          }, 30000);
-        });
+    const lastFetch = state._nodeFetchTimestamps.get(nodeUuid) || 0;
+    if (now - lastFetch < CACHE_TTL_MS) {
+      return;
     }
 
-    return undefined;
+    if (state._pendingNodeFetches.has(nodeUuid)) {
+      return state._pendingNodeFetches.get(nodeUuid);
+    }
+
+    const fetchPromise = (async () => {
+      try {
+        const usages = await getNodeResources(nodeUuid);
+
+        set((s) => {
+          for (const [serverId, resources] of Object.entries(usages)) {
+            s.serverResourceUsage.set(serverId, resources);
+          }
+          s._nodeFetchTimestamps.set(nodeUuid, Date.now());
+
+          return { resourceUsageTick: s.resourceUsageTick + 1 };
+        });
+      } catch (err) {
+        console.error(`Failed to fetch resources for node ${nodeUuid}:`, err);
+      } finally {
+        get()._pendingNodeFetches.delete(nodeUuid);
+      }
+    })();
+
+    state._pendingNodeFetches.set(nodeUuid, fetchPromise);
+    return fetchPromise;
   },
 });
