@@ -76,7 +76,7 @@ impl SettingsDeserializeExt for AppSettingsAppDeserializer {
                 .unwrap_or_else(|| "http://localhost:8000".into()),
             language: deserializer
                 .take_raw_setting("language")
-                .unwrap_or_else(|| "en-US".into()),
+                .unwrap_or_else(|| "en".into()),
             two_factor_requirement: match deserializer
                 .take_raw_setting("two_factor_requirement")
                 .as_deref()

@@ -24,7 +24,7 @@ const timezones = Object.keys(zones)
   }));
 
 export default function TimezoneContainer() {
-  const { t } = useTranslations();
+  const { t, language } = useTranslations();
   const { addToast } = useToast();
   const server = useServerStore((state) => state.server);
 
@@ -53,10 +53,10 @@ export default function TimezoneContainer() {
 
   useEffect(() => {
     if (form.values.timezone) {
-      setTime(new Date().toLocaleString('en-US', { timeZone: form.values.timezone }));
+      setTime(new Date().toLocaleString(language, { timeZone: form.values.timezone }));
 
       const interval = setInterval(() => {
-        setTime(new Date().toLocaleString('en-US', { timeZone: form.values.timezone! }));
+        setTime(new Date().toLocaleString(language, { timeZone: form.values.timezone! }));
       }, 1000);
 
       return () => clearInterval(interval);

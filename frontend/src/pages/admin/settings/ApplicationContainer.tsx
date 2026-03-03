@@ -38,7 +38,7 @@ export default function ApplicationContainer() {
       name: '',
       icon: '',
       url: '',
-      language: 'en-US',
+      language: 'en',
       twoFactorRequirement: 'none',
       telemetryEnabled: true,
       registrationEnabled: true,
