@@ -4,7 +4,7 @@ export default async (
   mountUuid: string,
   page: number,
   search?: string,
-): Promise<ResponseMeta<AndCreated<{ server: AdminServer }>>> => {
+): Promise<Pagination<AndCreated<{ server: AdminServer }>>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/mounts/${mountUuid}/servers`, {

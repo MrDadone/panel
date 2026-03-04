@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (page: number, search?: string): Promise<ResponseMeta<AdminActivity>> => {
+export default async (page: number, search?: string): Promise<Pagination<AdminActivity>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get('/api/admin/activity', {

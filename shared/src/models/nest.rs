@@ -100,6 +100,25 @@ impl Nest {
         })
     }
 
+    pub async fn by_name(
+        database: &crate::database::Database,
+        name: &str,
+    ) -> Result<Option<Self>, crate::database::DatabaseError> {
+        let row = sqlx::query(&format!(
+            r#"
+            SELECT {}
+            FROM nests
+            WHERE nests.name = $1
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(name)
+        .fetch_optional(database.read())
+        .await?;
+
+        row.try_map(|row| Self::map(None, &row))
+    }
+
     #[inline]
     pub fn into_admin_api_object(self) -> AdminApiNest {
         AdminApiNest {

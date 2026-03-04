@@ -5,15 +5,18 @@ import deleteAssets from '@/api/admin/assets/deleteAssets.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
+import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
+import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function AssetActionBar({
   selectedAssets,
   invalidateAssets,
 }: {
-  selectedAssets: Set<string>;
+  selectedAssets: ObjectSet<StorageAsset, 'name'>;
   invalidateAssets: () => void;
 }) {
   const { addToast } = useToast();
@@ -21,7 +24,7 @@ export default function AssetActionBar({
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
   const doDelete = async () => {
-    await deleteAssets([...selectedAssets])
+    await deleteAssets(selectedAssets.keys())
       .then(({ deleted }) => {
         invalidateAssets();
 
@@ -32,6 +35,16 @@ export default function AssetActionBar({
         addToast(httpErrorToHuman(msg), 'error');
       });
   };
+
+  useKeyboardShortcuts({
+    shortcuts: [
+      {
+        key: 'Delete',
+        callback: () => setOpenModal('delete'),
+      },
+    ],
+    deps: [],
+  });
 
   return (
     <>
@@ -46,9 +59,11 @@ export default function AssetActionBar({
       </ConfirmationModal>
 
       <ActionBar opened={selectedAssets.size > 0}>
-        <Button color='red' onClick={() => setOpenModal('delete')} className='col-span-2'>
-          <FontAwesomeIcon icon={faTrash} className='mr-2' /> Delete
-        </Button>
+        <AdminCan action='assets.delete'>
+          <Button color='red' onClick={() => setOpenModal('delete')} className='col-span-2'>
+            <FontAwesomeIcon icon={faTrash} className='mr-2' /> Delete
+          </Button>
+        </AdminCan>
       </ActionBar>
     </>
   );

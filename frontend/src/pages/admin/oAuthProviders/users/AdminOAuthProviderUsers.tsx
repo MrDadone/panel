@@ -8,9 +8,7 @@ import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTabl
 import UserOAuthLinkRow from './UserOAuthLinkRow.tsx';
 
 export default function AdminOAuthProviderUsers({ oauthProvider }: { oauthProvider: AdminOAuthProvider }) {
-  const [oauthProviderUsers, setOAuthProviderUsers] = useState<ResponseMeta<AdminUserOAuthLink>>(
-    getEmptyPaginationSet(),
-  );
+  const [oauthProviderUsers, setOAuthProviderUsers] = useState<Pagination<AdminUserOAuthLink>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getOAuthProviderUsers(oauthProvider.uuid, page, search),

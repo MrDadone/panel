@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface SubusersSlice {
-  subusers: ResponseMeta<ServerSubuser>;
+  subusers: Pagination<ServerSubuser>;
 
-  setSubusers: (subusers: ResponseMeta<ServerSubuser>) => void;
+  setSubusers: (subusers: Pagination<ServerSubuser>) => void;
   addSubuser: (subusers: ServerSubuser) => void;
   removeSubuser: (subusers: ServerSubuser) => void;
 }

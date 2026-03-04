@@ -28,7 +28,7 @@ export default function OobeConfiguration({ onNext }: OobeComponentProps) {
   const form = useForm<z.infer<typeof oobeConfigurationSchema>>({
     initialValues: {
       applicationName: '',
-      applicationLanguage: 'en-US',
+      applicationLanguage: 'en',
       applicationUrl: '',
       applicationTelemetry: true,
       applicationRegistration: false,
@@ -46,8 +46,8 @@ export default function OobeConfiguration({ onNext }: OobeComponentProps) {
           applicationName: settings.app.name,
           applicationLanguage: settings.app.language,
           applicationUrl: settings.app.url,
-          applicationTelemetry: settings.app.telemetryEnabled,
-          applicationRegistration: settings.app.registrationEnabled,
+          applicationTelemetry: true,
+          applicationRegistration: false,
         });
       })
       .finally(() => setLoading(false));
@@ -58,6 +58,7 @@ export default function OobeConfiguration({ onNext }: OobeComponentProps) {
 
     updateApplicationSettings({
       name: form.values.applicationName,
+      icon: '/icon.svg',
       language: form.values.applicationLanguage,
       url: form.values.applicationUrl,
       twoFactorRequirement: 'none',

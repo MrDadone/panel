@@ -1,6 +1,6 @@
 import { axiosInstance, getPaginationSet } from '@/api/axios.ts';
 
-export default async (userUuid: string, page: number, search?: string): Promise<ResponseMeta<UserActivity>> => {
+export default async (userUuid: string, page: number, search?: string): Promise<Pagination<UserActivity>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/users/${userUuid}/activity`, {

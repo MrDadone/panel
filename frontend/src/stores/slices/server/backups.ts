@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface BackupsSlice {
-  backups: ResponseMeta<ServerBackupWithProgress>;
+  backups: Pagination<ServerBackupWithProgress>;
 
-  setBackups: (backups: ResponseMeta<ServerBackupWithProgress>) => void;
+  setBackups: (backups: Pagination<ServerBackupWithProgress>) => void;
   addBackup: (backups: ServerBackupWithProgress) => void;
   removeBackup: (backups: ServerBackupWithProgress) => void;
   updateBackup: (uuid: string, updatedProps: Partial<ServerBackupWithProgress>) => void;

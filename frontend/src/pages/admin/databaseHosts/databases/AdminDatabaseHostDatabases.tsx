@@ -8,7 +8,7 @@ import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTabl
 import DatabaseRow from './DatabaseRow.tsx';
 
 export default function AdminDatabaseHostDatabases({ databaseHost }: { databaseHost: AdminDatabaseHost }) {
-  const [databaseHostDatabases, setDatabaseHostDatabases] = useState<ResponseMeta<AdminServerDatabase>>(
+  const [databaseHostDatabases, setDatabaseHostDatabases] = useState<Pagination<AdminServerDatabase>>(
     getEmptyPaginationSet(),
   );
 

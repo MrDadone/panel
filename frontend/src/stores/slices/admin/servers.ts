@@ -3,24 +3,24 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface ServersSlice {
-  servers: ResponseMeta<AdminServer>;
-  serverAllocations: ResponseMeta<ServerAllocation>;
+  servers: Pagination<AdminServer>;
+  serverAllocations: Pagination<ServerAllocation>;
   serverVariables: ServerVariable[];
-  serverMounts: ResponseMeta<AdminServerMount>;
+  serverMounts: Pagination<AdminServerMount>;
 
-  setServers: (servers: ResponseMeta<AdminServer>) => void;
+  setServers: (servers: Pagination<AdminServer>) => void;
   addServer: (server: AdminServer) => void;
   removeServer: (server: AdminServer) => void;
   updateServer: (server: AdminServer) => void;
 
-  setServerAllocations: (allocations: ResponseMeta<ServerAllocation>) => void;
+  setServerAllocations: (allocations: Pagination<ServerAllocation>) => void;
   addServerAllocation: (allocation: ServerAllocation) => void;
   removeServerAllocation: (allocation: ServerAllocation) => void;
 
   setServerVariables: (variables: ServerVariable[]) => void;
   updateServerVariable: (envVariable: string, updatedProps: Partial<ServerVariable>) => void;
 
-  setServerMounts: (mounts: ResponseMeta<AdminServerMount>) => void;
+  setServerMounts: (mounts: Pagination<AdminServerMount>) => void;
   addServerMount: (mount: AdminServerMount) => void;
   removeServerMount: (mount: AdminServerMount) => void;
 }

@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (serverGroupUuid: string, page: number, search?: string): Promise<ResponseMeta<Server>> => {
+export default async (serverGroupUuid: string, page: number, search?: string): Promise<Pagination<Server>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/client/servers/groups/${serverGroupUuid}`, { params: { page, search } })

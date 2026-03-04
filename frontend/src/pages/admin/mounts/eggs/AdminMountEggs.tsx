@@ -9,7 +9,7 @@ import EggRow from '../../nests/eggs/EggRow.tsx';
 
 export default function AdminMountNestEggs({ mount }: { mount: Mount }) {
   const [mountNestEggs, setMountNestEggs] = useState<
-    ResponseMeta<AndCreated<{ nest: AdminNest; nestEgg: AdminNestEgg }>>
+    Pagination<AndCreated<{ nest: AdminNest; nestEgg: AdminNestEgg }>>
   >(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({

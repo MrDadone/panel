@@ -1,9 +1,11 @@
+import { getTranslations } from '@/providers/TranslationProvider.tsx';
+
 export function formatAllocation(allocation?: ServerAllocation | NodeAllocation | null, separatePort: boolean = false) {
   return allocation
     ? separatePort
       ? allocation.ipAlias || allocation.ip
       : `${allocation.ipAlias || allocation.ip}:${allocation.port}`
-    : 'No Allocation';
+    : getTranslations().t('common.server.noAllocation', {});
 }
 
 export function statusToColor(status: ServerPowerState | undefined) {

@@ -8,7 +8,7 @@ import UserRow from '@/pages/admin/users/UserRow.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 
 export default function AdminRoleUsers({ role }: { role: Role }) {
-  const [roleUsers, setRoleUsers] = useState<ResponseMeta<User>>(getEmptyPaginationSet());
+  const [roleUsers, setRoleUsers] = useState<Pagination<User>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getRoleUsers(role.uuid, page, search),

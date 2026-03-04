@@ -63,7 +63,6 @@ const minifyTranslations = () => {
           }
         });
 
-        // Now write minified files
         for (const [language, namespaces] of Object.entries(languageData)) {
           const minifiedContent = JSON.stringify(namespaces);
           fs.writeFileSync(path.join(dir, `${language}.json`), minifiedContent);
@@ -122,23 +121,26 @@ export default defineConfig({
     chunkSizeWarningLimit: 1024,
     target: 'es2020',
     cssCodeSplit: false,
-    rollupOptions: {
+    rolldownOptions: {
       external: ['monaco-editor'],
       output: {
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
         assetFileNames: 'assets/[name].[hash].[ext]',
-        experimentalMinChunkSize: 102400,
-        manualChunks(id) {
-          if (id.includes('zod/v4/locales')) {
-            return 'zod-locale';
-          }
-          if (
-            id.includes('src/stores/') ||
-            id.includes('src/lib/')
-          ) {
-            return 'shared';
-          }
+        advancedChunks: {
+          groups: [
+            {
+              name: 'react',
+              test: /node_modules\/react/,
+              priority: 20,
+            },
+            {
+              name: 'common',
+              minShareCount: 5,
+              minSize: 10240,
+              priority: 5,
+            },
+          ],
         },
       },
     },

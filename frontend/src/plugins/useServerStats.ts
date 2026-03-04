@@ -1,34 +1,21 @@
-import debounce from 'debounce';
-import { useEffect, useState } from 'react';
-import getNodeResources from '@/api/me/servers/resources/getNodeResources.ts';
+import { useEffect } from 'react';
 import { useUserStore } from '@/stores/user.ts';
 
-export function useServerStats(servers: Server[]) {
-  const [loadingStats, setLoadingStats] = useState(true);
-  const { addServerResourceUsage } = useUserStore();
+export function useServerStats(server: AdminServer | Server) {
+  const fetchNodeResources = useUserStore((state) => state.fetchNodeResources);
+
+  const stats = useUserStore((state) => {
+    const _tick = state.resourceUsageTick;
+    return state.getServerResourceUsage(server.uuid) || null;
+  });
 
   useEffect(() => {
-    setLoadingStats(true);
-    const uniqueNodeIds = new Set([...servers.map((s) => s.nodeUuid)]);
+    if ('nodeUuid' in server) {
+      fetchNodeResources(server.nodeUuid);
+    } else if ('node' in server) {
+      fetchNodeResources(server.node.uuid);
+    }
+  }, [server, fetchNodeResources]);
 
-    const debouncedSetLoading = debounce(() => {
-      setLoadingStats(false);
-    }, 50);
-
-    Promise.all(
-      [...uniqueNodeIds].map((nodeId) =>
-        getNodeResources(nodeId).then((response) => {
-          for (const [serverId, resources] of Object.entries(response)) {
-            addServerResourceUsage(serverId, resources);
-          }
-        }),
-      ),
-    ).finally(debouncedSetLoading);
-
-    return () => {
-      debouncedSetLoading.clear();
-    };
-  }, [servers]);
-
-  return loadingStats;
+  return stats;
 }

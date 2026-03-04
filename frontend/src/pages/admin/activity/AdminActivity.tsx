@@ -8,7 +8,7 @@ import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTabl
 import ActivityRow from './ActivityRow.tsx';
 
 export default function AdminActivity() {
-  const [activities, setActivities] = useState<ResponseMeta<AdminActivity>>(getEmptyPaginationSet());
+  const [activities, setActivities] = useState<Pagination<AdminActivity>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: getAdminActivity,

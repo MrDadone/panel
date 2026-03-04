@@ -26,7 +26,10 @@ export default function DashboardApiKeys() {
   });
 
   return (
-    <AccountContentContainer title={t('pages.account.apiKeys.title', {})}>
+    <AccountContentContainer
+      title={t('pages.account.apiKeys.title', {})}
+      registry={window.extensionContext.extensionRegistry.pages.dashboard.apiKeys.container}
+    >
       <ApiKeyCreateOrUpdateModal opened={openModal === 'create'} onClose={() => setOpenModal(null)} />
 
       <Group justify='space-between' align='start' mb='md'>

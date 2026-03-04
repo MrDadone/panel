@@ -22,6 +22,7 @@ import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/contexts/toastContext.ts';
 import { useWindows } from '@/providers/contexts/windowContext.ts';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import RouterRoutes from '@/RouterRoutes.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
@@ -32,11 +33,19 @@ interface FileRowContextMenuProps {
 }
 
 export default function FileRowContextMenu({ file, children }: FileRowContextMenuProps) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
   const { addWindow } = useWindows();
   const { settings } = useGlobalStore();
-  const { server, browsingBackup, browsingWritableDirectory, setActingFiles } = useServerStore();
-  const { browsingDirectory, browsingFastDirectory, doOpenModal } = useFileManager();
+  const { server } = useServerStore();
+  const {
+    browsingBackup,
+    browsingDirectory,
+    browsingWritableDirectory,
+    browsingFastDirectory,
+    doOpenModal,
+    doActFiles,
+  } = useFileManager();
   const canCreate = useServerCan('files.create');
   const canArchive = useServerCan('files.archive');
 
@@ -49,7 +58,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
   const doDownload = (archiveFormat: StreamingArchiveFormat) => {
     downloadFiles(server.uuid, browsingDirectory, [file.name], file.directory, archiveFormat)
       .then(({ url }) => {
-        addToast('Download started.', 'success');
+        addToast(t('pages.server.files.toast.downloadStarted', {}), 'success');
         window.open(url);
       })
       .catch((msg) => {
@@ -62,7 +71,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
       items={[
         {
           icon: faWindowRestore,
-          label: 'Open in new Window',
+          label: t('pages.server.files.button.openInNewWindow', {}),
           hidden:
             !matchMedia('(pointer: fine)').matches ||
             !(
@@ -95,14 +104,14 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
         },
         {
           icon: faFilePen,
-          label: 'Rename',
+          label: t('pages.server.files.button.rename', {}),
           hidden: !!browsingBackup || !browsingWritableDirectory,
           onClick: () => doOpenModal('rename', [file]),
           canAccess: useServerCan('files.update'),
         },
         {
           icon: faCopy,
-          label: 'Copy',
+          label: t('pages.server.files.button.copy', {}),
           hidden: !!browsingBackup || !browsingWritableDirectory || (!file.file && !file.directory),
           onClick: () => doOpenModal('copy', [file]),
           color: 'gray',
@@ -110,15 +119,15 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
         },
         {
           icon: faAnglesUp,
-          label: 'Move',
+          label: t('pages.server.files.button.move', {}),
           hidden: !!browsingBackup || !browsingWritableDirectory,
-          onClick: () => setActingFiles('move', [file]),
+          onClick: () => doActFiles('move', [file]),
           color: 'gray',
           canAccess: useServerCan('files.update'),
         },
         {
           icon: faFileShield,
-          label: 'Permissions',
+          label: t('pages.server.files.button.permissions', {}),
           onClick: () => doOpenModal('permissions', [file]),
           color: 'gray',
           canAccess: useServerCan('files.update'),
@@ -126,7 +135,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
         isArchiveType(file) && !browsingBackup
           ? {
               icon: faEnvelopesBulk,
-              label: 'Unarchive',
+              label: t('pages.server.files.button.unarchive', {}),
               hidden: !!browsingBackup || !browsingWritableDirectory,
               onClick: doUnarchive,
               color: 'gray',
@@ -134,7 +143,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
             }
           : {
               icon: faFileZipper,
-              label: 'Archive',
+              label: t('pages.server.files.button.archive', {}),
               hidden: !!browsingBackup || !browsingWritableDirectory,
               onClick: () => doOpenModal('archive', [file]),
               color: 'gray',
@@ -142,13 +151,13 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
             },
         {
           icon: faFileArrowDown,
-          label: 'Download',
+          label: t('common.button.download', {}),
           onClick: file.file ? () => doDownload('tar_gz') : () => null,
           color: 'gray',
           items: file.directory
             ? Object.entries(streamingArchiveFormatLabelMapping).map(([mime, label]) => ({
                 icon: faFileArrowDown,
-                label: `Download as ${label}`,
+                label: t('common.button.downloadAs', { format: label }),
                 onClick: () => doDownload(mime as StreamingArchiveFormat),
                 color: 'gray',
               }))
@@ -157,13 +166,15 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
         },
         {
           icon: faTrash,
-          label: 'Delete',
+          label: t('common.button.delete', {}),
           hidden: !!browsingBackup || !browsingWritableDirectory,
           onClick: () => doOpenModal('delete', [file]),
           color: 'red',
           canAccess: useServerCan('files.delete'),
         },
       ]}
+      registry={window.extensionContext.extensionRegistry.pages.server.files.fileContextMenu}
+      registryProps={{ file }}
     >
       {children}
     </ContextMenu>

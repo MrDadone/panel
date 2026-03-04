@@ -6,6 +6,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -17,8 +18,8 @@ export default function EggRepositoryEggsInstallModal({
   onClose,
 }: ModalProps & {
   eggRepository: AdminEggRepository;
-  selectedEggs: Set<string>;
-  setSelectedEggs: (eggs: Set<string>) => void;
+  selectedEggs: ObjectSet<AdminEggRepositoryEgg, 'uuid'>;
+  setSelectedEggs: (eggs: ObjectSet<AdminEggRepositoryEgg, 'uuid'>) => void;
 }) {
   const { addToast } = useToast();
 
@@ -41,10 +42,10 @@ export default function EggRepositoryEggsInstallModal({
   const doInstall = () => {
     setLoading(true);
 
-    installEggs(eggRepository.uuid, [...selectedEggs], selectedNest!.uuid)
+    installEggs(eggRepository.uuid, selectedEggs.keys(), selectedNest!.uuid)
       .then((installed) => {
         addToast(`${installed} Egg${installed !== 1 ? 's' : ''} installed.`, 'success');
-        setSelectedEggs(new Set());
+        setSelectedEggs(new ObjectSet('uuid'));
 
         onClose();
       })

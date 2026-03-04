@@ -5,7 +5,7 @@ export default async (
   eggUuid: string,
   page: number,
   search?: string,
-): Promise<ResponseMeta<AdminServer>> => {
+): Promise<Pagination<AdminServer>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/nests/${nestUuid}/eggs/${eggUuid}/servers`, {

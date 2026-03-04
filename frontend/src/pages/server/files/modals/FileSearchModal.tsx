@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Box, Collapse, Flex, Group, ModalProps, Stack, Text, UnstyledButton } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import searchFiles from '@/api/server/files/searchFiles.ts';
@@ -23,6 +23,7 @@ import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -95,15 +96,19 @@ function FilterSection({ icon, title, enabled, onToggle, children }: FilterSecti
   );
 }
 
-interface FileSearchModalProps extends ModalProps {
-  onSearchComplete?: (searchInfo: { query?: string; filters: z.infer<typeof serverFilesSearchSchema> }) => void;
-}
-
-export default function FileSearchModal({ opened, onClose, onSearchComplete }: FileSearchModalProps) {
+export default function FileSearchModal({ opened, onClose }: ModalProps) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
   const { settings } = useGlobalStore();
   const { server } = useServerStore();
-  const { browsingDirectory, browsingFastDirectory, setBrowsingEntries, setSearchInfo } = useFileManager();
+  const {
+    browsingDirectory,
+    browsingFastDirectory,
+    setBrowsingEntries,
+    setSearchInfo,
+    doSelectFiles,
+    clearActingFiles,
+  } = useFileManager();
 
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
@@ -157,8 +162,12 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
 
     searchFiles(server.uuid, { root: browsingDirectory, ...searchFilters })
       .then((entries) => {
-        setBrowsingEntries({ total: entries.length, page: 1, perPage: entries.length, data: entries });
-        setSearchInfo({ query, filters: searchFilters });
+        startTransition(() => {
+          setBrowsingEntries({ total: entries.length, page: 1, perPage: entries.length, data: entries });
+          setSearchInfo({ query, filters: searchFilters });
+          doSelectFiles([]);
+          clearActingFiles();
+        });
         onClose();
       })
       .catch((msg) => {
@@ -168,11 +177,11 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
   };
 
   return (
-    <Modal title='Search Files' onClose={onClose} opened={opened} size='lg'>
+    <Modal title={t('pages.server.files.modal.searchFiles.title', {})} onClose={onClose} opened={opened} size='lg'>
       <form onSubmit={form.onSubmit(() => doSearch())}>
         <Stack gap='md'>
           <TextInput
-            placeholder='Search for files...'
+            placeholder={t('pages.server.files.modal.searchFiles.placeholder', {})}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             leftSection={<FontAwesomeIcon icon={faSearch} style={{ color: 'var(--mantine-color-gray-5)' }} />}
@@ -214,7 +223,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                 />
               </Box>
               <Text size='sm' c={showAdvanced ? 'gray.2' : 'gray.5'} fw={500}>
-                Advanced Filters
+                {t('pages.server.files.modal.searchFiles.advancedFilters', {})}
               </Text>
               {activeFiltersCount > 0 && (
                 <Box
@@ -247,7 +256,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
             <Stack gap='xs'>
               <FilterSection
                 icon={faFolder}
-                title='Path Patterns'
+                title={t('pages.server.files.modal.searchFiles.pathPatterns', {})}
                 enabled={!!form.values.pathFilter}
                 onToggle={(enabled) =>
                   form.setFieldValue('pathFilter', enabled ? { include: [], exclude: [], caseInsensitive: true } : null)
@@ -256,7 +265,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                 <Stack gap='sm'>
                   <Group grow align='start'>
                     <TagsInput
-                      label='Include'
+                      label={t('pages.server.files.modal.searchFiles.include', {})}
                       placeholder='e.g., *.js, src/**'
                       size='sm'
                       value={form.values.pathFilter?.include ?? []}
@@ -269,7 +278,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                       }
                     />
                     <TagsInput
-                      label='Exclude'
+                      label={t('pages.server.files.modal.searchFiles.exclude', {})}
                       placeholder='e.g., node_modules/**'
                       size='sm'
                       value={form.values.pathFilter?.exclude ?? []}
@@ -283,7 +292,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                     />
                   </Group>
                   <Switch
-                    label='Case insensitive'
+                    label={t('pages.server.files.modal.searchFiles.caseInsensitive', {})}
                     checked={form.values.pathFilter?.caseInsensitive ?? true}
                     onChange={(e) =>
                       form.setFieldValue('pathFilter', {
@@ -299,7 +308,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
               {browsingFastDirectory && (
                 <FilterSection
                   icon={faFileAlt}
-                  title='File Content'
+                  title={t('pages.server.files.modal.searchFiles.fileContent', {})}
                   enabled={!!form.values.contentFilter}
                   onToggle={(enabled) =>
                     form.setFieldValue(
@@ -318,13 +327,13 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                   <Stack gap='sm'>
                     <Group grow align='start'>
                       <TextInput
-                        label='Search text'
+                        label={t('pages.server.files.modal.searchFiles.searchText', {})}
                         placeholder='Text to find in files'
                         size='sm'
                         {...form.getInputProps('contentFilter.query')}
                       />
                       <SizeInput
-                        label='Max file size'
+                        label={t('pages.server.files.modal.searchFiles.maxFileSize', {})}
                         mode='b'
                         min={0}
                         value={form.values.contentFilter?.maxSearchSize ?? 0}
@@ -333,12 +342,12 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
                     </Group>
                     <Group grow>
                       <Switch
-                        label='Include oversized files'
-                        description='Include files that match other filters but are too large to search'
+                        label={t('pages.server.files.modal.searchFiles.includeOversized', {})}
+                        description={t('pages.server.files.modal.searchFiles.includeOversizedDescription', {})}
                         {...form.getInputProps('contentFilter.includeUnmatched', { type: 'checkbox' })}
                       />
                       <Switch
-                        label='Case insensitive'
+                        label={t('pages.server.files.modal.searchFiles.caseInsensitive', {})}
                         {...form.getInputProps('contentFilter.caseInsensitive', { type: 'checkbox' })}
                       />
                     </Group>
@@ -348,7 +357,7 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
 
               <FilterSection
                 icon={faHardDrive}
-                title='File Size'
+                title={t('pages.server.files.modal.searchFiles.fileSize', {})}
                 enabled={!!form.values.sizeFilter}
                 onToggle={(enabled) =>
                   form.setFieldValue('sizeFilter', enabled ? { min: 0, max: 100 * 1024 * 1024 } : null)
@@ -356,14 +365,14 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
               >
                 <Group grow>
                   <SizeInput
-                    label='Minimum'
+                    label={t('pages.server.files.modal.searchFiles.minimum', {})}
                     mode='b'
                     min={0}
                     value={form.values.sizeFilter?.min ?? 0}
                     onChange={(value) => form.setFieldValue('sizeFilter.min', value)}
                   />
                   <SizeInput
-                    label='Maximum'
+                    label={t('pages.server.files.modal.searchFiles.maximum', {})}
                     mode='b'
                     min={0}
                     value={form.values.sizeFilter?.max ?? 0}
@@ -377,10 +386,10 @@ export default function FileSearchModal({ opened, onClose, onSearchComplete }: F
 
         <ModalFooter>
           <Button type='submit' loading={loading}>
-            Search
+            {t('pages.server.files.button.search', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
-            Cancel
+            {t('common.button.cancel', {})}
           </Button>
         </ModalFooter>
       </form>

@@ -1,4 +1,4 @@
-import { Title } from '@mantine/core';
+import { Group, Title } from '@mantine/core';
 import { type OnMount } from '@monaco-editor/react';
 import { join } from 'pathe';
 import { startTransition, useEffect, useRef, useState } from 'react';
@@ -10,25 +10,39 @@ import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import MonacoEditor from '@/elements/MonacoEditor.tsx';
+import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { registerHoconLanguage, registerTomlLanguage } from '@/lib/monaco.ts';
 import NotFound from '@/pages/NotFound.tsx';
-import { FileManagerProvider } from '@/providers/FileManagerProvider.tsx';
+import { useBlocker } from '@/plugins/useBlocker.ts';
+import { FileManagerProvider, useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import FileBreadcrumbs from './FileBreadcrumbs.tsx';
+import FileEditorSettings from './FileEditorSettings.tsx';
+import FileImageViewerSettings from './FileImageViewerSettings.tsx';
 import FileNameModal from './modals/FileNameModal.tsx';
 
 function FileEditorComponent() {
   const params = useParams<'action'>();
 
+  const { t } = useTranslations();
   const [searchParams, _] = useSearchParams();
   const navigate = useNavigate();
   const { addToast } = useToast();
   const server = useServerStore((state) => state.server);
-  const { browsingBackup, browsingWritableDirectory, browsingDirectory, setBrowsingDirectory } = useServerStore();
+  const {
+    editorMinimap,
+    editorLineOverflow,
+    imageViewerSmoothing,
+    browsingWritableDirectory,
+    browsingDirectory,
+    setBrowsingDirectory,
+  } = useFileManager();
 
   const [loading, setLoading] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [nameModalOpen, setNameModalOpen] = useState(false);
   const [fileName, setFileName] = useState('');
@@ -36,6 +50,8 @@ function FileEditorComponent() {
 
   const editorRef = useRef<Parameters<OnMount>[0]>(null);
   const contentRef = useRef(content);
+
+  const blocker = useBlocker(dirty);
 
   useEffect(() => {
     setBrowsingDirectory(searchParams.get('directory') || '/');
@@ -62,7 +78,9 @@ function FileEditorComponent() {
   }, [content]);
 
   const saveFile = (name?: string) => {
-    if (!editorRef.current || browsingBackup || !browsingWritableDirectory) return;
+    setDirty(false);
+
+    if (!editorRef.current || !browsingWritableDirectory) return;
 
     const currentContent = editorRef.current.getValue();
     setSaving(true);
@@ -73,7 +91,7 @@ function FileEditorComponent() {
         setNameModalOpen(false);
       });
 
-      addToast(`${name ?? fileName} was saved.`);
+      addToast(t('pages.server.files.toast.fileSaved', {}), 'success');
 
       if (name) {
         navigate(
@@ -90,28 +108,56 @@ function FileEditorComponent() {
     return <NotFound />;
   }
 
-  const title = fileName ? (params.action === 'image' ? `Viewing ${fileName}` : `Editing ${fileName}`) : 'New File';
+  const title = fileName
+    ? params.action === 'image'
+      ? t('pages.server.files.titleEditorViewing', { file: fileName })
+      : t('pages.server.files.titleEditorEditing', { file: fileName })
+    : t('pages.server.files.titleEditorNew', {});
 
   return (
-    <ServerContentContainer hideTitleComponent fullscreen title={title}>
+    <ServerContentContainer
+      hideTitleComponent
+      fullscreen
+      title={title}
+      registry={window.extensionContext.extensionRegistry.pages.server.files.editorContainer}
+    >
       <div className='flex justify-between items-center lg:p-4 lg:pb-0 mx-5'>
-        <Title>{title}</Title>
-        <div hidden={!!browsingBackup || !browsingWritableDirectory || params.action === 'image'}>
+        <Group>
+          <Title>{title}</Title>
+
+          {params.action === 'new' || params.action === 'edit' ? (
+            <FileEditorSettings />
+          ) : params.action === 'image' ? (
+            <FileImageViewerSettings />
+          ) : null}
+        </Group>
+        <div hidden={!browsingWritableDirectory || params.action === 'image'}>
           {params.action === 'edit' ? (
             <ServerCan action='files.update'>
               <Button loading={saving} onClick={() => saveFile()}>
-                Save
+                {t('common.button.save', {})}
               </Button>
             </ServerCan>
           ) : (
             <ServerCan action='files.create'>
               <Button loading={saving} onClick={() => setNameModalOpen(true)}>
-                Create
+                {t('common.button.create', {})}
               </Button>
             </ServerCan>
           )}
         </div>
       </div>
+
+      <ConfirmationModal
+        title={t('pages.server.files.modal.unsavedChanges.title', {})}
+        opened={blocker.state === 'blocked'}
+        onClose={() => blocker.reset()}
+        onConfirmed={() => blocker.proceed()}
+        confirm={t('pages.server.files.modal.unsavedChanges.button.leave', {})}
+      >
+        {t('pages.server.files.modal.unsavedChanges.content', {}).md()}
+      </ConfirmationModal>
+
       {loading ? (
         <div className='w-full h-screen flex items-center justify-center'>
           <Spinner size={75} />
@@ -133,7 +179,11 @@ function FileEditorComponent() {
                 <div className='h-full w-full flex flex-row justify-center'>
                   <TransformWrapper minScale={0.5}>
                     <TransformComponent wrapperClass='w-[calc(100%-4rem)]! h-7/8! rounded-md'>
-                      <img src={content} alt='test' />
+                      <img
+                        src={content}
+                        alt={fileName}
+                        style={{ imageRendering: imageViewerSmoothing ? undefined : 'pixelated' }}
+                      />
                     </TransformComponent>
                   </TransformWrapper>
                 </div>
@@ -145,9 +195,10 @@ function FileEditorComponent() {
                   defaultValue={content}
                   path={fileName}
                   options={{
-                    readOnly: !!browsingBackup || !browsingWritableDirectory,
+                    readOnly: !browsingWritableDirectory,
                     stickyScroll: { enabled: false },
-                    minimap: { enabled: false },
+                    minimap: { enabled: editorMinimap },
+                    wordWrap: editorLineOverflow ? 'on' : 'off',
                     codeLens: false,
                     scrollBeyondLastLine: false,
                     smoothScrolling: true,
@@ -159,6 +210,7 @@ function FileEditorComponent() {
                     editorRef.current = editor;
                     editor.onDidChangeModelContent(() => {
                       contentRef.current = editor.getValue();
+                      setDirty(contentRef.current !== content);
                     });
                     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
                       if (params.action === 'new') {

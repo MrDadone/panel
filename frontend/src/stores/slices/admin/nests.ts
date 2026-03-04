@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface NestsSlice {
-  nests: ResponseMeta<AdminNest>;
+  nests: Pagination<AdminNest>;
 
-  setNests: (nests: ResponseMeta<AdminNest>) => void;
+  setNests: (nests: Pagination<AdminNest>) => void;
   addNest: (nest: AdminNest) => void;
   removeNest: (nest: AdminNest) => void;
 }

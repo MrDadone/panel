@@ -17,7 +17,7 @@ export default function StepUpdateStartupDockerImage({
       <Select
         withAsterisk
         label='Docker Image'
-        value={action.image}
+        value={action.image as string}
         onChange={(value) => setAction({ ...action, image: value || '' })}
         data={Object.entries(server.egg.dockerImages).map(([key, value]) => ({
           value,

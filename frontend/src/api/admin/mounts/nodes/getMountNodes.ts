@@ -4,7 +4,7 @@ export default async (
   mountUuid: string,
   page: number,
   search?: string,
-): Promise<ResponseMeta<AndCreated<{ node: Node }>>> => {
+): Promise<Pagination<AndCreated<{ node: Node }>>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/mounts/${mountUuid}/nodes`, {

@@ -1,5 +1,6 @@
 import { ReactNode, useRef } from 'react';
 import { useAuth } from '@/providers/AuthProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import Alert from './Alert.tsx';
 import Tooltip from './Tooltip.tsx';
@@ -10,6 +11,7 @@ interface LayoutProps {
 }
 
 export default function Container({ children, isNormal }: LayoutProps) {
+  const { t } = useTranslations();
   const { impersonating } = useAuth();
   const { settings } = useGlobalStore();
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -25,8 +27,7 @@ export default function Container({ children, isNormal }: LayoutProps) {
       <div ref={bodyRef}>
         {impersonating && (
           <Alert color='yellow' className='mt-2 mx-2'>
-            You are currently impersonating a user. Please be aware that your actions may affect the impersonated user's
-            account. To exit impersonation mode, click the "Logout" button in the bottom left corner.
+            {t('elements.container.alert.impersonating', {})}
           </Alert>
         )}
 

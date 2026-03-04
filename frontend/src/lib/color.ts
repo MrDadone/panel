@@ -1,4 +1,4 @@
-import { fullyHex } from './ip.ts';
+import { isFullyHex } from './ip.ts';
 
 /**
  * Given a valid six character HEX color code, converts it into its associated
@@ -7,7 +7,7 @@ import { fullyHex } from './ip.ts';
 export function hexToRgba(hex: string, alpha = 1): string {
   hex = hex.trim().replace('#', '');
 
-  if (hex.length !== 6 || !fullyHex(hex)) {
+  if (hex.length !== 6 || !isFullyHex(hex)) {
     return hex;
   }
 

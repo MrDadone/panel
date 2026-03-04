@@ -1,6 +1,7 @@
 import { faImage } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Grid, Group, Stack } from '@mantine/core';
+import { Group, Stack } from '@mantine/core';
+import classNames from 'classnames';
 import { useRef, useState } from 'react';
 import AvatarEditor from 'react-avatar-editor';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -14,7 +15,7 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { AccountCardProps } from './DashboardAccount.tsx';
 
-export default function AvatarContainer({ blurred }: AccountCardProps) {
+export default function AvatarContainer({ requireTwoFactorActivation }: AccountCardProps) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { user, setUser } = useAuth();
@@ -59,43 +60,44 @@ export default function AvatarContainer({ blurred }: AccountCardProps) {
   };
 
   return (
-    <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>
-      <TitleCard
-        title={t('pages.account.account.containers.avatar.title', {})}
-        icon={<FontAwesomeIcon icon={faImage} />}
-        className='h-full'
-      >
-        <Group className='h-full'>
-          <AvatarEditor
-            ref={editor}
-            image={file ?? user!.avatar}
-            height={512}
-            width={512}
-            showGrid
-            style={{ width: 256, height: 256, borderRadius: '0.25rem' }}
+    <TitleCard
+      title={t('pages.account.account.containers.avatar.title', {})}
+      icon={<FontAwesomeIcon icon={faImage} />}
+      className={classNames(
+        'h-full order-50 col-span-2',
+        requireTwoFactorActivation && 'blur-xs pointer-events-none select-none',
+      )}
+    >
+      <Group className='h-full'>
+        <AvatarEditor
+          ref={editor}
+          image={file ?? user!.avatar}
+          height={512}
+          width={512}
+          showGrid
+          style={{ width: 256, height: 256, borderRadius: '0.25rem' }}
+        />
+
+        <Stack className='h-full grow'>
+          <FileInput
+            label={t('pages.account.account.containers.avatar.form.avatar', {})}
+            placeholder={t('pages.account.account.containers.avatar.form.avatar', {})}
+            value={file}
+            onChange={(file) => setFile(file)}
+            accept='image/*'
+            clearable
           />
 
-          <Stack className='h-full grow'>
-            <FileInput
-              label={t('pages.account.account.containers.avatar.form.avatar', {})}
-              placeholder={t('pages.account.account.containers.avatar.form.avatar', {})}
-              value={file}
-              onChange={(file) => setFile(file)}
-              accept='image/*'
-              clearable
-            />
-
-            <Group>
-              <Button loading={loading} disabled={!file} onClick={doUpdate}>
-                {t('common.button.update', {})}
-              </Button>
-              <Button color='red' loading={loading} disabled={!user!.avatar} onClick={doRemove}>
-                {t('common.button.remove', {})}
-              </Button>
-            </Group>
-          </Stack>
-        </Group>
-      </TitleCard>
-    </Grid.Col>
+          <Group>
+            <Button loading={loading} disabled={!file} onClick={doUpdate}>
+              {t('common.button.update', {})}
+            </Button>
+            <Button color='red' loading={loading} disabled={!user!.avatar} onClick={doRemove}>
+              {t('common.button.remove', {})}
+            </Button>
+          </Group>
+        </Stack>
+      </Group>
+    </TitleCard>
   );
 }

@@ -4,19 +4,25 @@ import { Group, Text, Title } from '@mantine/core';
 import { startTransition, useEffect, useState } from 'react';
 import getBackupStats, { type BackupStats } from '@/api/admin/stats/getBackupStats.ts';
 import getGeneralStats, { type GeneralStats } from '@/api/admin/stats/getGeneralStats.ts';
-import getAdminSystemOverview, { AdminSystemOverview } from '@/api/admin/system/getAdminSystemOverview.ts';
+import getOverview, { AdminSystemOverview } from '@/api/admin/system/getOverview.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import Alert from '@/elements/Alert.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import Card from '@/elements/Card.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import { bytesToString } from '@/lib/size.ts';
+import { parseVersion } from '@/lib/version.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useAdminStore } from '@/stores/admin.tsx';
+import { useGlobalStore } from '@/stores/global.ts';
 
 export default function AdminOverview() {
   const { addToast } = useToast();
+  const { latestVersions } = useAdminStore();
+  const { settings } = useGlobalStore();
   const canReadStats = useAdminCan('stats.read');
 
   const [systemOverview, setSystemOverview] = useState<AdminSystemOverview | null>(null);
@@ -28,7 +34,7 @@ export default function AdminOverview() {
   useEffect(() => {
     if (!canReadStats) return;
 
-    Promise.all([getAdminSystemOverview(), getGeneralStats(), getBackupStats()])
+    Promise.all([getOverview(), getGeneralStats(), getBackupStats()])
       .then(([system, general, backup]) => {
         startTransition(() => {
           setSystemOverview(system);
@@ -48,6 +54,13 @@ export default function AdminOverview() {
           Overview
         </Title>
       </Group>
+
+      {latestVersions && parseVersion(latestVersions.panel).isNewerThan(settings.version) && (
+        <Alert className='mb-4' color='yellow'>
+          A new version is available for the panel! You are currently on {settings.version} and the latest version is{' '}
+          {latestVersions.panel}. You may want to consider upgrading.
+        </Alert>
+      )}
 
       <AdminCan
         action='stats.read'

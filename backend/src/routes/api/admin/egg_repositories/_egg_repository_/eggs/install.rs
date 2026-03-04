@@ -19,9 +19,9 @@ mod post {
 
     #[derive(ToSchema, Deserialize)]
     pub struct Payload {
-        nest_uuid: uuid::Uuid,
-
         egg_uuids: HashSet<uuid::Uuid>,
+
+        nest_uuid: uuid::Uuid,
     }
 
     #[derive(ToSchema, Serialize)]

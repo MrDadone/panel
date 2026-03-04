@@ -1,0 +1,49 @@
+import { faCog } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Popover } from '@mantine/core';
+import { useEffect } from 'react';
+import Button from '@/elements/Button.tsx';
+import Checkbox from '@/elements/input/Checkbox.tsx';
+import { useFileManager } from '@/providers/FileManagerProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
+
+export default function FileImageViewerSettings() {
+  const { t } = useTranslations();
+  const { imageViewerSmoothing, setImageViewerSmoothing } = useFileManager();
+
+  useEffect(() => {
+    localStorage.setItem('file_image_viewer_smoothing', String(imageViewerSmoothing));
+  }, [imageViewerSmoothing]);
+
+  return (
+    <Popover position='bottom' withArrow shadow='md'>
+      <Popover.Target>
+        <Button variant='transparent' size='compact-xs'>
+          <FontAwesomeIcon size='lg' icon={faCog} />
+        </Button>
+      </Popover.Target>
+      <Popover.Dropdown>
+        <div className='flex flex-col space-y-2'>
+          {window.extensionContext.extensionRegistry.pages.server.files.fileImageViewierSettings.prependedComponents.map(
+            (Component, i) => (
+              <Component key={`files-imageViewerSettings-prepended-${i}`} />
+            ),
+          )}
+
+          <Checkbox
+            label={t('pages.server.files.settings.imageViewerSmoothing', {})}
+            className='order-10'
+            checked={imageViewerSmoothing}
+            onChange={(e) => setImageViewerSmoothing(e.target.checked)}
+          />
+
+          {window.extensionContext.extensionRegistry.pages.server.files.fileImageViewierSettings.appendedComponents.map(
+            (Component, i) => (
+              <Component key={`files-imageViewerSettings-appended-${i}`} />
+            ),
+          )}
+        </div>
+      </Popover.Dropdown>
+    </Popover>
+  );
+}

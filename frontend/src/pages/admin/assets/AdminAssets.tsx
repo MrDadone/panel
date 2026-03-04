@@ -6,6 +6,7 @@ import AdminContentContainer from '@/elements/containers/AdminContentContainer.t
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Table from '@/elements/Table.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { assetTableColumns } from '@/lib/tableColumns.ts';
 import AssetUpload from '@/pages/admin/assets/AssetUpload.tsx';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
@@ -15,9 +16,9 @@ import AssetRow from './AssetRow.tsx';
 export default function AdminAssets() {
   const queryClient = useQueryClient();
 
-  const selectedAssetsPreviousRef = useRef(new Set<string>());
+  const selectedAssetsPreviousRef = useRef<StorageAsset[]>([]);
 
-  const [selectedAssets, setSelectedAssets] = useState(new Set<string>());
+  const [selectedAssets, setSelectedAssets] = useState(new ObjectSet<StorageAsset, 'name'>('name'));
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
@@ -35,30 +36,30 @@ export default function AdminAssets() {
 
   const onSelectedStart = useCallback(
     (event: ReactMouseEvent | MouseEvent) => {
-      selectedAssetsPreviousRef.current = new Set(event.shiftKey ? selectedAssets : []);
+      selectedAssetsPreviousRef.current = event.shiftKey ? selectedAssets.values() : [];
     },
     [selectedAssets],
   );
 
-  const onSelected = useCallback((selected: string[]) => {
-    setSelectedAssets(new Set([...selectedAssetsPreviousRef.current, ...selected]));
+  const onSelected = useCallback((selected: StorageAsset[]) => {
+    setSelectedAssets(new ObjectSet('name', [...selectedAssetsPreviousRef.current, ...selected.values()]));
   }, []);
 
   useEffect(() => {
-    setSelectedAssets(new Set([]));
+    setSelectedAssets(new ObjectSet('name', []));
   }, []);
 
-  const addSelectedAsset = (assetName: string) =>
+  const addSelectedAsset = (asset: StorageAsset) =>
     setSelectedAssets((prev) => {
-      const next = new Set(prev);
-      next.add(assetName);
+      const next = new ObjectSet('name', prev.values());
+      next.add(asset);
       return next;
     });
 
-  const removeSelectedAsset = (assetName: string) =>
+  const removeSelectedAsset = (asset: StorageAsset) =>
     setSelectedAssets((prev) => {
-      const next = new Set(prev);
-      next.delete(assetName);
+      const next = new ObjectSet('name', prev.values());
+      next.delete(asset);
       return next;
     });
 
@@ -67,12 +68,11 @@ export default function AdminAssets() {
       {
         key: 'a',
         modifiers: ['ctrlOrMeta'],
-        callback: () => setSelectedAssets(new Set(data?.data.map((a) => a.name) ?? [])),
+        callback: () => setSelectedAssets(new ObjectSet('name', data?.data)),
       },
       {
         key: 'Escape',
-        modifiers: ['ctrlOrMeta'],
-        callback: () => setSelectedAssets(new Set([])),
+        callback: () => setSelectedAssets(new ObjectSet('name')),
       },
     ],
     deps: [data],
@@ -90,7 +90,7 @@ export default function AdminAssets() {
       <AssetActionBar
         selectedAssets={selectedAssets}
         invalidateAssets={() => {
-          setSelectedAssets(new Set());
+          setSelectedAssets(new ObjectSet('name'));
           invalidateAssets();
         }}
       />
@@ -107,7 +107,7 @@ export default function AdminAssets() {
             allowSelect={false}
           >
             {data.data.map((asset) => (
-              <SelectionArea.Selectable key={asset.name} item={asset.name}>
+              <SelectionArea.Selectable key={asset.name} item={asset}>
                 {(innerRef: Ref<HTMLElement>) => (
                   <AssetRow
                     key={asset.name}

@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (serverUuid: string, page: number, search?: string): Promise<ResponseMeta<AdminServerMount>> => {
+export default async (serverUuid: string, page: number, search?: string): Promise<Pagination<AdminServerMount>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/servers/${serverUuid}/mounts/available`, {

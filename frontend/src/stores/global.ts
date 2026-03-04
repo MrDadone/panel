@@ -8,3 +8,7 @@ export const useGlobalStore = create<GlobalStore>()((...a) => ({
   ...createPermissionsSlice(...a),
   ...createSettingsSlice(...a),
 }));
+
+export function getGlobalStore() {
+  return useGlobalStore.getState();
+}

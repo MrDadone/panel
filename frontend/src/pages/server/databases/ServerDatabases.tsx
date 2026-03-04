@@ -51,6 +51,7 @@ export default function ServerDatabases() {
           </ConditionalTooltip>
         </ServerCan>
       }
+      registry={window.extensionContext.extensionRegistry.pages.server.databases.container}
     >
       <DatabaseCreateModal opened={openModal === 'create'} onClose={() => setOpenModal(null)} />
 

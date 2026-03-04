@@ -1,3 +1,5 @@
+import { createTheme, type MantineThemeOverride } from '@mantine/core';
+import { merge } from 'object-deep-merge';
 import { ExtensionRegistry } from 'shared';
 
 class ExtensionSkip {
@@ -24,9 +26,23 @@ export class ExtensionContext {
       try {
         extension.initialize(this);
       } catch (err) {
-        console.error('Error while running module initialize function', extension.packageName, err);
+        console.error('Error while running extension initialize()', extension.packageName, err);
       }
     }
+  }
+
+  public getMantineTheme(): MantineThemeOverride {
+    let mantineTheme: MantineThemeOverride = {};
+
+    for (const extension of this.extensions) {
+      try {
+        mantineTheme = merge(mantineTheme, extension.initializeMantineTheme(this));
+      } catch (err) {
+        console.error('Error while running extension initializeMantineTheme()', extension.packageName, err);
+      }
+    }
+
+    return createTheme(mantineTheme);
   }
 
   public call(name: string, args: object): unknown {
@@ -57,6 +73,11 @@ export class Extension {
   // Your extension entrypoint, this runs when the page is loaded
   public initialize(ctx: ExtensionContext): void {
     // to be implemented
+  }
+
+  // Your extension mantine theme entrypoint, this runs when the page is loaded
+  public initializeMantineTheme(ctx: ExtensionContext): MantineThemeOverride {
+    return {};
   }
 
   /**

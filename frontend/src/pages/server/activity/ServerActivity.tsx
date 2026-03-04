@@ -13,7 +13,7 @@ import { useServerStore } from '@/stores/server.ts';
 
 export default function ServerActivity() {
   const { t } = useTranslations();
-  const [activities, setActivities] = useState<ResponseMeta<ServerActivity>>(getEmptyPaginationSet());
+  const [activities, setActivities] = useState<Pagination<ServerActivity>>(getEmptyPaginationSet());
   const server = useServerStore((state) => state.server);
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
@@ -22,7 +22,12 @@ export default function ServerActivity() {
   });
 
   return (
-    <ServerContentContainer title={t('pages.server.activity.title', {})} search={search} setSearch={setSearch}>
+    <ServerContentContainer
+      title={t('pages.server.activity.title', {})}
+      search={search}
+      setSearch={setSearch}
+      registry={window.extensionContext.extensionRegistry.pages.server.activity.container}
+    >
       <Table
         columns={[
           '',

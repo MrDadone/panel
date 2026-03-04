@@ -4,7 +4,7 @@ export default async (
   oauthProviderUuid: string,
   page: number,
   search?: string,
-): Promise<ResponseMeta<AdminUserOAuthLink>> => {
+): Promise<Pagination<AdminUserOAuthLink>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/oauth-providers/${oauthProviderUuid}/users`, {

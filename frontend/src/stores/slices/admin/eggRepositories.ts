@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface EggRepositoriesSlice {
-  eggRepositories: ResponseMeta<AdminEggRepository>;
+  eggRepositories: Pagination<AdminEggRepository>;
 
-  setEggRepositories: (eggRepositories: ResponseMeta<AdminEggRepository>) => void;
+  setEggRepositories: (eggRepositories: Pagination<AdminEggRepository>) => void;
   addEggRepository: (eggRepository: AdminEggRepository) => void;
   removeEggRepository: (eggRepository: AdminEggRepository) => void;
 }

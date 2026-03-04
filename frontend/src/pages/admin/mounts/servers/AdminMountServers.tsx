@@ -8,7 +8,7 @@ import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTabl
 import ServerRow from '../../servers/ServerRow.tsx';
 
 export default function AdminMountServers({ mount }: { mount: Mount }) {
-  const [mountServers, setMountServers] = useState<ResponseMeta<AndCreated<{ server: AdminServer }>>>(
+  const [mountServers, setMountServers] = useState<Pagination<AndCreated<{ server: AdminServer }>>>(
     getEmptyPaginationSet(),
   );
 

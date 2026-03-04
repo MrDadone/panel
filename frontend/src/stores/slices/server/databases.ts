@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface DatabasesSlice {
-  databases: ResponseMeta<ServerDatabase>;
+  databases: Pagination<ServerDatabase>;
 
-  setDatabases: (databases: ResponseMeta<ServerDatabase>) => void;
+  setDatabases: (databases: Pagination<ServerDatabase>) => void;
   addDatabase: (database: ServerDatabase) => void;
   removeDatabase: (database: ServerDatabase) => void;
 }

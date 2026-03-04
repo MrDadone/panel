@@ -1,7 +1,8 @@
 import { faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Grid, Group, Stack } from '@mantine/core';
+import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import classNames from 'classnames';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -19,7 +20,7 @@ import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { AccountCardProps } from './DashboardAccount.tsx';
 
-export default function AccountContainer({ blurred }: AccountCardProps) {
+export default function AccountContainer({ requireTwoFactorActivation }: AccountCardProps) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { user, setUser } = useAuth();
@@ -72,95 +73,93 @@ export default function AccountContainer({ blurred }: AccountCardProps) {
   };
 
   return (
-    <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>
-      <TitleCard
-        title={t('pages.account.account.containers.account.title', {})}
-        icon={<FontAwesomeIcon icon={faUser} />}
-        className='h-full'
-      >
-        <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack>
-            <Group grow>
-              <TextInput
-                withAsterisk
-                label={t('pages.account.account.containers.account.form.nameFirst', {})}
-                placeholder={t('pages.account.account.containers.account.form.nameFirst', {})}
-                autoComplete='given-name'
-                {...form.getInputProps('nameFirst')}
-              />
-              <TextInput
-                withAsterisk
-                label={t('pages.account.account.containers.account.form.nameLast', {})}
-                placeholder={t('pages.account.account.containers.account.form.nameLast', {})}
-                autoComplete='family-name'
-                {...form.getInputProps('nameLast')}
-              />
-            </Group>
-            <Group grow>
-              <TextInput
-                withAsterisk
-                label={t('pages.account.account.containers.account.form.username', {})}
-                placeholder={t('pages.account.account.containers.account.form.username', {})}
-                autoComplete='username'
-                {...form.getInputProps('username')}
-              />
-              <Select
-                withAsterisk
-                label={t('pages.account.account.containers.account.form.language', {})}
-                placeholder={t('pages.account.account.containers.account.form.language', {})}
-                data={languages.map((language) => ({
-                  label: new Intl.DisplayNames([language], { type: 'language' }).of(language) ?? language,
-                  value: language,
-                }))}
-                {...form.getInputProps('language')}
-              />
-            </Group>
-            <Group grow>
-              <Select
-                withAsterisk
-                label={t('pages.account.account.containers.account.form.toastPosition', {})}
-                placeholder={t('pages.account.account.containers.account.form.toastPosition', {})}
-                data={[
-                  {
-                    label: t('common.enum.userToastPosition.topLeft', {}),
-                    value: 'top_left',
-                  },
-                  {
-                    label: t('common.enum.userToastPosition.topCenter', {}),
-                    value: 'top_center',
-                  },
-                  {
-                    label: t('common.enum.userToastPosition.topRight', {}),
-                    value: 'top_right',
-                  },
-                  {
-                    label: t('common.enum.userToastPosition.bottomLeft', {}),
-                    value: 'bottom_left',
-                  },
-                  {
-                    label: t('common.enum.userToastPosition.bottomCenter', {}),
-                    value: 'bottom_center',
-                  },
-                  {
-                    label: t('common.enum.userToastPosition.bottomRight', {}),
-                    value: 'bottom_right',
-                  },
-                ]}
-                {...form.getInputProps('toastPosition')}
-              />
-              <Switch
-                label={t('pages.account.account.containers.account.form.startOnGroupedServers', {})}
-                {...form.getInputProps('startOnGroupedServers', { type: 'checkbox' })}
-              />
-            </Group>
-            <Group>
-              <Button type='submit' disabled={!form.isValid()} loading={loading}>
-                {t('common.button.update', {})}
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </TitleCard>
-    </Grid.Col>
+    <TitleCard
+      title={t('pages.account.account.containers.account.title', {})}
+      icon={<FontAwesomeIcon icon={faUser} />}
+      className={classNames('h-full order-40', requireTwoFactorActivation && 'blur-xs pointer-events-none select-none')}
+    >
+      <form onSubmit={form.onSubmit(() => doUpdate())}>
+        <Stack>
+          <Group grow>
+            <TextInput
+              withAsterisk
+              label={t('pages.account.account.containers.account.form.nameFirst', {})}
+              placeholder={t('pages.account.account.containers.account.form.nameFirst', {})}
+              autoComplete='given-name'
+              {...form.getInputProps('nameFirst')}
+            />
+            <TextInput
+              withAsterisk
+              label={t('pages.account.account.containers.account.form.nameLast', {})}
+              placeholder={t('pages.account.account.containers.account.form.nameLast', {})}
+              autoComplete='family-name'
+              {...form.getInputProps('nameLast')}
+            />
+          </Group>
+          <Group grow>
+            <TextInput
+              withAsterisk
+              label={t('pages.account.account.containers.account.form.username', {})}
+              placeholder={t('pages.account.account.containers.account.form.username', {})}
+              autoComplete='username'
+              {...form.getInputProps('username')}
+            />
+            <Select
+              withAsterisk
+              label={t('pages.account.account.containers.account.form.language', {})}
+              placeholder={t('pages.account.account.containers.account.form.language', {})}
+              data={languages.map((language) => ({
+                label: new Intl.DisplayNames([language], { type: 'language' }).of(language) ?? language,
+                value: language,
+              }))}
+              {...form.getInputProps('language')}
+            />
+          </Group>
+          <Group grow>
+            <Select
+              withAsterisk
+              label={t('pages.account.account.containers.account.form.toastPosition', {})}
+              placeholder={t('pages.account.account.containers.account.form.toastPosition', {})}
+              data={[
+                {
+                  label: t('common.enum.userToastPosition.topLeft', {}),
+                  value: 'top_left',
+                },
+                {
+                  label: t('common.enum.userToastPosition.topCenter', {}),
+                  value: 'top_center',
+                },
+                {
+                  label: t('common.enum.userToastPosition.topRight', {}),
+                  value: 'top_right',
+                },
+                {
+                  label: t('common.enum.userToastPosition.bottomLeft', {}),
+                  value: 'bottom_left',
+                },
+                {
+                  label: t('common.enum.userToastPosition.bottomCenter', {}),
+                  value: 'bottom_center',
+                },
+                {
+                  label: t('common.enum.userToastPosition.bottomRight', {}),
+                  value: 'bottom_right',
+                },
+              ]}
+              {...form.getInputProps('toastPosition')}
+            />
+            <Switch
+              label={t('pages.account.account.containers.account.form.startOnGroupedServers', {})}
+              {...form.getInputProps('startOnGroupedServers', { type: 'checkbox' })}
+            />
+          </Group>
+          <Group>
+            <Button type='submit' disabled={!form.isValid()} loading={loading}>
+              {t('common.button.update', {})}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </TitleCard>
   );
 }

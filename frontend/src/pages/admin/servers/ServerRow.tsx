@@ -6,8 +6,8 @@ import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { statusToColor } from '@/lib/server.ts';
+import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
-import { useUserStore } from '@/stores/user.ts';
 
 interface ServerRowProps {
   server: AdminServer;
@@ -23,9 +23,7 @@ const ServerRow = memo(
     ref,
   ) {
     const { t } = useTranslations();
-    const { getServerResourceUsage } = useUserStore();
-
-    const stats = getServerResourceUsage(server.uuid, server.node.uuid);
+    const stats = useServerStats(server);
 
     return (
       <TableRow bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined} onClick={onClick} ref={ref}>

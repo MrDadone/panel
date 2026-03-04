@@ -26,7 +26,6 @@ import { Pagination } from '@/elements/Table.tsx';
 import ServerItem from '@/pages/dashboard/home/ServerItem.tsx';
 import { useBulkPowerActions } from '@/plugins/useBulkPowerActions.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
-import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -67,7 +66,6 @@ export default function ServerGroupItem({
   const [openModal, setOpenModal] = useState<'edit' | 'delete' | 'add-server' | null>(null);
 
   const { handleBulkPowerAction, bulkActionLoading: groupActionLoading } = useBulkPowerActions();
-  const loadingStats = useServerStats(servers.data);
 
   const { loading, search, setSearch, setPage, refetch } = useSearchablePaginatedTable({
     fetcher: (page, search) => getServerGroupServers(serverGroup.uuid, page, search),
@@ -217,7 +215,7 @@ export default function ServerGroupItem({
 
         <Collapse in={isExpanded}>
           <div className='p-3'>
-            {loading || loadingStats ? (
+            {loading ? (
               <Spinner.Centered />
             ) : servers.total === 0 ? (
               <p className='text-gray-500 text-sm text-center py-4'>{t('pages.account.home.noServers', {})}</p>

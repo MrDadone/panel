@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface SessionSlice {
-  sessions: ResponseMeta<UserSession>;
+  sessions: Pagination<UserSession>;
 
-  setSessions: (sessions: ResponseMeta<UserSession>) => void;
+  setSessions: (sessions: Pagination<UserSession>) => void;
   removeSession: (session: UserSession) => void;
 }
 

@@ -11,6 +11,7 @@ import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { serverFilesNameSchema } from '@/lib/schemas/server/files.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
@@ -18,6 +19,7 @@ type Props = ModalProps & {
 };
 
 export default function FileRenameModal({ file, opened, onClose }: Props) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
   const { server } = useServerStore();
   const { browsingDirectory, invalidateFilemanager } = useFileManager();
@@ -57,11 +59,11 @@ export default function FileRenameModal({ file, opened, onClose }: Props) {
     })
       .then(({ renamed }) => {
         if (renamed < 1) {
-          addToast('File could not be renamed.', 'error');
+          addToast(t('pages.server.files.toast.fileCouldNotBeRenamed', {}), 'error');
           return;
         }
 
-        addToast('File has been renamed.', 'success');
+        addToast(t('pages.server.files.toast.fileRenamed', {}), 'success');
         invalidateFilemanager();
         onClose();
       })
@@ -72,16 +74,21 @@ export default function FileRenameModal({ file, opened, onClose }: Props) {
   };
 
   return (
-    <Modal title='Rename File' onClose={onClose} opened={opened}>
+    <Modal title={t('pages.server.files.modal.renameFile.title', {})} onClose={onClose} opened={opened}>
       <form onSubmit={form.onSubmit(() => doRename())}>
-        <TextInput withAsterisk label='File Name' placeholder='File Name' {...form.getInputProps('name')} />
+        <TextInput
+          withAsterisk
+          label={t('pages.server.files.modal.renameFile.form.fileName', {})}
+          placeholder={t('pages.server.files.modal.renameFile.form.fileName', {})}
+          {...form.getInputProps('name')}
+        />
 
         <ModalFooter>
           <Button type='submit' loading={loading}>
-            Rename
+            {t('pages.server.files.button.rename', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
-            Close
+            {t('common.button.close', {})}
           </Button>
         </ModalFooter>
       </form>

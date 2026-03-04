@@ -1,7 +1,8 @@
 import { faUserLock } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Grid, Group, Stack } from '@mantine/core';
+import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import classNames from 'classnames';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -17,7 +18,7 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { AccountCardProps } from './DashboardAccount.tsx';
 
-export default function PasswordContainer({ blurred }: AccountCardProps) {
+export default function PasswordContainer({ requireTwoFactorActivation }: AccountCardProps) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { user, setUser } = useAuth();
@@ -62,45 +63,43 @@ export default function PasswordContainer({ blurred }: AccountCardProps) {
   }
 
   return (
-    <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>
-      <TitleCard
-        title={t('pages.account.account.containers.password.title', {})}
-        icon={<FontAwesomeIcon icon={faUserLock} />}
-        className='h-full'
-      >
-        <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack>
-            {user.hasPassword && (
-              <PasswordInput
-                withAsterisk
-                label={t('pages.account.account.containers.password.form.currentPassword', {})}
-                placeholder={t('pages.account.account.containers.password.form.currentPassword', {})}
-                autoComplete='current-password'
-                {...form.getInputProps('currentPassword')}
-              />
-            )}
+    <TitleCard
+      title={t('pages.account.account.containers.password.title', {})}
+      icon={<FontAwesomeIcon icon={faUserLock} />}
+      className={classNames('h-full order-10', requireTwoFactorActivation && 'blur-xs pointer-events-none select-none')}
+    >
+      <form onSubmit={form.onSubmit(() => doUpdate())}>
+        <Stack>
+          {user.hasPassword && (
             <PasswordInput
               withAsterisk
-              label={t('pages.account.account.containers.password.form.newPassword', {})}
-              placeholder={t('pages.account.account.containers.password.form.newPassword', {})}
-              autoComplete='new-password'
-              {...form.getInputProps('newPassword')}
+              label={t('pages.account.account.containers.password.form.currentPassword', {})}
+              placeholder={t('pages.account.account.containers.password.form.currentPassword', {})}
+              autoComplete='current-password'
+              {...form.getInputProps('currentPassword')}
             />
-            <PasswordInput
-              withAsterisk
-              label={t('pages.account.account.containers.password.form.confirmNewPassword', {})}
-              placeholder={t('pages.account.account.containers.password.form.confirmNewPassword', {})}
-              autoComplete='new-password'
-              {...form.getInputProps('confirmNewPassword')}
-            />
-            <Group>
-              <Button type='submit' disabled={!form.isValid()} loading={loading}>
-                {t('common.button.update', {})}
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </TitleCard>
-    </Grid.Col>
+          )}
+          <PasswordInput
+            withAsterisk
+            label={t('pages.account.account.containers.password.form.newPassword', {})}
+            placeholder={t('pages.account.account.containers.password.form.newPassword', {})}
+            autoComplete='new-password'
+            {...form.getInputProps('newPassword')}
+          />
+          <PasswordInput
+            withAsterisk
+            label={t('pages.account.account.containers.password.form.confirmNewPassword', {})}
+            placeholder={t('pages.account.account.containers.password.form.confirmNewPassword', {})}
+            autoComplete='new-password'
+            {...form.getInputProps('confirmNewPassword')}
+          />
+          <Group>
+            <Button type='submit' disabled={!form.isValid()} loading={loading}>
+              {t('common.button.update', {})}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </TitleCard>
   );
 }

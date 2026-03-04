@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface SshKeySlice {
-  sshKeys: ResponseMeta<UserSshKey>;
+  sshKeys: Pagination<UserSshKey>;
 
-  setSshKeys: (keys: ResponseMeta<UserSshKey>) => void;
+  setSshKeys: (keys: Pagination<UserSshKey>) => void;
   addSshKey: (key: UserSshKey) => void;
   removeSshKey: (key: UserSshKey) => void;
   updateSshKey: (uuid: string, data: Partial<UserSshKey>) => void;

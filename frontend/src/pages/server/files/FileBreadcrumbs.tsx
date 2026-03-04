@@ -10,13 +10,23 @@ import Button from '@/elements/Button.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; inFileEditor?: boolean }) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
-  const { server, setBrowsingDirectory, actingFileNames } = useServerStore();
-  const { selectedFiles, browsingBackup, browsingEntries, doSelectFiles, setBrowsingBackup, doOpenModal } =
-    useFileManager();
+  const { server } = useServerStore();
+  const {
+    selectedFiles,
+    browsingBackup,
+    browsingEntries,
+    setBrowsingDirectory,
+    actingFiles,
+    doSelectFiles,
+    setBrowsingBackup,
+    doOpenModal,
+  } = useFileManager();
 
   const splittedPath = path.split('/').filter(Boolean);
   const pathItems = splittedPath.map((item, index) => {
@@ -77,10 +87,10 @@ export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; 
   ];
 
   return (
-    <div className='flex flex-row items-center justify-between'>
+    <div className='flex flex-col gap-4 sm:gap-0 sm:flex-row sm:items-center sm:justify-between'>
       <Breadcrumbs separatorMargin='xs'>
         <Checkbox
-          disabled={actingFileNames.size > 0}
+          disabled={actingFiles.size > 0}
           checked={!inFileEditor && selectedFiles.size > 0 && selectedFiles.size >= browsingEntries.data.length}
           indeterminate={selectedFiles.size > 0 && selectedFiles.size < browsingEntries.data.length}
           className='mr-2'
@@ -99,12 +109,12 @@ export default function FileBreadcrumbs({ path, inFileEditor }: { path: string; 
 
       <NavLink to={`/server/${server?.uuidShort}/files`} hidden={!browsingBackup || inFileEditor}>
         <Button variant='light' leftSection={<FontAwesomeIcon icon={faDoorOpen} />}>
-          Exit Backup
+          {t('pages.server.files.button.exitBackup', {})}
         </Button>
       </NavLink>
       <span hidden={!!browsingBackup || inFileEditor}>
         <Button variant='light' leftSection={<FontAwesomeIcon icon={faSearch} />} onClick={() => doOpenModal('search')}>
-          Search
+          {t('pages.server.files.button.search', {})}
         </Button>
       </span>
     </div>

@@ -757,10 +757,10 @@ async fn main() {
                                 frame-src 'self' {frame_csp}; \
                                 style-src 'self' 'unsafe-inline' {style_csp}; \
                                 connect-src *; \
-                                font-src 'self' data:; \
-                                img-src * blob:; \
-                                media-src 'self'; \
-                                object-src 'none'; \
+                                font-src 'self' blob: data:; \
+                                img-src * blob: data:; \
+                                media-src 'self' blob: data:; \
+                                object-src 'none' blob: data:; \
                                 base-uri 'self'; \
                                 form-action 'self'; \
                                 frame-ancestors 'self';"

@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface DatabaseHostsSlice {
-  databaseHosts: ResponseMeta<AdminDatabaseHost>;
+  databaseHosts: Pagination<AdminDatabaseHost>;
 
-  setDatabaseHosts: (databaseHosts: ResponseMeta<AdminDatabaseHost>) => void;
+  setDatabaseHosts: (databaseHosts: Pagination<AdminDatabaseHost>) => void;
   addDatabaseHosts: (databaseHost: AdminDatabaseHost) => void;
   removeDatabaseHosts: (databaseHost: AdminDatabaseHost) => void;
 }

@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface AllocationsSlice {
-  allocations: ResponseMeta<ServerAllocation>;
+  allocations: Pagination<ServerAllocation>;
 
-  setAllocations: (allocation: ResponseMeta<ServerAllocation>) => void;
+  setAllocations: (allocation: Pagination<ServerAllocation>) => void;
   addAllocation: (allocation: ServerAllocation) => void;
   removeAllocation: (allocation: ServerAllocation) => void;
 }

@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface SecurityKeySlice {
-  securityKeys: ResponseMeta<UserSecurityKey>;
+  securityKeys: Pagination<UserSecurityKey>;
 
-  setSecurityKeys: (keys: ResponseMeta<UserSecurityKey>) => void;
+  setSecurityKeys: (keys: Pagination<UserSecurityKey>) => void;
   addSecurityKey: (key: UserSecurityKey) => void;
   removeSecurityKey: (key: UserSecurityKey) => void;
   updateSecurityKey: (uuid: string, data: Partial<UserSecurityKey>) => void;

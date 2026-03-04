@@ -1,13 +1,13 @@
 import ArchiveCreateModal from '@/pages/server/files/modals/ArchiveCreateModal.tsx';
+import DirectoryNameModal from '@/pages/server/files/modals/DirectoryNameModal.tsx';
 import FileCopyModal from '@/pages/server/files/modals/FileCopyModal.tsx';
 import FileCopyRemoteModal from '@/pages/server/files/modals/FileCopyRemoteModal.tsx';
 import FileDeleteModal from '@/pages/server/files/modals/FileDeleteModal.tsx';
 import FilePermissionsModal from '@/pages/server/files/modals/FilePermissionsModal.tsx';
 import FileRenameModal from '@/pages/server/files/modals/FileRenameModal.tsx';
 import FileSearchModal from '@/pages/server/files/modals/FileSearchModal.tsx';
-import DirectoryNameModal from '@/pages/server/filesold/modals/DirectoryNameModal.tsx';
-import PullFileModal from '@/pages/server/filesold/modals/PullFileModal.tsx';
-import SftpDetailsModal from '@/pages/server/filesold/modals/SftpDetailsModal.tsx';
+import PullFileModal from '@/pages/server/files/modals/PullFileModal.tsx';
+import SftpDetailsModal from '@/pages/server/files/modals/SftpDetailsModal.tsx';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 
 export default function FileModals() {

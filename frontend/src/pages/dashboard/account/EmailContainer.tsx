@@ -1,7 +1,8 @@
 import { faAt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Grid, Group, Stack } from '@mantine/core';
+import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import classNames from 'classnames';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -18,7 +19,7 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { AccountCardProps } from './DashboardAccount.tsx';
 
-export default function EmailContainer({ blurred }: AccountCardProps) {
+export default function EmailContainer({ requireTwoFactorActivation }: AccountCardProps) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { user, setUser } = useAuth();
@@ -68,38 +69,36 @@ export default function EmailContainer({ blurred }: AccountCardProps) {
   }
 
   return (
-    <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>
-      <TitleCard
-        title={t('pages.account.account.containers.email.title', {})}
-        icon={<FontAwesomeIcon icon={faAt} />}
-        className='h-full'
-      >
-        <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack>
-            <TextInput
+    <TitleCard
+      title={t('pages.account.account.containers.email.title', {})}
+      icon={<FontAwesomeIcon icon={faAt} />}
+      className={classNames('h-full order-20', requireTwoFactorActivation && 'blur-xs pointer-events-none select-none')}
+    >
+      <form onSubmit={form.onSubmit(() => doUpdate())}>
+        <Stack>
+          <TextInput
+            withAsterisk
+            label={t('pages.account.account.containers.email.form.newEmail', {})}
+            placeholder={t('pages.account.account.containers.email.form.newEmail', {})}
+            autoComplete='email'
+            {...form.getInputProps('email')}
+          />
+          {user.hasPassword && (
+            <PasswordInput
               withAsterisk
-              label={t('pages.account.account.containers.email.form.newEmail', {})}
-              placeholder={t('pages.account.account.containers.email.form.newEmail', {})}
-              autoComplete='email'
-              {...form.getInputProps('email')}
+              label={t('pages.account.account.containers.email.form.currentPassword', {})}
+              placeholder={t('pages.account.account.containers.email.form.currentPassword', {})}
+              autoComplete='current-password'
+              {...form.getInputProps('password')}
             />
-            {user.hasPassword && (
-              <PasswordInput
-                withAsterisk
-                label={t('pages.account.account.containers.email.form.currentPassword', {})}
-                placeholder={t('pages.account.account.containers.email.form.currentPassword', {})}
-                autoComplete='current-password'
-                {...form.getInputProps('password')}
-              />
-            )}
-          </Stack>
-          <Group className='mt-auto pt-4'>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              {t('common.button.update', {})}
-            </Button>
-          </Group>
-        </form>
-      </TitleCard>
-    </Grid.Col>
+          )}
+        </Stack>
+        <Group className='mt-auto pt-4'>
+          <Button type='submit' disabled={!form.isValid()} loading={loading}>
+            {t('common.button.update', {})}
+          </Button>
+        </Group>
+      </form>
+    </TitleCard>
   );
 }

@@ -1,6 +1,6 @@
 import { axiosInstance, getPaginationSet } from '@/api/axios.ts';
 
-export default async (page: number, search?: string, other?: boolean): Promise<ResponseMeta<Server>> => {
+export default async (page: number, search?: string, other?: boolean): Promise<Pagination<Server>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get('/api/client/servers', {

@@ -14,7 +14,7 @@ export default function AdminEggServers({
   contextNest: AdminNest;
   contextEgg: AdminNestEgg;
 }) {
-  const [eggServers, setEggServers] = useState<ResponseMeta<AdminServer>>(getEmptyPaginationSet());
+  const [eggServers, setEggServers] = useState<Pagination<AdminServer>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getEggServers(contextNest.uuid, contextEgg.uuid, page, search),

@@ -10,7 +10,7 @@ import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTabl
 
 export default function AdminUserServers({ user }: { user: User }) {
   const [showOwnedUserServers, setShowOwnedUserServers] = useState(false);
-  const [userServers, setUserServers] = useState<ResponseMeta<AdminServer>>(getEmptyPaginationSet());
+  const [userServers, setUserServers] = useState<Pagination<AdminServer>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getUserServers(user.uuid, page, search, showOwnedUserServers),

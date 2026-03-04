@@ -8,8 +8,12 @@ import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { parseVersion } from '@/lib/version.ts';
+import { useAdminStore } from '@/stores/admin.tsx';
 
 export default function NodeRow({ node }: { node: Node }) {
+  const { latestVersions } = useAdminStore();
+
   const [version, setVersion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,10 +24,11 @@ export default function NodeRow({ node }: { node: Node }) {
         },
       })
       .then(({ data }) => {
-        setVersion(data.version);
+        setVersion(data.version ?? 'Unavailable');
       })
       .catch((msg) => {
         console.error('Error while connecting to node', msg);
+        setVersion('Unavailable');
       });
   }, []);
 
@@ -34,6 +39,10 @@ export default function NodeRow({ node }: { node: Node }) {
           version === 'Unavailable' ? (
             <Tooltip label='Error while fetching version'>
               <FontAwesomeIcon icon={faHeartBroken} className='text-red-500' />
+            </Tooltip>
+          ) : latestVersions && parseVersion(latestVersions.wings).isNewerThan(version) ? (
+            <Tooltip label={`${version} (Update Available)`}>
+              <FontAwesomeIcon icon={faHeart} className='text-yellow-500 animate-pulse' />
             </Tooltip>
           ) : (
             <Tooltip label={version}>

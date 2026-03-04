@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (serverUuid: string, page: number, search?: string): Promise<ResponseMeta<ServerAllocation>> => {
+export default async (serverUuid: string, page: number, search?: string): Promise<Pagination<ServerAllocation>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/servers/${serverUuid}/allocations`, {

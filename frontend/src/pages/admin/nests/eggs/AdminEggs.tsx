@@ -1,7 +1,7 @@
 import { faPlus, faUpload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import jsYaml from 'js-yaml';
-import { ChangeEvent, useRef } from 'react';
+import { ChangeEvent, MouseEvent as ReactMouseEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router';
 import getEggs from '@/api/admin/nests/eggs/getEggs.ts';
 import importEgg from '@/api/admin/nests/eggs/importEgg.ts';
@@ -9,13 +9,17 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
+import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { eggTableColumns } from '@/lib/tableColumns.ts';
 import EggView from '@/pages/admin/nests/eggs/EggView.tsx';
+import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
+import EggActionBar from './EggActionBar.tsx';
 import EggCreateOrUpdate from './EggCreateOrUpdate.tsx';
 import EggRow from './EggRow.tsx';
 
@@ -24,9 +28,12 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
   const { addToast } = useToast();
   const { eggs, setEggs, addEgg } = useAdminStore();
 
+  const selectedEggsPreviousRef = useRef<AdminNestEgg[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
+  const [selectedEggs, setSelectedEggs] = useState(new ObjectSet<AdminNestEgg, 'uuid'>('uuid'));
+
+  const { loading, refetch, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getEggs(contextNest.uuid, page, search),
     setStoreData: setEggs,
   });
@@ -60,6 +67,50 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
       });
   };
 
+  const onSelectedStart = useCallback(
+    (event: ReactMouseEvent | MouseEvent) => {
+      selectedEggsPreviousRef.current = event.shiftKey ? selectedEggs.values() : [];
+    },
+    [selectedEggs],
+  );
+
+  const onSelected = useCallback((selected: AdminNestEgg[]) => {
+    setSelectedEggs(new ObjectSet('uuid', [...selectedEggsPreviousRef.current, ...selected]));
+  }, []);
+
+  useEffect(() => {
+    setSelectedEggs(new ObjectSet('uuid'));
+  }, []);
+
+  const addSelectedEgg = (egg: AdminNestEgg) =>
+    setSelectedEggs((prev) => {
+      const next = new ObjectSet('uuid', prev.values());
+      next.add(egg);
+      return next;
+    });
+
+  const removeSelectedEgg = (egg: AdminNestEgg) =>
+    setSelectedEggs((prev) => {
+      const next = new ObjectSet('uuid', prev.values());
+      next.delete(egg);
+      return next;
+    });
+
+  useKeyboardShortcuts({
+    shortcuts: [
+      {
+        key: 'a',
+        modifiers: ['ctrlOrMeta'],
+        callback: () => setSelectedEggs(new ObjectSet('uuid', eggs?.data)),
+      },
+      {
+        key: 'Escape',
+        callback: () => setSelectedEggs(new ObjectSet('uuid')),
+      },
+    ],
+    deps: [eggs],
+  });
+
   return (
     <AdminSubContentContainer
       title='Eggs'
@@ -90,11 +141,34 @@ function EggsContainer({ contextNest }: { contextNest: AdminNest }) {
         </AdminCan>
       }
     >
-      <Table columns={eggTableColumns} loading={loading} pagination={eggs} onPageSelect={setPage}>
-        {eggs.data.map((egg) => (
-          <EggRow key={egg.uuid} nest={contextNest} egg={egg} />
-        ))}
-      </Table>
+      <EggActionBar
+        nest={contextNest}
+        selectedEggs={selectedEggs}
+        invalidateEggs={() => {
+          setSelectedEggs(new ObjectSet('uuid'));
+          refetch();
+        }}
+      />
+
+      <SelectionArea onSelectedStart={onSelectedStart} onSelected={onSelected}>
+        <Table columns={eggTableColumns} loading={loading} pagination={eggs} onPageSelect={setPage} allowSelect={false}>
+          {eggs.data.map((egg) => (
+            <SelectionArea.Selectable key={egg.uuid} item={egg}>
+              {(innerRef: Ref<HTMLElement>) => (
+                <EggRow
+                  key={egg.uuid}
+                  nest={contextNest}
+                  egg={egg}
+                  showSelection
+                  isSelected={selectedEggs.has(egg.uuid)}
+                  onSelectionChange={(selected) => (selected ? addSelectedEgg(egg) : removeSelectedEgg(egg))}
+                  ref={innerRef as Ref<HTMLTableRowElement>}
+                />
+              )}
+            </SelectionArea.Selectable>
+          ))}
+        </Table>
+      </SelectionArea>
     </AdminSubContentContainer>
   );
 }

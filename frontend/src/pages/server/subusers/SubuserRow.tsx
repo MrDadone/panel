@@ -80,6 +80,8 @@ export default function SubuserRow({ subuser }: { subuser: ServerSubuser }) {
             canAccess: useServerCan('subusers.delete'),
           },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.server.subusers.subuserContextMenu}
+        registryProps={{ subuser }}
       >
         {({ items, openMenu }) => (
           <TableRow

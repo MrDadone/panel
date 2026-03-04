@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { axiosInstance, getEmptyPaginationSet } from '@/api/axios.ts';
 import getFileUploadUrl from '@/api/server/files/getFileUploadUrl.ts';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { useFileUpload } from '@/plugins/useFileUpload.ts';
 import { ActingFileMode, FileManagerContext, ModalType, SearchInfo } from '@/providers/contexts/fileManagerContext.ts';
 import { useServerStore } from '@/stores/server.ts';
@@ -17,12 +18,12 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const [actingMode, setActingMode] = useState<ActingFileMode | null>(null);
-  const [actingFiles, setActingFiles] = useState(new Set<DirectoryEntry>());
+  const [actingFiles, setActingFiles] = useState(new ObjectSet<DirectoryEntry, 'name'>('name'));
   const [actingFilesSource, setActingFilesSource] = useState<string | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState(new Set<DirectoryEntry>());
+  const [selectedFiles, setSelectedFiles] = useState(new ObjectSet<DirectoryEntry, 'name'>('name'));
   const [browsingBackup, setBrowsingBackup] = useState<ServerBackup | null>(null);
   const [browsingDirectory, setBrowsingDirectory] = useState('');
-  const [browsingEntries, setBrowsingEntries] = useState<ResponseMeta<DirectoryEntry>>(getEmptyPaginationSet());
+  const [browsingEntries, setBrowsingEntries] = useState<Pagination<DirectoryEntry>>(getEmptyPaginationSet());
   const [page, setPage] = useState(1);
   const [browsingWritableDirectory, setBrowsingWritableDirectory] = useState(true);
   const [browsingFastDirectory, setBrowsingFastDirectory] = useState(true);
@@ -30,6 +31,13 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [modalDirectoryEntries, setModalDirectoryEntries] = useState<DirectoryEntry[]>([]);
   const [searchInfo, setSearchInfo] = useState<SearchInfo | null>(null);
   const [clickOnce, setClickOnce] = useState(localStorage.getItem('file_click_once') !== 'false');
+  const [editorMinimap, setEditorMinimap] = useState(localStorage.getItem('file_editor_minimap') === 'true');
+  const [editorLineOverflow, setEditorLineOverflow] = useState(
+    localStorage.getItem('file_editor_lineoverflow') === 'true',
+  );
+  const [imageViewerSmoothing, setImageViewerSmoothing] = useState(
+    localStorage.getItem('file_image_viewer_smoothing') !== 'false',
+  );
 
   const invalidateFilemanager = () => {
     queryClient
@@ -48,21 +56,21 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
 
   const doActFiles = (mode: ActingFileMode | null, files: DirectoryEntry[]) => {
     setActingMode(mode);
-    setActingFiles(new Set(files));
+    setActingFiles(new ObjectSet('name', files));
     setActingFilesSource(browsingDirectory);
   };
 
   const clearActingFiles = () => {
     setActingMode(null);
-    setActingFiles(new Set());
+    setActingFiles(new ObjectSet('name'));
     setActingFilesSource(null);
   };
 
-  const doSelectFiles = (files: DirectoryEntry[]) => setSelectedFiles(new Set(files));
+  const doSelectFiles = (files: DirectoryEntry[]) => setSelectedFiles(new ObjectSet('name', files));
 
   const addSelectedFile = (file: DirectoryEntry) => {
     setSelectedFiles((prev) => {
-      const next = new Set(prev);
+      const next = new ObjectSet('name', prev.values());
       next.add(file);
       return next;
     });
@@ -70,7 +78,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
 
   const removeSelectedFile = (file: DirectoryEntry) => {
     setSelectedFiles((prev) => {
-      const next = new Set(prev);
+      const next = new ObjectSet('name', prev.values());
       next.delete(file);
       return next;
     });
@@ -94,7 +102,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   }, [searchParams]);
 
   useEffect(() => {
-    setSelectedFiles(new Set());
+    setSelectedFiles(new ObjectSet('name'));
   }, [browsingDirectory]);
 
   return (
@@ -104,13 +112,9 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         folderInputRef,
 
         actingMode,
-        setActingMode,
         actingFiles,
-        setActingFiles,
         actingFilesSource,
-        setActingFilesSource,
         selectedFiles,
-        setSelectedFiles,
         browsingBackup,
         setBrowsingBackup,
         browsingDirectory,
@@ -129,8 +133,15 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
         setModalDirectoryEntries,
         searchInfo,
         setSearchInfo,
+
         clickOnce,
         setClickOnce,
+        editorMinimap,
+        setEditorMinimap,
+        editorLineOverflow,
+        setEditorLineOverflow,
+        imageViewerSmoothing,
+        setImageViewerSmoothing,
 
         invalidateFilemanager,
         fileUploader,

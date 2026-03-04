@@ -5,8 +5,10 @@ import { useEffect } from 'react';
 import Button from '@/elements/Button.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 export default function FileSettings() {
+  const { t } = useTranslations();
   const { clickOnce, setClickOnce } = useFileManager();
 
   useEffect(() => {
@@ -22,7 +24,7 @@ export default function FileSettings() {
       </Popover.Target>
       <Popover.Dropdown>
         <Checkbox
-          label='Click once to open file or folder'
+          label={t('pages.server.files.settings.clickOnce', {})}
           checked={clickOnce}
           onChange={(e) => setClickOnce(e.target.checked)}
         />

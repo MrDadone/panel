@@ -12,7 +12,7 @@ export default function AdminBackupConfigurationNodes({
 }: {
   backupConfiguration: BackupConfiguration;
 }) {
-  const [backupConfigurationNodes, setBackupConfigurationNodes] = useState<ResponseMeta<Node>>(getEmptyPaginationSet());
+  const [backupConfigurationNodes, setBackupConfigurationNodes] = useState<Pagination<Node>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getBackupConfigurationNodes(backupConfiguration.uuid, page, search),

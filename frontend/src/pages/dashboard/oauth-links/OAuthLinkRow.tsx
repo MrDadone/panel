@@ -53,6 +53,8 @@ export default function OAuthLinkRow({ oauthLink }: { oauthLink: UserOAuthLink }
             color: 'red',
           },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.dashboard.oauthLinks.oauthLinkContextMenu}
+        registryProps={{ oauthLink }}
       >
         {({ items, openMenu }) => (
           <TableRow

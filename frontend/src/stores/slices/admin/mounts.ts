@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface MountsSlice {
-  mounts: ResponseMeta<Mount>;
+  mounts: Pagination<Mount>;
 
-  setMounts: (mounts: ResponseMeta<Mount>) => void;
+  setMounts: (mounts: Pagination<Mount>) => void;
   addMount: (mount: Mount) => void;
   removeMount: (mount: Mount) => void;
 }

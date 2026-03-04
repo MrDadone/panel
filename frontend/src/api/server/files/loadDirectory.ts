@@ -3,7 +3,7 @@ import { axiosInstance } from '@/api/axios.ts';
 export interface DirectoryResponse {
   isFilesystemWritable: boolean;
   isFilesystemFast: boolean;
-  entries: ResponseMeta<DirectoryEntry>;
+  entries: Pagination<DirectoryEntry>;
 }
 
 export default async (uuid: string, directory: string, page: number): Promise<DirectoryResponse> => {

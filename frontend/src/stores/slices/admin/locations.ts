@@ -3,14 +3,14 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface LocationsSlice {
-  locations: ResponseMeta<Location>;
-  locationDatabaseHosts: ResponseMeta<LocationDatabaseHost>;
+  locations: Pagination<Location>;
+  locationDatabaseHosts: Pagination<LocationDatabaseHost>;
 
-  setLocations: (locations: ResponseMeta<Location>) => void;
+  setLocations: (locations: Pagination<Location>) => void;
   addLocation: (location: Location) => void;
   removeLocation: (location: Location) => void;
 
-  setLocationDatabaseHosts: (databaseHosts: ResponseMeta<LocationDatabaseHost>) => void;
+  setLocationDatabaseHosts: (databaseHosts: Pagination<LocationDatabaseHost>) => void;
   addLocationDatabaseHost: (databaseHost: LocationDatabaseHost) => void;
   removeLocationDatabaseHost: (databaseHost: LocationDatabaseHost) => void;
 }

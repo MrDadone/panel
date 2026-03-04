@@ -10,7 +10,7 @@ import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 
 export default function AdminUserActivity({ user }: { user: User }) {
-  const [userActivity, setUserActivity] = useState<ResponseMeta<UserActivity>>(getEmptyPaginationSet());
+  const [userActivity, setUserActivity] = useState<Pagination<UserActivity>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getUserActivity(user.uuid, page, search),

@@ -1,11 +1,49 @@
+import { forwardRef } from 'react';
 import { NavLink } from 'react-router';
 import Code from '@/elements/Code.tsx';
+import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 
-export default function EggRow({ nest, egg }: { nest: AdminNest; egg: AdminNestEgg }) {
+interface EggRowProps {
+  nest: AdminNest;
+  egg: AdminNestEgg;
+  showSelection?: boolean;
+  isSelected?: boolean;
+  onSelectionChange?: (selected: boolean) => void;
+}
+
+const EggRow = forwardRef<HTMLTableRowElement, EggRowProps>(function EggRow(
+  { nest, egg, showSelection, isSelected, onSelectionChange },
+  ref,
+) {
   return (
-    <TableRow>
+    <TableRow
+      bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}
+      onClick={(e) => {
+        if (e.ctrlKey || e.metaKey) {
+          onSelectionChange?.(true);
+          return true;
+        }
+
+        return false;
+      }}
+      ref={ref}
+    >
+      {showSelection && (
+        <TableData className='pl-4 relative cursor-pointer w-10 text-center'>
+          <Checkbox
+            id={egg.uuid}
+            checked={isSelected}
+            onChange={(e) => {
+              onSelectionChange?.(e.target.checked);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            classNames={{ input: 'cursor-pointer!' }}
+          />
+        </TableData>
+      )}
+
       <TableData>
         <NavLink
           to={`/admin/nests/${nest.uuid}/eggs/${egg.uuid}`}
@@ -26,4 +64,6 @@ export default function EggRow({ nest, egg }: { nest: AdminNest; egg: AdminNestE
       </TableData>
     </TableRow>
   );
-}
+});
+
+export default EggRow;

@@ -4,7 +4,7 @@ export default async (
   mountUuid: string,
   page: number,
   search?: string,
-): Promise<ResponseMeta<AndCreated<{ nest: AdminNest; nestEgg: AdminNestEgg }>>> => {
+): Promise<Pagination<AndCreated<{ nest: AdminNest; nestEgg: AdminNestEgg }>>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/mounts/${mountUuid}/nest-eggs`, {

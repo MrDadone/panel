@@ -14,7 +14,7 @@ const NodeAllocationRow = memo(
   forwardRef<HTMLTableRowElement, NodeAllocationRowProps>(function FileRow({ allocation }, ref) {
     const { selectedNodeAllocations, addSelectedNodeAllocation, removeSelectedNodeAllocation } = useAdminStore();
 
-    const isNodeAllocationSelected = selectedNodeAllocations.some((a) => a.uuid === allocation.uuid);
+    const isNodeAllocationSelected = selectedNodeAllocations.has(allocation);
 
     return (
       <TableRow

@@ -1,7 +1,6 @@
 import { faFile, faFolder } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { forwardRef, memo, useRef } from 'react';
-import { createSearchParams, useNavigate, useSearchParams } from 'react-router';
 import { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
@@ -12,61 +11,37 @@ import FileRowContextMenu from '@/pages/server/files/FileRowContextMenu.tsx';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
-import { useServerStore } from '@/stores/server.ts';
 
 interface FileRowProps {
   file: DirectoryEntry;
+  handleOpen: () => void;
   isSelected: boolean;
+  isActing: boolean;
   multipleSelected: boolean;
 }
 
 const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
-  { file, isSelected, multipleSelected },
+  { file, handleOpen, isSelected, isActing, multipleSelected },
   ref,
 ) {
-  const navigate = useNavigate();
-  const [_, setSearchParams] = useSearchParams();
   const canOpenActionBar = useServerCan(['files.read-content', 'files.archive', 'files.update', 'files.delete'], true);
-  const { server } = useServerStore();
-  const { browsingDirectory, browsingFastDirectory, doSelectFiles, addSelectedFile, removeSelectedFile, clickOnce } =
-    useFileManager();
+  const { browsingFastDirectory, doSelectFiles, addSelectedFile, removeSelectedFile, clickOnce } = useFileManager();
   const { settings } = useGlobalStore();
   const canOpenFile = useServerCan('files.read-content');
 
   const toggleSelected = () => (isSelected ? removeSelectedFile(file) : addSelectedFile(file));
 
-  const handleOpen = () => {
-    if (
-      ((isEditableFile(file) || isViewableImage(file)) && file.size <= settings.server.maxFileManagerViewSize) ||
-      file.directory ||
-      (isViewableArchive(file) && browsingFastDirectory)
-    ) {
-      if (file.directory || (isViewableArchive(file) && browsingFastDirectory)) {
-        setSearchParams({
-          directory: `${browsingDirectory}/${file.name}`.replace('//', '/'),
-        });
-      } else {
-        if (!canOpenFile) return;
-
-        navigate(
-          `/server/${server.uuidShort}/files/${isViewableImage(file) ? 'image' : 'edit'}?${createSearchParams({
-            directory: browsingDirectory,
-            file: file.name,
-          })}`,
-        );
-      }
-    }
-  };
-
   const clickCount = useRef(0);
   const clickTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent<HTMLTableRowElement>) => {
     clickCount.current += 1;
 
     if (clickTimer.current) return;
 
-    if (isSelected) {
+    if (e.shiftKey) {
+      addSelectedFile(file);
+    } else if (isSelected) {
       if (multipleSelected) {
         doSelectFiles([file]);
       } else {
@@ -91,6 +66,9 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
     // if (isOver && isValidDropTarget) {
     //   return 'var(--mantine-color-green-light)';
     // }
+    if (isActing) {
+      return 'var(--mantine-color-orange-light)';
+    }
     if (isSelected) {
       return 'var(--mantine-color-blue-light)';
     }
@@ -121,7 +99,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
             if (clickOnce) {
               handleOpen();
             } else {
-              handleClick();
+              handleClick(e);
             }
           }}
         >
@@ -150,7 +128,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
             <span className='flex items-center gap-4 leading-[100%]'>{bytesToString(file.size)}</span>
           </TableData>
 
-          <TableData>
+          <TableData className='hidden md:table-cell'>
             <FormattedTimestamp timestamp={file.modified} />
           </TableData>
 

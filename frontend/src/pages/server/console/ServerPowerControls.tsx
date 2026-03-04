@@ -42,6 +42,12 @@ export default function ServerPowerControls() {
         {t('pages.server.console.power.modal.forceStop.content', {}).md()}
       </ConfirmationModal>
 
+      {window.extensionContext.extensionRegistry.pages.server.console.powerButtonComponents.prependedComponents.map(
+        (Component, i) => (
+          <Component key={`console-powerbutton-prepended-${i}`} />
+        ),
+      )}
+
       <ServerCan action='control.start'>
         <Button
           color='green'
@@ -62,6 +68,12 @@ export default function ServerPowerControls() {
           {killable ? t('pages.server.console.power.kill', {}) : t('pages.server.console.power.stop', {})}
         </Button>
       </ServerCan>
+
+      {window.extensionContext.extensionRegistry.pages.server.console.powerButtonComponents.appendedComponents.map(
+        (Component, i) => (
+          <Component key={`console-powerButton-appended-${i}`} />
+        ),
+      )}
     </div>
   );
 }

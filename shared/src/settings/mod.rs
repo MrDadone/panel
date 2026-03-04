@@ -866,10 +866,7 @@ impl Settings {
         })
     }
 
-    pub async fn get_as<F, T: 'static>(&self, f: F) -> Result<T, anyhow::Error>
-    where
-        F: FnOnce(&AppSettings) -> T,
-    {
+    pub async fn get_as<F: FnOnce(&AppSettings) -> T, T>(&self, f: F) -> Result<T, anyhow::Error> {
         let settings = self.get().await?;
         Ok(f(&settings))
     }

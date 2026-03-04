@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (page: number, search?: string): Promise<ResponseMeta<BackupConfiguration>> => {
+export default async (page: number, search?: string): Promise<Pagination<BackupConfiguration>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get('/api/admin/backup-configurations', {

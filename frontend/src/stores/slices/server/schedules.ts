@@ -3,10 +3,10 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface SchedulesSlice {
-  schedules: ResponseMeta<ServerSchedule>;
+  schedules: Pagination<ServerSchedule>;
   runningScheduleSteps: Map<string, string | null>;
 
-  setSchedules: (schedules: ResponseMeta<ServerSchedule>) => void;
+  setSchedules: (schedules: Pagination<ServerSchedule>) => void;
   addSchedule: (schedule: ServerSchedule) => void;
   removeSchedule: (schedule: ServerSchedule) => void;
   setRunningScheduleStep: (schedule: string, step: string | null) => void;

@@ -1,5 +1,6 @@
 import { createContext, RefObject, useContext } from 'react';
 import { z } from 'zod';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
 import { FileUploader } from '@/plugins/useFileUpload.ts';
 
@@ -28,19 +29,15 @@ export interface FileManagerContextType {
   folderInputRef: RefObject<HTMLInputElement | null>;
 
   actingMode: ActingFileMode | null;
-  setActingMode: (actingMode: ActingFileMode, files: DirectoryEntry[]) => void;
-  actingFiles: Set<DirectoryEntry>;
-  setActingFiles: (files: Set<DirectoryEntry>) => void;
+  actingFiles: ObjectSet<DirectoryEntry, 'name'>;
   actingFilesSource: string | null;
-  setActingFilesSource: (directory: string | null) => void;
-  selectedFiles: Set<DirectoryEntry>;
-  setSelectedFiles: (files: Set<DirectoryEntry>) => void;
+  selectedFiles: ObjectSet<DirectoryEntry, 'name'>;
   browsingBackup: ServerBackup | null;
   setBrowsingBackup: (backup: ServerBackup | null) => void;
   browsingDirectory: string;
   setBrowsingDirectory: (directory: string) => void;
-  browsingEntries: ResponseMeta<DirectoryEntry>;
-  setBrowsingEntries: (entries: ResponseMeta<DirectoryEntry>) => void;
+  browsingEntries: Pagination<DirectoryEntry>;
+  setBrowsingEntries: (entries: Pagination<DirectoryEntry>) => void;
   page: number;
   setPage: (page: number) => void;
   browsingWritableDirectory: boolean;
@@ -53,8 +50,15 @@ export interface FileManagerContextType {
   setModalDirectoryEntries: (files: DirectoryEntry[]) => void;
   searchInfo: SearchInfo | null;
   setSearchInfo: (info: SearchInfo | null) => void;
+
   clickOnce: boolean;
   setClickOnce: (state: boolean) => void;
+  editorMinimap: boolean;
+  setEditorMinimap: (state: boolean) => void;
+  editorLineOverflow: boolean;
+  setEditorLineOverflow: (state: boolean) => void;
+  imageViewerSmoothing: boolean;
+  setImageViewerSmoothing: (state: boolean) => void;
 
   invalidateFilemanager: () => void;
   fileUploader: FileUploader;

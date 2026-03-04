@@ -16,7 +16,7 @@ export default function DashboardActivity() {
   const { user } = useAuth();
   const { t } = useTranslations();
 
-  const [activities, setActivities] = useState<ResponseMeta<UserActivity>>(getEmptyPaginationSet());
+  const [activities, setActivities] = useState<Pagination<UserActivity>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: getUserActivity,
@@ -24,7 +24,10 @@ export default function DashboardActivity() {
   });
 
   return (
-    <AccountContentContainer title={t('pages.account.activity.title', {})}>
+    <AccountContentContainer
+      title={t('pages.account.activity.title', {})}
+      registry={window.extensionContext.extensionRegistry.pages.dashboard.activity.container}
+    >
       <Group justify='space-between' mb='md'>
         <Title order={1} c='white'>
           {t('pages.account.activity.title', {})}

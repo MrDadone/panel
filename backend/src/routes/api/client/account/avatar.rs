@@ -52,6 +52,12 @@ mod put {
             }
         };
 
+        if !(64..=16384).contains(&image.width()) || !(64..=16384).contains(&image.height()) {
+            return ApiResponse::error("image: invalid resolution, dimensions must not be smaller than 64px and must not exceed 16384px")
+                    .with_status(StatusCode::BAD_REQUEST)
+                    .ok();
+        }
+
         let data = tokio::task::spawn_blocking(move || -> Result<Vec<u8>, image::ImageError> {
             let image = image.resize_exact(512, 512, FilterType::Triangle);
             let mut data: Vec<u8> = Vec::new();

@@ -1,6 +1,6 @@
 const hexChars = '0123456789ABCDEFabcdef';
 
-export function fullyHex(hex: string): boolean {
+export function isFullyHex(hex: string): boolean {
   for (const char of hex) {
     if (!hexChars.includes(char)) return false;
   }
@@ -22,7 +22,7 @@ function checkV4(ip: string): boolean {
       if (int < 0 || int > 0xff) return false;
     }
   } else {
-    const int = parseInt(ip, fullyHex(ip) ? 16 : 10);
+    const int = parseInt(ip, isFullyHex(ip) ? 16 : 10);
 
     if (Number.isNaN(int)) return false;
     if (int < 0 || int > MAX_IPV4_LONG) return false;

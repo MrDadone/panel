@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (uuid: string, page: number, search?: string): Promise<ResponseMeta<ServerDatabase>> => {
+export default async (uuid: string, page: number, search?: string): Promise<Pagination<ServerDatabase>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/client/servers/${uuid}/databases`, {

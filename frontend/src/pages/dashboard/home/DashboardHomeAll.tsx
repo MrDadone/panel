@@ -10,9 +10,9 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
 import { useBulkPowerActions } from '@/plugins/useBulkPowerActions.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
-import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
@@ -27,11 +27,10 @@ export default function DashboardHomeAll() {
   const { serverListShowOthers, setServerListShowOthers } = useGlobalStore();
   const { addToast } = useToast();
 
-  const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set());
+  const [selectedServers, setSelectedServers] = useState(new ObjectSet<Server, 'uuid'>('uuid'));
   const [sKeyPressed, setSKeyPressed] = useState(false);
 
   const { handleBulkPowerAction, bulkActionLoading } = useBulkPowerActions();
-  const loadingStats = useServerStats(servers.data);
 
   useEffect(() => {
     getServerGroups()
@@ -75,30 +74,29 @@ export default function DashboardHomeAll() {
     deps: [serverListShowOthers],
   });
 
-  const handleServerSelectionChange = (serverUuid: string, selected: boolean) => {
+  const handleServerSelectionChange = (server: Server, selected: boolean) => {
     setSelectedServers((prev) => {
-      const newSet = new Set(prev);
+      const newSet = new ObjectSet('uuid', prev.values());
       if (selected) {
-        newSet.add(serverUuid);
+        newSet.add(server);
       } else {
-        newSet.delete(serverUuid);
+        newSet.delete(server);
       }
       return newSet;
     });
   };
 
-  const handleServerClick = (serverUuid: string, event: React.MouseEvent) => {
+  const handleServerClick = (server: Server, event: React.MouseEvent) => {
     if (sKeyPressed) {
       event.preventDefault();
       event.stopPropagation();
-      handleServerSelectionChange(serverUuid, !selectedServers.has(serverUuid));
+      handleServerSelectionChange(server, !selectedServers.has(server));
     }
   };
 
   const onBulkAction = async (action: ServerPowerAction) => {
-    const serverUuids = Array.from(selectedServers);
-    await handleBulkPowerAction(serverUuids, action);
-    setSelectedServers(new Set());
+    await handleBulkPowerAction(selectedServers.keys(), action);
+    setSelectedServers(new ObjectSet('uuid'));
   };
 
   return (
@@ -116,7 +114,10 @@ export default function DashboardHomeAll() {
           <Switch
             label={t('pages.account.home.tabs.allServers.page.input.showOtherUsersServers', {})}
             checked={serverListShowOthers}
-            onChange={(e) => setServerListShowOthers(e.currentTarget.checked)}
+            onChange={(e) => {
+              setPage(1);
+              setServerListShowOthers(e.currentTarget.checked);
+            }}
           />
         </AdminCan>
       </Group>
@@ -126,7 +127,7 @@ export default function DashboardHomeAll() {
           <Divider my='md' />
         </>
       )}
-      {loading || loadingStats ? (
+      {loading ? (
         <Spinner.Centered />
       ) : servers.total === 0 ? (
         <p className='text-gray-400'>{t('pages.account.home.noServers', {})}</p>
@@ -138,8 +139,8 @@ export default function DashboardHomeAll() {
               server={server}
               showGroupAddButton={!serverListShowOthers}
               isSelected={selectedServers.has(server.uuid)}
-              onSelectionChange={(selected) => handleServerSelectionChange(server.uuid, selected)}
-              onClick={(e) => handleServerClick(server.uuid, e)}
+              onSelectionChange={(selected) => handleServerSelectionChange(server, selected)}
+              onClick={(e) => handleServerClick(server, e)}
               sKeyPressed={sKeyPressed}
             />
           ))}
@@ -147,7 +148,7 @@ export default function DashboardHomeAll() {
       )}
       <BulkActionBar
         selectedCount={selectedServers.size}
-        onClear={() => setSelectedServers(new Set())}
+        onClear={() => setSelectedServers(new ObjectSet('uuid'))}
         onAction={onBulkAction}
         loading={bulkActionLoading}
       />

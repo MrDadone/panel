@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface OAuthProvidersSlice {
-  oauthProviders: ResponseMeta<AdminOAuthProvider>;
+  oauthProviders: Pagination<AdminOAuthProvider>;
 
-  setOAuthProviders: (oauthProviders: ResponseMeta<AdminOAuthProvider>) => void;
+  setOAuthProviders: (oauthProviders: Pagination<AdminOAuthProvider>) => void;
   addOAuthProvider: (oauthProvider: AdminOAuthProvider) => void;
   removeOAuthProvider: (oauthProvider: AdminOAuthProvider) => void;
 }

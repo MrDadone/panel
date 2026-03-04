@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (nodeUuid: string, page: number, search?: string): Promise<ResponseMeta<NodeAllocation>> => {
+export default async (nodeUuid: string, page: number, search?: string): Promise<Pagination<NodeAllocation>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/nodes/${nodeUuid}/allocations/available`, {

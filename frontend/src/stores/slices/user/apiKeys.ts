@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface ApiKeySlice {
-  apiKeys: ResponseMeta<UserApiKey>;
+  apiKeys: Pagination<UserApiKey>;
 
-  setApiKeys: (keys: ResponseMeta<UserApiKey>) => void;
+  setApiKeys: (keys: Pagination<UserApiKey>) => void;
   addApiKey: (key: UserApiKey) => void;
   removeApiKey: (key: UserApiKey) => void;
   updateApiKey: (uuid: string, key: UpdateUserApiKey) => void;

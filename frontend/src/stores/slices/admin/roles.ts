@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface RolesSlice {
-  roles: ResponseMeta<Role>;
+  roles: Pagination<Role>;
 
-  setRoles: (roles: ResponseMeta<Role>) => void;
+  setRoles: (roles: Pagination<Role>) => void;
   addRole: (role: Role) => void;
   removeRole: (role: Role) => void;
 }

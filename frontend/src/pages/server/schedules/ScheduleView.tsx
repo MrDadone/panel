@@ -18,7 +18,6 @@ import updateSchedule from '@/api/server/schedules/updateSchedule.ts';
 import Badge from '@/elements/Badge.tsx';
 import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
-import Card from '@/elements/Card.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
@@ -43,7 +42,7 @@ export default function ScheduleView() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => setDate(new Date()), 60000);
+    const interval = setInterval(() => setDate(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -194,87 +193,80 @@ export default function ScheduleView() {
           </Tabs.List>
 
           <Tabs.Panel value='actions' pt='md'>
-            <Card p='lg'>
-              <Group justify='space-between'>
-                <Title order={3} mb='md'>
-                  Schedule Actions
-                </Title>
-                <ServerCan action='schedules.update'>
-                  <Group>
-                    <Button
-                      onClick={() => setOpenModal(openModal === 'actions' ? null : 'actions')}
-                      variant='outline'
-                      leftSection={<FontAwesomeIcon icon={openModal === 'actions' ? faReply : faPencil} />}
-                    >
-                      {openModal === 'actions' ? 'Exit Editor' : 'Edit'}
-                    </Button>
-                  </Group>
-                </ServerCan>
-              </Group>
-              {openModal === 'actions' ? (
-                <StepsEditor schedule={schedule} />
-              ) : scheduleSteps.length === 0 ? (
-                <Alert icon={<FontAwesomeIcon icon={faExclamationTriangle} />} color='yellow'>
-                  No actions configured for this schedule
-                </Alert>
-              ) : (
-                <Timeline
-                  active={
-                    scheduleSteps.findIndex((step) => step.uuid === runningScheduleSteps.get(schedule.uuid)) ?? -1
-                  }
-                  color='blue'
-                  bulletSize={40}
-                  lineWidth={2}
+            <Group justify='space-between' align='start'>
+              <Title order={2} mb='md'>
+                Schedule Actions
+              </Title>
+              <ServerCan action='schedules.update'>
+                <Button
+                  onClick={() => setOpenModal(openModal === 'actions' ? null : 'actions')}
+                  variant='outline'
+                  leftSection={<FontAwesomeIcon icon={openModal === 'actions' ? faReply : faPencil} />}
                 >
-                  {scheduleSteps.map((step) => (
-                    <ActionStep
-                      key={step.uuid}
-                      step={step}
-                      isActive={step.uuid === runningScheduleSteps.get(schedule.uuid)}
-                    />
-                  ))}
-                </Timeline>
-              )}
-            </Card>
+                  {openModal === 'actions' ? 'Exit Editor' : 'Edit'}
+                </Button>
+              </ServerCan>
+            </Group>
+
+            {openModal === 'actions' ? (
+              <StepsEditor schedule={schedule} />
+            ) : scheduleSteps.length === 0 ? (
+              <Alert icon={<FontAwesomeIcon icon={faExclamationTriangle} />} color='yellow'>
+                No actions configured for this schedule
+              </Alert>
+            ) : (
+              <Timeline
+                active={scheduleSteps.findIndex((step) => step.uuid === runningScheduleSteps.get(schedule.uuid)) ?? -1}
+                color='blue'
+                bulletSize={40}
+                lineWidth={2}
+              >
+                {scheduleSteps.map((step) => (
+                  <ActionStep
+                    key={step.uuid}
+                    step={step}
+                    isActive={step.uuid === runningScheduleSteps.get(schedule.uuid)}
+                  />
+                ))}
+              </Timeline>
+            )}
           </Tabs.Panel>
 
           <Tabs.Panel value='conditions' pt='md'>
-            <Card p='lg'>
-              <Title order={3} mb='md'>
-                Execution Pre-Conditions
-              </Title>
-              <SchedulePreConditionBuilder
-                condition={schedule.condition}
-                onChange={(condition) => setSchedule({ ...schedule, condition })}
-              />
+            <Title order={2} mb='md'>
+              Schedule Pre-Conditions
+            </Title>
 
-              <ServerCan action='schedules.update'>
-                <div className='flex flex-row mt-6'>
-                  <Button loading={loading} onClick={doUpdate}>
-                    Update
-                  </Button>
-                </div>
-              </ServerCan>
-            </Card>
+            <SchedulePreConditionBuilder
+              condition={schedule.condition}
+              onChange={(condition) => setSchedule({ ...schedule, condition })}
+            />
+
+            <ServerCan action='schedules.update'>
+              <div className='flex flex-row mt-4'>
+                <Button loading={loading} onClick={doUpdate}>
+                  Update
+                </Button>
+              </div>
+            </ServerCan>
           </Tabs.Panel>
 
           <Tabs.Panel value='triggers' pt='md'>
-            <Card p='lg'>
-              <Title order={3} mb='md'>
-                Schedule Triggers
-              </Title>
-              {schedule.triggers.length === 0 ? (
-                <Alert icon={<FontAwesomeIcon icon={faExclamationTriangle} />} color='yellow'>
-                  No triggers configured for this schedule
-                </Alert>
-              ) : (
-                <Stack gap='md'>
-                  {schedule.triggers.map((trigger, index) => (
-                    <TriggerCard key={index} date={date} timezone={server.timezone || 'UTC'} trigger={trigger} />
-                  ))}
-                </Stack>
-              )}
-            </Card>
+            <Title order={2} mb='md'>
+              Schedule Triggers
+            </Title>
+
+            {schedule.triggers.length === 0 ? (
+              <Alert icon={<FontAwesomeIcon icon={faExclamationTriangle} />} color='yellow'>
+                No triggers configured for this schedule
+              </Alert>
+            ) : (
+              <Stack gap='md'>
+                {schedule.triggers.map((trigger, index) => (
+                  <TriggerCard key={index} date={date} timezone={server.timezone || 'UTC'} trigger={trigger} />
+                ))}
+              </Stack>
+            )}
           </Tabs.Panel>
         </Tabs>
       </Stack>

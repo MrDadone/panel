@@ -12,7 +12,7 @@ export default function AdminBackupConfigurationLocations({
 }: {
   backupConfiguration: BackupConfiguration;
 }) {
-  const [backupConfigurationLocations, setBackupConfigurationLocations] = useState<ResponseMeta<Location>>(
+  const [backupConfigurationLocations, setBackupConfigurationLocations] = useState<Pagination<Location>>(
     getEmptyPaginationSet(),
   );
 

@@ -7,6 +7,7 @@ import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import NodeAllocationsUpdateModal from './modals/NodeAllocationsUpdateModal.tsx';
@@ -18,12 +19,9 @@ export default function AllocationActionBar({ node, loadAllocations }: { node: N
   const [openModal, setOpenModal] = useState<'update' | 'delete' | null>(null);
 
   const doDelete = async () => {
-    await deleteNodeAllocations(
-      node.uuid,
-      Array.from(selectedNodeAllocations).map((a) => a.uuid),
-    )
+    await deleteNodeAllocations(node.uuid, selectedNodeAllocations.keys())
       .then(({ deleted }) => {
-        removeNodeAllocations(Array.from(selectedNodeAllocations));
+        removeNodeAllocations(selectedNodeAllocations.values());
 
         addToast(`${deleted} Node Allocation${deleted === 1 ? '' : 's'} deleted.`, 'success');
         setSelectedNodeAllocations([]);
@@ -33,6 +31,16 @@ export default function AllocationActionBar({ node, loadAllocations }: { node: N
         addToast(httpErrorToHuman(msg), 'error');
       });
   };
+
+  useKeyboardShortcuts({
+    shortcuts: [
+      {
+        key: 'Delete',
+        callback: () => setOpenModal('delete'),
+      },
+    ],
+    deps: [],
+  });
 
   return (
     <>
@@ -50,11 +58,11 @@ export default function AllocationActionBar({ node, loadAllocations }: { node: N
         onConfirmed={doDelete}
       >
         Are you sure you want to delete
-        <Code>{selectedNodeAllocations.length}</Code>
+        <Code>{selectedNodeAllocations.size}</Code>
         allocations from <Code>{node.name}</Code>?
       </ConfirmationModal>
 
-      <ActionBar opened={selectedNodeAllocations.length > 0}>
+      <ActionBar opened={selectedNodeAllocations.size > 0}>
         <Button onClick={() => setOpenModal('update')}>
           <FontAwesomeIcon icon={faPen} className='mr-2' /> Update
         </Button>

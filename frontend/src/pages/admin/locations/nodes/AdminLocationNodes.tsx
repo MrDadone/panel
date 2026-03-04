@@ -8,7 +8,7 @@ import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTabl
 import NodeRow from '../../nodes/NodeRow.tsx';
 
 export default function AdminLocationNodes({ location }: { location: Location }) {
-  const [locationNodes, setLocationNodes] = useState<ResponseMeta<Node>>(getEmptyPaginationSet());
+  const [locationNodes, setLocationNodes] = useState<Pagination<Node>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getLocationNodes(location.uuid, page, search),

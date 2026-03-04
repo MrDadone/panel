@@ -1,6 +1,6 @@
 import { axiosInstance, getPaginationSet } from '@/api/axios.ts';
 
-export default async (page: number, search?: string): Promise<ResponseMeta<UserSshKey>> => {
+export default async (page: number, search?: string): Promise<Pagination<UserSshKey>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get('/api/client/account/ssh-keys', {

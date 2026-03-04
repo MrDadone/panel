@@ -3,14 +3,14 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface UsersSlice {
-  users: ResponseMeta<User>;
-  userOAuthLinks: ResponseMeta<UserOAuthLink>;
+  users: Pagination<User>;
+  userOAuthLinks: Pagination<UserOAuthLink>;
 
-  setUsers: (users: ResponseMeta<User>) => void;
+  setUsers: (users: Pagination<User>) => void;
   addUser: (user: User) => void;
   removeUser: (user: User) => void;
 
-  setUserOAuthLinks: (links: ResponseMeta<UserOAuthLink>) => void;
+  setUserOAuthLinks: (links: Pagination<UserOAuthLink>) => void;
   addUserOAuthLink: (link: UserOAuthLink) => void;
   removeUserOAuthLink: (link: UserOAuthLink) => void;
 }

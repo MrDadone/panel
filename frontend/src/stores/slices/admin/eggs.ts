@@ -3,15 +3,15 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface EggsSlice {
-  eggs: ResponseMeta<AdminNestEgg>;
-  eggMounts: ResponseMeta<NodeMount>;
+  eggs: Pagination<AdminNestEgg>;
+  eggMounts: Pagination<NodeMount>;
   eggVariables: NestEggVariable[];
 
-  setEggs: (eggs: ResponseMeta<AdminNestEgg>) => void;
+  setEggs: (eggs: Pagination<AdminNestEgg>) => void;
   addEgg: (egg: AdminNestEgg) => void;
   removeEgg: (egg: AdminNestEgg) => void;
 
-  setEggMounts: (mounts: ResponseMeta<NodeMount>) => void;
+  setEggMounts: (mounts: Pagination<NodeMount>) => void;
   addEggMount: (mount: NodeMount) => void;
   removeEggMount: (mount: NodeMount) => void;
 

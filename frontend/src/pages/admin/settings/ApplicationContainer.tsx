@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import getAssets from '@/api/admin/assets/getAssets.ts';
 import updateApplicationSettings from '@/api/admin/settings/updateApplicationSettings.ts';
-import getAdminSystemTelemetry from '@/api/admin/system/getAdminSystemTelemetry.ts';
+import getTelemetry from '@/api/admin/system/getTelemetry.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
@@ -38,7 +38,7 @@ export default function ApplicationContainer() {
       name: '',
       icon: '',
       url: '',
-      language: 'en-US',
+      language: 'en',
       twoFactorRequirement: 'none',
       telemetryEnabled: true,
       registrationEnabled: true,
@@ -73,7 +73,7 @@ export default function ApplicationContainer() {
   const doPreviewTelemetry = () => {
     setLoading(true);
 
-    getAdminSystemTelemetry()
+    getTelemetry()
       .then((data) => {
         setTelemetryData(data);
       })

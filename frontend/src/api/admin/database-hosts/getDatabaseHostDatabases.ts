@@ -4,7 +4,7 @@ export default async (
   databaseHostUuid: string,
   page: number,
   search?: string,
-): Promise<ResponseMeta<AdminServerDatabase>> => {
+): Promise<Pagination<AdminServerDatabase>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/database-hosts/${databaseHostUuid}/databases`, {

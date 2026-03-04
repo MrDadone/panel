@@ -75,7 +75,7 @@ export function httpErrorToHuman(error: unknown): string {
   }
 }
 
-export function getPaginationSet(data: ResponseMeta<unknown>) {
+export function getPaginationSet(data: Pagination<unknown>) {
   return {
     total: data.total,
     perPage: data.perPage,
@@ -83,7 +83,7 @@ export function getPaginationSet(data: ResponseMeta<unknown>) {
   };
 }
 
-export function getEmptyPaginationSet<T>(): ResponseMeta<T> {
+export function getEmptyPaginationSet<T>(): Pagination<T> {
   return {
     total: 0,
     perPage: 0,

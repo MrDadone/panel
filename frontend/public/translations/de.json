@@ -1,0 +1,1224 @@
+{
+  "items": {
+    "user": {
+      "zero": "{count} Benutzer",
+      "one": "{count} Benutzer",
+      "two": "{count} Benutzer",
+      "few": "{count} Benutzer",
+      "many": "{count} Benutzer",
+      "other": "{count} Benutzer"
+    },
+    "file": {
+      "zero": "{count} Dateien",
+      "one": "{count} Datei",
+      "two": "{count} Dateien",
+      "few": "{count} Dateien",
+      "many": "{count} Dateien",
+      "other": "{count} Dateien"
+    },
+    "server": {
+      "zero": "{count} Server",
+      "one": "{count} Server",
+      "two": "{count} Server",
+      "few": "{count} Server",
+      "many": "{count} Server",
+      "other": "{count} Server"
+    },
+    "sshKey": {
+      "zero": "{count} SSH-Schlüssel",
+      "one": "{count} SSH-Schlüssel",
+      "two": "{count} SSH-Schlüssel",
+      "few": "{count} SSH-Schlüssel",
+      "many": "{count} SSH-Schlüssel",
+      "other": "{count} SSH-Schlüssel"
+    }
+  },
+  "translations": {
+    "common": {
+      "button": {
+        "create": "Erstellen",
+        "add": "Hinzufügen",
+        "save": "Speichern",
+        "saveAndStay": "Speichern & Bleiben",
+        "edit": "Bearbeiten",
+        "delete": "Löschen",
+        "remove": "Entfernen",
+        "enable": "Aktivieren",
+        "disable": "Deaktivieren",
+        "update": "Aktualisieren",
+        "close": "Schließen",
+        "cancel": "Abbrechen",
+        "continue": "Weiter",
+        "skip": "Überspringen",
+        "back": "Zurück",
+        "next": "Weiter",
+        "install": "Installieren",
+        "selectAll": "Alle auswählen",
+        "deselectAll": "Alle abwählen",
+        "download": "Herunterladen",
+        "downloadAs": "Als {format} herunterladen"
+      },
+      "input": {
+        "search": "Suchen..."
+      },
+      "form": {
+        "name": "Name",
+        "description": "Beschreibung",
+        "password": "Passwort",
+        "host": "Host",
+        "username": "Benutzername",
+        "server": "Server",
+        "truncateDirectory": "Möchtest du alle Dateien dieses Servers löschen, bevor diese Aktion ausgeführt wird? Dies kann nicht rückgängig gemacht werden."
+      },
+      "table": {
+        "pagination": {
+          "results": "Zeige {start} bis {end} von {total} Ergebnissen.",
+          "empty": "Es konnten keine Elemente gefunden werden, fast so, als würden sie sich verstecken."
+        },
+        "columns": {
+          "name": "Name",
+          "description": "Beschreibung",
+          "username": "Benutzername",
+          "size": "Größe",
+          "lastUsed": "Zuletzt verwendet",
+          "created": "Erstellt",
+          "actor": "Akteur",
+          "event": "Ereignis",
+          "ip": "IP",
+          "when": "Wann",
+          "command": "Befehl"
+        }
+      },
+      "server": {
+        "noAllocation": "Keine Allocation",
+        "state": {
+          "suspended": "Suspendiert",
+          "restoringBackup": "Backup wird wiederhergestellt",
+          "installing": "Wird installiert",
+          "InstallFailed": "Installation fehlgeschlagen"
+        }
+      },
+      "enum": {
+        "userToastPosition": {
+          "topLeft": "Oben links",
+          "topCenter": "Oben Mitte",
+          "topRight": "Oben rechts",
+          "bottomLeft": "Unten links",
+          "bottomCenter": "Unten Mitte",
+          "bottomRight": "Unten rechts"
+        },
+        "serverState": {
+          "unknown": "Unbekannt",
+          "offline": "Offline",
+          "running": "Läuft",
+          "starting": "Startet",
+          "stopping": "Stoppt"
+        },
+        "connectionStatus": {
+          "connected": "Verbunden",
+          "offline": "Offline"
+        },
+        "serverAutoStartBehavior": {
+          "always": "Immer",
+          "unlessStopped": "Außer wenn gestoppt",
+          "never": "Nie"
+        },
+        "bulkActionServerAction": {
+          "started": "Gestartet",
+          "stopped": "Gestoppt",
+          "restarted": "Neu gestartet",
+          "killed": "Gekillt"
+        }
+      },
+      "unlimited": "Unendlich",
+      "readOnly": "Schreibgeschützt",
+      "na": "N/V",
+      "yes": "Ja",
+      "no": "Nein",
+      "web": "Web",
+      "api": "API",
+      "system": "System",
+      "schedule": "Zeitplan",
+      "impersonatedBy": "Impersoniert von {username}"
+    },
+    "elements": {
+      "errorBoundary": {
+        "message": "Beim Rendern dieser Ansicht ist in der Anwendung ein Fehler aufgetreten. Versuche, die Seite neu zu laden.",
+        "hideDetails": "Details ausblenden",
+        "showDetails": "Details einblenden",
+        "errorMessage": "Fehlermeldung:",
+        "stackTrace": "Stack-Trace:",
+        "componentStack": "Komponenten-Stack:"
+      },
+      "copyOnClick": {
+        "toast": {
+          "copied": "In die Zwischenablage kopiert.",
+          "failed": "Kopieren in die Zwischenablage fehlgeschlagen.",
+          "copyManual": "In die Zwischenablage kopieren: Strg+C oder Cmd+C, Eingabe"
+        }
+      },
+      "container": {
+        "alert": {
+          "impersonating": "Du impersonierst derzeit einen Benutzer. Bitte beachte, dass deine Aktionen das Konto des impersonierten Benutzers beeinflussen können. Um den Impersonation-Modus zu beenden, klicke unten links auf die Schaltfläche \"Impersonierung beenden\"."
+        }
+      },
+      "sidebar": {
+        "button": {
+          "logout": "Abmelden",
+          "stopImpersonating": "Impersonierung beenden"
+        }
+      },
+      "permissionSelector": {
+        "selectedPermissions": "Ausgewählte Berechtigungen ({count})",
+        "noPermissions": "Keine Berechtigungen ausgewählt."
+      },
+      "can": {
+        "tooltip": {
+          "cantSave": "Du hast keine Berechtigung zum Speichern.",
+          "cantDelete": "Du hast keine Berechtigung zum Löschen."
+        }
+      },
+      "activityInfoButton": {
+        "modal": {
+          "info": {
+            "title": "Aktivitätsdetails"
+          }
+        }
+      }
+    },
+    "pages": {
+      "oobe": {
+        "welcome": {
+          "title": "Willkommen bei Calagopus",
+          "subtitle": "Lass uns dein Game-Server-Managementsystem einrichten!",
+          "wizardIntro": "Dieser Einrichtungsassistent führt dich durch:",
+          "steps": {
+            "account": "Erstellung deines Administrator-Accounts",
+            "settings": "Konfiguration grundlegender Systemeinstellungen",
+            "location": "Einrichtung deines Server-Standorts",
+            "node": "Hinzufügen deiner ersten Node",
+            "server": "Bereitstellung deines ersten Game-Servers"
+          },
+          "button": {
+            "start": "Loslegen"
+          }
+        },
+        "register": {
+          "title": "Administrator-Account erstellen",
+          "alert": {
+            "title": "Sicherheitshinweis",
+            "description": "Wähle ein starkes Passwort. Dieser Account hat vollen administrativen Zugriff auf alle Server und Einstellungen."
+          },
+          "form": {
+            "username": "Benutzername",
+            "usernamePlaceholder": "admin",
+            "email": "E-Mail-Adresse",
+            "emailPlaceholder": "admin@beispiel.de",
+            "firstName": "Vorname",
+            "firstNamePlaceholder": "Alan",
+            "lastName": "Nachname",
+            "lastNamePlaceholder": "Turing",
+            "password": "Passwort",
+            "passwordPlaceholder": "Gib ein sicheres Passwort ein",
+            "confirmPassword": "Passwort bestätigen",
+            "confirmPasswordPlaceholder": "Gib dein Passwort erneut ein"
+          },
+          "button": {
+            "create": "Account erstellen & Weiter"
+          }
+        },
+        "login": {
+          "title": "Wieder einloggen",
+          "alert": "Du wurdest während des Einrichtungsprozesses ausgeloggt. Bitte logge dich erneut ein, um dort weiterzumachen, wo du aufgehört hast.",
+          "form": {
+            "username": "Benutzername",
+            "usernamePlaceholder": "admin",
+            "password": "Passwort",
+            "passwordPlaceholder": "Gib ein sicheres Passwort ein"
+          },
+          "button": {
+            "login": "Einloggen & Weiter"
+          }
+        },
+        "location": {
+          "title": "Standort-Konfiguration",
+          "form": {
+            "locationName": "Standort-Name",
+            "locationNamePlaceholder": "Mein Zuhause",
+            "backupName": "Backup Konfigurations-Name",
+            "backupNamePlaceholder": "Unicorn Cloud",
+            "backupDisk": "Backup Festplatte",
+            "backupDiskPlaceholder": "Backup Festplatte"
+          },
+          "button": {
+            "create": "Erstellen & Weiter"
+          }
+        },
+        "node": {
+          "title": "Node-Konfiguration",
+          "form": {
+            "name": "Name",
+            "namePlaceholder": "Mein Server",
+            "url": "URL",
+            "urlPlaceholder": "URL",
+            "urlDescription": "wird für die interne Kommunikation mit der Node verwendet",
+            "publicUrl": "Öffentliche URL",
+            "publicUrlPlaceholder": "URL",
+            "publicUrlDescription": "wird für Websocket/Downloads verwendet",
+            "sftpHost": "SFTP Host",
+            "sftpHostPlaceholder": "SFTP Host",
+            "sftpPort": "SFTP Port",
+            "sftpPortPlaceholder": "SFTP Port",
+            "memory": "Arbeitsspeicher (RAM)",
+            "disk": "Festplattenspeicher"
+          },
+          "error": {
+            "noLocations": "Etwas ist schiefgelaufen. Es wurden keine Standorte gefunden."
+          },
+          "button": {
+            "create": "Erstellen & Weiter"
+          }
+        },
+        "configuration": {
+          "title": "Anwendungseinstellungen",
+          "form": {
+            "applicationName": "Anwendungsname",
+            "applicationNamePlaceholder": "Calagopus",
+            "language": "Sprache",
+            "languagePlaceholder": "Sprache",
+            "applicationUrl": "Anwendungs-URL",
+            "applicationUrlPlaceholder": "https://calagop.us",
+            "telemetry": "Telemetrie aktivieren",
+            "telemetryDescription": "Erlaube Calagopus, limitierte und anonyme Nutzungsdaten zu sammeln, um die Anwendung zu verbessern.",
+            "registration": "Registrierung aktivieren",
+            "registrationDescription": "Erlaube neuen Benutzern, ihren eigenen Account zu registrieren."
+          },
+          "button": {
+            "submit": "Einstellungen aktualisieren & Weiter"
+          }
+        },
+        "finished": {
+          "title": "Einrichtung abgeschlossen!",
+          "subtitle": "Dein Calagopus-Panel ist einsatzbereit",
+          "setupTitle": "Was wir eingerichtet haben",
+          "items": {
+            "account": "Administrator-Account",
+            "configuration": {
+              "title": "System-Konfiguration",
+              "subtitle": "Paneleinstellungen und Präferenzen konfiguriert"
+            },
+            "location": "Standort",
+            "node": "Node"
+          },
+          "badge": {
+            "skipped": "Übersprungen"
+          },
+          "button": "Zum Dashboard"
+        }
+      },
+      "auth": {},
+      "account": {
+        "home": {
+          "title": "Servers",
+          "tooltip": {
+            "removeFromGroup": "Aus der Gruppe entfernen",
+            "addToGroup": "Zur Gruppe hinzufügen",
+            "noGroups": "Keine Gruppen zum Hinzufügen verfügbar",
+            "noGroup": "Dieser Server ist noch in keiner Gruppe"
+          },
+          "tabs": {
+            "groupedServers": {
+              "title": "Gruppierte Server",
+              "page": {
+                "button": {
+                  "createGroup": "Neue Gruppe"
+                },
+                "modal": {
+                  "createServerGroup": {
+                    "title": "Server-Gruppe erstellen",
+                    "toast": {
+                      "created": "Server-Gruppe erstellt."
+                    }
+                  },
+                  "editServerGroup": {
+                    "title": "Server-Gruppe bearbeiten",
+                    "toast": {
+                      "updated": "Server-Gruppe aktualisiert."
+                    }
+                  },
+                  "deleteServerGroup": {
+                    "title": "Löschen der Server-Gruppe bestätigen",
+                    "content": "Bist du sicher, dass du die Gruppe **{group}** von deinem Account löschen möchtest?",
+                    "toast": {
+                      "deleted": "Server-Gruppe gelöscht."
+                    }
+                  },
+                  "addServerToGroup": {
+                    "title": "Server zu {group} hinzufügen",
+                    "noServers": "Alle Server sind bereits in dieser Gruppe.",
+                    "toast": {
+                      "added": "Server zur Gruppe hinzugefügt."
+                    }
+                  }
+                },
+                "noGroups": "Es konnten keine Gruppen gefunden werden, Zeit eine zu erstellen?"
+              }
+            },
+            "allServers": {
+              "title": "Alle Server",
+              "page": {
+                "input": {
+                  "showOtherUsersServers": "Zeige die Server von anderen Benutzern"
+                },
+                "modal": {
+                  "addToServerGroup": {
+                    "title": "{server} zu einer Server-Gruppe hinzufügen",
+                    "form": {
+                      "serverGroup": "Server-Gruppe"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "bulkActions": {
+            "selectionMode": "Auswahlmodus",
+            "select": "Server auswählen",
+            "deselect": "Server abwählen",
+            "success": "Erfolgreich {servers} {action}.",
+            "partial": "Erfolgreich {successfulServers} {action}. {failedServers} fehlgeschlagen.",
+            "groupActions": "Gruppen-Aktionen"
+          },
+          "noServers": "Es konnten keine Server gefunden werden, Zeit, einen hinzuzufügen?"
+        },
+        "admin": {
+          "title": "Admin"
+        },
+        "account": {
+          "title": "Account",
+          "alert": {
+            "requireTwoFactor": {
+              "title": "Zwei-Faktor-Authentifizierung erforderlich",
+              "description": "Zwei-Faktor-Authentifizierung ist für deinen Account erforderlich. Bitte richte sie unten ein, um das Panel weiter nutzen zu können."
+            }
+          },
+          "containers": {
+            "password": {
+              "title": "Passwort",
+              "toast": {
+                "updated": "Passwort erfolgreich aktualisiert."
+              },
+              "form": {
+                "currentPassword": "Aktuelles Passwort",
+                "newPassword": "Neues Passwort",
+                "confirmNewPassword": "Neues Passwort bestätigen"
+              }
+            },
+            "email": {
+              "title": "E-Mail",
+              "toast": {
+                "updated": "E-Mail erfolgreich aktualisiert."
+              },
+              "form": {
+                "newEmail": "Neue E-Mail",
+                "currentPassword": "Aktuelles Passwort"
+              }
+            },
+            "twoFactor": {
+              "title": "Zwei-Faktor-Authentifizierung",
+              "toast": {
+                "disabled": "Zwei-Faktor-Authentifizierung erfolgreich deaktiviert.",
+                "enabled": "Zwei-Faktor-Authentifizierung erfolgreich eingerichtet. Bewahre deine Wiederherstellungscodes sicher auf."
+              },
+              "modal": {
+                "disableTwoFactor": {
+                  "title": "Zwei-Faktor-Authentifizierung deaktivieren",
+                  "description": "Das Deaktivieren der Zwei-Faktor-Authentifizierung macht deinen Account weniger sicher.",
+                  "form": {
+                    "code": "Authentifizierungs-Code"
+                  }
+                },
+                "setupTwoFactor": {
+                  "title": "Zwei-Faktor-Authentifizierung einrichten",
+                  "description": "Schütze deinen Account vor unbefugtem Zugriff. Du wirst bei jeder Anmeldung nach einem Bestätigungscode gefragt.",
+                  "descriptionQR": "Scanne den obigen QR-Code mit der Authentifizierungs-App deiner Wahl. Gib dann den generierten 6-stelligen Code in das Feld unten ein.",
+                  "form": {
+                    "code": "Authentifizierungs-Code"
+                  }
+                },
+                "recoveryCodes": {
+                  "title": "Wiederherstellungscodes",
+                  "description": "Unten findest du deine Wiederherstellungscodes. Bewahre diese an einem sicheren Ort auf. Wenn du den Zugriff auf dein Authentifizierungsgerät verlierst, kannst du diese Codes verwenden, um wieder Zugriff auf deinen Account zu erhalten."
+                }
+              },
+              "button": {
+                "disableTwoFactor": "2FA deaktivieren",
+                "setupTwoFactor": "2FA einrichten"
+              },
+              "twoFactorEnabled": "Zwei-Faktor-Verifizierung ist derzeit aktiviert.",
+              "twoFactorDisabled": "Du hast derzeit keine Zwei-Faktor-Verifizierung für deinen Account aktiviert. Klicke auf den Button unten, um mit der Konfiguration zu beginnen.",
+              "twoFactorLastUsed": "Zuletzt verwendet: **{date}**"
+            },
+            "account": {
+              "title": "Account-Details",
+              "toast": {
+                "updated": "Account-Details erfolgreich aktualisiert."
+              },
+              "form": {
+                "nameFirst": "Vorname",
+                "nameLast": "Nachname",
+                "username": "Benutzername",
+                "language": "Sprache",
+                "toastPosition": "Toast-Position",
+                "startOnGroupedServers": "Auf der Seite 'Gruppierte Server' starten"
+              }
+            },
+            "avatar": {
+              "title": "Avatar",
+              "toast": {
+                "updated": "Avatar erfolgreich aktualisiert.",
+                "removed": "Avatar erfolgreich entfernt."
+              },
+              "form": {
+                "avatar": "Avatar"
+              }
+            }
+          }
+        },
+        "securityKeys": {
+          "title": "Sicherheitsschlüssel",
+          "modal": {
+            "createSecurityKey": {
+              "title": "Sicherheitsschlüssel erstellen",
+              "toast": {
+                "created": "Sicherheitsschlüssel erfolgreich erstellt.",
+                "aborted": "Erstellung des Sicherheitsschlüssels abgebrochen."
+              }
+            },
+            "editSecurityKey": {
+              "title": "Sicherheitsschlüssel bearbeiten",
+              "toast": {
+                "updated": "Sicherheitsschlüssel erfolgreich aktualisiert."
+              }
+            },
+            "deleteSecurityKey": {
+              "title": "Löschen des Sicherheitsschlüssels bestätigen",
+              "content": "Bist du sicher, dass du den Schlüssel **{key}** von deinem Account löschen möchtest?",
+              "toast": {
+                "deleted": "Sicherheitsschlüssel erfolgreich gelöscht."
+              }
+            }
+          }
+        },
+        "sessions": {
+          "title": "Sitzungen",
+          "table": {
+            "columns": {
+              "ip": "IP",
+              "thisDevice": "Dieses Gerät?",
+              "userAgent": "User Agent"
+            }
+          },
+          "modal": {
+            "deleteSession": {
+              "title": "Löschen der Sitzung bestätigen",
+              "content": "Bist du sicher, dass du die Sitzung **{ip}** von deinem Account löschen möchtest?",
+              "toast": {
+                "deleted": "Sitzung gelöscht."
+              }
+            }
+          }
+        },
+        "shortcuts": {
+          "title": "Tastaturkürzel",
+          "description": "Verwende diese Tastaturkürzel, um effizienter durch das Panel zu navigieren und damit zu interagieren.",
+          "detectedMac": "macOS erkannt",
+          "detectedWindows": "Windows/Linux erkannt",
+          "fileManager": {
+            "title": "Dateimanager",
+            "selectAll": "Alle Dateien auswählen",
+            "cutFiles": "Ausgewählte Dateien ausschneiden",
+            "copyFiles": "Ausgewählte Dateien kopieren",
+            "duplicateFile": "Ausgewählte Datei duplizieren",
+            "pasteFiles": "Dateien einfügen",
+            "searchFiles": "Dateien suchen",
+            "moveUpDirectory": "Ein Verzeichnis nach oben",
+            "moveUpSelection": "Auswahl nach oben verschieben",
+            "moveDownSelection": "Auswahl nach unten verschieben",
+            "renameFile": "Datei umbenennen",
+            "deselectAll": "Alle Dateien abwählen",
+            "deleteFiles": "Ausgewählte Dateien löschen"
+          },
+          "table": {
+            "title": "Tabellen-Navigation",
+            "previousPage": "Vorherige Seite",
+            "nextPage": "Nächste Seite",
+            "firstPage": "Erste Seite",
+            "lastPage": "Letzte Seite"
+          },
+          "console": {
+            "title": "Server Konsole",
+            "searchContent": "Konsolenausgabe durchsuchen",
+            "previousCommand": "Vorheriger Befehl im Verlauf",
+            "nextCommand": "Nächster Befehl im Verlauf"
+          },
+          "serverList": {
+            "title": "Server Liste",
+            "selectServer": "Halte S und klicke, um Server auszuwählen/abzuwählen"
+          }
+        },
+        "sshKeys": {
+          "title": "SSH-Schlüssel",
+          "button": {
+            "import": "Importieren"
+          },
+          "table": {
+            "columns": {
+              "fingerprint": "Fingerabdruck"
+            }
+          },
+          "modal": {
+            "createSshKey": {
+              "title": "SSH-Schlüssel erstellen",
+              "toast": {
+                "created": "SSH-Schlüssel erstellt."
+              },
+              "button": {
+                "uploadKeyFile": "Schlüssel-Datei hochladen"
+              },
+              "form": {
+                "publicKey": "Öffentlicher Schlüssel (Public Key)"
+              }
+            },
+            "editSshKey": {
+              "title": "SSH-Schlüssel bearbeiten",
+              "toast": {
+                "updated": "SSH-Schlüssel aktualisiert."
+              }
+            },
+            "importSshKeys": {
+              "title": "SSH-Schlüssel importieren",
+              "toast": {
+                "created": "{sshKeys} erstellt."
+              },
+              "form": {
+                "provider": "Anbieter",
+                "username": "Benutzername"
+              }
+            },
+            "deleteSshKey": {
+              "title": "Löschen des SSH-Schlüssels bestätigen",
+              "content": "Bist du sicher, dass du **{name}** von deinem Account löschen möchtest?",
+              "toast": {
+                "removed": "SSH-Schlüssel entfernt."
+              }
+            }
+          }
+        },
+        "oauthLinks": {
+          "title": "OAuth-Verknüpfungen",
+          "button": {
+            "connect": "Verbinden",
+            "connectTo": "Mit {provider} verbinden"
+          },
+          "table": {
+            "columns": {
+              "providerName": "Anbieter Name",
+              "identifier": "Kennung (Identifier)"
+            }
+          },
+          "modal": {
+            "deleteOAuthLink": {
+              "title": "Löschen der OAuth-Verknüpfung bestätigen",
+              "content": "Bist du sicher, dass du die Verbindung zu **{provider}** von deinem Account löschen möchtest?",
+              "toast": {
+                "removed": "OAuth-Verknüpfung entfernt."
+              }
+            }
+          }
+        },
+        "apiKeys": {
+          "title": "API-Schlüssel",
+          "button": {
+            "apiDocumentation": "API Dokumentation"
+          },
+          "table": {
+            "columns": {
+              "key": "Schlüssel",
+              "permissions": "Benutzer / Server / Admin Berechtigungen",
+              "expires": "Läuft ab"
+            }
+          },
+          "modal": {
+            "createApiKey": {
+              "title": "API-Schlüssel erstellen",
+              "toast": {
+                "created": "API-Schlüssel erstellt."
+              }
+            },
+            "updateApiKey": {
+              "title": "API-Schlüssel aktualisieren",
+              "toast": {
+                "updated": "API-Schlüssel aktualisiert."
+              }
+            },
+            "deleteApiKey": {
+              "title": "Löschen des API-Schlüssels bestätigen",
+              "content": "Bist du sicher, dass du **{name}** von deinem Account löschen möchtest?",
+              "toast": {
+                "removed": "API-Schlüssel entfernt."
+              }
+            }
+          },
+          "form": {
+            "allowedIps": "Erlaubte IPs",
+            "allowedIpsPlaceholder": "z.B. 192.168.1.1, 2001:db8::1",
+            "userPermissions": "Benutzer-Berechtigungen",
+            "serverPermissions": "Server-Berechtigungen",
+            "adminPermissions": "Admin-Berechtigungen"
+          }
+        },
+        "activity": {
+          "title": "Aktivität"
+        }
+      },
+      "admin": {},
+      "server": {
+        "viewAdmin": {
+          "title": "Im Admin-Bereich ansehen"
+        },
+        "console": {
+          "title": "Konsole",
+          "input": {
+            "placeholder": "Gib einen Befehl ein...",
+            "ariaLabel": "Konsolenbefehl Eingabe."
+          },
+          "toast": {
+            "installCancelled": "Server-Installation abgebrochen."
+          },
+          "notification": {
+            "restoringBackup": "Dein Server stellt gerade ein Backup wieder her. Bitte warten...",
+            "installing": "Dein Server wird gerade installiert. Bitte warten..."
+          },
+          "message": {
+            "serverMarkedAs": "Server markiert als {state}...",
+            "transferFailed": "Übertragung fehlgeschlagen.",
+            "pullingImage": "Dein Server lädt gerade sein Docker-Image herunter. Bitte warten...",
+            "pulling": "Wird heruntergeladen",
+            "extracting": "Wird entpackt",
+            "layer": "Layer"
+          },
+          "tooltip": {
+            "search": "Suchen",
+            "commandHistory": "Befehlsverlauf",
+            "decreaseFontSize": "Schriftgröße verringern",
+            "increaseFontSize": "Schriftgröße erhöhen"
+          },
+          "drawer": {
+            "commandHistory": {
+              "title": "Befehlsverlauf",
+              "detailTitle": "Befehlsdetails",
+              "noCommands": "Keine Befehle gefunden.",
+              "copyButton": "Befehl kopieren",
+              "sendButton": "Befehl senden",
+              "commandSent": "Befehl erfolgreich gesendet."
+            }
+          },
+          "feature": {
+            "eula": {
+              "title": "Minecraft EULA Vereinbarung",
+              "content": "Der Minecraft-Server erfordert, dass du die [Minecraft End User License Agreement](https://minecraft.net/eula) akzeptierst, bevor er starten kann.",
+              "contentDetails": "Indem du auf \"EULA Akzeptieren\" klickst, stimmst du den Bedingungen der Minecraft EULA zu und die Datei **eula.txt** wird auf **eula=true** aktualisiert.",
+              "toast": {
+                "accepted": "EULA erfolgreich akzeptiert."
+              },
+              "button": {
+                "accept": "EULA Akzeptieren"
+              }
+            }
+          },
+          "details": {
+            "address": "Adresse",
+            "port": "Port",
+            "uptime": "Laufzeit",
+            "cpuLoad": "CPU-Last",
+            "memoryLoad": "RAM-Last",
+            "diskUsage": "Speichernutzung",
+            "networkIn": "Netzwerk (Eingehend)",
+            "networkOut": "Netzwerk (Ausgehend)",
+            "normalizeCpuLoad": "Normalisiere CPU-Last (skaliert auf max. 100%)"
+          },
+          "power": {
+            "start": "Starten",
+            "stop": "Stoppen",
+            "restart": "Neustarten",
+            "kill": "Killen",
+            "modal": {
+              "forceStop": {
+                "title": "Prozess gewaltsam stoppen",
+                "content": "Das gewaltsame Stoppen eines Servers kann zu Datenverlust führen."
+              }
+            }
+          },
+          "stats": {
+            "cpuLoad": "CPU-Last",
+            "memoryLoad": "RAM-Last",
+            "network": "Netzwerk",
+            "inbound": "Eingehend",
+            "outbound": "Ausgehend"
+          },
+          "socketConnected": "Verbunden ({ping}ms ping)",
+          "socketDisconnected": "Getrennt"
+        },
+        "files": {
+          "title": "Dateien",
+          "titleEditorViewing": "Betrachte {file}",
+          "titleEditorEditing": "Bearbeite {file}",
+          "titleEditorNew": "Neue Datei",
+          "table": {
+            "columns": {
+              "modified": "Geändert"
+            }
+          },
+          "button": {
+            "new": "Neu",
+            "sftpDetails": "SFTP-Details",
+            "openInNewWindow": "In neuem Fenster öffnen",
+            "rename": "Umbenennen",
+            "copy": "Kopieren",
+            "move": "Verschieben",
+            "permissions": "Berechtigungen",
+            "unarchive": "Entpacken",
+            "archive": "Archivieren",
+            "remoteCopy": "Remote-Kopie",
+            "search": "Suchen",
+            "exitBackup": "Backup verlassen",
+            "fileFromEditor": "Datei aus Editor",
+            "directory": "Verzeichnis",
+            "fileFromPull": "Datei aus Pull",
+            "fileFromUpload": "Datei aus Upload",
+            "directoryFromUpload": "Verzeichnis aus Upload"
+          },
+          "actionBar": {
+            "copyHere": "Kopiere {files} hierhin",
+            "moveHere": "Verschiebe {files} hierhin"
+          },
+          "searchBanner": {
+            "resultsTitle": "Suchergebnisse ({files} gefunden)",
+            "query": "Suchbegriff:",
+            "excluded": "Ausgeschlossen:",
+            "content": "Inhalt:",
+            "size": "Größe:",
+            "min": "Min:",
+            "max": "Max:"
+          },
+          "operations": {
+            "uploadingFolder": "Verzeichnis wird hochgeladen: {folder} ({current}/{total} Dateien)",
+            "waiting": "Warten: ",
+            "uploading": "Wird hochgeladen: ",
+            "compressing": "Komprimiere {files} von {path}",
+            "decompressing": "Entpacke {path}",
+            "pulling": "Lade {path} herunter",
+            "copying": "Kopiere {path} nach {destination}",
+            "copyingMany": "Kopiere {files}",
+            "receivingRemote": "Empfange {files} vom Remote-Server",
+            "sendingRemote": "Sende {files} an Remote-Server"
+          },
+          "settings": {
+            "clickOnce": "Klicke einmal auf eine Datei oder ein Verzeichnis, um es zu öffnen",
+            "editorMinimap": "Datei Minimap",
+            "editorLineOverflow": "Zeilenumbruch für lange Zeilen im Editor",
+            "imageViewerSmoothing": "Bildglättung (Anti-Aliasing)"
+          },
+          "toast": {
+            "operationCancelled": "Vorgang abgebrochen",
+            "copyingStarted": "Kopieren von {files} gestartet.",
+            "filesCouldNotBeMoved": "Dateien konnten nicht verschoben werden.",
+            "filesMoved": "{files} verschoben.",
+            "downloadStarted": "Download gestartet.",
+            "filesDeleted": "Dateien wurden gelöscht.",
+            "archiveCreationStarted": "Archiverstellung hat begonnen.",
+            "fileCopyingStarted": "Dateikopiervorgang hat begonnen.",
+            "fileInfoRetrieved": "Dateiinformationen erfolgreich abgerufen.",
+            "filePullingStarted": "Datei-Pull hat begonnen.",
+            "fileRenamed": "Datei wurde umbenannt.",
+            "fileCouldNotBeRenamed": "Datei konnte nicht umbenannt werden.",
+            "permissionsUpdated": "Berechtigungen wurden aktualisiert.",
+            "fileSaved": "Datei wurde gespeichert."
+          },
+          "modal": {
+            "activeUploads": {
+              "title": "Aktive Uploads",
+              "content": "Bist du sicher, dass du diese Seite verlassen möchtest? Du hast {files} aktive Datei-Uploads. Wenn du diese Seite verlässt, werden die Uploads abgebrochen.",
+              "button": {
+                "leave": "Seite verlassen"
+              }
+            },
+            "unsavedChanges": {
+              "title": "Ungespeicherte Änderungen",
+              "content": "Du hast ungespeicherte Änderungen im Editor. Bist du sicher, dass du diese Seite verlassen möchtest? Wenn du die Seite verlässt, gehen deine Änderungen verloren.",
+              "button": {
+                "leave": "Seite verlassen"
+              }
+            },
+            "createArchive": {
+              "title": "Archiv erstellen",
+              "form": {
+                "archiveName": "Archivname",
+                "format": "Format"
+              },
+              "createdAs": "Dieses Archiv wird erstellt als "
+            },
+            "createDirectory": {
+              "title": "Verzeichnis erstellen",
+              "form": {
+                "directoryName": "Verzeichnisname"
+              },
+              "createdAs": "Dieses Verzeichnis wird erstellt als "
+            },
+            "copyFile": {
+              "title": "Datei kopieren",
+              "form": {
+                "fileName": "Dateiname"
+              },
+              "createdAs": "Diese Datei wird erstellt als "
+            },
+            "copyRemote": {
+              "title": "Remote kopieren",
+              "form": {
+                "server": "Server",
+                "destination": "Ziel"
+              },
+              "createdAs": "Diese Dateien werden auf dem Remote-Server erstellt unter "
+            },
+            "deleteFile": {
+              "title": "Datei löschen",
+              "singleFileWarning": "Du wirst den Inhalt von {file} nach dem Löschen nicht mehr wiederherstellen können.",
+              "multipleFilesWarning": "Du wirst den Inhalt der folgenden Dateien nach dem Löschen nicht mehr wiederherstellen können."
+            },
+            "createFile": {
+              "title": "Datei erstellen",
+              "form": {
+                "fileName": "Dateiname"
+              }
+            },
+            "filePermissions": {
+              "title": "Dateiberechtigungen",
+              "symbolic": "Symbolisch:",
+              "octal": "Oktal:",
+              "owner": "Besitzer (Owner)",
+              "group": "Gruppe (Group)",
+              "other": "Andere (Other)",
+              "breakdown": "Berechtigungs-Aufschlüsselung",
+              "readPermission": "Leseberechtigung (4)",
+              "writePermission": "Schreibberechtigung (2)",
+              "executePermission": "Ausführungsberechtigung (1)"
+            },
+            "renameFile": {
+              "title": "Datei umbenennen",
+              "form": {
+                "fileName": "Dateiname"
+              }
+            },
+            "searchFiles": {
+              "title": "Dateien suchen",
+              "placeholder": "Suchen...",
+              "advancedFilters": "Erweiterte Filter",
+              "pathPatterns": "Pfadmuster",
+              "include": "Einschließen",
+              "exclude": "Ausschließen",
+              "caseInsensitive": "Groß-/Kleinschreibung ignorieren",
+              "fileContent": "Dateiinhalte",
+              "searchText": "Suchtext",
+              "maxFileSize": "Maximale Dateigröße",
+              "includeOversized": "Übergroße einschließen",
+              "includeOversizedDescription": "Schließt Dateien ein, die auf andere Filter passen, aber zu groß zum Durchsuchen sind",
+              "fileSize": "Dateigröße",
+              "minimum": "Minimum",
+              "maximum": "Maximum"
+            },
+            "pullFile": {
+              "title": "Datei herunterladen (Pull)",
+              "form": {
+                "fileUrl": "Datei-URL",
+                "query": "Suchanfrage",
+                "fileName": "Dateiname"
+              },
+              "createdAs": "Diese Datei wird erstellt als ",
+              "pull": "Herunterladen (Pull)"
+            },
+            "sftpDetails": {
+              "title": "SFTP-Details",
+              "form": {
+                "protocol": "Protokoll",
+                "port": "Port",
+                "host": "Host",
+                "username": "Benutzername",
+                "password": "Passwort",
+                "yourPassword": "Dein Control Panel Passwort"
+              },
+              "launch": "Starten"
+            }
+          }
+        },
+        "databases": {
+          "title": "Datenbanken",
+          "subtitle": "{current} von maximal {max} Datenbanken erstellt.",
+          "tooltip": {
+            "limitReached": "Dieser Server ist auf {max} Datenbanken limitiert."
+          },
+          "table": {
+            "columns": {
+              "type": "Typ",
+              "address": "Adresse",
+              "locked": "Gesperrt?"
+            }
+          },
+          "button": {
+            "details": "Details",
+            "rotatePassword": "Passwort rotieren"
+          },
+          "modal": {
+            "createDatabase": {
+              "title": "Datenbank erstellen",
+              "toast": {
+                "created": "Datenbank erstellt."
+              },
+              "form": {
+                "databaseName": "Datenbank Name",
+                "databaseHost": "Datenbank Host",
+                "noHostsFound": "Keine Hosts gefunden"
+              }
+            },
+            "editDatabase": {
+              "title": "Datenbank bearbeiten",
+              "toast": {
+                "updated": "Datenbank aktualisiert."
+              },
+              "form": {
+                "locked": "Gesperrt"
+              }
+            },
+            "databaseDetails": {
+              "title": "Datenbank-Verbindungsdetails",
+              "toast": {
+                "passwordRotated": "Passwort wurde rotiert."
+              },
+              "form": {
+                "jdbcConnectionString": "JDBC-Verbindungszeichenfolge"
+              }
+            },
+            "deleteDatabase": {
+              "title": "Löschen der Datenbank bestätigen",
+              "content": "Das Löschen einer Datenbank ist endgültig und kann nicht rückgängig gemacht werden. Dies wird die Datenbank **{name}** und alle zugehörigen Daten permanent löschen.",
+              "toast": {
+                "deleted": "Datenbank gelöscht."
+              }
+            }
+          }
+        },
+        "schedules": {
+          "title": "Zeitpläne"
+        },
+        "subusers": {
+          "title": "Subuser",
+          "table": {
+            "columns": {
+              "twoFactorEnabled": "2FA Aktiv",
+              "permissions": "Berechtigungen",
+              "ignoredFiles": "Ignorierte Dateien"
+            }
+          },
+          "modal": {
+            "createSubuser": {
+              "title": "Subuser erstellen",
+              "toast": {
+                "created": "Subuser erstellt."
+              },
+              "form": {
+                "email": "E-Mail",
+                "emailPlaceholder": "Gib die E-Mail ein, unter der dieser Subuser gespeichert werden soll.",
+                "permissions": "Berechtigungen",
+                "ignoredFiles": "Ignorierte Dateien"
+              }
+            },
+            "updateSubuser": {
+              "title": "Subuser aktualisieren",
+              "toast": {
+                "updated": "Subuser aktualisiert."
+              }
+            },
+            "removeSubuser": {
+              "title": "Entfernen des Subusers bestätigen",
+              "content": "Bist du sicher, dass du **{username}** von diesem Server entfernen möchtest?",
+              "toast": {
+                "removed": "Subuser entfernt."
+              }
+            }
+          }
+        },
+        "backups": {
+          "title": "Backups",
+          "subtitle": "{current} von maximal {max} Backups erstellt.",
+          "tooltip": {
+            "limitReached": "Dieser Server ist auf {max} Backups limitiert."
+          },
+          "table": {
+            "columns": {
+              "checksum": "Prüfsumme",
+              "files": "Dateien",
+              "locked": "Gesperrt?"
+            }
+          },
+          "button": {
+            "browse": "Durchsuchen",
+            "restore": "Wiederherstellen"
+          },
+          "toast": {
+            "downloadStarted": "Download gestartet.",
+            "restoringBackup": "Backup wird wiederhergestellt..."
+          },
+          "modal": {
+            "createBackup": {
+              "title": "Backup erstellen",
+              "toast": {
+                "created": "Backup erstellt."
+              },
+              "form": {
+                "ignoredFiles": "Ignorierte Dateien"
+              }
+            },
+            "editBackup": {
+              "title": "Backup bearbeiten",
+              "toast": {
+                "updated": "Backup aktualisiert."
+              },
+              "form": {
+                "locked": "Gesperrt"
+              }
+            },
+            "restoreBackup": {
+              "title": "Backup wiederherstellen"
+            },
+            "deleteBackup": {
+              "title": "Löschen des Backups bestätigen",
+              "content": "Bist du sicher, dass du **{name}** von diesem Server löschen möchtest?",
+              "toast": {
+                "deleted": "Backup gelöscht."
+              }
+            }
+          }
+        },
+        "network": {
+          "title": "Netzwerk",
+          "subtitle": "{current} von maximal {max} Allocations zugewiesen.",
+          "tooltip": {
+            "limitReached": "Dieser Server ist auf {max} Allocations limitiert.",
+            "primary": "Primär"
+          },
+          "table": {
+            "columns": {
+              "hostname": "Hostname",
+              "port": "Port",
+              "notes": "Notizen"
+            }
+          },
+          "button": {
+            "setPrimary": "Als Primär setzen",
+            "unsetPrimary": "Primär entfernen"
+          },
+          "toast": {
+            "created": "Allocation erstellt.",
+            "updated": "Allocation aktualisiert.",
+            "removed": "Allocation entfernt.",
+            "setPrimary": "Allocation als primär gesetzt.",
+            "unsetPrimary": "Allocation nicht mehr primär."
+          },
+          "modal": {
+            "editAllocation": {
+              "title": "Allocation bearbeiten",
+              "form": {
+                "notes": "Notizen"
+              }
+            },
+            "removeAllocation": {
+              "title": "Entfernen der Allocation bestätigen",
+              "content": "Bist du sicher, dass du **{allocation}** von diesem Server entfernen möchtest?"
+            }
+          }
+        },
+        "startup": {
+          "title": "Start",
+          "form": {
+            "startupCommand": "Startbefehl",
+            "dockerImage": "Docker Image"
+          },
+          "variables": "Variablen",
+          "dockerImageDescription": "Das Docker Image, das verwendet wird, um diesen Server auszuführen. Dies kann geändert werden, um ein anderes Image zu verwenden.",
+          "dockerImageDescriptionCustom": "Das Docker Image, das verwendet wird, um diesen Server auszuführen. Dies wurde von einem Administrator festgelegt und kann nicht geändert werden.",
+          "toast": {
+            "startupCommandUpdated": "Startbefehl aktualisiert.",
+            "dockerImageUpdated": "Docker Image aktualisiert.",
+            "variablesUpdated": "Variablen aktualisiert."
+          }
+        },
+        "settings": {
+          "title": "Einstellungen",
+          "rename": {
+            "title": "Server umbenennen",
+            "form": {
+              "serverName": "Server Name"
+            },
+            "toast": {
+              "renamed": "Server umbenannt."
+            }
+          },
+          "timezone": {
+            "title": "Zeitzone",
+            "form": {
+              "timezone": "Zeitzone",
+              "system": "System"
+            },
+            "toast": {
+              "updated": "Server-Zeitzone aktualisiert."
+            }
+          },
+          "autokill": {
+            "title": "Auto-Kill",
+            "form": {
+              "enabled": "Aktiviert",
+              "secondsUntilAutoKill": "Sekunden bis zum Auto-Kill"
+            },
+            "toast": {
+              "updated": "Server Auto-Kill aktualisiert."
+            }
+          },
+          "autostart": {
+            "title": "Auto-Start",
+            "form": {
+              "behavior": "Verhalten"
+            },
+            "toast": {
+              "updated": "Server Auto-Start Verhalten aktualisiert."
+            }
+          },
+          "reinstall": {
+            "title": "Server neu installieren",
+            "button": "Server neu installieren",
+            "content": "Die Neuinstallation deines Servers stoppt ihn und führt dann das Installationsskript erneut aus, das ihn ursprünglich eingerichtet hat. **Während dieses Vorgangs können einige Dateien gelöscht oder geändert werden. Bitte sichere deine Daten, bevor du fortfährst.**",
+            "modal": {
+              "title": "Server neu installieren",
+              "button": "Neu installieren",
+              "toast": {
+                "reinstalling": "Server wird neu installiert..."
+              }
+            }
+          }
+        },
+        "activity": {
+          "title": "Aktivität"
+        }
+      }
+    }
+  }
+}

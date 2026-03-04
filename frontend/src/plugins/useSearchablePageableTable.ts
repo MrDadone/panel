@@ -5,12 +5,20 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 interface UseSearchablePaginatedTableOptions<T> {
-  fetcher: (page: number, search: string) => Promise<ResponseMeta<T>>;
-  setStoreData: (data: ResponseMeta<T>) => void;
+  fetcher: (page: number, search: string) => Promise<Pagination<T>>;
+  setStoreData: (data: Pagination<T>) => void;
   deps?: unknown[];
   debounceMs?: number;
   initialPage?: number;
   modifyParams?: boolean;
+}
+
+function parseNumber(num: string | null): number | null {
+  if (!num) return null;
+
+  const parsed = parseInt(num);
+
+  return Number.isFinite(parsed) && parsed >= 1 ? parsed : null;
 }
 
 export function useSearchablePaginatedTable<T>({
@@ -26,7 +34,7 @@ export function useSearchablePaginatedTable<T>({
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(modifyParams ? searchParams.get('search') || '' : '');
-  const [page, setPage] = useState(modifyParams ? Number(searchParams.get('page')) || initialPage : initialPage);
+  const [page, setPage] = useState(modifyParams ? (parseNumber(searchParams.get('page')) ?? initialPage) : initialPage);
 
   useEffect(() => {
     if (modifyParams) {
@@ -39,14 +47,22 @@ export function useSearchablePaginatedTable<T>({
       setLoading(true);
       fetcher(p, s)
         .then((res) => {
-          setStoreData(res);
+          const totalPages = Math.ceil(res.total / res.perPage);
+
+          if (res.total === 0 && res.page !== 1) {
+            setPage(1);
+          } else if (p > totalPages && totalPages !== 0) {
+            setPage(totalPages);
+          } else {
+            setStoreData(res);
+          }
         })
         .catch((err) => {
           addToast(httpErrorToHuman(err), 'error');
         })
         .finally(() => setLoading(false));
     },
-    [addToast, setStoreData, ...deps],
+    [addToast, setStoreData, setPage, ...deps],
   );
 
   const debouncedSearch = useCallback(

@@ -1,8 +1,8 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.0/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.5/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
-    "includes": ["src/**", "!!**/dist"]
+    "includes": ["src/**", "extensions/*/src/**", "*.ts", "*.mts", "public/translations/*.json", "!!**/dist"]
   },
   "formatter": {
     "enabled": true,
@@ -16,7 +16,7 @@
     "bracketSpacing": true,
     "expand": "auto",
     "useEditorconfig": true,
-    "includes": ["**", "!**/public", "!**/node_modules"]
+    "includes": ["src/**", "extensions/*/src/**", "*.ts", "*.mts", "public/translations/*.json", "!**/node_modules"]
   },
   "linter": {
     "enabled": true,

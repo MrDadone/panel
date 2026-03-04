@@ -12,7 +12,7 @@ export default function AdminBackupConfigurationServers({
 }: {
   backupConfiguration: BackupConfiguration;
 }) {
-  const [backupConfigurationServers, setBackupConfigurationServers] = useState<ResponseMeta<AdminServer>>(
+  const [backupConfigurationServers, setBackupConfigurationServers] = useState<Pagination<AdminServer>>(
     getEmptyPaginationSet(),
   );
 

@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface OAuthLinksSlice {
-  oauthLinks: ResponseMeta<UserOAuthLink>;
+  oauthLinks: Pagination<UserOAuthLink>;
 
-  setOAuthLinks: (links: ResponseMeta<UserOAuthLink>) => void;
+  setOAuthLinks: (links: Pagination<UserOAuthLink>) => void;
   removeOAuthLink: (link: UserOAuthLink) => void;
 }
 

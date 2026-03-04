@@ -11,6 +11,7 @@ import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { permissionStringToNumber } from '@/lib/files.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
@@ -21,6 +22,7 @@ type PermissionKey = 'owner' | 'group' | 'other';
 type PermissionType = 'read' | 'write' | 'execute';
 
 export default function FilePermissionsModal({ file, opened, onClose }: Props) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
   const { server } = useServerStore();
   const { browsingWritableDirectory, browsingDirectory } = useFileManager();
@@ -135,7 +137,7 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
     })
       .then(() => {
         onClose();
-        addToast('Permissions have been updated.', 'success');
+        addToast(t('pages.server.files.toast.permissionsUpdated', {}), 'success');
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
@@ -144,11 +146,11 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
   };
 
   return (
-    <Modal title='File Permissions' onClose={onClose} opened={opened}>
+    <Modal title={t('pages.server.files.modal.filePermissions.title', {})} onClose={onClose} opened={opened} size='lg'>
       <Card>
         <div className='flex flex-row justify-between'>
           <Title order={3} c='white'>
-            Symbolic:
+            {t('pages.server.files.modal.filePermissions.symbolic', {})}
           </Title>
           <Badge variant='light' color='blue' size='xl' className='lowercase!'>
             {getPermissionString()}
@@ -156,7 +158,7 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
         </div>
         <div className='mt-2 flex flex-row justify-between'>
           <Title order={3} c='white'>
-            Octal:
+            {t('pages.server.files.modal.filePermissions.octal', {})}
           </Title>
           <Badge variant='light' color='green' size='xl'>
             {getOctalValue()}
@@ -165,34 +167,46 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
       </Card>
 
       <Group mt='md' grow>
-        <PermissionGroup title='Owner' category='owner' perms={permissions.owner} />
-        <PermissionGroup title='Group' category='group' perms={permissions.group} />
-        <PermissionGroup title='Other' category='other' perms={permissions.other} />
+        <PermissionGroup
+          title={t('pages.server.files.modal.filePermissions.owner', {})}
+          category='owner'
+          perms={permissions.owner}
+        />
+        <PermissionGroup
+          title={t('pages.server.files.modal.filePermissions.group', {})}
+          category='group'
+          perms={permissions.group}
+        />
+        <PermissionGroup
+          title={t('pages.server.files.modal.filePermissions.other', {})}
+          category='other'
+          perms={permissions.other}
+        />
       </Group>
 
       <Card mt='md'>
         <Title order={3} c='white'>
-          Permission Breakdown
+          {t('pages.server.files.modal.filePermissions.breakdown', {})}
         </Title>
         <div className='text-sm space-y-1'>
           <div>
-            <Code className='font-bold'>r</Code> - Read permission (4)
+            <Code className='font-bold'>r</Code> - {t('pages.server.files.modal.filePermissions.readPermission', {})}
           </div>
           <div>
-            <Code className='font-bold'>w</Code> - Write permission (2)
+            <Code className='font-bold'>w</Code> - {t('pages.server.files.modal.filePermissions.writePermission', {})}
           </div>
           <div>
-            <Code className='font-bold'>x</Code> - Execute permission (1)
+            <Code className='font-bold'>x</Code> - {t('pages.server.files.modal.filePermissions.executePermission', {})}
           </div>
         </div>
       </Card>
 
       <ModalFooter>
         <Button onClick={doChmod} loading={loading} disabled={!browsingWritableDirectory}>
-          Save
+          {t('common.button.save', {})}
         </Button>
         <Button variant='default' onClick={onClose}>
-          Close
+          {t('common.button.close', {})}
         </Button>
       </ModalFooter>
     </Modal>

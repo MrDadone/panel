@@ -3,9 +3,9 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface BackupConfigurationsSlice {
-  backupConfigurations: ResponseMeta<BackupConfiguration>;
+  backupConfigurations: Pagination<BackupConfiguration>;
 
-  setBackupConfigurations: (backupConfigurations: ResponseMeta<BackupConfiguration>) => void;
+  setBackupConfigurations: (backupConfigurations: Pagination<BackupConfiguration>) => void;
   addBackupConfiguration: (backupConfigurations: BackupConfiguration) => void;
   removeBackupConfiguration: (backupConfigurations: BackupConfiguration) => void;
 }

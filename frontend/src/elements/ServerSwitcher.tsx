@@ -5,7 +5,6 @@ import Select from '@/elements/input/Select.tsx';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useServerStore } from '@/stores/server.ts';
-import { useUserStore } from '@/stores/user.ts';
 
 const getStatusColor = (powerState?: ServerPowerState, status?: ServerStatus | null, suspended?: boolean) => {
   if (suspended) return 'bg-server-status-offline';
@@ -24,16 +23,27 @@ const getStatusColor = (powerState?: ServerPowerState, status?: ServerStatus | n
   }
 };
 
+function ServerSwitcherOption({ server }: { server: Server }) {
+  const stats = useServerStats(server);
+
+  return (
+    <div className='flex items-center gap-2'>
+      <span
+        className={`w-2 h-2 rounded-full shrink-0 ${getStatusColor(stats?.state, server.status, server.suspended)}`}
+      />
+      <span className='truncate'>{server.name}</span>
+    </div>
+  );
+}
+
 export default function ServerSwitcher({ className }: { className?: string }) {
   const currentServer = useServerStore((state) => state.server);
-  const { getServerResourceUsage } = useUserStore();
   const location = useLocation();
   const navigate = useNavigate();
 
   const servers = useSearchableResource<Server>({
     fetcher: (search) => getServers(1, search),
   });
-  const loadingStats = useServerStats(servers.items);
 
   const otherServers = servers.items.filter((s) => s.uuid !== currentServer?.uuid);
 
@@ -41,16 +51,7 @@ export default function ServerSwitcher({ className }: { className?: string }) {
     const server = otherServers.find((s) => s.uuid === option.value);
     if (!server) return option.label;
 
-    const stats = loadingStats ? null : getServerResourceUsage(server.uuid, server.nodeUuid);
-
-    return (
-      <div className='flex items-center gap-2'>
-        <span
-          className={`w-2 h-2 rounded-full shrink-0 ${getStatusColor(stats?.state, server.status, server.suspended)}`}
-        />
-        <span className='truncate'>{server.name}</span>
-      </div>
-    );
+    return <ServerSwitcherOption server={server} />;
   };
 
   const handleChange = (value: string | null) => {
@@ -63,7 +64,7 @@ export default function ServerSwitcher({ className }: { className?: string }) {
   return (
     <Select
       className={className}
-      placeholder={currentServer?.name || 'Switch server...'}
+      placeholder={currentServer?.name}
       data={otherServers.map((server) => ({
         label: server.name,
         value: server.uuid,

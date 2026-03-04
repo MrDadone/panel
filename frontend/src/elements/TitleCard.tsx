@@ -1,17 +1,30 @@
 import { Box, Group, Title } from '@mantine/core';
+import classNames from 'classnames';
+import type { ReactNode } from 'react';
 import Card from './Card.tsx';
+
+export interface TitleCardProps {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+  titleClassName?: string;
+  childrenClassName?: string;
+
+  leftSection?: ReactNode;
+  rightSection?: ReactNode;
+}
 
 export default function TitleCard({
   title,
   icon,
   children,
   className,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  className?: string;
-}) {
+  titleClassName,
+  childrenClassName,
+  leftSection,
+  rightSection,
+}: TitleCardProps) {
   return (
     <Card withBorder radius='md' p={0} bg='dark.7' className={className}>
       <Box
@@ -22,7 +35,8 @@ export default function TitleCard({
           background: 'var(--mantine-color-dark-6)',
         }}
       >
-        <Group gap='sm'>
+        <Group gap='sm' className={titleClassName}>
+          {leftSection}
           <Box
             style={{
               width: 28,
@@ -39,9 +53,10 @@ export default function TitleCard({
           <Title order={5} c='gray.2' fw={600}>
             {title}
           </Title>
+          {rightSection}
         </Group>
       </Box>
-      <div className='p-4'>{children}</div>
+      <div className={classNames('p-4', childrenClassName)}>{children}</div>
     </Card>
   );
 }

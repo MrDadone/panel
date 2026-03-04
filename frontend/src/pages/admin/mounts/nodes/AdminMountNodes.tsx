@@ -8,7 +8,7 @@ import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTabl
 import NodeRow from '../../nodes/NodeRow.tsx';
 
 export default function AdminMountNodes({ mount }: { mount: Mount }) {
-  const [mountNodes, setMountNodes] = useState<ResponseMeta<AndCreated<{ node: Node }>>>(getEmptyPaginationSet());
+  const [mountNodes, setMountNodes] = useState<Pagination<AndCreated<{ node: Node }>>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getMountNodes(mount.uuid, page, search),

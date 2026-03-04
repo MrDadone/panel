@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (page: number, search?: string): Promise<ResponseMeta<Role>> => {
+export default async (page: number, search?: string): Promise<Pagination<Role>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get('/api/admin/roles', {

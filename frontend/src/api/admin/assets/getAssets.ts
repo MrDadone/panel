@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (page: number): Promise<ResponseMeta<StorageAsset>> => {
+export default async (page: number): Promise<Pagination<StorageAsset>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get('/api/admin/assets', {

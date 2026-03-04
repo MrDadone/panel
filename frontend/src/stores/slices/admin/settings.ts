@@ -2,7 +2,10 @@ import { StateCreator } from 'zustand';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface SettingsSlice extends AdminSettings {
+  latestVersions: Record<'panel' | 'wings' | 'fusequota', string> | null;
+
   setSettings: (settings: AdminSettings) => void;
+  setLatestVersions: (versions: Record<'panel' | 'wings' | 'fusequota', string>) => void;
 }
 
 export const createSettingsSlice: StateCreator<AdminStore, [], [], SettingsSlice> = (set): SettingsSlice => ({
@@ -47,6 +50,8 @@ export const createSettingsSlice: StateCreator<AdminStore, [], [], SettingsSlice
     serverLogScheduleActivity: true,
   },
 
+  latestVersions: null,
+
   setSettings: (value) =>
     set((state) => {
       state.storageDriver = value.storageDriver;
@@ -58,4 +63,5 @@ export const createSettingsSlice: StateCreator<AdminStore, [], [], SettingsSlice
       state.activity = value.activity;
       return state;
     }),
+  setLatestVersions: (value) => set((state) => ({ ...state, latestVersions: value })),
 });

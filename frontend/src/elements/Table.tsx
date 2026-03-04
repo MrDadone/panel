@@ -53,7 +53,7 @@ export const TableData = forwardRef<HTMLTableCellElement, TableTdProps>(({ class
 });
 
 interface PaginationProps<T> {
-  data: ResponseMeta<T>;
+  data: Pagination<T>;
   onPageSelect: (page: number) => void;
 }
 
@@ -134,7 +134,7 @@ export const NoItems = () => {
 interface TableProps {
   columns: string[];
   loading?: boolean;
-  pagination?: ResponseMeta<unknown>;
+  pagination?: Pagination<unknown>;
   onPageSelect?: (page: number) => void;
   allowSelect?: boolean;
   children: ReactNode;
@@ -154,7 +154,7 @@ export default ({ columns, loading, pagination, onPageSelect, allowSelect = true
       >
         <TableHead>
           {columns.map((column, index) => (
-            <TableHeader name={column} key={`column-${index}`} />
+            <TableHeader key={`column-${index}`} name={column} />
           ))}
         </TableHead>
         <Table.Tbody>

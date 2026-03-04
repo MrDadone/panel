@@ -4,7 +4,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 interface UseSearchableResourceOptions<T> {
-  fetcher: (search: string) => Promise<ResponseMeta<T>>;
+  fetcher: (search: string) => Promise<Pagination<T>>;
   defaultSearchValue?: string;
   deps?: unknown[];
   debounceMs?: number;

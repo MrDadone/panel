@@ -1,6 +1,7 @@
 import { faReply } from '@fortawesome/free-solid-svg-icons';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { NavLink, Route, Routes } from 'react-router';
+import getLatest from '@/api/admin/system/getLatest.ts';
 import { AdminCan } from '@/elements/Can.tsx';
 import Container from '@/elements/Container.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
@@ -9,10 +10,16 @@ import { to } from '@/lib/routes.ts';
 import NotFound from '@/pages/NotFound.tsx';
 import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import adminRoutes from '@/routers/routes/adminRoutes.ts';
+import { useAdminStore } from '@/stores/admin.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 
 export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
   const { settings } = useGlobalStore();
+  const { setLatestVersions } = useAdminStore();
+
+  useEffect(() => {
+    getLatest().then(setLatestVersions);
+  }, []);
 
   return (
     <div className='lg:flex h-full'>

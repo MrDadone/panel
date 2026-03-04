@@ -32,7 +32,7 @@ export default function CommandHistoryDrawer({ opened, onClose, ...props }: Draw
   const state = useServerStore((state) => state.state);
   const socketInstance = useServerStore((state) => state.socketInstance);
 
-  const [activities, setActivities] = useState<ResponseMeta<ServerActivity>>(getEmptyPaginationSet());
+  const [activities, setActivities] = useState<Pagination<ServerActivity>>(getEmptyPaginationSet());
   const [selectedCommand, setSelectedCommand] = useState<CommandDetail | null>(null);
 
   const { loading, setPage } = useSearchablePaginatedTable({

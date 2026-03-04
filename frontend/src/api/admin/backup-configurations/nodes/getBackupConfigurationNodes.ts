@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (backupConfigUuid: string, page: number, search?: string): Promise<ResponseMeta<Node>> => {
+export default async (backupConfigUuid: string, page: number, search?: string): Promise<Pagination<Node>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/backup-configurations/${backupConfigUuid}/nodes`, {
