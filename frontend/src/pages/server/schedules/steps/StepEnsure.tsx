@@ -1,18 +1,15 @@
 import { Stack } from '@mantine/core';
+import { UseFormReturnType } from '@mantine/form';
+import { z } from 'zod';
+import { serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleConditionBuilder from '../ScheduleConditionBuilder.tsx';
 
-export default function StepEnsure({
-  action,
-  setAction,
-}: {
-  action: ScheduleActionEnsure;
-  setAction: (action: ScheduleActionEnsure) => void;
-}) {
+export default function StepEnsure({ form }: { form: UseFormReturnType<z.infer<typeof serverScheduleStepSchema>> }) {
   return (
     <Stack>
       <ScheduleConditionBuilder
-        condition={action.condition}
-        onChange={(condition) => setAction({ ...action, condition })}
+        condition={form.getInputProps('action.condition').value}
+        onChange={(condition) => form.setFieldValue('action.condition', condition)}
       />
     </Stack>
   );

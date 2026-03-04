@@ -1,15 +1,17 @@
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group, Select, Stack, Text } from '@mantine/core';
+import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import { scheduleConditionLabelMapping } from '@/lib/enums.ts';
+import { serverSchedulePreConditionSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from './ScheduleDynamicParameterInput.tsx';
 
 const maxConditionDepth = 3;
 
 interface ConditionBuilderProps {
-  condition: ScheduleCondition;
-  onChange: (condition: ScheduleCondition) => void;
+  condition: z.infer<typeof serverSchedulePreConditionSchema>;
+  onChange: (condition: z.infer<typeof serverSchedulePreConditionSchema>) => void;
   depth?: number;
 }
 
@@ -26,7 +28,7 @@ export default function ScheduleConditionBuilder({ condition, onChange, depth = 
         onChange({ type: 'or', conditions: [] });
         break;
       case 'not':
-        onChange({ type: 'not', condition: { type: 'none' } });
+        onChange({ type: 'not', conditions: [] });
         break;
       case 'variable_exists':
         onChange({ type: 'variable_exists', variable: { variable: '' } });
@@ -46,7 +48,10 @@ export default function ScheduleConditionBuilder({ condition, onChange, depth = 
     }
   };
 
-  const handleNestedConditionChange = (index: number, newCondition: ScheduleCondition) => {
+  const handleNestedConditionChange = (
+    index: number,
+    newCondition: z.infer<typeof serverSchedulePreConditionSchema>,
+  ) => {
     if (condition.type === 'and' || condition.type === 'or') {
       const newConditions = [...condition.conditions];
       newConditions[index] = newCondition;
@@ -167,8 +172,8 @@ export default function ScheduleConditionBuilder({ condition, onChange, depth = 
 
             <div style={{ flex: 1 }}>
               <ScheduleConditionBuilder
-                condition={condition.condition}
-                onChange={(nestedCondition) => onChange({ ...condition, condition: nestedCondition })}
+                condition={condition}
+                onChange={(nestedCondition) => onChange(nestedCondition)}
                 depth={depth + 1}
               />
             </div>

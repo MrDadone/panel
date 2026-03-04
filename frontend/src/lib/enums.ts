@@ -42,6 +42,8 @@ import {
   faUserSecret,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
+import { z } from 'zod';
+import { serverScheduleStepActionSchema } from '@/lib/schemas/server/schedules.ts';
 
 export const captchaProviderTypeLabelMapping: Record<CaptchaProvider['type'], string> = {
   none: 'None',
@@ -199,7 +201,10 @@ export const scheduleStepLabelMapping: Record<ScheduleAction['type'], string> = 
   update_startup_docker_image: 'Update Docker Image',
 };
 
-export const scheduleStepDefaultMapping: Record<ScheduleAction['type'], ScheduleAction> = {
+export const scheduleStepDefaultMapping: Record<
+  z.infer<typeof serverScheduleStepActionSchema>['type'],
+  z.infer<typeof serverScheduleStepActionSchema>
+> = {
   sleep: {
     type: 'sleep',
     duration: 0,
@@ -259,7 +264,7 @@ export const scheduleStepDefaultMapping: Record<ScheduleAction['type'], Schedule
   copy_file: {
     type: 'copy_file',
     ignoreFailure: false,
-    foreground: false,
+    append: false,
     file: '/source.txt',
     destination: '/destination.txt',
   },

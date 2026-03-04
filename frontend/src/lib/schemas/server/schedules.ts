@@ -1,6 +1,12 @@
 import { ZodType, z } from 'zod';
 import { archiveFormatLabelMapping } from '@/lib/enums.ts';
 
+export const serverScheduleStepVariableSchema = z.object({
+  variable: z.string(),
+});
+
+export const serverScheduleStepDynamicSchema = z.union([z.string(), serverScheduleStepVariableSchema]);
+
 export const serverScheduleComparator = z.enum([
   'smaller_than',
   'smaller_than_or_equals',
@@ -90,6 +96,35 @@ export const serverSchedulePreConditionFileExistsSchema = z.object({
   file: z.string(),
 });
 
+export const serverSechdulePreConditionVariableExists = z.object({
+  type: z.literal('variable_exists'),
+  variable: serverScheduleStepVariableSchema,
+});
+
+export const serverSechdulePreConditionVariableEquals = z.object({
+  type: z.literal('variable_equals'),
+  variable: serverScheduleStepVariableSchema,
+  equals: serverScheduleStepDynamicSchema,
+});
+
+export const serverSechdulePreConditionVariableContains = z.object({
+  type: z.literal('variable_contains'),
+  variable: serverScheduleStepVariableSchema,
+  contains: serverScheduleStepDynamicSchema,
+});
+
+export const serverSechdulePreConditionVariableStartsWith = z.object({
+  type: z.literal('variable_starts_with'),
+  variable: serverScheduleStepVariableSchema,
+  startsWith: serverScheduleStepDynamicSchema,
+});
+
+export const serverSechdulePreConditionVariableEndsWith = z.object({
+  type: z.literal('variable_ends_with'),
+  variable: serverScheduleStepVariableSchema,
+  endsWith: serverScheduleStepDynamicSchema,
+});
+
 export type ServerSchedulePreCondition =
   | z.infer<typeof serverSchedulePreConditionNoneSchema>
   | {
@@ -101,7 +136,12 @@ export type ServerSchedulePreCondition =
   | z.infer<typeof serverSchedulePreConditionCpuUsageSchema>
   | z.infer<typeof serverSchedulePreConditionMemoryUsageSchema>
   | z.infer<typeof serverSchedulePreConditionDiskUsageSchema>
-  | z.infer<typeof serverSchedulePreConditionFileExistsSchema>;
+  | z.infer<typeof serverSchedulePreConditionFileExistsSchema>
+  | z.infer<typeof serverSechdulePreConditionVariableExists>
+  | z.infer<typeof serverSechdulePreConditionVariableEquals>
+  | z.infer<typeof serverSechdulePreConditionVariableContains>
+  | z.infer<typeof serverSechdulePreConditionVariableStartsWith>
+  | z.infer<typeof serverSechdulePreConditionVariableEndsWith>;
 
 export const serverSchedulePreConditionSchema: ZodType<ServerSchedulePreCondition> = z.lazy(() =>
   z.discriminatedUnion('type', [
@@ -126,6 +166,11 @@ export const serverSchedulePreConditionSchema: ZodType<ServerSchedulePreConditio
     serverSchedulePreConditionMemoryUsageSchema,
     serverSchedulePreConditionDiskUsageSchema,
     serverSchedulePreConditionFileExistsSchema,
+    serverSechdulePreConditionVariableExists,
+    serverSechdulePreConditionVariableEquals,
+    serverSechdulePreConditionVariableContains,
+    serverSechdulePreConditionVariableStartsWith,
+    serverSechdulePreConditionVariableEndsWith,
   ]),
 );
 
@@ -142,12 +187,6 @@ export const serverScheduleUpdateSchema = z.object({
   triggers: z.array(serverScheduleTriggerSchema).optional(),
   condition: serverSchedulePreConditionSchema.optional(),
 });
-
-export const serverScheduleStepVariableSchema = z.object({
-  variable: z.string(),
-});
-
-export const serverScheduleStepDynamicSchema = z.union([z.string(), serverScheduleStepVariableSchema]);
 
 export const serverScheduleStepSleepSchema = z.object({
   type: z.literal('sleep'),
@@ -216,7 +255,7 @@ export const serverScheduleStepWriteFileSchema = z.object({
 });
 
 export const serverScheduleStepCopyFileSchema = z.object({
-  type: z.literal('write_file'),
+  type: z.literal('copy_file'),
   ignoreFailure: z.boolean(),
   append: z.boolean(),
   file: serverScheduleStepDynamicSchema,
@@ -266,7 +305,7 @@ export const serverScheduleStepUpdateStartupVariableSchema = z.object({
 });
 
 export const serverScheduleStepUpdateStartupCommandSchema = z.object({
-  type: z.literal('update_startup_variable'),
+  type: z.literal('update_startup_command'),
   ignoreFailure: z.boolean(),
   command: serverScheduleStepDynamicSchema,
 });
