@@ -852,10 +852,10 @@ pub struct CreateUserOptions {
     pub admin: bool,
 
     #[validate(
-        length(min = 5, max = 15),
+        length(min = 2, max = 15),
         custom(function = "crate::validate_language")
     )]
-    #[schema(min_length = 5, max_length = 15)]
+    #[schema(min_length = 2, max_length = 15)]
     pub language: compact_str::CompactString,
 }
 
@@ -956,10 +956,10 @@ pub struct UpdateUserOptions {
     pub admin: Option<bool>,
 
     #[validate(
-        length(min = 5, max = 15),
+        length(min = 2, max = 15),
         custom(function = "crate::validate_language")
     )]
-    #[schema(min_length = 5, max_length = 15)]
+    #[schema(min_length = 2, max_length = 15)]
     pub language: Option<compact_str::CompactString>,
 }
 

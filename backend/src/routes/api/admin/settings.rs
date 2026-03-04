@@ -51,7 +51,7 @@ mod put {
         #[validate(url)]
         url: Option<compact_str::CompactString>,
         #[validate(
-            length(min = 5, max = 15),
+            length(min = 2, max = 15),
             custom(function = "shared::validate_language")
         )]
         language: Option<compact_str::CompactString>,
