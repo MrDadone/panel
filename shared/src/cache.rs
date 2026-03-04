@@ -47,7 +47,9 @@ pub struct Cache {
     pub client: Arc<Client>,
     use_internal_cache: bool,
     local: moka::future::Cache<compact_str::CompactString, DataEntry>,
+    local_task: tokio::task::JoinHandle<()>,
     local_locks: moka::future::Cache<compact_str::CompactString, LockEntry>,
+    local_locks_task: tokio::task::JoinHandle<()>,
 
     cache_calls: AtomicU64,
     cache_latency_ns_total: AtomicU64,
@@ -80,13 +82,37 @@ impl Cache {
             .expire_after(DataExpiry)
             .build();
 
+        let local_task = tokio::spawn({
+            let local = local.clone();
+
+            async move {
+                loop {
+                    tokio::time::sleep(Duration::from_secs(10)).await;
+                    local.run_pending_tasks().await;
+                }
+            }
+        });
+
         let local_locks = moka::future::Cache::builder().max_capacity(4096).build();
+
+        let local_locks_task = tokio::spawn({
+            let local_locks = local_locks.clone();
+
+            async move {
+                loop {
+                    tokio::time::sleep(Duration::from_secs(10)).await;
+                    local_locks.run_pending_tasks().await;
+                }
+            }
+        });
 
         let instance = Arc::new(Self {
             client,
             use_internal_cache: env.app_use_internal_cache,
             local,
+            local_task,
             local_locks,
+            local_locks_task,
             cache_calls: AtomicU64::new(0),
             cache_latency_ns_total: AtomicU64::new(0),
             cache_latency_ns_max: AtomicU64::new(0),
@@ -362,6 +388,13 @@ impl Cache {
         } else {
             self.cache_latency_ns_total.load(Ordering::Relaxed) / calls
         }
+    }
+}
+
+impl Drop for Cache {
+    fn drop(&mut self) {
+        self.local_task.abort();
+        self.local_locks_task.abort();
     }
 }
 
