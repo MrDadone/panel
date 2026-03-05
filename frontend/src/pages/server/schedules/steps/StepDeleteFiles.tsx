@@ -2,13 +2,13 @@ import { Stack } from '@mantine/core';
 import { UseFormReturnType } from '@mantine/form';
 import { z } from 'zod';
 import TagsInput from '@/elements/input/TagsInput.tsx';
-import { serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 export default function StepDeleteFiles({
   form,
 }: {
-  form: UseFormReturnType<z.infer<typeof serverScheduleStepSchema>>;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <Stack>

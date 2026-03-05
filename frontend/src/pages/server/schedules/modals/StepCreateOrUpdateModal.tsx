@@ -12,7 +12,11 @@ import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { scheduleStepDefaultMapping, scheduleStepLabelMapping } from '@/lib/enums.ts';
-import { serverScheduleStepActionSchema, serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
+import {
+  serverScheduleSchema,
+  serverScheduleStepSchema,
+  serverScheduleStepUpdateSchema,
+} from '@/lib/schemas/server/schedules.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import StepCompressFiles from '../steps/StepCompressFiles.tsx';
@@ -35,8 +39,8 @@ import StepWaitForConsoleLine from '../steps/StepWaitForConsoleLine.tsx';
 import StepWriteFile from '../steps/StepWriteFile.tsx';
 
 type Props = ModalProps & {
-  schedule: ServerSchedule;
-  propStep?: ScheduleStep;
+  schedule: z.infer<typeof serverScheduleSchema>;
+  propStep?: z.infer<typeof serverScheduleStepSchema>;
   nextStepOrder?: number;
   onStepCreate?: (step: z.infer<typeof serverScheduleStepSchema>) => void;
   onStepUpdate?: (step: z.infer<typeof serverScheduleStepSchema>) => void;
@@ -56,7 +60,7 @@ export default function StepCreateOrUpdateModal({
 
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof serverScheduleStepSchema>>({
+  const form = useForm<z.infer<typeof serverScheduleStepUpdateSchema>>({
     initialValues: {
       order: nextStepOrder ?? 1,
       action: scheduleStepDefaultMapping.sleep,
@@ -69,7 +73,7 @@ export default function StepCreateOrUpdateModal({
     if (propStep) {
       form.setValues({
         order: propStep.order,
-        action: propStep.action as unknown as z.infer<typeof serverScheduleStepActionSchema>,
+        action: propStep.action,
       });
     }
   }, [propStep]);
@@ -93,7 +97,7 @@ export default function StepCreateOrUpdateModal({
         .then((step) => {
           onClose();
           addToast('Schedule step created.', 'success');
-          onStepCreate?.(form.values);
+          onStepCreate?.(step);
         })
         .catch((msg) => {
           addToast(httpErrorToHuman(msg), 'error');

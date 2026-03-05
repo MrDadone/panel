@@ -3,13 +3,13 @@ import { UseFormReturnType } from '@mantine/form';
 import { z } from 'zod';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
-import { serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import { useServerStore } from '@/stores/server.ts';
 
 export default function StepUpdateStartupDockerImage({
   form,
 }: {
-  form: UseFormReturnType<z.infer<typeof serverScheduleStepSchema>>;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   const server = useServerStore((state) => state.server);
 

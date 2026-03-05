@@ -2,6 +2,7 @@ import { faFileDownload, faPlay, faPlayCircle, faShareAlt, faTrash } from '@fort
 import jsYaml from 'js-yaml';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteSchedule from '@/api/server/schedules/deleteSchedule.ts';
 import exportSchedule from '@/api/server/schedules/exportSchedule.ts';
@@ -12,12 +13,13 @@ import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { serverScheduleSchema } from '@/lib/schemas/server/schedules.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
-export default function ScheduleRow({ schedule }: { schedule: ServerSchedule }) {
+export default function ScheduleRow({ schedule }: { schedule: z.infer<typeof serverScheduleSchema> }) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const navigate = useNavigate();

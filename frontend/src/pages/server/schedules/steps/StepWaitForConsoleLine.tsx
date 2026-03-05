@@ -3,13 +3,13 @@ import { UseFormReturnType } from '@mantine/form';
 import { z } from 'zod';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
-import { serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 export default function StepWaitForConsoleLine({
   form,
 }: {
-  form: UseFormReturnType<z.infer<typeof serverScheduleStepSchema>>;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <Stack>

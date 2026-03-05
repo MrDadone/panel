@@ -2,13 +2,13 @@ import { Stack } from '@mantine/core';
 import { UseFormReturnType } from '@mantine/form';
 import { z } from 'zod';
 import Switch from '@/elements/input/Switch.tsx';
-import { serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 export default function StepCreateDirectory({
   form,
 }: {
-  form: UseFormReturnType<z.infer<typeof serverScheduleStepSchema>>;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <Stack>

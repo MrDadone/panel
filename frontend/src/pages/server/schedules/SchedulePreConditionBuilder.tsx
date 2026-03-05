@@ -1,6 +1,7 @@
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group, Select, Stack, Text } from '@mantine/core';
+import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import SizeInput from '@/elements/input/SizeInput.tsx';
@@ -10,12 +11,13 @@ import {
   schedulePreConditionLabelMapping,
   serverPowerStateLabelMapping,
 } from '@/lib/enums.ts';
+import { serverSchedulePreConditionSchema } from '@/lib/schemas/server/schedules.ts';
 
 const maxConditionDepth = 3;
 
 interface PreConditionBuilderProps {
-  condition: SchedulePreCondition;
-  onChange: (condition: SchedulePreCondition) => void;
+  condition: z.infer<typeof serverSchedulePreConditionSchema>;
+  onChange: (condition: z.infer<typeof serverSchedulePreConditionSchema>) => void;
   depth?: number;
 }
 

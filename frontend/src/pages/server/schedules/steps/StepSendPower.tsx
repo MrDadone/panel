@@ -4,9 +4,13 @@ import { z } from 'zod';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import { serverPowerActionLabelMapping } from '@/lib/enums.ts';
-import { serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 
-export default function StepSendPower({ form }: { form: UseFormReturnType<z.infer<typeof serverScheduleStepSchema>> }) {
+export default function StepSendPower({
+  form,
+}: {
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
+}) {
   return (
     <Stack>
       <Select

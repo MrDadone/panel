@@ -3,13 +3,13 @@ import { UseFormReturnType } from '@mantine/form';
 import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import { serverScheduleStepRenameFilesSchema, serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverScheduleStepRenameFilesSchema, serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 export default function StepRenameFiles({
   form,
 }: {
-  form: UseFormReturnType<z.infer<typeof serverScheduleStepSchema>>;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <Stack>

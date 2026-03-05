@@ -5,7 +5,11 @@ import { z } from 'zod';
 import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { serverBackupStatusLabelMapping, serverPowerStateLabelMapping } from '@/lib/enums.ts';
-import { serverScheduleSchema } from '@/lib/schemas/server/schedules.ts';
+import {
+  serverScheduleSchema,
+  serverScheduleTriggerSchema,
+  serverScheduleUpdateSchema
+} from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 const CRON_SEGMENTS = ['Second', 'Minute', 'Hour', 'Day', 'Month', 'Weekday'] as const;
@@ -57,7 +61,7 @@ function CrontabEditor({ value, setValue }: CrontabEditorProps) {
 }
 
 interface TriggerFormProps {
-  form: UseFormReturnType<z.infer<typeof serverScheduleSchema>>;
+  form: UseFormReturnType<z.infer<typeof serverScheduleUpdateSchema>>;
   index: number;
 }
 
@@ -166,7 +170,9 @@ function ConsoleLineOutputForm({ form, index }: TriggerFormProps) {
   );
 }
 
-const TRIGGER_INLINE_FORMS: Record<ScheduleTrigger['type'], React.FC<TriggerFormProps> | null> = {
+type ServerScheduleTriggerType = z.infer<typeof serverScheduleTriggerSchema>['type'];
+
+const TRIGGER_INLINE_FORMS: Record<ServerScheduleTriggerType, React.FC<TriggerFormProps> | null> = {
   cron: CronTriggerForm,
   power_action: PowerActionTriggerForm,
   server_state: ServerStateTriggerForm,
@@ -175,7 +181,7 @@ const TRIGGER_INLINE_FORMS: Record<ScheduleTrigger['type'], React.FC<TriggerForm
   crash: null,
 };
 
-const TRIGGER_EXTRA_FORMS: Record<ScheduleTrigger['type'], React.FC<TriggerFormProps> | null> = {
+const TRIGGER_EXTRA_FORMS: Record<ServerScheduleTriggerType, React.FC<TriggerFormProps> | null> = {
   cron: null,
   power_action: null,
   server_state: null,

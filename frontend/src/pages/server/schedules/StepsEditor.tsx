@@ -2,23 +2,25 @@ import { faGear, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Paper, Stack, Text, ThemeIcon, Title } from '@mantine/core';
 import { memo, startTransition, useCallback, useMemo, useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updateScheduleStepsOrder from '@/api/server/schedules/steps/updateScheduleStepsOrder.ts';
 import Button from '@/elements/Button.tsx';
 import { DndContainer, DndItem, SortableItem } from '@/elements/DragAndDrop.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import { serverScheduleSchema, serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import StepCreateOrUpdateModal from './modals/StepCreateOrUpdateModal.tsx';
 import StepCard from './StepCard.tsx';
 
-interface DndScheduleStep extends ScheduleStep, DndItem {
+interface DndScheduleStep extends z.infer<typeof serverScheduleStepSchema>, DndItem {
   id: string;
 }
 
 const MemoizedStepCard = memo(StepCard);
 
-export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) {
+export default function StepsEditor({ schedule }: { schedule: z.infer<typeof serverScheduleSchema> }) {
   const { server, scheduleSteps, setScheduleSteps } = useServerStore();
   const { addToast } = useToast();
 
@@ -33,7 +35,7 @@ export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) 
   );
 
   const handleStepUpdate = useCallback(
-    (updatedStep: ScheduleStep) => {
+    (updatedStep: z.infer<typeof serverScheduleStepSchema>) => {
       setScheduleSteps(scheduleSteps.map((s) => (s.uuid === updatedStep.uuid ? updatedStep : s)));
     },
     [scheduleSteps, setScheduleSteps],
@@ -47,7 +49,7 @@ export default function StepsEditor({ schedule }: { schedule: ServerSchedule }) 
   );
 
   const handleStepCreate = useCallback(
-    (step: ScheduleStep) => {
+    (step: z.infer<typeof serverScheduleStepSchema>) => {
       setScheduleSteps([...scheduleSteps, step]);
     },
     [scheduleSteps, setScheduleSteps],

@@ -4,14 +4,14 @@ import { ActionIcon, Group, Select, Stack, Text } from '@mantine/core';
 import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import { scheduleConditionLabelMapping } from '@/lib/enums.ts';
-import { serverSchedulePreConditionSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverScheduleConditionSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from './ScheduleDynamicParameterInput.tsx';
 
 const maxConditionDepth = 3;
 
 interface ConditionBuilderProps {
-  condition: z.infer<typeof serverSchedulePreConditionSchema>;
-  onChange: (condition: z.infer<typeof serverSchedulePreConditionSchema>) => void;
+  condition: z.infer<typeof serverScheduleConditionSchema>;
+  onChange: (condition: z.infer<typeof serverScheduleConditionSchema>) => void;
   depth?: number;
 }
 
@@ -48,10 +48,7 @@ export default function ScheduleConditionBuilder({ condition, onChange, depth = 
     }
   };
 
-  const handleNestedConditionChange = (
-    index: number,
-    newCondition: z.infer<typeof serverSchedulePreConditionSchema>,
-  ) => {
+  const handleNestedConditionChange = (index: number, newCondition: z.infer<typeof serverScheduleConditionSchema>) => {
     if (condition.type === 'and' || condition.type === 'or') {
       const newConditions = [...condition.conditions];
       newConditions[index] = newCondition;

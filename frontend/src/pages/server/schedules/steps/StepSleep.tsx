@@ -1,9 +1,13 @@
 import { UseFormReturnType } from '@mantine/form';
 import { z } from 'zod';
 import NumberInput from '@/elements/input/NumberInput.tsx';
-import { serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 
-export default function StepSleep({ form }: { form: UseFormReturnType<z.infer<typeof serverScheduleStepSchema>> }) {
+export default function StepSleep({
+  form,
+}: {
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
+}) {
   return (
     <NumberInput
       withAsterisk

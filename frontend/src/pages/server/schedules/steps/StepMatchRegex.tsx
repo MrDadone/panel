@@ -5,13 +5,13 @@ import { UseFormReturnType } from '@mantine/form';
 import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import { serverScheduleStepMatchRegexSchema, serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverScheduleStepMatchRegexSchema, serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 export default function StepMatchRegex({
   form,
 }: {
-  form: UseFormReturnType<z.infer<typeof serverScheduleStepSchema>>;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <Stack>

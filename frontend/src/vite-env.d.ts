@@ -643,17 +643,6 @@ declare global {
     | SchedulePreConditionDiskUsage
     | SchedulePreConditionFileExists;
 
-  interface ServerSchedule {
-    uuid: string;
-    name: string;
-    enabled: boolean;
-    triggers: ScheduleTrigger[];
-    condition: SchedulePreCondition;
-    lastRun: Date | null;
-    lastFailure: Date | null;
-    created: Date;
-  }
-
   interface ScheduleStatus {
     running: boolean;
     step: string | null;
@@ -869,14 +858,6 @@ declare global {
     | ScheduleActionUpdateStartupVariable
     | ScheduleActionUpdateStartupCommand
     | ScheduleActionUpdateStartupDockerImage;
-
-  interface ScheduleStep {
-    uuid: string;
-    action: ScheduleAction;
-    order: number;
-    error: string | null;
-    created: Date;
-  }
 
   interface ScheduleStatus {
     running: boolean;

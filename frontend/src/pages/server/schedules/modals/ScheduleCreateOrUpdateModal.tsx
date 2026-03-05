@@ -15,14 +15,14 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { scheduleTriggerDefaultMapping, scheduleTriggerLabelMapping } from '@/lib/enums.ts';
-import { serverScheduleSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverScheduleSchema, serverScheduleUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import { TriggerExtraForm, TriggerInlineForm } from '../triggers/TriggerForm.tsx';
 
 type Props = ModalProps & {
-  propSchedule?: ServerSchedule;
-  onScheduleUpdate?: (schedule: Partial<ServerSchedule>) => void;
+  propSchedule?: z.infer<typeof serverScheduleSchema>;
+  onScheduleUpdate?: (schedule: z.infer<typeof serverScheduleUpdateSchema>) => void;
 };
 
 const TRIGGER_TYPE_OPTIONS = Object.entries(scheduleTriggerLabelMapping).map(([value, label]) => ({
@@ -36,7 +36,7 @@ export default function ScheduleCreateOrUpdateModal({ propSchedule, onScheduleUp
 
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof serverScheduleSchema>>({
+  const form = useForm<z.infer<typeof serverScheduleUpdateSchema>>({
     initialValues: {
       name: '',
       enabled: true,
@@ -46,7 +46,7 @@ export default function ScheduleCreateOrUpdateModal({ propSchedule, onScheduleUp
       },
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(serverScheduleSchema),
+    validate: zod4Resolver(serverScheduleUpdateSchema),
   });
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function ScheduleCreateOrUpdateModal({ propSchedule, onScheduleUp
         .then(() => {
           addToast('Schedule updated.', 'success');
           onClose();
-          // onScheduleUpdate!({ name, enabled, triggers });
+          onScheduleUpdate!(form.values);
         })
         .catch((msg) => {
           addToast(httpErrorToHuman(msg), 'error');
