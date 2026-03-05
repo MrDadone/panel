@@ -10,11 +10,14 @@ import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
 import { bytesToString } from '@/lib/size.ts';
+import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import NodeBackupsDeleteModal from './modals/NodeBackupsDeleteModal.tsx';
 import NodeBackupsRestoreModal from './modals/NodeBackupsRestoreModal.tsx';
 
 export default function NodeBackupRow({ node, backup }: { node: Node; backup: AdminServerBackup }) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
 
   const [openModal, setOpenModal] = useState<'restore' | 'delete' | null>(null);
@@ -49,29 +52,32 @@ export default function NodeBackupRow({ node, backup }: { node: Node; backup: Ad
         items={[
           {
             icon: faFileArrowDown,
-            label: 'Download',
+            label: t('common.button.download', {}),
             onClick: !backup.isStreaming ? () => doDownload('tar_gz') : () => null,
             color: 'gray',
             items: backup.isStreaming
               ? Object.entries(streamingArchiveFormatLabelMapping).map(([mime, label]) => ({
                   icon: faFileArrowDown,
-                  label: `Download as ${label}`,
+                  label: t('common.button.downloadAs', { format: label }),
                   onClick: () => doDownload(mime as StreamingArchiveFormat),
                   color: 'gray',
                 }))
               : [],
+            canAccess: useAdminCan('nodes.backups'),
           },
           {
             icon: faRotateLeft,
-            label: 'Restore',
+            label: t('common.button.restore', {}),
             onClick: () => setOpenModal('restore'),
             color: 'gray',
+            canAccess: useAdminCan('nodes.backups'),
           },
           {
             icon: faTrash,
-            label: 'Delete',
+            label: t('common.button.delete', {}),
             onClick: () => setOpenModal('delete'),
             color: 'red',
+            canAccess: useAdminCan('nodes.backups'),
           },
         ]}
       >

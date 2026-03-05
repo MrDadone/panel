@@ -114,7 +114,7 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
           },
           {
             icon: faRotateLeft,
-            label: t('pages.server.backups.button.restore', {}),
+            label: t('common.button.restore', {}),
             onClick: () => setOpenModal('restore'),
             color: 'gray',
             canAccess: useServerCan('backups.restore'),

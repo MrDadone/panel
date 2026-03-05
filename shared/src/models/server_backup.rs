@@ -696,7 +696,43 @@ impl ServerBackup {
         }
     }
 
-    #[inline]
+    pub async fn into_admin_node_api_object(
+        self,
+        database: &crate::database::Database,
+        storage_url_retriever: &StorageUrlRetriever<'_>,
+    ) -> Result<AdminApiNodeServerBackup, anyhow::Error> {
+        Ok(AdminApiNodeServerBackup {
+            uuid: self.uuid,
+            server: match self.server {
+                Some(server) => Some(
+                    server
+                        .fetch_cached(database)
+                        .await?
+                        .into_admin_api_object(database, storage_url_retriever)
+                        .await?,
+                ),
+                None => None,
+            },
+            node: self
+                .node
+                .fetch_cached(database)
+                .await?
+                .into_admin_api_object(database)
+                .await?,
+            name: self.name,
+            ignored_files: self.ignored_files,
+            is_successful: self.successful,
+            is_locked: self.locked,
+            is_browsable: self.browsable,
+            is_streaming: self.streaming,
+            checksum: self.checksum,
+            bytes: self.bytes,
+            files: self.files,
+            completed: self.completed.map(|dt| dt.and_utc()),
+            created: self.created.and_utc(),
+        })
+    }
+
     pub async fn into_admin_api_object(
         self,
         database: &crate::database::Database,
@@ -1150,6 +1186,29 @@ impl DeletableModel for ServerBackup {
             Ok(())
         }).await?
     }
+}
+
+#[derive(ToSchema, Serialize)]
+#[schema(title = "AdminNodeServerBackup")]
+pub struct AdminApiNodeServerBackup {
+    pub uuid: uuid::Uuid,
+    pub server: Option<super::server::AdminApiServer>,
+    pub node: super::node::AdminApiNode,
+
+    pub name: compact_str::CompactString,
+    pub ignored_files: Vec<compact_str::CompactString>,
+
+    pub is_successful: bool,
+    pub is_locked: bool,
+    pub is_browsable: bool,
+    pub is_streaming: bool,
+
+    pub checksum: Option<compact_str::CompactString>,
+    pub bytes: i64,
+    pub files: i64,
+
+    pub completed: Option<chrono::DateTime<chrono::Utc>>,
+    pub created: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(ToSchema, Serialize)]

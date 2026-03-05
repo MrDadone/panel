@@ -55,6 +55,7 @@
         "install": "Installieren",
         "selectAll": "Alle auswählen",
         "deselectAll": "Alle abwählen",
+        "restore": "Wiederherstellen",
         "download": "Herunterladen",
         "downloadAs": "Als {format} herunterladen"
       },
@@ -1071,8 +1072,7 @@
             }
           },
           "button": {
-            "browse": "Durchsuchen",
-            "restore": "Wiederherstellen"
+            "browse": "Durchsuchen"
           },
           "toast": {
             "downloadStarted": "Download gestartet.",

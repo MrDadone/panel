@@ -36,6 +36,7 @@ const baseTranslations = defineTranslations({
         install: 'Install',
         selectAll: 'Select All',
         deselectAll: 'Deselect All',
+        restore: 'Restore',
         download: 'Download',
         downloadAs: 'Download as {format}',
       },
@@ -1067,7 +1068,6 @@ const baseTranslations = defineTranslations({
           },
           button: {
             browse: 'Browse',
-            restore: 'Restore',
           },
           toast: {
             downloadStarted: 'Download started.',

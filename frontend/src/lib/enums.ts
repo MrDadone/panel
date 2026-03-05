@@ -346,6 +346,7 @@ export const permissionCategoryIconMapping: Record<string, IconDefinition> = {
   'database-hosts': faDatabase,
   databases: faDatabase,
   eggs: faEgg,
+  assets: faFolderOpen,
   extensions: faPuzzlePiece,
   files: faFolderOpen,
   locations: faEarthAmerica,
