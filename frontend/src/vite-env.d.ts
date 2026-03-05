@@ -344,6 +344,8 @@ declare global {
     suspended: boolean;
     isOwner: boolean;
     permissions: string[];
+    locationUuid: string;
+    locationName: string;
     nodeUuid: string;
     nodeName: string;
     nodeMaintenanceEnabled: boolean;

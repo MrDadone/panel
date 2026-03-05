@@ -13,6 +13,7 @@ import ServerContentContainer from '@/elements/containers/ServerContentContainer
 import Select from '@/elements/input/Select.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
 import VariableContainer from '@/elements/VariableContainer.tsx';
 import { useKeyboardShortcut } from '@/plugins/useKeyboardShortcuts.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
@@ -125,14 +126,16 @@ export default function ServerStartup() {
             disabled={!useServerCan('startup.command') || !settings.server.allowEditingStartupCommand}
             autosize
             rightSection={
-              <ActionIcon
-                variant='subtle'
-                hidden={!settings.server.allowEditingStartupCommand}
-                disabled={command === server.egg.startup}
-                onClick={() => setCommand(server.egg.startup)}
-              >
-                <FontAwesomeIcon icon={faReply} />
-              </ActionIcon>
+              <Tooltip label={t('common.tooltip.resetToDefault', {})}>
+                <ActionIcon
+                  variant='subtle'
+                  hidden={!settings.server.allowEditingStartupCommand}
+                  disabled={command === server.egg.startup}
+                  onClick={() => setCommand(server.egg.startup)}
+                >
+                  <FontAwesomeIcon icon={faReply} />
+                </ActionIcon>
+              </Tooltip>
             }
           />
         </TitleCard>

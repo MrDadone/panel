@@ -39,9 +39,14 @@ const baseTranslations = defineTranslations({
         restore: 'Restore',
         download: 'Download',
         downloadAs: 'Download as {format}',
+        export: 'Export',
+        exportAs: 'Export as {format}',
       },
       input: {
         search: 'Search...',
+      },
+      tooltip: {
+        resetToDefault: 'Reset to default',
       },
       form: {
         name: 'Name',
@@ -115,6 +120,8 @@ const baseTranslations = defineTranslations({
       },
       unlimited: 'Unlimited',
       readOnly: 'Read-Only',
+      active: 'Active',
+      inactive: 'Inactive',
       na: 'N/A',
       yes: 'Yes',
       no: 'No',
@@ -1161,6 +1168,14 @@ const baseTranslations = defineTranslations({
         },
         settings: {
           title: 'Settings',
+          debugInformation: {
+            title: 'Debug Information',
+            form: {
+              nodeName: 'Node',
+              locationName: 'Location',
+              serverUuid: 'Server UUID',
+            },
+          },
           rename: {
             title: 'Rename Server',
             form: {

@@ -1,5 +1,6 @@
-import { faCog } from '@fortawesome/free-solid-svg-icons';
+import { faCog, faReply } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ActionIcon } from '@mantine/core';
 import Badge from '@/elements/Badge.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
@@ -8,6 +9,7 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
+import Tooltip from './Tooltip.tsx';
 
 interface Props {
   variable: ServerVariable;
@@ -97,6 +99,23 @@ export default function VariableContainer({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
+              rightSection={
+                <Tooltip label={t('common.tooltip.resetToDefault', {})}>
+                  <ActionIcon
+                    variant='subtle'
+                    disabled={
+                      !variable.defaultValue ||
+                      disabled ||
+                      loading ||
+                      (!variable.isEditable && !overrideReadonly) ||
+                      value === variable.defaultValue
+                    }
+                    onClick={() => setValue(variable.defaultValue ?? '')}
+                  >
+                    <FontAwesomeIcon icon={faReply} />
+                  </ActionIcon>
+                </Tooltip>
+              }
             />
           )}
           <p className='text-gray-400 text-sm mt-4'>{variable.description?.md()}</p>

@@ -38,6 +38,7 @@ import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
 import VariableContainer from '@/elements/VariableContainer.tsx';
 import { adminServerCreateSchema } from '@/lib/schemas/admin/servers.ts';
 import { formatAllocation } from '@/lib/server.ts';
@@ -45,6 +46,7 @@ import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 const timezones = Object.keys(zones)
   .sort()
@@ -54,6 +56,7 @@ const timezones = Object.keys(zones)
   }));
 
 export default function ServerCreate() {
+  const { t } = useTranslations();
   const { addToast } = useToast();
   const canReadNodes = useAdminCan('nodes.read');
   const canReadUsers = useAdminCan('users.read');
@@ -413,18 +416,22 @@ export default function ServerCreate() {
                   required
                   rows={2}
                   rightSection={
-                    <ActionIcon
-                      variant='subtle'
-                      disabled={form.values.startup === eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup}
-                      onClick={() =>
-                        form.setFieldValue(
-                          'startup',
-                          eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup || '',
-                        )
-                      }
-                    >
-                      <FontAwesomeIcon icon={faReply} />
-                    </ActionIcon>
+                    <Tooltip label={t('common.tooltip.resetToDefault', {})}>
+                      <ActionIcon
+                        variant='subtle'
+                        disabled={
+                          form.values.startup === eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup
+                        }
+                        onClick={() =>
+                          form.setFieldValue(
+                            'startup',
+                            eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup || '',
+                          )
+                        }
+                      >
+                        <FontAwesomeIcon icon={faReply} />
+                      </ActionIcon>
+                    </Tooltip>
                   }
                   {...form.getInputProps('startup')}
                 />

@@ -3,6 +3,7 @@ import ServerContentContainer from '@/elements/containers/ServerContentContainer
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import AutokillContainer from './AutokillContainer.tsx';
 import AutostartContainer from './AutostartContainer.tsx';
+import DebugInformationContainer from './DebugInformationContainer.tsx';
 import ReinstallContainer from './ReinstallContainer.tsx';
 import RenameContainer from './RenameContainer.tsx';
 import TimezoneContainer from './TimezoneContainer.tsx';
@@ -22,6 +23,7 @@ export default function ServerSettings() {
           ),
         )}
 
+        <DebugInformationContainer />
         <ServerCan action='settings.rename'>
           <RenameContainer />
         </ServerCan>

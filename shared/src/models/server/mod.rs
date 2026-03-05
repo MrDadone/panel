@@ -1483,6 +1483,8 @@ impl Server {
                 self.subuser_permissions
                     .map_or_else(|| vec!["*".into()], |p| p.to_vec())
             },
+            location_uuid: node.location.uuid,
+            location_name: node.location.name,
             node_uuid: node.uuid,
             node_name: node.name,
             node_maintenance_enabled: node.maintenance_enabled,
@@ -2226,6 +2228,8 @@ pub struct ApiServer {
     pub is_owner: bool,
     pub permissions: Vec<compact_str::CompactString>,
 
+    pub location_uuid: uuid::Uuid,
+    pub location_name: compact_str::CompactString,
     pub node_uuid: uuid::Uuid,
     pub node_name: compact_str::CompactString,
     pub node_maintenance_enabled: bool,
