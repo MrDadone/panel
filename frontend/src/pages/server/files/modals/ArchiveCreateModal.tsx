@@ -16,6 +16,7 @@ import { generateArchiveName } from '@/lib/files.ts';
 import { serverFilesArchiveCreateSchema } from '@/lib/schemas/server/files.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
@@ -23,6 +24,7 @@ type Props = ModalProps & {
 };
 
 export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
   const { server } = useServerStore();
   const { browsingDirectory, doSelectFiles } = useFileManager();
@@ -51,7 +53,7 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
     })
       .then(() => {
         doSelectFiles([]);
-        addToast('Archive creation has begun.', 'success');
+        addToast(t('pages.server.files.toast.archiveCreationStarted', {}), 'success');
         onClose();
       })
       .catch((msg) => {
@@ -61,14 +63,18 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
   };
 
   return (
-    <Modal title='Create Archive' onClose={onClose} opened={opened}>
+    <Modal title={t('pages.server.files.modal.createArchive.title', {})} onClose={onClose} opened={opened}>
       <form onSubmit={form.onSubmit(() => doArchive())}>
         <Stack>
-          <TextInput label='Archive Name' placeholder='Archive Name' {...form.getInputProps('name')} />
+          <TextInput
+            label={t('pages.server.files.modal.createArchive.form.archiveName', {})}
+            placeholder={t('pages.server.files.modal.createArchive.form.archiveName', {})}
+            {...form.getInputProps('name')}
+          />
 
           <Select
             withAsterisk
-            label='Format'
+            label={t('pages.server.files.modal.createArchive.form.format', {})}
             data={Object.entries(archiveFormatLabelMapping).map(([format, extension]) => ({
               label: extension,
               value: format,
@@ -77,7 +83,7 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
           />
 
           <p className='text-sm md:text-base break-all'>
-            <span className='text-neutral-200'>This archive will be created as&nbsp;</span>
+            <span className='text-neutral-200'>{t('pages.server.files.modal.createArchive.createdAs', {})}</span>
             <Code>
               /home/container/
               <span className='text-cyan-200'>
@@ -93,10 +99,10 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
 
           <ModalFooter>
             <Button type='submit' loading={loading}>
-              Create
+              {t('common.button.create', {})}
             </Button>
             <Button variant='default' onClick={onClose}>
-              Close
+              {t('common.button.close', {})}
             </Button>
           </ModalFooter>
         </Stack>

@@ -5,7 +5,7 @@ export default async (
   page: number,
   search?: string,
   detached?: boolean,
-): Promise<Pagination<AdminServerBackup>> => {
+): Promise<Pagination<AdminNodeServerBackup>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/backup-configurations/${backupConfigUuid}/backups`, {

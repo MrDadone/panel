@@ -61,6 +61,8 @@ export default function DatabaseRow({ database }: { database: ServerDatabase }) 
             canAccess: useServerCan('databases.delete'),
           },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.server.databases.databaseContextMenu}
+        registryProps={{ database }}
       >
         {({ items, openMenu }) => (
           <TableRow

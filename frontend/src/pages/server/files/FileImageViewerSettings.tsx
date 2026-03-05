@@ -5,8 +5,10 @@ import { useEffect } from 'react';
 import Button from '@/elements/Button.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 export default function FileImageViewerSettings() {
+  const { t } = useTranslations();
   const { imageViewerSmoothing, setImageViewerSmoothing } = useFileManager();
 
   useEffect(() => {
@@ -21,11 +23,26 @@ export default function FileImageViewerSettings() {
         </Button>
       </Popover.Target>
       <Popover.Dropdown>
-        <Checkbox
-          label='Smoothen Image (Anti-Aliasing)'
-          checked={imageViewerSmoothing}
-          onChange={(e) => setImageViewerSmoothing(e.target.checked)}
-        />
+        <div className='flex flex-col space-y-2'>
+          {window.extensionContext.extensionRegistry.pages.server.files.fileImageViewierSettings.prependedComponents.map(
+            (Component, i) => (
+              <Component key={`files-imageViewerSettings-prepended-${i}`} />
+            ),
+          )}
+
+          <Checkbox
+            label={t('pages.server.files.settings.imageViewerSmoothing', {})}
+            className='order-10'
+            checked={imageViewerSmoothing}
+            onChange={(e) => setImageViewerSmoothing(e.target.checked)}
+          />
+
+          {window.extensionContext.extensionRegistry.pages.server.files.fileImageViewierSettings.appendedComponents.map(
+            (Component, i) => (
+              <Component key={`files-imageViewerSettings-appended-${i}`} />
+            ),
+          )}
+        </div>
       </Popover.Dropdown>
     </Popover>
   );

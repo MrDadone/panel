@@ -3,7 +3,6 @@ import { memo, useMemo } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import cancelOperation from '@/api/server/files/cancelOperation.ts';
 import CloseButton from '@/elements/CloseButton.tsx';
-import Code from '@/elements/Code.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Progress from '@/elements/Progress.tsx';
 import RingProgress from '@/elements/RingProgress.tsx';
@@ -12,9 +11,11 @@ import { bytesToString } from '@/lib/size.ts';
 import { useBlocker } from '@/plugins/useBlocker.ts';
 import { useToast } from '@/providers/contexts/toastContext.ts';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 function FileOperationsProgress() {
+  const { t, tItem } = useTranslations();
   const { addToast } = useToast();
   const { server, fileOperations, removeFileOperation } = useServerStore();
   const { fileUploader } = useFileManager();
@@ -27,7 +28,7 @@ function FileOperationsProgress() {
 
     cancelOperation(server.uuid, uuid)
       .then(() => {
-        addToast('Operation cancelled', 'success');
+        addToast(t('pages.server.files.toast.operationCancelled', {}), 'success');
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
@@ -63,14 +64,13 @@ function FileOperationsProgress() {
   return (
     <>
       <ConfirmationModal
-        title='Active Uploads'
+        title={t('pages.server.files.modal.activeUploads.title', {})}
         opened={blocker.state === 'blocked'}
         onClose={() => blocker.reset()}
         onConfirmed={() => blocker.proceed()}
-        confirm='Leave'
+        confirm={t('pages.server.files.modal.activeUploads.button.leave', {})}
       >
-        Are you sure you want to leave this page? You have <Code>{fileOperations.size}</Code> active file uploads. If
-        you leave this page, the file uploads will abort.
+        {t('pages.server.files.modal.activeUploads.content', { files: tItem('file', uploadingFiles.size) }).md()}
       </ConfirmationModal>
 
       <Popover position='bottom-start' shadow='md'>
@@ -95,12 +95,19 @@ function FileOperationsProgress() {
           </UnstyledButton>
         </Popover.Target>
         <Popover.Dropdown className='md:min-w-xl max-w-screen max-h-96 overflow-y-auto'>
+          {window.extensionContext.extensionRegistry.pages.server.files.fileOperationsProgress.prependedComponents.map(
+            (Component, i) => (
+              <Component key={`files-operationProgress-prepended-${i}`} />
+            ),
+          )}
+
           {Array.from(aggregatedUploadProgress).map(([folderName, info]) => {
             const progress = info.totalSize > 0 ? (info.uploadedSize / info.totalSize) * 100 : 0;
-            const statusText =
-              info.pendingCount > 0
-                ? `Uploading folder: ${folderName} (${info.fileCount - info.pendingCount}/${info.fileCount} files)`
-                : `Uploading folder: ${folderName} (${info.fileCount} files)`;
+            const statusText = t('pages.server.files.operations.uploadingFolder', {
+              folder: folderName,
+              current: info.fileCount - info.pendingCount,
+              total: info.fileCount,
+            });
 
             return (
               <div key={folderName} className='flex flex-row items-center mb-3'>
@@ -127,7 +134,9 @@ function FileOperationsProgress() {
               <div key={key} className='flex flex-row items-center mb-2'>
                 <div className='flex flex-col grow'>
                   <p className='break-all mb-1 text-sm'>
-                    {file.status === 'pending' ? 'Waiting: ' : 'Uploading: '}
+                    {file.status === 'pending'
+                      ? t('pages.server.files.operations.waiting', {})
+                      : t('pages.server.files.operations.uploading', {})}
                     {file.filePath}
                   </p>
                   <Tooltip
@@ -150,19 +159,31 @@ function FileOperationsProgress() {
                 <div className='flex flex-col grow'>
                   <p className='break-all mb-1'>
                     {operation.type === 'compress'
-                      ? `Compressing ${operation.files.length} files from ${operation.path}`
+                      ? t('pages.server.files.operations.compressing', {
+                          files: tItem('file', operation.files.length),
+                          path: operation.path,
+                        })
                       : operation.type === 'decompress'
-                        ? `Decompressing ${operation.path}`
+                        ? t('pages.server.files.operations.decompressing', { path: operation.path })
                         : operation.type === 'pull'
-                          ? `Pulling ${operation.path}`
+                          ? t('pages.server.files.operations.pulling', { path: operation.path })
                           : operation.type === 'copy'
-                            ? `Copying ${operation.path} to ${operation.destinationPath}`
+                            ? t('pages.server.files.operations.copying', {
+                                path: operation.path,
+                                destination: operation.destinationPath,
+                              })
                             : operation.type === 'copy_many'
-                              ? `Copying ${operation.files.length} files`
+                              ? t('pages.server.files.operations.copyingMany', {
+                                  files: tItem('file', operation.files.length),
+                                })
                               : operation.type === 'copy_remote'
                                 ? operation.destinationServer === server.uuid
-                                  ? `Receiving ${operation.files.length} files from remote server`
-                                  : `Sending ${operation.files.length} files to remote server`
+                                  ? t('pages.server.files.operations.receivingRemote', {
+                                      files: tItem('file', operation.files.length),
+                                    })
+                                  : t('pages.server.files.operations.sendingRemote', {
+                                      files: tItem('file', operation.files.length),
+                                    })
                                 : null}
                   </p>
                   <Tooltip
@@ -176,6 +197,12 @@ function FileOperationsProgress() {
               </div>
             );
           })}
+
+          {window.extensionContext.extensionRegistry.pages.server.files.fileOperationsProgress.appendedComponents.map(
+            (Component, i) => (
+              <Component key={`files-operationProgress-appended-${i}`} />
+            ),
+          )}
         </Popover.Dropdown>
       </Popover>
     </>

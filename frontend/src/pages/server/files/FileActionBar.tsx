@@ -22,9 +22,11 @@ import Tooltip from '@/elements/Tooltip.tsx';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 function FileActionBar() {
+  const { t, tItem } = useTranslations();
   const { addToast } = useToast();
   const { server } = useServerStore();
   const {
@@ -55,7 +57,7 @@ function FileActionBar() {
       })),
     })
       .then(() => {
-        addToast(`${actingFiles.size} File${actingFiles.size === 1 ? ' has' : 's have'} started copying.`, 'success');
+        addToast(t('pages.server.files.toast.copyingStarted', { files: tItem('file', actingFiles.size) }), 'success');
         clearActingFiles();
       })
       .catch((msg) => {
@@ -77,11 +79,11 @@ function FileActionBar() {
     })
       .then(({ renamed }) => {
         if (renamed < 1) {
-          addToast('Files could not be moved.', 'error');
+          addToast(t('pages.server.files.toast.filesCouldNotBeMoved', {}), 'error');
           return;
         }
 
-        addToast(`${renamed} File${renamed === 1 ? ' has' : 's have'} moved.`, 'success');
+        addToast(t('pages.server.files.toast.filesMoved', { files: tItem('file', renamed) }), 'success');
         clearActingFiles();
         invalidateFilemanager();
       })
@@ -102,7 +104,7 @@ function FileActionBar() {
       'zip',
     )
       .then(({ url }) => {
-        addToast('Download started.', 'success');
+        addToast(t('pages.server.files.toast.downloadStarted', {}), 'success');
         window.open(url);
       })
       .catch((msg) => {
@@ -168,22 +170,28 @@ function FileActionBar() {
   return (
     <>
       <ActionBar opened={actingFiles.size > 0 || selectedFiles.size > 0}>
+        {window.extensionContext.extensionRegistry.pages.server.files.fileActionBar.prependedComponents.map(
+          (Component, i) => (
+            <Component key={`files-actionBar-prepended-${i}`} />
+          ),
+        )}
+
         {actingFiles.size > 0 ? (
           <>
             {actingMode === 'copy' ? (
-              <Tooltip label={`Copy ${actingFiles.size} file${actingFiles.size === 1 ? '' : 's'} here`}>
+              <Tooltip label={t('pages.server.files.actionBar.copyHere', { files: tItem('file', actingFiles.size) })}>
                 <Button onClick={doCopy} loading={loading}>
                   <FontAwesomeIcon icon={faAnglesDown} />
                 </Button>
               </Tooltip>
             ) : (
-              <Tooltip label={`Move ${actingFiles.size} file${actingFiles.size === 1 ? '' : 's'} here`}>
+              <Tooltip label={t('pages.server.files.actionBar.moveHere', { files: tItem('file', actingFiles.size) })}>
                 <Button onClick={doMove} loading={loading}>
                   <FontAwesomeIcon icon={faAnglesDown} />
                 </Button>
               </Tooltip>
             )}
-            <Tooltip label='Cancel'>
+            <Tooltip label={t('common.button.cancel', {})}>
               <Button variant='default' onClick={clearActingFiles}>
                 <FontAwesomeIcon icon={faBan} />
               </Button>
@@ -192,21 +200,21 @@ function FileActionBar() {
         ) : (
           <>
             <ServerCan action='files.read-content'>
-              <Tooltip label='Download'>
+              <Tooltip label={t('common.button.download', {})}>
                 <Button onClick={doDownload} loading={loading}>
                   <FontAwesomeIcon icon={faFileDownload} />
                 </Button>
               </Tooltip>
             </ServerCan>
             <ServerCan action='files.read'>
-              <Tooltip label='Remote Copy'>
+              <Tooltip label={t('pages.server.files.button.remoteCopy', {})}>
                 <Button onClick={() => doOpenModal('copy-remote', selectedFiles.values())}>
                   <FontAwesomeIcon icon={faClone} />
                 </Button>
               </Tooltip>
             </ServerCan>
             <ServerCan action='files.create'>
-              <Tooltip label='Copy'>
+              <Tooltip label={t('pages.server.files.button.copy', {})}>
                 <Button
                   onClick={() => {
                     doActFiles('copy', selectedFiles.values());
@@ -220,14 +228,14 @@ function FileActionBar() {
             {browsingWritableDirectory && (
               <>
                 <ServerCan action='files.archive'>
-                  <Tooltip label='Archive'>
+                  <Tooltip label={t('pages.server.files.button.archive', {})}>
                     <Button onClick={() => doOpenModal('archive', selectedFiles.values())}>
                       <FontAwesomeIcon icon={faArchive} />
                     </Button>
                   </Tooltip>
                 </ServerCan>
                 <ServerCan action='files.update'>
-                  <Tooltip label='Move'>
+                  <Tooltip label={t('pages.server.files.button.move', {})}>
                     <Button
                       onClick={() => {
                         doActFiles('move', selectedFiles.values());
@@ -239,7 +247,7 @@ function FileActionBar() {
                   </Tooltip>
                 </ServerCan>
                 <ServerCan action='files.delete'>
-                  <Tooltip label='Delete'>
+                  <Tooltip label={t('common.button.delete', {})}>
                     <Button color='red' onClick={() => doOpenModal('delete', selectedFiles.values())}>
                       <FontAwesomeIcon icon={faTrash} />
                     </Button>
@@ -248,6 +256,12 @@ function FileActionBar() {
               </>
             )}
           </>
+        )}
+
+        {window.extensionContext.extensionRegistry.pages.server.files.fileActionBar.appendedComponents.map(
+          (Component, i) => (
+            <Component key={`files-actionBar-appended-${i}`} />
+          ),
         )}
       </ActionBar>
     </>

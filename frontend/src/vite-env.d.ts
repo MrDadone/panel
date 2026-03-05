@@ -344,6 +344,8 @@ declare global {
     suspended: boolean;
     isOwner: boolean;
     permissions: string[];
+    locationUuid: string;
+    locationName: string;
     nodeUuid: string;
     nodeName: string;
     nodeMaintenanceEnabled: boolean;
@@ -388,6 +390,23 @@ declare global {
     port: number;
     notes: string | null;
     isPrimary: boolean;
+    created: Date;
+  }
+
+  interface AdminNodeServerBackup {
+    uuid: string;
+    server: AdminServer | null;
+    node: Node;
+    name: string;
+    ignoredFiles: string[];
+    isSuccessful: boolean;
+    isLocked: boolean;
+    isBrowsable: boolean;
+    isStreaming: boolean;
+    checksum: string | null;
+    bytes: number;
+    files: number;
+    completed: Date | null;
     created: Date;
   }
 
@@ -1255,6 +1274,7 @@ declare global {
       allowOverwritingCustomDockerImage: boolean;
       allowEditingStartupCommand: boolean;
       allowViewingInstallationLogs: boolean;
+      allowViewingTransferProgress: boolean;
     };
     activity: {
       adminLogRetentionDays: number;

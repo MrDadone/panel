@@ -31,10 +31,12 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
 import { adminServerUpdateSchema } from '@/lib/schemas/admin/servers.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 const timezones = Object.keys(zones)
   .sort()
@@ -44,6 +46,7 @@ const timezones = Object.keys(zones)
   }));
 
 export default function ServerUpdate({ contextServer }: { contextServer: AdminServer }) {
+  const { t } = useTranslations();
   const canReadUsers = useAdminCan('users.read');
   const canReadNests = useAdminCan('nests.read');
   const canReadEggs = useAdminCan('eggs.read');
@@ -365,18 +368,22 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                   required
                   rows={2}
                   rightSection={
-                    <ActionIcon
-                      variant='subtle'
-                      disabled={form.values.startup === eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup}
-                      onClick={() =>
-                        form.setFieldValue(
-                          'startup',
-                          eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup || '',
-                        )
-                      }
-                    >
-                      <FontAwesomeIcon icon={faReply} />
-                    </ActionIcon>
+                    <Tooltip label={t('common.tooltip.resetToDefault', {})}>
+                      <ActionIcon
+                        variant='subtle'
+                        disabled={
+                          form.values.startup === eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup
+                        }
+                        onClick={() =>
+                          form.setFieldValue(
+                            'startup',
+                            eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup || '',
+                          )
+                        }
+                      >
+                        <FontAwesomeIcon icon={faReply} />
+                      </ActionIcon>
+                    </Tooltip>
                   }
                   {...form.getInputProps('startup')}
                 />

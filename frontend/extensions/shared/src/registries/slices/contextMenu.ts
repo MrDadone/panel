@@ -1,7 +1,7 @@
 import { Registry } from 'shared';
 import type { ContextMenuItem } from '@/elements/ContextMenu.tsx';
 
-type ItemInterceptor<P> = (items: ContextMenuItem[], props: P) => ContextMenuItem[];
+type ItemInterceptor<P> = (items: ContextMenuItem[], props: P) => void;
 
 export class ContextMenuRegistry<Props = {}> implements Registry {
   public mergeFrom(other: this): this {

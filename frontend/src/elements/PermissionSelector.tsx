@@ -183,11 +183,11 @@ export default function PermissionSelector({
 
         <Card>
           <Title order={3} c='white'>
-            Selected Permissions ({selectedPermissions.length})
+            {t('elements.permissionSelector.selectedPermissions', { count: selectedPermissions.length })}
           </Title>
           <div className='max-h-96 overflow-y-auto'>
             {selectedPermissions.length === 0 ? (
-              <p className='text-gray-200 text-sm'>No permissions selected</p>
+              <p className='text-gray-200 text-sm'>{t('elements.permissionSelector.noPermissions', {})}</p>
             ) : (
               <div className='space-y-1'>
                 {sortedSelectedPermissions.map((permission) => (

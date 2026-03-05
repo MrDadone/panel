@@ -8,11 +8,15 @@ export function formatMiliseconds(uptime: number) {
   const minutes = Math.floor((uptimeSeconds % 3600) / 60);
   const seconds = Math.floor(uptimeSeconds % 60);
 
-  if (days === 0 && hours === 0 && minutes === 0) return `${seconds}s`;
-  if (days === 0 && hours === 0) return `${minutes}m ${seconds}s`;
-  if (days === 0) return `${hours}h ${minutes}m ${seconds}s`;
+  const formatter = new Intl.DurationFormat(getTranslations().language, { style: 'narrow' });
 
-  return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  const duration: Record<string, number> = {};
+  if (days > 0) duration.days = days;
+  if (hours > 0) duration.hours = hours;
+  if (minutes > 0 || (days === 0 && hours === 0)) duration.minutes = minutes;
+  duration.seconds = seconds;
+
+  return formatter.format(duration);
 }
 
 export function formatDateTime(timestamp: string | number | Date, precise?: boolean) {
@@ -29,26 +33,32 @@ export function formatDateTime(timestamp: string | number | Date, precise?: bool
 export function formatTimestamp(timestamp: string | number | Date) {
   const now = new Date();
   const target = new Date(timestamp);
+
   const diffMs = target.getTime() - now.getTime();
+  const diffSeconds = Math.round(diffMs / 1000);
 
-  const absDiffMs = Math.abs(diffMs);
-  const diffSeconds = Math.floor(absDiffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
+  const absSeconds = Math.abs(diffSeconds);
+  const diffMinutes = Math.round(diffSeconds / 60);
+  const diffHours = Math.round(diffMinutes / 60);
+  const diffDays = Math.round(diffHours / 24);
 
-  const isFuture = diffMs > 0;
-
-  // Threshold: switch to date formatting after 7 days
-  if (diffDays >= 7) {
+  if (Math.abs(diffDays) >= 7) {
     return formatDateTime(timestamp);
   }
 
-  const format = (value: number, unit: string) =>
-    `${isFuture ? 'in ' : ''}${value} ${unit}${value !== 1 ? 's' : ''}${isFuture ? '' : ' ago'}`;
+  const rtf = new Intl.RelativeTimeFormat(getTranslations().language, { numeric: 'auto' });
 
-  if (diffSeconds < 60) return isFuture ? 'in a few seconds' : 'a few seconds ago';
-  if (diffMinutes < 60) return format(diffMinutes, 'minute');
-  if (diffHours < 24) return format(diffHours, 'hour');
-  return format(diffDays, 'day');
+  if (absSeconds < 60) {
+    return rtf.format(diffSeconds, 'second');
+  }
+
+  if (Math.abs(diffMinutes) < 60) {
+    return rtf.format(diffMinutes, 'minute');
+  }
+
+  if (Math.abs(diffHours) < 24) {
+    return rtf.format(diffHours, 'hour');
+  }
+
+  return rtf.format(diffDays, 'day');
 }

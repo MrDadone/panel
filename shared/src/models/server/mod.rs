@@ -1083,10 +1083,13 @@ impl Server {
             permissions.push("websocket.connect");
 
             for permission in subuser_permissions.iter() {
-                if permission == "control.read-console"
-                    && settings.server.allow_viewing_installation_logs
-                {
-                    permissions.push("admin.websocket.install");
+                if permission == "control.read-console" {
+                    if settings.server.allow_viewing_installation_logs {
+                        permissions.push("admin.websocket.install");
+                    }
+                    if settings.server.allow_viewing_transfer_progress {
+                        permissions.push("admin.websocket.transfer");
+                    }
                 }
 
                 permissions.push(permission.as_str());
@@ -1097,6 +1100,9 @@ impl Server {
 
             if settings.server.allow_viewing_installation_logs {
                 permissions.push("admin.websocket.install");
+            }
+            if settings.server.allow_viewing_transfer_progress {
+                permissions.push("admin.websocket.transfer");
             }
 
             permissions.push("*");
@@ -1127,10 +1133,13 @@ impl Server {
         permissions.push("websocket.connect");
 
         for permission in subuser.permissions.iter() {
-            if permission == "control.read-console"
-                && settings.server.allow_viewing_installation_logs
-            {
-                permissions.push("admin.websocket.install");
+            if permission == "control.read-console" {
+                if settings.server.allow_viewing_installation_logs {
+                    permissions.push("admin.websocket.install");
+                }
+                if settings.server.allow_viewing_transfer_progress {
+                    permissions.push("admin.websocket.transfer");
+                }
             }
 
             permissions.push(permission.as_str());
@@ -1474,6 +1483,8 @@ impl Server {
                 self.subuser_permissions
                     .map_or_else(|| vec!["*".into()], |p| p.to_vec())
             },
+            location_uuid: node.location.uuid,
+            location_name: node.location.name,
             node_uuid: node.uuid,
             node_name: node.name,
             node_maintenance_enabled: node.maintenance_enabled,
@@ -2217,6 +2228,8 @@ pub struct ApiServer {
     pub is_owner: bool,
     pub permissions: Vec<compact_str::CompactString>,
 
+    pub location_uuid: uuid::Uuid,
+    pub location_name: compact_str::CompactString,
     pub node_uuid: uuid::Uuid,
     pub node_name: compact_str::CompactString,
     pub node_maintenance_enabled: bool,

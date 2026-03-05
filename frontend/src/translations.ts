@@ -10,6 +10,7 @@ try {
 const baseTranslations = defineTranslations({
   items: {
     user: defineEnglishItem('User', 'Users'),
+    file: defineEnglishItem('File', 'Files'),
     server: defineEnglishItem('Server', 'Servers'),
     sshKey: defineEnglishItem('SSH Key', 'SSH Keys'),
   },
@@ -30,15 +31,22 @@ const baseTranslations = defineTranslations({
         cancel: 'Cancel',
         continue: 'Continue',
         skip: 'Skip',
-        logout: 'Logout',
         back: 'Back',
         next: 'Next',
         install: 'Install',
         selectAll: 'Select All',
         deselectAll: 'Deselect All',
+        restore: 'Restore',
+        download: 'Download',
+        downloadAs: 'Download as {format}',
+        export: 'Export',
+        exportAs: 'Export as {format}',
       },
       input: {
         search: 'Search...',
+      },
+      tooltip: {
+        resetToDefault: 'Reset to default',
       },
       form: {
         name: 'Name',
@@ -111,6 +119,9 @@ const baseTranslations = defineTranslations({
         },
       },
       unlimited: 'Unlimited',
+      readOnly: 'Read-Only',
+      active: 'Active',
+      inactive: 'Inactive',
       na: 'N/A',
       yes: 'Yes',
       no: 'No',
@@ -119,6 +130,52 @@ const baseTranslations = defineTranslations({
       system: 'System',
       schedule: 'Schedule',
       impersonatedBy: 'Impersonated by {username}',
+    },
+    elements: {
+      errorBoundary: {
+        message: 'An error was encountered by the application while rendering this view. Try refreshing the page.',
+        hideDetails: 'Hide Details',
+        showDetails: 'Show Details',
+        errorMessage: 'Error Message:',
+        stackTrace: 'Stack Trace:',
+        componentStack: 'Component Stack:',
+      },
+      copyOnClick: {
+        toast: {
+          copied: 'Copied to clipboard.',
+          failed: 'Failed to copy to clipboard.',
+          copyManual: 'Copy to clipboard: Ctrl+C or Command+C, Enter',
+        },
+      },
+      container: {
+        alert: {
+          impersonating:
+            'You are currently impersonating a user. Please be aware that your actions may affect the impersonated user\'s account. To exit impersonation mode, click the "Stop Impersonating" button in the bottom left corner.',
+        },
+      },
+      sidebar: {
+        button: {
+          logout: 'Logout',
+          stopImpersonating: 'Stop Impersonating',
+        },
+      },
+      permissionSelector: {
+        selectedPermissions: 'Selected Permissions ({count})',
+        noPermissions: 'No permissions selected.',
+      },
+      can: {
+        tooltip: {
+          cantSave: 'You do not have permission to save.',
+          cantDelete: 'You do not have permission to delete.',
+        },
+      },
+      activityInfoButton: {
+        modal: {
+          info: {
+            title: 'Activity Details',
+          },
+        },
+      },
     },
     pages: {
       oobe: {
@@ -715,6 +772,196 @@ const baseTranslations = defineTranslations({
         },
         files: {
           title: 'Files',
+          titleEditorViewing: 'Voewing {file}',
+          titleEditorEditing: 'Editing {file}',
+          titleEditorNew: 'New File',
+          table: {
+            columns: {
+              modified: 'Modified',
+            },
+          },
+          button: {
+            new: 'New',
+            sftpDetails: 'SFTP Details',
+            openInNewWindow: 'Open in new Window',
+            rename: 'Rename',
+            copy: 'Copy',
+            move: 'Move',
+            permissions: 'Permissions',
+            unarchive: 'Unarchive',
+            archive: 'Archive',
+            remoteCopy: 'Remote Copy',
+            search: 'Search',
+            exitBackup: 'Exit Backup',
+            fileFromEditor: 'File from Editor',
+            directory: 'Directory',
+            fileFromPull: 'File from Pull',
+            fileFromUpload: 'File from Upload',
+            directoryFromUpload: 'Directory from Upload',
+          },
+          actionBar: {
+            copyHere: 'Copy {files} here',
+            moveHere: 'Move {files} here',
+          },
+          searchBanner: {
+            resultsTitle: 'Search Results ({files} found)',
+            query: 'Query:',
+            excluded: 'Excluded:',
+            content: 'Content:',
+            size: 'Size:',
+            min: 'Min:',
+            max: 'Max:',
+          },
+          operations: {
+            uploadingFolder: 'Uploading folder: {folder} ({current}/{total} files)',
+            waiting: 'Waiting: ',
+            uploading: 'Uploading: ',
+            compressing: 'Compressing {files} from {path}',
+            decompressing: 'Decompressing {path}',
+            pulling: 'Pulling {path}',
+            copying: 'Copying {path} to {destination}',
+            copyingMany: 'Copying {files}',
+            receivingRemote: 'Receiving {files} from remote server',
+            sendingRemote: 'Sending {files} to remote server',
+          },
+          settings: {
+            clickOnce: 'Click once to open file or folder',
+            editorMinimap: 'Show File Minimap',
+            editorLineOverflow: 'Wrap Line Overflow',
+            imageViewerSmoothing: 'Smoothen Image (Anti-Aliasing)',
+          },
+          toast: {
+            operationCancelled: 'Operation cancelled',
+            copyingStarted: '{files} started copying.',
+            filesCouldNotBeMoved: 'Files could not be moved.',
+            filesMoved: '{files} moved.',
+            downloadStarted: 'Download started.',
+            filesDeleted: 'Files have been deleted.',
+            archiveCreationStarted: 'Archive creation has begun.',
+            fileCopyingStarted: 'File copying has started.',
+            fileInfoRetrieved: 'File information retrieved successfully.',
+            filePullingStarted: 'File pulling has started.',
+            fileRenamed: 'File has been renamed.',
+            fileCouldNotBeRenamed: 'File could not be renamed.',
+            permissionsUpdated: 'Permissions have been updated.',
+            fileSaved: 'File has been saved.',
+          },
+          modal: {
+            activeUploads: {
+              title: 'Active Uploads',
+              content:
+                'Are you sure you want to leave this page? You have {files} active file uploads. If you leave this page, the file uploads will abort.',
+              button: {
+                leave: 'Leave Page',
+              },
+            },
+            unsavedChanges: {
+              title: 'Unsaved Changes',
+              content:
+                'You have unsaved changes in the file editor. Are you sure you want to leave this page? If you leave, your changes will be lost.',
+              button: {
+                leave: 'Leave Page',
+              },
+            },
+            createArchive: {
+              title: 'Create Archive',
+              form: {
+                archiveName: 'Archive Name',
+                format: 'Format',
+              },
+              createdAs: 'This archive will be created as ',
+            },
+            createDirectory: {
+              title: 'Create Directory',
+              form: {
+                directoryName: 'Directory Name',
+              },
+              createdAs: 'This directory will be created as ',
+            },
+            copyFile: {
+              title: 'Copy File',
+              form: {
+                fileName: 'File Name',
+              },
+              createdAs: 'This file will be created as ',
+            },
+            copyRemote: {
+              title: 'Remote Copy Files',
+              form: {
+                server: 'Server',
+                destination: 'Destination',
+              },
+              createdAs: 'These files will be created on the remote server under ',
+            },
+            deleteFile: {
+              title: 'Delete File',
+              singleFileWarning: 'You will not be able to recover the contents of {file} once deleted.',
+              multipleFilesWarning: 'You will not be able to recover the contents of the following files once deleted.',
+            },
+            createFile: {
+              title: 'Create File',
+              form: {
+                fileName: 'File Name',
+              },
+            },
+            filePermissions: {
+              title: 'File Permissions',
+              symbolic: 'Symbolic:',
+              octal: 'Octal:',
+              owner: 'Owner',
+              group: 'Group',
+              other: 'Other',
+              breakdown: 'Permission Breakdown',
+              readPermission: 'Read permission (4)',
+              writePermission: 'Write permission (2)',
+              executePermission: 'Execute permission (1)',
+            },
+            renameFile: {
+              title: 'Rename File',
+              form: {
+                fileName: 'File Name',
+              },
+            },
+            searchFiles: {
+              title: 'Search Files',
+              placeholder: 'Search for files...',
+              advancedFilters: 'Advanced Filters',
+              pathPatterns: 'Path Patterns',
+              include: 'Include',
+              exclude: 'Exclude',
+              caseInsensitive: 'Case insensitive',
+              fileContent: 'File Content',
+              searchText: 'Search text',
+              maxFileSize: 'Max file size',
+              includeOversized: 'Include oversized files',
+              includeOversizedDescription: 'Include files that match other filters but are too large to search',
+              fileSize: 'File Size',
+              minimum: 'Minimum',
+              maximum: 'Maximum',
+            },
+            pullFile: {
+              title: 'Pull File',
+              form: {
+                fileUrl: 'File URL',
+                query: 'Query',
+                fileName: 'File Name',
+              },
+              createdAs: 'This file will be created as ',
+              pull: 'Pull',
+            },
+            sftpDetails: {
+              title: 'SFTP Details',
+              form: {
+                protocol: 'Protocol',
+                port: 'Port',
+                host: 'Host',
+                username: 'Username',
+                password: 'Password',
+                yourPassword: 'Your Control Panel Password',
+              },
+              launch: 'Launch',
+            },
+          },
         },
         databases: {
           title: 'Databases',
@@ -828,9 +1075,6 @@ const baseTranslations = defineTranslations({
           },
           button: {
             browse: 'Browse',
-            download: 'Download',
-            downloadAs: 'Download as {format}',
-            restore: 'Restore',
           },
           toast: {
             downloadStarted: 'Download started.',
@@ -924,6 +1168,14 @@ const baseTranslations = defineTranslations({
         },
         settings: {
           title: 'Settings',
+          debugInformation: {
+            title: 'Debug Information',
+            form: {
+              nodeName: 'Node',
+              locationName: 'Location',
+              serverUuid: 'Server UUID',
+            },
+          },
           rename: {
             title: 'Rename Server',
             form: {

@@ -30,7 +30,10 @@ export default function DashboardOAuthLinks() {
   });
 
   return (
-    <AccountContentContainer title={t('pages.account.oauthLinks.title', {})}>
+    <AccountContentContainer
+      title={t('pages.account.oauthLinks.title', {})}
+      registry={window.extensionContext.extensionRegistry.pages.dashboard.oauthLinks.container}
+    >
       <Group justify='space-between' align='center' mb='md'>
         <Title order={1} c='white'>
           {t('pages.account.oauthLinks.title', {})}

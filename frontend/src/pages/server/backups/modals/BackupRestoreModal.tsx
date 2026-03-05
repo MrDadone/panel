@@ -50,7 +50,7 @@ export default function BackupRestoreModal({ backup, opened, onClose }: Props) {
 
       <ModalFooter>
         <Button color={truncate ? 'red' : undefined} onClick={doRestore} loading={loading}>
-          {t('pages.server.backups.button.restore', {})}
+          {t('common.button.restore', {})}
         </Button>
         <Button variant='default' onClick={onClose}>
           {t('common.button.close', {})}

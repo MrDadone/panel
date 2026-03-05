@@ -26,10 +26,12 @@ import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { FileManagerProvider } from '@/providers/FileManagerProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
 
 function ServerFilesComponent() {
+  const { t } = useTranslations();
   const { settings } = useGlobalStore();
   const { server } = useServerStore();
   const {
@@ -176,7 +178,7 @@ function ServerFilesComponent() {
 
             copyFile(server.uuid, join(browsingDirectory, file.name), null)
               .then(() => {
-                addToast('File copying has started.', 'success');
+                addToast(t('pages.server.files.toast.fileCopyingStarted', {}), 'success');
               })
               .catch((msg) => {
                 addToast(httpErrorToHuman(msg), 'error');
@@ -213,7 +215,7 @@ function ServerFilesComponent() {
       <Group justify='space-between' align='center' mb='md'>
         <Group>
           <Title order={1} c='white'>
-            Files
+            {t('pages.server.files.title', {})}
           </Title>
 
           <FileSettings />
@@ -236,7 +238,17 @@ function ServerFilesComponent() {
         <SelectionArea onSelectedStart={onSelectedStart} onSelected={onSelected} fireEvents={false} className='h-full'>
           <ContextMenuProvider>
             <Table
-              columns={window.innerWidth < 768 ? ['', 'Name', 'Size', ''] : ['', 'Name', 'Size', 'Modified', '']}
+              columns={
+                window.innerWidth < 768
+                  ? ['', t('common.table.columns.name', {}), t('common.table.columns.size', {}), '']
+                  : [
+                      '',
+                      t('common.table.columns.name', {}),
+                      t('common.table.columns.size', {}),
+                      t('pages.server.files.table.columns.modified', {}),
+                      '',
+                    ]
+              }
               pagination={browsingEntries}
               onPageSelect={onPageSelect}
               allowSelect={false}
@@ -264,8 +276,14 @@ function ServerFilesComponent() {
 }
 
 export default function ServerFiles() {
+  const { t } = useTranslations();
+
   return (
-    <ServerContentContainer title='Files' hideTitleComponent>
+    <ServerContentContainer
+      title={t('pages.server.files.title', {})}
+      hideTitleComponent
+      registry={window.extensionContext.extensionRegistry.pages.server.files.container}
+    >
       <FileManagerProvider>
         <ServerFilesComponent />
       </FileManagerProvider>

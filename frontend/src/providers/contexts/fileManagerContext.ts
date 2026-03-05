@@ -55,6 +55,8 @@ export interface FileManagerContextType {
   setClickOnce: (state: boolean) => void;
   editorMinimap: boolean;
   setEditorMinimap: (state: boolean) => void;
+  editorLineOverflow: boolean;
+  setEditorLineOverflow: (state: boolean) => void;
   imageViewerSmoothing: boolean;
   setImageViewerSmoothing: (state: boolean) => void;
 

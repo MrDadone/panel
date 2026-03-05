@@ -2,6 +2,7 @@ import { faChevronDown, faChevronUp, faExclamationTriangle } from '@fortawesome/
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { ReactNode } from 'react';
 import { Component, type ErrorInfo } from 'react';
+import { TranslationContext } from 'shared';
 import { useGlobalStore } from '@/stores/global.ts';
 
 interface Props {
@@ -16,6 +17,9 @@ interface State {
 }
 
 class ErrorBoundary extends Component<Props, State> {
+  static contextType = TranslationContext;
+  declare context: React.ContextType<typeof TranslationContext>;
+
   override state: State = {
     hasError: false,
     error: null,
@@ -49,7 +53,8 @@ class ErrorBoundary extends Component<Props, State> {
 
               <div className='flex-1 min-w-0'>
                 <p className='text-sm text-neutral-100 mb-2'>
-                  An error was encountered by the application while rendering this view. Try refreshing the page.
+                  {this.context?.t('elements.errorBoundary.message', {}) ||
+                    'An error was encountered by the application while rendering this view. Try refreshing the page.'}
                 </p>
 
                 {error && appDebug && (
@@ -59,21 +64,27 @@ class ErrorBoundary extends Component<Props, State> {
                       className='flex items-center text-xs text-neutral-400 hover:text-neutral-200 transition-colors mb-2'
                     >
                       <FontAwesomeIcon icon={showDetails ? faChevronUp : faChevronDown} className='h-3 w-auto mr-1' />
-                      {showDetails ? 'Hide' : 'Show'} error details
+                      {showDetails
+                        ? this.context?.t('elements.errorBoundary.hideDetails', {}) || 'Hide Details'
+                        : this.context?.t('elements.errorBoundary.showDetails', {}) || 'Show Details'}
                     </button>
 
                     {showDetails && (
                       <div className='bg-neutral-800 rounded p-3 mt-2 space-y-3'>
                         <div>
-                          <p className='text-xs font-semibold text-red-400 mb-1'>Error Message:</p>
+                          <p className='text-xs font-semibold text-red-400 mb-1'>
+                            {this.context?.t('elements.errorBoundary.errorMessage', {}) || 'Error Message:'}
+                          </p>
                           <pre className='text-xs text-neutral-300 whitespace-pre-wrap wrap-break-word bg-neutral-950 p-2 rounded'>
-                            {error.message || 'No error message available'}
+                            {error.message || this.context?.t('common.na', {}) || 'N/A'}
                           </pre>
                         </div>
 
                         {error.stack && (
                           <div>
-                            <p className='text-xs font-semibold text-red-400 mb-1'>Stack Trace:</p>
+                            <p className='text-xs font-semibold text-red-400 mb-1'>
+                              {this.context?.t('elements.errorBoundary.stackTrace', {}) || 'Stack Trace:'}
+                            </p>
                             <pre className='text-xs text-neutral-300 whitespace-pre-wrap wrap-break-word bg-neutral-950 p-2 rounded overflow-x-auto'>
                               {error.stack}
                             </pre>
@@ -82,7 +93,9 @@ class ErrorBoundary extends Component<Props, State> {
 
                         {errorInfo && errorInfo.componentStack && (
                           <div>
-                            <p className='text-xs font-semibold text-red-400 mb-1'>Component Stack:</p>
+                            <p className='text-xs font-semibold text-red-400 mb-1'>
+                              {this.context?.t('elements.errorBoundary.componentStack', {}) || 'Component Stack:'}
+                            </p>
                             <pre className='text-xs text-neutral-300 whitespace-pre-wrap wrap-break-word bg-neutral-950 p-2 rounded overflow-x-auto'>
                               {errorInfo.componentStack}
                             </pre>

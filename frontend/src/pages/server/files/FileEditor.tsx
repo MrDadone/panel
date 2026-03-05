@@ -8,7 +8,6 @@ import getFileContent from '@/api/server/files/getFileContent.ts';
 import saveFileContent from '@/api/server/files/saveFileContent.ts';
 import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
-import Code from '@/elements/Code.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import MonacoEditor from '@/elements/MonacoEditor.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
@@ -18,6 +17,7 @@ import NotFound from '@/pages/NotFound.tsx';
 import { useBlocker } from '@/plugins/useBlocker.ts';
 import { FileManagerProvider, useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import FileBreadcrumbs from './FileBreadcrumbs.tsx';
 import FileEditorSettings from './FileEditorSettings.tsx';
@@ -27,12 +27,19 @@ import FileNameModal from './modals/FileNameModal.tsx';
 function FileEditorComponent() {
   const params = useParams<'action'>();
 
+  const { t } = useTranslations();
   const [searchParams, _] = useSearchParams();
   const navigate = useNavigate();
   const { addToast } = useToast();
   const server = useServerStore((state) => state.server);
-  const { editorMinimap, imageViewerSmoothing, browsingWritableDirectory, browsingDirectory, setBrowsingDirectory } =
-    useFileManager();
+  const {
+    editorMinimap,
+    editorLineOverflow,
+    imageViewerSmoothing,
+    browsingWritableDirectory,
+    browsingDirectory,
+    setBrowsingDirectory,
+  } = useFileManager();
 
   const [loading, setLoading] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -84,7 +91,7 @@ function FileEditorComponent() {
         setNameModalOpen(false);
       });
 
-      addToast(`${name ?? fileName} was saved.`);
+      addToast(t('pages.server.files.toast.fileSaved', {}), 'success');
 
       if (name) {
         navigate(
@@ -101,10 +108,19 @@ function FileEditorComponent() {
     return <NotFound />;
   }
 
-  const title = fileName ? (params.action === 'image' ? `Viewing ${fileName}` : `Editing ${fileName}`) : 'New File';
+  const title = fileName
+    ? params.action === 'image'
+      ? t('pages.server.files.titleEditorViewing', { file: fileName })
+      : t('pages.server.files.titleEditorEditing', { file: fileName })
+    : t('pages.server.files.titleEditorNew', {});
 
   return (
-    <ServerContentContainer hideTitleComponent fullscreen title={title}>
+    <ServerContentContainer
+      hideTitleComponent
+      fullscreen
+      title={title}
+      registry={window.extensionContext.extensionRegistry.pages.server.files.editorContainer}
+    >
       <div className='flex justify-between items-center lg:p-4 lg:pb-0 mx-5'>
         <Group>
           <Title>{title}</Title>
@@ -119,13 +135,13 @@ function FileEditorComponent() {
           {params.action === 'edit' ? (
             <ServerCan action='files.update'>
               <Button loading={saving} onClick={() => saveFile()}>
-                Save
+                {t('common.button.save', {})}
               </Button>
             </ServerCan>
           ) : (
             <ServerCan action='files.create'>
               <Button loading={saving} onClick={() => setNameModalOpen(true)}>
-                Create
+                {t('common.button.create', {})}
               </Button>
             </ServerCan>
           )}
@@ -133,13 +149,13 @@ function FileEditorComponent() {
       </div>
 
       <ConfirmationModal
-        title='Unsaved Changes'
+        title={t('pages.server.files.modal.unsavedChanges.title', {})}
         opened={blocker.state === 'blocked'}
         onClose={() => blocker.reset()}
         onConfirmed={() => blocker.proceed()}
-        confirm='Leave'
+        confirm={t('pages.server.files.modal.unsavedChanges.button.leave', {})}
       >
-        Are you sure you want to leave this page? You have unsaved changes in <Code>{fileName}</Code>.
+        {t('pages.server.files.modal.unsavedChanges.content', {}).md()}
       </ConfirmationModal>
 
       {loading ? (
@@ -182,6 +198,7 @@ function FileEditorComponent() {
                     readOnly: !browsingWritableDirectory,
                     stickyScroll: { enabled: false },
                     minimap: { enabled: editorMinimap },
+                    wordWrap: editorLineOverflow ? 'on' : 'off',
                     codeLens: false,
                     scrollBeyondLastLine: false,
                     smoothScrolling: true,

@@ -21,6 +21,7 @@ import Spinner from '@/elements/Spinner.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import { formatAllocation, statusToColor } from '@/lib/server.ts';
 import { bytesToString, mbToBytes } from '@/lib/size.ts';
+import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useUserStore } from '@/stores/user.ts';
@@ -46,11 +47,11 @@ export default function ServerItem({
   sKeyPressed?: boolean;
 }) {
   const { t } = useTranslations();
-  const { serverGroups, getServerResourceUsage } = useUserStore();
+  const { serverGroups } = useUserStore();
   const { serverListShowOthers } = useGlobalStore();
 
   const [openModal, setOpenModal] = useState<'add-group' | null>(null);
-  const stats = getServerResourceUsage(server.uuid, server.nodeUuid);
+  const stats = useServerStats(server);
 
   const diskLimit = server.limits.disk !== 0 ? bytesToString(mbToBytes(server.limits.disk)) : t('common.unlimited', {});
   const memoryLimit =

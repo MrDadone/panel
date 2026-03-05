@@ -71,10 +71,10 @@ mod patch {
         name_last: Option<compact_str::CompactString>,
 
         #[validate(
-            length(min = 5, max = 15),
+            length(min = 2, max = 15),
             custom(function = "shared::validate_language")
         )]
-        #[schema(min_length = 5, max_length = 15)]
+        #[schema(min_length = 2, max_length = 15)]
         language: Option<compact_str::CompactString>,
         toast_position: Option<UserToastPosition>,
         start_on_grouped_servers: Option<bool>,

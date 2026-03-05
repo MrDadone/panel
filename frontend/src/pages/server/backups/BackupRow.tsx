@@ -99,13 +99,13 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
           },
           {
             icon: faFileArrowDown,
-            label: t('pages.server.backups.button.download', {}),
+            label: t('common.button.download', {}),
             onClick: !backup.isStreaming ? () => doDownload('tar_gz') : () => null,
             color: 'gray',
             items: backup.isStreaming
               ? Object.entries(streamingArchiveFormatLabelMapping).map(([mime, label]) => ({
                   icon: faFileArrowDown,
-                  label: t('pages.server.backups.button.downloadAs', { format: label }),
+                  label: t('common.button.downloadAs', { format: label }),
                   onClick: () => doDownload(mime as StreamingArchiveFormat),
                   color: 'gray',
                 }))
@@ -114,7 +114,7 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
           },
           {
             icon: faRotateLeft,
-            label: t('pages.server.backups.button.restore', {}),
+            label: t('common.button.restore', {}),
             onClick: () => setOpenModal('restore'),
             color: 'gray',
             canAccess: useServerCan('backups.restore'),
@@ -128,6 +128,8 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
             canAccess: useServerCan('backups.delete'),
           },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.server.backups.backupContextMenu}
+        registryProps={{ backup }}
       >
         {({ items, openMenu }) => (
           <TableRow

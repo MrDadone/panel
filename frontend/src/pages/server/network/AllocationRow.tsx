@@ -120,6 +120,8 @@ export default function AllocationRow({ allocation }: { allocation: ServerAlloca
             canAccess: useServerCan('allocations.delete'),
           },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.server.network.allocationContextMenu}
+        registryProps={{ allocation }}
       >
         {({ items, openMenu }) => (
           <TableRow

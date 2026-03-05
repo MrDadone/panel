@@ -51,8 +51,7 @@ jobs:
       - name: Build frontend
         run: |
           cd frontend
-          export NODE_OPTIONS="--max-old-space-size=4096"
-          pnpm build
+          pnpm build:ci
 
       - name: Upload frontend build
         uses: actions/upload-artifact@v4

@@ -27,7 +27,10 @@ export default function DashboardSshKeys() {
   });
 
   return (
-    <AccountContentContainer title={t('pages.account.sshKeys.title', {})}>
+    <AccountContentContainer
+      title={t('pages.account.sshKeys.title', {})}
+      registry={window.extensionContext.extensionRegistry.pages.dashboard.sshKeys.container}
+    >
       <SshKeyCreateModal opened={openModal === 'create'} onClose={() => setOpenModal(null)} />
       <SshKeyImportModal opened={openModal === 'import'} onClose={() => setOpenModal(null)} />
 

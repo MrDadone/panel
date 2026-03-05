@@ -53,6 +53,8 @@ export default function ApiKeyRow({ apiKey }: { apiKey: UserApiKey }) {
           { icon: faPencil, label: t('common.button.edit', {}), onClick: () => setOpenModal('edit'), color: 'gray' },
           { icon: faTrash, label: t('common.button.remove', {}), onClick: () => setOpenModal('delete'), color: 'red' },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.dashboard.apiKeys.apiKeyContextMenu}
+        registryProps={{ apiKey }}
       >
         {({ items, openMenu }) => (
           <TableRow

@@ -123,7 +123,7 @@ function Divider() {
 
 function Footer() {
   const { t } = useTranslations();
-  const { user, doLogout } = useAuth();
+  const { impersonating, user, doLogout } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -172,7 +172,9 @@ function Footer() {
             )}
             <Menu.Divider />
             <Menu.Item leftSection={<FontAwesomeIcon icon={faArrowRightFromBracket} />} color='red' onClick={doLogout}>
-              {t('common.button.logout', {})}
+              {impersonating
+                ? t('elements.sidebar.button.stopImpersonating', {})
+                : t('elements.sidebar.button.logout', {})}
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>

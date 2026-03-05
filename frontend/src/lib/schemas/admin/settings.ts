@@ -96,6 +96,7 @@ export const adminSettingsServerSchema = z.object({
   allowOverwritingCustomDockerImage: z.boolean(),
   allowEditingStartupCommand: z.boolean(),
   allowViewingInstallationLogs: z.boolean(),
+  allowViewingTransferProgress: z.boolean(),
 });
 
 export const adminSettingsActivitySchema = z.object({

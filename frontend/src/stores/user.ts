@@ -22,3 +22,7 @@ export const useUserStore = create<UserStore>()((...a) => ({
   ...createSecurityKeysSlice(...a),
   ...createOAuthLinksSlice(...a),
 }));
+
+export function getUserStore() {
+  return useUserStore.getState();
+}
