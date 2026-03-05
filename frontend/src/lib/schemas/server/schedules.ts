@@ -58,16 +58,16 @@ export const serverScheduleTriggerSchema = z.discriminatedUnion('type', [
   serverScheduleTriggerCrashSchema,
 ]);
 
-export const serverSchedulePreConditionNoneSchema = z.object({
+export const serverScheduleConditionNoneSchema = z.object({
   type: z.literal('none'),
 });
 
-export const serverSchedulePreCondtionServerStateSchema = z.object({
+export const serverSchedulePreConditionServerStateSchema = z.object({
   type: z.literal('server_state'),
   state: z.enum(['offline', 'starting', 'stopping', 'running']),
 });
 
-export const serverSchedulePreCondtionUptimeSchema = z.object({
+export const serverSchedulePreConditionUptimeSchema = z.object({
   type: z.literal('uptime'),
   value: z.number(),
   comparator: serverScheduleComparator,
@@ -96,56 +96,22 @@ export const serverSchedulePreConditionFileExistsSchema = z.object({
   file: z.string(),
 });
 
-export const serverSechdulePreConditionVariableExists = z.object({
-  type: z.literal('variable_exists'),
-  variable: serverScheduleStepVariableSchema,
-});
-
-export const serverSechdulePreConditionVariableEquals = z.object({
-  type: z.literal('variable_equals'),
-  variable: serverScheduleStepVariableSchema,
-  equals: serverScheduleStepDynamicSchema,
-});
-
-export const serverSechdulePreConditionVariableContains = z.object({
-  type: z.literal('variable_contains'),
-  variable: serverScheduleStepVariableSchema,
-  contains: serverScheduleStepDynamicSchema,
-});
-
-export const serverSechdulePreConditionVariableStartsWith = z.object({
-  type: z.literal('variable_starts_with'),
-  variable: serverScheduleStepVariableSchema,
-  startsWith: serverScheduleStepDynamicSchema,
-});
-
-export const serverSechdulePreConditionVariableEndsWith = z.object({
-  type: z.literal('variable_ends_with'),
-  variable: serverScheduleStepVariableSchema,
-  endsWith: serverScheduleStepDynamicSchema,
-});
-
 export type ServerSchedulePreCondition =
-  | z.infer<typeof serverSchedulePreConditionNoneSchema>
+  | z.infer<typeof serverScheduleConditionNoneSchema>
   | {
       type: 'and' | 'or' | 'not';
       conditions: ServerSchedulePreCondition[];
     }
-  | z.infer<typeof serverSchedulePreCondtionServerStateSchema>
-  | z.infer<typeof serverSchedulePreCondtionUptimeSchema>
+  | z.infer<typeof serverSchedulePreConditionServerStateSchema>
+  | z.infer<typeof serverSchedulePreConditionUptimeSchema>
   | z.infer<typeof serverSchedulePreConditionCpuUsageSchema>
   | z.infer<typeof serverSchedulePreConditionMemoryUsageSchema>
   | z.infer<typeof serverSchedulePreConditionDiskUsageSchema>
-  | z.infer<typeof serverSchedulePreConditionFileExistsSchema>
-  | z.infer<typeof serverSechdulePreConditionVariableExists>
-  | z.infer<typeof serverSechdulePreConditionVariableEquals>
-  | z.infer<typeof serverSechdulePreConditionVariableContains>
-  | z.infer<typeof serverSechdulePreConditionVariableStartsWith>
-  | z.infer<typeof serverSechdulePreConditionVariableEndsWith>;
+  | z.infer<typeof serverSchedulePreConditionFileExistsSchema>;
 
 export const serverSchedulePreConditionSchema: ZodType<ServerSchedulePreCondition> = z.lazy(() =>
   z.discriminatedUnion('type', [
-    serverSchedulePreConditionNoneSchema,
+    serverScheduleConditionNoneSchema,
 
     z.object({
       type: z.literal('and'),
@@ -160,17 +126,78 @@ export const serverSchedulePreConditionSchema: ZodType<ServerSchedulePreConditio
       conditions: z.array(serverSchedulePreConditionSchema),
     }),
 
-    serverSchedulePreCondtionServerStateSchema,
-    serverSchedulePreCondtionUptimeSchema,
+    serverSchedulePreConditionServerStateSchema,
+    serverSchedulePreConditionUptimeSchema,
     serverSchedulePreConditionCpuUsageSchema,
     serverSchedulePreConditionMemoryUsageSchema,
     serverSchedulePreConditionDiskUsageSchema,
     serverSchedulePreConditionFileExistsSchema,
-    serverSechdulePreConditionVariableExists,
-    serverSechdulePreConditionVariableEquals,
-    serverSechdulePreConditionVariableContains,
-    serverSechdulePreConditionVariableStartsWith,
-    serverSechdulePreConditionVariableEndsWith,
+  ]),
+);
+
+export const serverSechduleConditionVariableExists = z.object({
+  type: z.literal('variable_exists'),
+  variable: serverScheduleStepVariableSchema,
+});
+
+export const serverSechduleConditionVariableEquals = z.object({
+  type: z.literal('variable_equals'),
+  variable: serverScheduleStepVariableSchema,
+  equals: serverScheduleStepDynamicSchema,
+});
+
+export const serverSechduleConditionVariableContains = z.object({
+  type: z.literal('variable_contains'),
+  variable: serverScheduleStepVariableSchema,
+  contains: serverScheduleStepDynamicSchema,
+});
+
+export const serverSechduleConditionVariableStartsWith = z.object({
+  type: z.literal('variable_starts_with'),
+  variable: serverScheduleStepVariableSchema,
+  startsWith: serverScheduleStepDynamicSchema,
+});
+
+export const serverSechduleConditionVariableEndsWith = z.object({
+  type: z.literal('variable_ends_with'),
+  variable: serverScheduleStepVariableSchema,
+  endsWith: serverScheduleStepDynamicSchema,
+});
+
+export type ServerScheduleCondition =
+  | z.infer<typeof serverScheduleConditionNoneSchema>
+  | {
+      type: 'and' | 'or' | 'not';
+      conditions: ServerScheduleCondition[];
+    }
+  | z.infer<typeof serverSechduleConditionVariableExists>
+  | z.infer<typeof serverSechduleConditionVariableEquals>
+  | z.infer<typeof serverSechduleConditionVariableContains>
+  | z.infer<typeof serverSechduleConditionVariableStartsWith>
+  | z.infer<typeof serverSechduleConditionVariableEndsWith>;
+
+export const serverScheduleConditionSchema: ZodType<ServerScheduleCondition> = z.lazy(() =>
+  z.discriminatedUnion('type', [
+    serverScheduleConditionNoneSchema,
+
+    z.object({
+      type: z.literal('and'),
+      conditions: z.array(serverScheduleConditionSchema),
+    }),
+    z.object({
+      type: z.literal('or'),
+      conditions: z.array(serverScheduleConditionSchema),
+    }),
+    z.object({
+      type: z.literal('not'),
+      conditions: z.array(serverScheduleConditionSchema),
+    }),
+
+    serverSechduleConditionVariableExists,
+    serverSechduleConditionVariableEquals,
+    serverSechduleConditionVariableContains,
+    serverSechduleConditionVariableStartsWith,
+    serverSechduleConditionVariableEndsWith,
   ]),
 );
 
@@ -195,7 +222,7 @@ export const serverScheduleStepSleepSchema = z.object({
 
 export const serverScheduleStepEnsureSchema = z.object({
   type: z.literal('ensure'),
-  condition: serverSchedulePreConditionSchema,
+  condition: serverScheduleConditionSchema,
 });
 
 export const serverScheduleStepFormatSchema = z.object({
