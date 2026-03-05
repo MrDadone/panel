@@ -16,6 +16,7 @@ pub struct AppSettingsServer {
     pub allow_overwriting_custom_docker_image: bool,
     pub allow_editing_startup_command: bool,
     pub allow_viewing_installation_logs: bool,
+    pub allow_viewing_transfer_progress: bool,
 }
 
 #[async_trait::async_trait]
@@ -54,6 +55,10 @@ impl SettingsSerializeExt for AppSettingsServer {
             .write_raw_setting(
                 "allow_viewing_installation_logs",
                 self.allow_viewing_installation_logs.to_compact_string(),
+            )
+            .write_raw_setting(
+                "allow_viewing_transfer_progress",
+                self.allow_viewing_transfer_progress.to_compact_string(),
             ))
     }
 }
@@ -93,6 +98,10 @@ impl SettingsDeserializeExt for AppSettingsServerDeserializer {
                 .unwrap_or(false),
             allow_viewing_installation_logs: deserializer
                 .take_raw_setting("allow_viewing_installation_logs")
+                .map(|s| s == "true")
+                .unwrap_or(true),
+            allow_viewing_transfer_progress: deserializer
+                .take_raw_setting("allow_viewing_transfer_progress")
                 .map(|s| s == "true")
                 .unwrap_or(true),
         }))

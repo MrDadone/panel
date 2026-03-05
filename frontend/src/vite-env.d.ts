@@ -1272,6 +1272,7 @@ declare global {
       allowOverwritingCustomDockerImage: boolean;
       allowEditingStartupCommand: boolean;
       allowViewingInstallationLogs: boolean;
+      allowViewingTransferProgress: boolean;
     };
     activity: {
       adminLogRetentionDays: number;

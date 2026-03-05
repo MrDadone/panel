@@ -1083,10 +1083,13 @@ impl Server {
             permissions.push("websocket.connect");
 
             for permission in subuser_permissions.iter() {
-                if permission == "control.read-console"
-                    && settings.server.allow_viewing_installation_logs
-                {
-                    permissions.push("admin.websocket.install");
+                if permission == "control.read-console" {
+                    if settings.server.allow_viewing_installation_logs {
+                        permissions.push("admin.websocket.install");
+                    }
+                    if settings.server.allow_viewing_transfer_progress {
+                        permissions.push("admin.websocket.transfer");
+                    }
                 }
 
                 permissions.push(permission.as_str());
@@ -1097,6 +1100,9 @@ impl Server {
 
             if settings.server.allow_viewing_installation_logs {
                 permissions.push("admin.websocket.install");
+            }
+            if settings.server.allow_viewing_transfer_progress {
+                permissions.push("admin.websocket.transfer");
             }
 
             permissions.push("*");
@@ -1127,10 +1133,13 @@ impl Server {
         permissions.push("websocket.connect");
 
         for permission in subuser.permissions.iter() {
-            if permission == "control.read-console"
-                && settings.server.allow_viewing_installation_logs
-            {
-                permissions.push("admin.websocket.install");
+            if permission == "control.read-console" {
+                if settings.server.allow_viewing_installation_logs {
+                    permissions.push("admin.websocket.install");
+                }
+                if settings.server.allow_viewing_transfer_progress {
+                    permissions.push("admin.websocket.transfer");
+                }
             }
 
             permissions.push(permission.as_str());

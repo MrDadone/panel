@@ -30,6 +30,7 @@ export default function ServerContainer() {
       allowOverwritingCustomDockerImage: false,
       allowEditingStartupCommand: false,
       allowViewingInstallationLogs: false,
+      allowViewingTransferProgress: false,
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(adminSettingsServerSchema),
@@ -106,13 +107,19 @@ export default function ServerContainer() {
               {...form.getInputProps('allowEditingStartupCommand', { type: 'checkbox' })}
             />
           </Group>
-        </Stack>
 
-        <Switch
-          label='Allow Viewing Installation Logs'
-          description='If enabled, users with console read permissions will also be able to view installation logs via the websocket connection. If disabled, installation logs will only be available for admins.'
-          {...form.getInputProps('allowViewingInstallationLogs', { type: 'checkbox' })}
-        />
+          <Switch
+            label='Allow Viewing Installation Logs'
+            description='If enabled, users with console read permissions will also be able to view installation logs via the websocket connection. If disabled, installation logs will only be available for admins.'
+            {...form.getInputProps('allowViewingInstallationLogs', { type: 'checkbox' })}
+          />
+
+          <Switch
+            label='Allow Viewing Transfer Progress'
+            description='If enabled, users with console read permissions will also be able to view transfer progress logs via the websocket connection. If disabled, transfer progress logs will only be available for admins.'
+            {...form.getInputProps('allowViewingTransferProgress', { type: 'checkbox' })}
+          />
+        </Stack>
 
         <Group mt='md'>
           <AdminCan

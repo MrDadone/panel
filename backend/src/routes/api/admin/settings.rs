@@ -77,6 +77,8 @@ mod put {
 
         allow_overwriting_custom_docker_image: Option<bool>,
         allow_editing_startup_command: Option<bool>,
+        allow_viewing_installation_logs: Option<bool>,
+        allow_viewing_transfer_progress: Option<bool>,
     }
 
     #[derive(ToSchema, Validate, Deserialize)]
@@ -209,6 +211,12 @@ mod put {
             }
             if let Some(allow_editing_startup_command) = server.allow_editing_startup_command {
                 settings.server.allow_editing_startup_command = allow_editing_startup_command;
+            }
+            if let Some(allow_viewing_installation_logs) = server.allow_viewing_installation_logs {
+                settings.server.allow_viewing_installation_logs = allow_viewing_installation_logs;
+            }
+            if let Some(allow_viewing_transfer_progress) = server.allow_viewing_transfer_progress {
+                settings.server.allow_viewing_transfer_progress = allow_viewing_transfer_progress;
             }
         }
         if let Some(activity) = data.activity {
