@@ -108,7 +108,7 @@ const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
         >
           <TitleCard
             key={`window_${w.id}_card`}
-            className='h-full'
+            className={`h-full window_${w.id}_card`}
             titleClassName={`window_${w.id}_drag cursor-grab select-none`}
             childrenClassName='h-full pb-16'
             icon={<FontAwesomeIcon icon={w.icon} />}

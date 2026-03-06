@@ -43,6 +43,8 @@ export const ContextMenuProvider = ({ children, menuProps }: { children: ReactNo
 
   const showMenu = (x: number, y: number, items: ContextMenuItem[]) => {
     const windowContainer = getParent();
+
+    console.log('Showing context menu at', { x, y }, 'within window container:', windowContainer);
     if (windowContainer) {
       const windowRect = windowContainer.getBoundingClientRect();
 

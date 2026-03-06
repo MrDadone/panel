@@ -700,6 +700,8 @@ const baseTranslations = defineTranslations({
           },
           message: {
             serverMarkedAs: 'Server marked as {state}...',
+            installFailed: 'Installation has failed.',
+            installCompleted: 'Installation has completed successfully.',
             transferFailed: 'Transfer has failed.',
             pullingImage: "Your Server is currently pulling it's docker image. Please wait...",
             pulling: 'Pulling',
