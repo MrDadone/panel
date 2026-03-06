@@ -22,6 +22,11 @@ import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import AuthWrapper from './AuthWrapper.tsx';
 
+interface TwoFactorInformation {
+  user: User;
+  token: string;
+}
+
 export default function Login() {
   const { doLogin } = useAuth();
   const { settings } = useGlobalStore();
@@ -33,7 +38,7 @@ export default function Login() {
   const [oAuthProviders, setOAuthProviders] = useState<OAuthProvider[]>([]);
   const [passkeyUuid, setPasskeyUuid] = useState('');
   const [passkeyOptions, setPasskeyOptions] = useState<CredentialRequestOptions>();
-  const [twoFactorToken, setTwoFactorToken] = useState('');
+  const [twoFactorInformation, setTwoFactorInformation] = useState<TwoFactorInformation | null>(null);
   const [timeOffset, setTimeOffset] = useState(0);
   const captchaRef = useRef<CaptchaRef>(null);
 
@@ -78,7 +83,7 @@ export default function Login() {
 
     getSecurityKeys(usernameForm.values.username)
       .then((keys) => {
-        setTimeOffset(new Date().getTime() - keys.serverTime.getTime());
+        setTimeOffset(Date.now() - keys.serverTime.getTime());
 
         if (keys.options.publicKey?.allowCredentials?.length === 0) {
           setStep('password');
@@ -163,13 +168,13 @@ export default function Login() {
         .then((response) => {
           if (response.type === 'two_factor_required') {
             startTransition(() => {
-              setTwoFactorToken(response.token!);
+              setTwoFactorInformation({ user: response.user, token: response.token });
               setStep('totp');
             });
             return;
           }
 
-          doLogin(response.user!);
+          doLogin(response.user);
         })
         .catch((msg) => {
           setError(httpErrorToHuman(msg));
@@ -184,7 +189,7 @@ export default function Login() {
 
     checkpointLogin({
       code: totpForm.values.code,
-      confirmation_token: twoFactorToken,
+      confirmation_token: twoFactorInformation?.token ?? '',
     })
       .then((response) => {
         doLogin(response.user);
@@ -337,6 +342,16 @@ export default function Login() {
               <Title order={2} ta='center'>
                 Two-Factor Authentication
               </Title>
+
+              <img
+                src={twoFactorInformation?.user.avatar}
+                alt='User Avatar'
+                className='w-24 h-24 rounded-full mx-auto'
+              />
+              <Title order={3} ta='center' mt={-8}>
+                {twoFactorInformation?.user.username}
+              </Title>
+
               <Text c='dimmed' ta='center'>
                 Enter the 6-digit code from your authenticator app
               </Text>
