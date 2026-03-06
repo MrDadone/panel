@@ -122,7 +122,7 @@ export default function ServerCreate() {
     fetcher: (search) => getNodes(1, search),
     canRequest: canReadNodes,
   });
-  const users = useSearchableResource<User>({
+  const users = useSearchableResource<FullUser>({
     fetcher: (search) => getUsers(1, search),
     canRequest: canReadUsers,
   });
@@ -440,25 +440,33 @@ export default function ServerCreate() {
                   <Switch
                     label='Start on Completion'
                     description='Start server after installation completes'
-                    {...form.getInputProps('startOnCompletion', { type: 'checkbox' })}
+                    {...form.getInputProps('startOnCompletion', {
+                      type: 'checkbox',
+                    })}
                   />
                   <Switch
                     label='Skip Installer'
                     description='Skip running the install script'
-                    {...form.getInputProps('skipInstaller', { type: 'checkbox' })}
+                    {...form.getInputProps('skipInstaller', {
+                      type: 'checkbox',
+                    })}
                   />
                 </Group>
 
                 <Switch
                   label='Enable Hugepages Passthrough'
                   description='Enable hugepages passthrough for the server (mounts /dev/hugepages into the container)'
-                  {...form.getInputProps('hugepagesPassthroughEnabled', { type: 'checkbox' })}
+                  {...form.getInputProps('hugepagesPassthroughEnabled', {
+                    type: 'checkbox',
+                  })}
                 />
 
                 <Switch
                   label='Enable KVM Passthrough'
                   description='Enable KVM passthrough for the server (allows access to /dev/kvm inside the container)'
-                  {...form.getInputProps('kvmPassthroughEnabled', { type: 'checkbox' })}
+                  {...form.getInputProps('kvmPassthroughEnabled', {
+                    type: 'checkbox',
+                  })}
                 />
               </Stack>
             </TitleCard>
@@ -550,7 +558,11 @@ export default function ServerCreate() {
                   {eggVariables.map((variable) => (
                     <VariableContainer
                       key={variable.envVariable}
-                      variable={{ ...variable, value: '', isEditable: variable.userEditable }}
+                      variable={{
+                        ...variable,
+                        value: '',
+                        isEditable: variable.userEditable,
+                      }}
                       loading={loading}
                       overrideReadonly
                       value={

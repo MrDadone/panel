@@ -8,7 +8,7 @@ import { serverTableColumns } from '@/lib/tableColumns.ts';
 import ServerRow from '@/pages/admin/servers/ServerRow.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 
-export default function AdminUserServers({ user }: { user: User }) {
+export default function AdminUserServers({ user }: { user: FullUser }) {
   const [showOwnedUserServers, setShowOwnedUserServers] = useState(false);
   const [userServers, setUserServers] = useState<Pagination<AdminServer>>(getEmptyPaginationSet());
 

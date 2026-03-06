@@ -47,7 +47,12 @@ export default function OobeLogin({ onNext }: OobeComponentProps) {
       captcha: '',
     })
       .then((response) => {
-        doLogin(response.user!, false);
+        if (response.type === 'two_factor_required') {
+          navigate('/auth/login');
+          return;
+        }
+
+        doLogin(response.user, false);
 
         const nextStep = steps.find((step) => step.stepKey === settings.oobeStep);
         if (nextStep) {

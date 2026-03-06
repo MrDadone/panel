@@ -8,7 +8,7 @@ interface Data extends z.infer<typeof authRegisterSchema> {
 }
 
 interface Response {
-  user: User;
+  user: FullUser;
 }
 
 export default async (data: Data): Promise<Response> => {

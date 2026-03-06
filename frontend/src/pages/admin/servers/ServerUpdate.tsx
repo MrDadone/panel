@@ -116,7 +116,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
 
   const [selectedNestUuid, setSelectedNestUuid] = useState<string | null>(contextServer?.nest.uuid ?? '');
 
-  const users = useSearchableResource<User>({
+  const users = useSearchableResource<FullUser>({
     fetcher: (search) => getUsers(1, search),
     defaultSearchValue: contextServer?.owner.username,
     canRequest: canReadUsers,
@@ -391,13 +391,17 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                 <Switch
                   label='Enable Hugepages Passthrough'
                   description='Enable hugepages passthrough for the server (mounts /dev/hugepages into the container)'
-                  {...form.getInputProps('hugepagesPassthroughEnabled', { type: 'checkbox' })}
+                  {...form.getInputProps('hugepagesPassthroughEnabled', {
+                    type: 'checkbox',
+                  })}
                 />
 
                 <Switch
                   label='Enable KVM Passthrough'
                   description='Enable KVM passthrough for the server (allows access to /dev/kvm inside the container)'
-                  {...form.getInputProps('kvmPassthroughEnabled', { type: 'checkbox' })}
+                  {...form.getInputProps('kvmPassthroughEnabled', {
+                    type: 'checkbox',
+                  })}
                 />
               </Stack>
             </TitleCard>

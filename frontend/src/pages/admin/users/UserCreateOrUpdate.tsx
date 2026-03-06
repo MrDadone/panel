@@ -24,7 +24,7 @@ import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 
-export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User }) {
+export default function UserCreateOrUpdate({ contextUser }: { contextUser?: FullUser }) {
   const { doImpersonate } = useAuth();
   const { settings, languages } = useGlobalStore();
   const { addToast } = useToast();
@@ -45,7 +45,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
     },
   });
 
-  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminUserSchema>, User>({
+  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminUserSchema>, FullUser>({
     form,
     createFn: () => createUser(adminUserSchema.parse(form.values)),
     updateFn: contextUser ? () => updateUser(contextUser.uuid, adminUserSchema.parse(form.values)) : undefined,

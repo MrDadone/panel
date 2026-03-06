@@ -11,7 +11,7 @@ import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
-export default function UserOAuthLinkAddModal({ user, opened, onClose }: ModalProps & { user: User }) {
+export default function UserOAuthLinkAddModal({ user, opened, onClose }: ModalProps & { user: FullUser }) {
   const { addToast } = useToast();
   const { addUserOAuthLink } = useAdminStore();
 

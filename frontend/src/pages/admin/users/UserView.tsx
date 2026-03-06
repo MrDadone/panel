@@ -15,7 +15,7 @@ import AdminUserOAuthLinks from './oauthLinks/AdminUserOAuthLinks.tsx';
 export default function UserView() {
   const params = useParams<'id'>();
   const { addToast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FullUser | null>(null);
 
   useEffect(() => {
     if (params.id) {

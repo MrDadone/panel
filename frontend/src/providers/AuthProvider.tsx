@@ -16,7 +16,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FullUser | null>(null);
   const [impersonating, setImpersonating] = useState(window.localStorage.getItem('impersonatedUser') !== null);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       .finally(() => setLoading(false));
   }, []);
 
-  const doImpersonate = (user: User) => {
+  const doImpersonate = (user: FullUser) => {
     localStorage.setItem('impersonatedUser', user.uuid);
 
     navigate('/');
@@ -46,7 +46,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     setImpersonating(true);
   };
 
-  const doLogin = (user: User, doNavigate: boolean = true) => {
+  const doLogin = (user: FullUser, doNavigate: boolean = true) => {
     setUser(user);
     if (doNavigate) {
       navigate('/');

@@ -37,6 +37,7 @@ mod post {
             user: Box<shared::models::user::ApiFullUser>,
         },
         TwoFactorRequired {
+            user: Box<shared::models::user::ApiUser>,
             token: String,
         },
     }
@@ -129,7 +130,11 @@ mod post {
                 );
             }
 
-            ApiResponse::new_serialized(Response::TwoFactorRequired { token }).ok()
+            ApiResponse::new_serialized(Response::TwoFactorRequired {
+                user: Box::new(user.into_api_object(&state.storage.retrieve_urls().await?)),
+                token,
+            })
+            .ok()
         } else {
             let key = UserSession::create(
                 &state,

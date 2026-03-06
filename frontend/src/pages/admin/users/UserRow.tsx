@@ -7,7 +7,7 @@ import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { isAdmin } from '@/lib/permissions.ts';
 
-export default function UserRow({ user }: { user: User }) {
+export default function UserRow({ user }: { user: FullUser }) {
   return (
     <TableRow>
       <TableData>

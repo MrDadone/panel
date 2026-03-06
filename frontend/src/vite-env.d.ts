@@ -78,7 +78,7 @@ declare global {
 
   interface AdminUserOAuthLink {
     uuid: string;
-    user: User;
+    user: FullUser;
     identifier: string;
     lastUsed: Date | null;
     created: Date;
@@ -257,7 +257,7 @@ declare global {
     externalId: string | null;
     allocation: ServerAllocation | null;
     node: Node;
-    owner: User;
+    owner: FullUser;
     egg: AdminNestEgg;
     backupConfiguration: BackupConfiguration | null;
     nest: AdminNest;
@@ -971,7 +971,7 @@ declare global {
     roleUuid: string;
   }
 
-  interface User extends UpdateUser {
+  interface FullUser extends UpdateUser {
     uuid: string;
     role: Role;
     avatar?: string;
@@ -981,6 +981,14 @@ declare global {
     toastPosition: UserToastPosition;
     startOnGroupedServers: boolean;
     hasPassword: boolean;
+    created: Date;
+  }
+
+  interface User {
+    uuid: string;
+    username: string;
+    avatar?: string;
+    totpEnabled: boolean;
     created: Date;
   }
 

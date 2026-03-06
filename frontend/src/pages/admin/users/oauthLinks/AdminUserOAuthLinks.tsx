@@ -12,7 +12,7 @@ import { useAdminStore } from '@/stores/admin.tsx';
 import UserOAuthLinkAddModal from './modals/UserOAuthLinkAddModal.tsx';
 import UserOAuthLinkRow from './UserOAuthLinkRow.tsx';
 
-export default function AdminUserOAuthLinks({ user }: { user: User }) {
+export default function AdminUserOAuthLinks({ user }: { user: FullUser }) {
   const { userOAuthLinks, setUserOAuthLinks } = useAdminStore();
 
   const [openModal, setOpenModal] = useState<'add' | null>(null);
