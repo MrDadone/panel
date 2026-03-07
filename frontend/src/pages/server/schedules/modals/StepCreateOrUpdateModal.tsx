@@ -86,7 +86,7 @@ export default function StepCreateOrUpdateModal({
         .then(() => {
           onClose();
           addToast('Schedule step updated.', 'success');
-          onStepUpdate?.(form.values);
+          onStepUpdate?.({ ...propStep, ...form.values });
         })
         .catch((msg) => {
           addToast(httpErrorToHuman(msg), 'error');

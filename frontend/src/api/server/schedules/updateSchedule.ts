@@ -6,7 +6,7 @@ import { transformKeysToSnakeCase } from '@/lib/transformers.ts';
 export default async (
   serverUuid: string,
   scheduleUuid: string,
-  data: z.infer<typeof serverScheduleUpdateSchema>,
+  data: Partial<z.infer<typeof serverScheduleUpdateSchema>>,
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
     axiosInstance
