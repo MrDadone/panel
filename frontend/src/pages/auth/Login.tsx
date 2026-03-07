@@ -344,8 +344,8 @@ export default function Login() {
               </Title>
 
               <img
-                src={twoFactorInformation?.user.avatar}
-                alt='User Avatar'
+                src={twoFactorInformation?.user.avatar ?? '/icon.svg'}
+                alt={twoFactorInformation?.user.username}
                 className='w-24 h-24 rounded-full mx-auto'
               />
               <Title order={3} ta='center' mt={-8}>

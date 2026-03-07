@@ -3,6 +3,7 @@ import { Registry } from 'shared';
 import { AccountRegistry } from './account.ts';
 import { ActivityRegistry } from './activity.ts';
 import { ApiKeysRegistry } from './apiKeys.ts';
+import { HomeRegistry } from './home.ts';
 import { KeyboardShortcutsRegistry } from './keyboardShortcuts.ts';
 import { OAuthLinksRegistry } from './oauthLinks.ts';
 import { SecurityKeysRegistry } from './securityKeys.ts';
@@ -11,6 +12,7 @@ import { SshKeysRegistry } from './sshKeys.ts';
 
 export class DashboardRegistry implements Registry {
   public mergeFrom(other: this): this {
+    this.home.mergeFrom(other.home);
     this.account.mergeFrom(other.account);
     this.securityKeys.mergeFrom(other.securityKeys);
     this.apiKeys.mergeFrom(other.apiKeys);
@@ -26,6 +28,7 @@ export class DashboardRegistry implements Registry {
     return this;
   }
 
+  public home: HomeRegistry = new HomeRegistry();
   public account: AccountRegistry = new AccountRegistry();
   public securityKeys: SecurityKeysRegistry = new SecurityKeysRegistry();
   public apiKeys: ApiKeysRegistry = new ApiKeysRegistry();
@@ -37,6 +40,11 @@ export class DashboardRegistry implements Registry {
 
   public prependedComponents: FC[] = [];
   public appendedComponents: FC[] = [];
+
+  public enterHome(callback: (registry: HomeRegistry) => unknown): this {
+    callback(this.home);
+    return this;
+  }
 
   public enterAccount(callback: (registry: AccountRegistry) => unknown): this {
     callback(this.account);

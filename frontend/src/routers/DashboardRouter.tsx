@@ -2,13 +2,14 @@ import { faGraduationCap, faServer } from '@fortawesome/free-solid-svg-icons';
 import { Suspense } from 'react';
 import { NavLink, Route, Routes } from 'react-router';
 import Container from '@/elements/Container.tsx';
+import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
+import ScreenBlock from '@/elements/ScreenBlock.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { isAdmin } from '@/lib/permissions.ts';
 import { to } from '@/lib/routes.ts';
 import DashboardHomeAll from '@/pages/dashboard/home/DashboardHomeAll.tsx';
 import DashboardHomeGrouped from '@/pages/dashboard/home/DashboardHomeGrouped.tsx';
-import NotFound from '@/pages/NotFound.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import accountRoutes from '@/routers/routes/accountRoutes.ts';
@@ -79,7 +80,17 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
                 .map(({ path, element: Element }) => (
                   <Route key={path} path={`/account/${path}`.replace('//', '/')} element={<Element />} />
                 ))}
-              <Route path='*' element={<NotFound />} />
+              <Route
+                path='*'
+                element={
+                  <AccountContentContainer title={t('elements.screenBlock.notFound.title', {})}>
+                    <ScreenBlock
+                      title={t('elements.screenBlock.notFound.title', {})}
+                      content={t('elements.screenBlock.notFound.content', {})}
+                    />
+                  </AccountContentContainer>
+                }
+              />
             </Routes>
           </Suspense>
 

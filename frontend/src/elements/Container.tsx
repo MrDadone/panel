@@ -1,4 +1,4 @@
-import { ReactNode, useRef } from 'react';
+import { ReactNode } from 'react';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
@@ -14,7 +14,6 @@ export default function Container({ children, isNormal }: LayoutProps) {
   const { t } = useTranslations();
   const { impersonating } = useAuth();
   const { settings } = useGlobalStore();
-  const bodyRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
@@ -24,7 +23,7 @@ export default function Container({ children, isNormal }: LayoutProps) {
           : 'flex flex-col justify-between h-full overflow-auto p-4'
       }
     >
-      <div ref={bodyRef}>
+      <div>
         {impersonating && (
           <Alert color='yellow' className='mt-2 mx-2'>
             {t('elements.container.alert.impersonating', {})}

@@ -50,16 +50,23 @@
         "cancel": "Cancel",
         "continue": "Continue",
         "skip": "Skip",
+        "okay": "Okay",
         "back": "Back",
         "next": "Next",
         "install": "Install",
         "selectAll": "Select All",
         "deselectAll": "Deselect All",
+        "restore": "Restore",
         "download": "Download",
-        "downloadAs": "Download as {format}"
+        "downloadAs": "Download as {format}",
+        "export": "Export",
+        "exportAs": "Export as {format}"
       },
       "input": {
         "search": "Search..."
+      },
+      "tooltip": {
+        "resetToDefault": "Reset to default"
       },
       "form": {
         "name": "Name",
@@ -93,6 +100,7 @@
         "noAllocation": "No Allocation",
         "state": {
           "suspended": "Suspended",
+          "nodeMaintenance": "Node is under Maintenance",
           "restoringBackup": "Restoring Backup",
           "installing": "Installing",
           "InstallFailed": "Install Failed"
@@ -132,6 +140,8 @@
       },
       "unlimited": "Unlimited",
       "readOnly": "Read-Only",
+      "active": "Active",
+      "inactive": "Inactive",
       "na": "N/A",
       "yes": "Yes",
       "no": "No",
@@ -183,6 +193,24 @@
           "info": {
             "title": "Activity Details"
           }
+        }
+      },
+      "screenBlock": {
+        "permissionDenied": {
+          "title": "Permission Denied",
+          "content": "You do not have permission to access this page."
+        },
+        "notFound": {
+          "title": "Not Found",
+          "content": "The page you are looking for could not be found."
+        },
+        "serverConflict": {
+          "title": "Conflicting Server State",
+          "contentSuspended": "This server is suspended and cannot be accessed.",
+          "contentNodeMaintenance": "This server is on a node that is currently under maintenance and cannot be accessed.",
+          "contentInstallFailed": "This server failed to install and cannot be accessed until acknowledged.",
+          "contentInstalling": "This server is currently installing and cannot be accessed until completed.",
+          "contentRestoringBackup": "This server is currently restoring from a backup and cannot be accessed until completed."
         }
       }
     },
@@ -702,6 +730,8 @@
           },
           "message": {
             "serverMarkedAs": "Server marked as {state}...",
+            "installFailed": "Installation has failed.",
+            "installCompleted": "Installation has completed successfully.",
             "transferFailed": "Transfer has failed.",
             "pullingImage": "Your Server is currently pulling it's docker image. Please wait...",
             "pulling": "Pulling",
@@ -1071,8 +1101,7 @@
             }
           },
           "button": {
-            "browse": "Browse",
-            "restore": "Restore"
+            "browse": "Browse"
           },
           "toast": {
             "downloadStarted": "Download started.",
@@ -1164,6 +1193,14 @@
         },
         "settings": {
           "title": "Settings",
+          "debugInformation": {
+            "title": "Debug Information",
+            "form": {
+              "nodeName": "Node",
+              "locationName": "Location",
+              "serverUuid": "Server UUID"
+            }
+          },
           "rename": {
             "title": "Rename Server",
             "form": {

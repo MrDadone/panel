@@ -1,5 +1,5 @@
 import { DefaultMantineColor, ModalProps } from '@mantine/core';
-import { MouseEvent as ReactMouseEvent, ReactNode, useState } from 'react';
+import { MouseEvent as ReactMouseEvent, ReactNode, useCallback, useState } from 'react';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import Button from '../Button.tsx';
 import { Modal, ModalFooter } from './Modal.tsx';
@@ -12,7 +12,7 @@ type ConfirmationProps = Omit<ModalProps, 'children'> & {
 };
 
 export default function ConfirmationModal({
-  confirm = 'Okay',
+  confirm,
   confirmColor = 'red',
   onConfirmed,
   children,
@@ -22,22 +22,26 @@ export default function ConfirmationModal({
 
   const [loading, setLoading] = useState(false);
 
-  const onConfirmedAlt = (e: ReactMouseEvent<HTMLButtonElement, MouseEvent>) => {
-    const res = onConfirmed(e);
+  const onConfirmedAlt = useCallback(
+    (e: ReactMouseEvent<HTMLButtonElement, MouseEvent>) => {
+      const res = onConfirmed(e);
 
-    if (res instanceof Promise) {
-      setLoading(true);
+      if (res instanceof Promise) {
+        setLoading(true);
 
-      Promise.resolve(res).finally(() => setLoading(false));
-    }
-  };
+        Promise.resolve(res).finally(() => setLoading(false));
+      }
+    },
+    [onConfirmed],
+  );
 
   return (
     <Modal {...props}>
       {children}
+
       <ModalFooter>
         <Button color={confirmColor} loading={loading} onClick={onConfirmedAlt}>
-          {confirm}
+          {confirm ?? t('common.button.okay', {})}
         </Button>
         <Button variant='default' onClick={props.onClose}>
           {t('common.button.cancel', {})}

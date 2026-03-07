@@ -47,7 +47,10 @@ export default function DashboardHome() {
   const dndServerGroups: DndServerGroup[] = sortedServerGroups.map((g) => ({ ...g, id: g.uuid }));
 
   return (
-    <AccountContentContainer title={t('pages.account.home.title', {})}>
+    <AccountContentContainer
+      title={t('pages.account.home.title', {})}
+      registry={window.extensionContext.extensionRegistry.pages.dashboard.home.containerGrouped}
+    >
       <ServerGroupCreateModal opened={openModal === 'create'} onClose={() => setOpenModal(null)} />
 
       <DashboardHomeTitle />
