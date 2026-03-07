@@ -292,7 +292,7 @@ export const serverScheduleStepWriteFileSchema = z.object({
 export const serverScheduleStepCopyFileSchema = z.object({
   type: z.literal('copy_file'),
   ignoreFailure: z.boolean(),
-  append: z.boolean(),
+  foreground: z.boolean(),
   file: serverScheduleStepDynamicSchema,
   destination: serverScheduleStepDynamicSchema,
 });

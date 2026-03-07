@@ -21,6 +21,7 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: M
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
   const form = useForm<z.infer<typeof adminMountSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       description: null,
@@ -35,8 +36,8 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: M
 
   const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminMountSchema>, Mount>({
     form,
-    createFn: () => createMount(adminMountSchema.parse(form.values)),
-    updateFn: contextMount ? () => updateMount(contextMount.uuid, adminMountSchema.parse(form.values)) : undefined,
+    createFn: () => createMount(adminMountSchema.parse(form.getValues())),
+    updateFn: contextMount ? () => updateMount(contextMount.uuid, adminMountSchema.parse(form.getValues())) : undefined,
     deleteFn: contextMount ? () => deleteMount(contextMount.uuid) : undefined,
     doUpdate: !!contextMount,
     basePath: '/admin/locations',
@@ -69,24 +70,56 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: M
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow align='start'>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
-            <TextArea label='Description' placeholder='Description' {...form.getInputProps('description')} rows={3} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
+            <TextArea
+              label='Description'
+              placeholder='Description'
+              rows={3}
+              key={form.key('description')}
+              {...form.getInputProps('description')}
+            />
           </Group>
 
           <Group grow>
-            <TextInput withAsterisk label='Source' placeholder='Source' {...form.getInputProps('source')} />
-            <TextInput withAsterisk label='Target' placeholder='Target' {...form.getInputProps('target')} />
+            <TextInput
+              withAsterisk
+              label='Source'
+              placeholder='Source'
+              key={form.key('source')}
+              {...form.getInputProps('source')}
+            />
+            <TextInput
+              withAsterisk
+              label='Target'
+              placeholder='Target'
+              key={form.key('target')}
+              {...form.getInputProps('target')}
+            />
           </Group>
 
           <Group grow>
-            <Switch label='Read Only' {...form.getInputProps('readOnly', { type: 'checkbox' })} />
-            <Switch label='User Mountable' {...form.getInputProps('userMountable', { type: 'checkbox' })} />
+            <Switch
+              label='Read Only'
+              key={form.key('readOnly')}
+              {...form.getInputProps('readOnly', { type: 'checkbox' })}
+            />
+            <Switch
+              label='User Mountable'
+              key={form.key('userMountable')}
+              {...form.getInputProps('userMountable', { type: 'checkbox' })}
+            />
           </Group>
 
           <Group>

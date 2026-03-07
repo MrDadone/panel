@@ -21,11 +21,18 @@ export default function BackupRestic({
 
       <Stack>
         <Group grow>
-          <TextInput withAsterisk label='Repository' placeholder='Repository' {...form.getInputProps('repository')} />
+          <TextInput
+            withAsterisk
+            label='Repository'
+            placeholder='Repository'
+            key={form.key('repository')}
+            {...form.getInputProps('repository')}
+          />
           <NumberInput
             withAsterisk
             label='Retry Lock Seconds'
             placeholder='Retry Lock Seconds'
+            key={form.key('retryLockSeconds')}
             {...form.getInputProps('retryLockSeconds')}
           />
         </Group>

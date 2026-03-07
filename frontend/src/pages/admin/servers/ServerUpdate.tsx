@@ -8,7 +8,7 @@ import {
   faWrench,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon, Group, Stack } from '@mantine/core';
+import { ActionIcon, Group, Stack, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -29,7 +29,7 @@ import Select from '@/elements/input/Select.tsx';
 import SizeInput from '@/elements/input/SizeInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
-import TextInput from '@/elements/input/TextInput.tsx';
+// import TextInput from '@/elements/input/TextInput.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import { adminServerUpdateSchema } from '@/lib/schemas/admin/servers.ts';
@@ -53,6 +53,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
   const canReadBackupConfigurations = useAdminCan('backup-configurations.read');
 
   const form = useForm<z.infer<typeof adminServerUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       ownerUuid: '',
       eggUuid: '',
@@ -87,7 +88,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
 
   const { loading, doCreateOrUpdate } = useResourceForm<z.infer<typeof adminServerUpdateSchema>, AdminServer>({
     form,
-    updateFn: () => updateServer(contextServer.uuid, adminServerUpdateSchema.parse(form.values)),
+    updateFn: () => updateServer(contextServer.uuid, adminServerUpdateSchema.parse(form.getValues())),
     doUpdate: true,
     basePath: '/admin/servers',
     resourceName: 'Server',
@@ -139,21 +140,21 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
     canRequest: canReadBackupConfigurations,
   });
 
-  const eggImages = eggs.items.find((egg) => egg.uuid === form.values.eggUuid)?.dockerImages || {};
+  const eggImages = eggs.items.find((egg) => egg.uuid === form.getValues().eggUuid)?.dockerImages || {};
 
   useEffect(() => {
-    if (!form.values.eggUuid || contextServer) {
+    if (!form.getValues().eggUuid || contextServer) {
       return;
     }
 
-    const egg = eggs.items.find((egg) => egg.uuid === form.values.eggUuid);
+    const egg = eggs.items.find((egg) => egg.uuid === form.getValues().eggUuid);
     if (!egg) {
       return;
     }
 
     form.setFieldValue('image', Object.values(egg.dockerImages)[0] ?? '');
     form.setFieldValue('startup', egg.startup);
-  }, [form.values.eggUuid, eggs.items, contextServer]);
+  }, [form.getValues().eggUuid, eggs.items, contextServer]);
 
   return (
     <AdminSubContentContainer title='Update Server' titleOrder={2}>
@@ -173,11 +174,13 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     withAsterisk
                     label='Server Name'
                     placeholder='My Game Server'
+                    key={form.key('name')}
                     {...form.getInputProps('name')}
                   />
                   <TextInput
                     label='External ID'
                     placeholder='Optional external identifier'
+                    key={form.key('externalId')}
                     {...form.getInputProps('externalId')}
                   />
                 </Group>
@@ -186,6 +189,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                   label='Description'
                   placeholder='Server description'
                   rows={3}
+                  key={form.key('description')}
                   {...form.getInputProps('description')}
                 />
               </Stack>
@@ -206,6 +210,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     searchValue={users.search}
                     onSearchChange={users.setSearch}
                     disabled={!canReadUsers}
+                    key={form.key('ownerUuid')}
                     {...form.getInputProps('ownerUuid')}
                   />
                   <Select
@@ -221,6 +226,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     allowDeselect
                     clearable
                     disabled={!canReadBackupConfigurations}
+                    key={form.key('backupConfigurationUuid')}
                     {...form.getInputProps('backupConfigurationUuid')}
                   />
                 </Group>
@@ -253,6 +259,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     searchable
                     searchValue={eggs.search}
                     onSearchChange={eggs.setSearch}
+                    key={form.key('eggUuid')}
                     {...form.getInputProps('eggUuid')}
                   />
                 </Group>
@@ -270,6 +277,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     description='The CPU Limit in % that the server can use, 1 thread = 100%'
                     placeholder='100'
                     min={0}
+                    key={form.key('limits.cpu')}
                     {...form.getInputProps('limits.cpu')}
                   />
                   <SizeInput
@@ -278,7 +286,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     description='The amount of swap to give this server, -1 will not set a limit'
                     mode='mb'
                     min={-1}
-                    value={form.values.limits.swap}
+                    value={form.getValues().limits.swap}
                     onChange={(value) => form.setFieldValue('limits.swap', value)}
                   />
                 </Group>
@@ -290,7 +298,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     description='The Memory limit of the server container, 0 will not set a limit'
                     mode='mb'
                     min={0}
-                    value={form.values.limits.memory}
+                    value={form.getValues().limits.memory}
                     onChange={(value) => form.setFieldValue('limits.memory', value)}
                   />
                   <SizeInput
@@ -299,7 +307,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     description='Hidden Memory that will be added to the container'
                     mode='mb'
                     min={0}
-                    value={form.values.limits.memoryOverhead}
+                    value={form.getValues().limits.memoryOverhead}
                     onChange={(value) => form.setFieldValue('limits.memoryOverhead', value)}
                   />
                 </Group>
@@ -311,12 +319,13 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     description='The disk limit of the server, this is a soft-limit unless disk limiter configured on wings'
                     mode='mb'
                     min={0}
-                    value={form.values.limits.disk}
+                    value={form.getValues().limits.disk}
                     onChange={(value) => form.setFieldValue('limits.disk', value)}
                   />
                   <NumberInput
                     label='IO Weight'
                     description='The relative IO Weight of the server container compared to other containers, 0-1000, may not work on all systems'
+                    key={form.key('limits.ioWeight')}
                     {...form.getInputProps('limits.ioWeight')}
                   />
                 </Group>
@@ -337,8 +346,8 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     clearable
                     searchable
                     value={
-                      Object.entries(eggImages).some(([label, value]) => value === form.values.image)
-                        ? form.values.image
+                      Object.entries(eggImages).some(([label, value]) => value === form.getValues().image)
+                        ? form.getValues().image
                         : null
                     }
                     onChange={(value) => form.setFieldValue('image', value || '')}
@@ -347,6 +356,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     withAsterisk
                     label='Docker Image'
                     placeholder='ghcr.io/...'
+                    key={form.key('image')}
                     {...form.getInputProps('image')}
                   />
                 </Group>
@@ -359,6 +369,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                   allowDeselect
                   clearable
                   searchable
+                  key={form.key('timezone')}
                   {...form.getInputProps('timezone')}
                 />
 
@@ -372,12 +383,13 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                       <ActionIcon
                         variant='subtle'
                         disabled={
-                          form.values.startup === eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup
+                          form.getValues().startup ===
+                          eggs.items.find((e) => e.uuid === form.getValues().eggUuid)?.startup
                         }
                         onClick={() =>
                           form.setFieldValue(
                             'startup',
-                            eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup || '',
+                            eggs.items.find((e) => e.uuid === form.getValues().eggUuid)?.startup || '',
                           )
                         }
                       >
@@ -385,12 +397,14 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                       </ActionIcon>
                     </Tooltip>
                   }
+                  key={form.key('startup')}
                   {...form.getInputProps('startup')}
                 />
 
                 <Switch
                   label='Enable Hugepages Passthrough'
                   description='Enable hugepages passthrough for the server (mounts /dev/hugepages into the container)'
+                  key={form.key('hugepagesPassthroughEnabled')}
                   {...form.getInputProps('hugepagesPassthroughEnabled', {
                     type: 'checkbox',
                   })}
@@ -399,6 +413,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                 <Switch
                   label='Enable KVM Passthrough'
                   description='Enable KVM passthrough for the server (allows access to /dev/kvm inside the container)'
+                  key={form.key('kvmPassthroughEnabled')}
                   {...form.getInputProps('kvmPassthroughEnabled', {
                     type: 'checkbox',
                   })}
@@ -416,6 +431,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     label='Allocations'
                     placeholder='0'
                     min={0}
+                    key={form.key('featureLimits.allocations')}
                     {...form.getInputProps('featureLimits.allocations')}
                   />
                   <NumberInput
@@ -423,6 +439,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     label='Databases'
                     placeholder='0'
                     min={0}
+                    key={form.key('featureLimits.databases')}
                     {...form.getInputProps('featureLimits.databases')}
                   />
                   <NumberInput
@@ -430,6 +447,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     label='Backups'
                     placeholder='0'
                     min={0}
+                    key={form.key('featureLimits.backups')}
                     {...form.getInputProps('featureLimits.backups')}
                   />
                   <NumberInput
@@ -437,6 +455,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
                     label='Schedules'
                     placeholder='0'
                     min={0}
+                    key={form.key('featureLimits.schedules')}
                     {...form.getInputProps('featureLimits.schedules')}
                   />
                 </Group>

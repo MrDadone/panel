@@ -32,6 +32,7 @@ export default function DatabaseHostCreateOrUpdate({
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
   const form = useForm<z.infer<typeof adminDatabaseHostUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       username: '',
@@ -53,9 +54,9 @@ export default function DatabaseHostCreateOrUpdate({
     AdminDatabaseHost
   >({
     form,
-    createFn: () => createDatabaseHost(adminDatabaseHostCreateSchema.parse(form.values)),
+    createFn: () => createDatabaseHost(adminDatabaseHostCreateSchema.parse(form.getValues())),
     updateFn: contextDatabaseHost
-      ? () => updateDatabaseHost(contextDatabaseHost.uuid, adminDatabaseHostUpdateSchema.parse(form.values))
+      ? () => updateDatabaseHost(contextDatabaseHost.uuid, adminDatabaseHostUpdateSchema.parse(form.getValues()))
       : undefined,
     deleteFn: contextDatabaseHost ? () => deleteDatabaseHost(contextDatabaseHost.uuid) : undefined,
     doUpdate: !!contextDatabaseHost,
@@ -105,13 +106,19 @@ export default function DatabaseHostCreateOrUpdate({
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
             <Select
               withAsterisk
               label='Type'
@@ -120,34 +127,74 @@ export default function DatabaseHostCreateOrUpdate({
                 label,
               }))}
               disabled={!!contextDatabaseHost}
+              key={form.key('type')}
               {...form.getInputProps('type')}
             />
           </Group>
 
           <Group grow>
-            <TextInput withAsterisk label='Username' placeholder='Username' {...form.getInputProps('username')} />
+            <TextInput
+              withAsterisk
+              label='Username'
+              placeholder='Username'
+              key={form.key('username')}
+              {...form.getInputProps('username')}
+            />
             <TextInput
               withAsterisk={!contextDatabaseHost}
               label='Password'
               placeholder='Password'
               type='password'
+              key={form.key('password')}
               {...form.getInputProps('password')}
             />
           </Group>
 
           <Group grow>
-            <TextInput withAsterisk label='Host' placeholder='Host' {...form.getInputProps('host')} />
-            <NumberInput withAsterisk label='Port' placeholder='Port' min={0} {...form.getInputProps('port')} />
+            <TextInput
+              withAsterisk
+              label='Host'
+              placeholder='Host'
+              key={form.key('host')}
+              {...form.getInputProps('host')}
+            />
+            <NumberInput
+              withAsterisk
+              label='Port'
+              placeholder='Port'
+              min={0}
+              key={form.key('port')}
+              {...form.getInputProps('port')}
+            />
           </Group>
 
           <Group grow>
-            <TextInput label='Public Host' placeholder='Public Host' {...form.getInputProps('publicHost')} />
-            <NumberInput label='Public Port' placeholder='Public Port' min={0} {...form.getInputProps('publicPort')} />
+            <TextInput
+              label='Public Host'
+              placeholder='Public Host'
+              key={form.key('publicHost')}
+              {...form.getInputProps('publicHost')}
+            />
+            <NumberInput
+              label='Public Port'
+              placeholder='Public Port'
+              min={0}
+              key={form.key('publicPort')}
+              {...form.getInputProps('publicPort')}
+            />
           </Group>
 
           <Group grow>
-            <Switch label='Deployment Enabled' {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })} />
-            <Switch label='Maintenance Enabled' {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })} />
+            <Switch
+              label='Deployment Enabled'
+              key={form.key('deploymentEnabled')}
+              {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })}
+            />
+            <Switch
+              label='Maintenance Enabled'
+              key={form.key('maintenanceEnabled')}
+              {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })}
+            />
           </Group>
 
           <Group>

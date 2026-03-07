@@ -32,6 +32,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
   const form = useForm<z.infer<typeof adminNodeSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       locationUuid: '',
       backupConfigurationUuid: null,
@@ -52,8 +53,8 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
 
   const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminNodeSchema>, Node>({
     form,
-    createFn: () => createNode(adminNodeSchema.parse(form.values)),
-    updateFn: contextNode ? () => updateNode(contextNode.uuid, adminNodeSchema.parse(form.values)) : undefined,
+    createFn: () => createNode(adminNodeSchema.parse(form.getValues())),
+    updateFn: contextNode ? () => updateNode(contextNode.uuid, adminNodeSchema.parse(form.getValues())) : undefined,
     deleteFn: contextNode ? () => deleteNode(contextNode.uuid) : undefined,
     doUpdate: !!contextNode,
     basePath: '/admin/nodes',
@@ -118,13 +119,19 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
             <Select
               withAsterisk
               label='Location'
@@ -136,6 +143,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
               searchable
               searchValue={locations.search}
               onSearchChange={locations.setSearch}
+              key={form.key('locationUuid')}
               {...form.getInputProps('locationUuid')}
             />
           </Group>
@@ -146,24 +154,32 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
               label='URL'
               description='used for internal communication with the node'
               placeholder='URL'
+              key={form.key('url')}
               {...form.getInputProps('url')}
             />
             <TextInput
               label='Public URL'
               description='used for websocket/downloads'
               placeholder='URL'
+              key={form.key('publicUrl')}
               {...form.getInputProps('publicUrl')}
             />
           </Group>
 
           <Group grow>
-            <TextInput label='SFTP Host' placeholder='SFTP Host' {...form.getInputProps('sftpHost')} />
+            <TextInput
+              label='SFTP Host'
+              placeholder='SFTP Host'
+              key={form.key('sftpHost')}
+              {...form.getInputProps('sftpHost')}
+            />
             <NumberInput
               withAsterisk
               label='SFTP Port'
               placeholder='SFTP Port'
               min={1}
               max={65535}
+              key={form.key('sftpPort')}
               {...form.getInputProps('sftpPort')}
             />
           </Group>
@@ -174,7 +190,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
               label='Memory'
               mode='mb'
               min={0}
-              value={form.values.memory}
+              value={form.getValues().memory}
               onChange={(value) => form.setFieldValue('memory', value)}
             />
             <SizeInput
@@ -182,7 +198,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
               label='Disk'
               mode='mb'
               min={0}
-              value={form.values.disk}
+              value={form.getValues().disk}
               onChange={(value) => form.setFieldValue('disk', value)}
             />
           </Group>
@@ -200,14 +216,29 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
               onSearchChange={backupConfigurations.setSearch}
               allowDeselect
               clearable
+              key={form.key('backupConfigurationUuid')}
               {...form.getInputProps('backupConfigurationUuid')}
             />
-            <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
+            <TextArea
+              label='Description'
+              placeholder='Description'
+              rows={3}
+              key={form.key('description')}
+              {...form.getInputProps('description')}
+            />
           </Group>
 
           <Group grow>
-            <Switch label='Deployment Enabled' {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })} />
-            <Switch label='Maintenance Enabled' {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })} />
+            <Switch
+              label='Deployment Enabled'
+              key={form.key('deploymentEnabled')}
+              {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })}
+            />
+            <Switch
+              label='Maintenance Enabled'
+              key={form.key('maintenanceEnabled')}
+              {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })}
+            />
           </Group>
 
           <Group>

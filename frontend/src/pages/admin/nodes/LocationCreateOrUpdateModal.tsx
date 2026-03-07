@@ -33,6 +33,7 @@ export default function LocationCreateOrUpdateModal({
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof adminLocationSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       description: null,
@@ -55,7 +56,7 @@ export default function LocationCreateOrUpdateModal({
 
     setLoading(true);
     try {
-      await createLocation(adminLocationSchema.parse(form.values));
+      await createLocation(adminLocationSchema.parse(form.getValues()));
       addToast('Location created.', 'success');
       form.reset();
       onLocationCreated();
@@ -77,7 +78,13 @@ export default function LocationCreateOrUpdateModal({
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap='md'>
             <Group grow>
-              <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+              <TextInput
+                withAsterisk
+                label='Name'
+                placeholder='Name'
+                key={form.key('name')}
+                {...form.getInputProps('name')}
+              />
               <Select
                 label='Backup Configuration'
                 placeholder='None'
@@ -91,6 +98,7 @@ export default function LocationCreateOrUpdateModal({
                 allowDeselect
                 clearable
                 disabled={!canReadBackupConfigurations}
+                key={form.key('backupConfigurationUuid')}
                 {...form.getInputProps('backupConfigurationUuid')}
               />
             </Group>

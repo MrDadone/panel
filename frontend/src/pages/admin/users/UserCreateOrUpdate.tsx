@@ -33,6 +33,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: Full
   const [openModal, setOpenModal] = useState<'delete' | 'disable_two_factor' | null>(null);
 
   const form = useForm<z.infer<typeof adminUserSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       username: '',
       email: '',
@@ -47,8 +48,8 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: Full
 
   const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminUserSchema>, FullUser>({
     form,
-    createFn: () => createUser(adminUserSchema.parse(form.values)),
-    updateFn: contextUser ? () => updateUser(contextUser.uuid, adminUserSchema.parse(form.values)) : undefined,
+    createFn: () => createUser(adminUserSchema.parse(form.getValues())),
+    updateFn: contextUser ? () => updateUser(contextUser.uuid, adminUserSchema.parse(form.getValues())) : undefined,
     deleteFn: contextUser ? () => deleteUser(contextUser.uuid) : undefined,
     doUpdate: !!contextUser,
     basePath: '/admin/users',
@@ -102,7 +103,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: Full
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.username}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().username}</Code>?
       </ConfirmationModal>
       <ConfirmationModal
         opened={openModal === 'disable_two_factor'}
@@ -111,19 +112,44 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: Full
         confirm='Disable'
         onConfirmed={doDisableTwoFactor}
       >
-        Are you sure you want to remove the two factor of <Code>{form.values.username}</Code>?
+        Are you sure you want to remove the two factor of <Code>{form.getValues().username}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Username' placeholder='Username' {...form.getInputProps('username')} />
-            <TextInput withAsterisk label='Email' placeholder='Email' type='email' {...form.getInputProps('email')} />
+            <TextInput
+              withAsterisk
+              label='Username'
+              placeholder='Username'
+              key={form.key('username')}
+              {...form.getInputProps('username')}
+            />
+            <TextInput
+              withAsterisk
+              label='Email'
+              placeholder='Email'
+              type='email'
+              key={form.key('email')}
+              {...form.getInputProps('email')}
+            />
           </Group>
 
           <Group grow>
-            <TextInput withAsterisk label='First Name' placeholder='First Name' {...form.getInputProps('nameFirst')} />
-            <TextInput withAsterisk label='Last Name' placeholder='Last Name' {...form.getInputProps('nameLast')} />
+            <TextInput
+              withAsterisk
+              label='First Name'
+              placeholder='First Name'
+              key={form.key('nameFirst')}
+              {...form.getInputProps('nameFirst')}
+            />
+            <TextInput
+              withAsterisk
+              label='Last Name'
+              placeholder='Last Name'
+              key={form.key('nameLast')}
+              {...form.getInputProps('nameLast')}
+            />
           </Group>
 
           <Group grow>
@@ -136,6 +162,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: Full
                 value: language,
               }))}
               searchable
+              key={form.key('language')}
               {...form.getInputProps('language')}
             />
 
@@ -152,6 +179,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: Full
               allowDeselect
               clearable
               disabled={!canReadRoles}
+              key={form.key('roleUuid')}
               {...form.getInputProps('roleUuid')}
             />
           </Group>
@@ -161,10 +189,11 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: Full
             label='Password'
             placeholder='Password'
             type='password'
+            key={form.key('password')}
             {...form.getInputProps('password')}
           />
 
-          <Switch label='Admin' {...form.getInputProps('admin', { type: 'checkbox' })} />
+          <Switch label='Admin' key={form.key('admin')} {...form.getInputProps('admin', { type: 'checkbox' })} />
         </Stack>
 
         <Group mt='md'>

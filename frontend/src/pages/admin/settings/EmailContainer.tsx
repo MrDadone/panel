@@ -31,6 +31,7 @@ export default function EmailContainer() {
   const [openModal, setOpenModal] = useState<'sendTestEmail' | null>(null);
 
   const form = useForm<z.infer<typeof adminSettingsEmailSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       type: 'none',
     },
@@ -46,7 +47,7 @@ export default function EmailContainer() {
 
   const doUpdate = () => {
     setLoading(true);
-    updateEmailSettings(adminSettingsEmailSchema.parse(form.values))
+    updateEmailSettings(adminSettingsEmailSchema.parse(form.getValues()))
       .then(() => {
         addToast('Email settings updated.', 'success');
       })
@@ -67,14 +68,15 @@ export default function EmailContainer() {
             value,
             label,
           }))}
+          key={form.key('type')}
           {...form.getInputProps('type')}
         />
 
-        {form.values.type === 'smtp' ? (
+        {form.getValues().type === 'smtp' ? (
           <EmailSmtp form={form as UseFormReturnType<z.infer<typeof adminSettingsEmailSmtpSchema>>} />
-        ) : form.values.type === 'sendmail' ? (
+        ) : form.getValues().type === 'sendmail' ? (
           <EmailSendmail form={form as UseFormReturnType<z.infer<typeof adminSettingsEmailSendmailSchema>>} />
-        ) : form.values.type === 'filesystem' ? (
+        ) : form.getValues().type === 'filesystem' ? (
           <EmailFile form={form as UseFormReturnType<z.infer<typeof adminSettingsEmailFilesystemSchema>>} />
         ) : null}
 

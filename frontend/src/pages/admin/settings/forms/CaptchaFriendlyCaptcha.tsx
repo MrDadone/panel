@@ -21,8 +21,20 @@ export default function CaptchaFriendlyCaptcha({
   return (
     <Stack mt='md'>
       <Group grow>
-        <TextInput withAsterisk label='Site Key' placeholder='Site Key' {...form.getInputProps('siteKey')} />
-        <PasswordInput withAsterisk label='API Key' placeholder='API Key' {...form.getInputProps('apiKey')} />
+        <TextInput
+          withAsterisk
+          label='Site Key'
+          placeholder='Site Key'
+          key={form.key('siteKey')}
+          {...form.getInputProps('siteKey')}
+        />
+        <PasswordInput
+          withAsterisk
+          label='API Key'
+          placeholder='API Key'
+          key={form.key('apiKey')}
+          {...form.getInputProps('apiKey')}
+        />
       </Group>
     </Stack>
   );

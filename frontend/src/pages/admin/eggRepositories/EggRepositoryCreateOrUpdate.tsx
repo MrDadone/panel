@@ -29,6 +29,7 @@ export default function EggRepositoryCreateOrUpdate({
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
   const form = useForm<z.infer<typeof adminEggRepositorySchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       description: null,
@@ -43,9 +44,9 @@ export default function EggRepositoryCreateOrUpdate({
     AdminEggRepository
   >({
     form,
-    createFn: () => createEggRepository(adminEggRepositorySchema.parse(form.values)),
+    createFn: () => createEggRepository(adminEggRepositorySchema.parse(form.getValues())),
     updateFn: contextEggRepository
-      ? () => updateEggRepository(contextEggRepository.uuid, adminEggRepositorySchema.parse(form.values))
+      ? () => updateEggRepository(contextEggRepository.uuid, adminEggRepositorySchema.parse(form.getValues()))
       : undefined,
     deleteFn: contextEggRepository ? () => deleteEggRepository(contextEggRepository.uuid) : undefined,
     doUpdate: !!contextEggRepository,
@@ -87,22 +88,35 @@ export default function EggRepositoryCreateOrUpdate({
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
             <TextInput
               withAsterisk
               label='Git Repository'
               placeholder='Git Repository'
+              key={form.key('gitRepository')}
               {...form.getInputProps('gitRepository')}
             />
           </Group>
 
-          <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
+          <TextArea
+            label='Description'
+            placeholder='Description'
+            rows={3}
+            key={form.key('description')}
+            {...form.getInputProps('description')}
+          />
         </Stack>
 
         <Group mt='md'>

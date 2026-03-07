@@ -26,6 +26,7 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
   const form = useForm<z.infer<typeof adminLocationSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       description: null,
@@ -37,9 +38,9 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
 
   const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminLocationSchema>, Location>({
     form,
-    createFn: () => createLocation(adminLocationSchema.parse(form.values)),
+    createFn: () => createLocation(adminLocationSchema.parse(form.getValues())),
     updateFn: contextLocation
-      ? () => updateLocation(contextLocation.uuid, adminLocationSchema.parse(form.values))
+      ? () => updateLocation(contextLocation.uuid, adminLocationSchema.parse(form.getValues()))
       : undefined,
     deleteFn: contextLocation ? () => deleteLocation(contextLocation.uuid) : undefined,
     doUpdate: !!contextLocation,
@@ -76,13 +77,19 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
             <Select
               label='Backup Configuration'
               placeholder='None'
@@ -96,12 +103,19 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
               allowDeselect
               clearable
               disabled={!canReadBackupConfigurations}
+              key={form.key('backupConfigurationUuid')}
               {...form.getInputProps('backupConfigurationUuid')}
             />
           </Group>
 
           <Group grow align='start'>
-            <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
+            <TextArea
+              label='Description'
+              placeholder='Description'
+              rows={3}
+              key={form.key('description')}
+              {...form.getInputProps('description')}
+            />
           </Group>
 
           <Group>
