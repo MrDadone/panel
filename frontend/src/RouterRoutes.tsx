@@ -8,7 +8,8 @@ import UnauthenticatedGuard from './routers/guards/UnauthenticatedGuard.tsx';
 import '@mantine/core/styles.css';
 import { lazy } from 'react';
 import OobeGuard from '@/routers/guards/OobeGuard.tsx';
-import NotFound from './pages/NotFound.tsx';
+import ContentContainer from './elements/containers/ContentContainer.tsx';
+import ScreenBlock from './elements/ScreenBlock.tsx';
 import { useCurrentWindow } from './providers/CurrentWindowProvider.tsx';
 import TranslationProvider from './providers/TranslationProvider.tsx';
 import { useWindows } from './providers/WindowProvider.tsx';
@@ -83,7 +84,14 @@ export default function RouterRoutes({ isNormal }: { isNormal: boolean }) {
                       </Route>
                     </Route>
 
-                    <Route path='*' element={<NotFound />} />
+                    <Route
+                      path='*'
+                      element={
+                        <ContentContainer title='Not found'>
+                          <ScreenBlock title='404' content='Page not found' />
+                        </ContentContainer>
+                      }
+                    />
                   </Route>
                 </Routes>
               </Suspense>

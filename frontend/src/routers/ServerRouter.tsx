@@ -4,13 +4,14 @@ import { NavLink, Route, Routes, useParams } from 'react-router';
 import getServer from '@/api/server/getServer.ts';
 import { ServerCan } from '@/elements/Can.tsx';
 import Container from '@/elements/Container.tsx';
+import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
+import ScreenBlock from '@/elements/ScreenBlock.tsx';
 import ServerStatusIndicator from '@/elements/ServerStatusIndicator.tsx';
 import ServerSwitcher from '@/elements/ServerSwitcher.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { isAdmin } from '@/lib/permissions.ts';
 import { to } from '@/lib/routes.ts';
-import NotFound from '@/pages/NotFound.tsx';
 import WebsocketHandler from '@/pages/server/WebsocketHandler.tsx';
 import WebsocketListener from '@/pages/server/WebsocketListener.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
@@ -19,6 +20,7 @@ import ServerPermissionGuard from '@/routers/guards/ServerPermissionGuard.tsx';
 import serverRoutes from '@/routers/routes/serverRoutes.ts';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
+import ServerStateGuard from './guards/ServerStateGuard.tsx';
 
 export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
   const { t } = useTranslations();
@@ -124,14 +126,26 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
 
               <Suspense fallback={<Spinner.Centered />}>
                 <Routes>
-                  {[...serverRoutes, ...window.extensionContext.extensionRegistry.routes.serverRoutes]
-                    .filter((route) => !route.filter || route.filter())
-                    .map(({ path, element: Element, permission }) => (
-                      <Route key={path} element={<ServerPermissionGuard permission={permission ?? []} />}>
-                        <Route path={path} element={<Element />} />
-                      </Route>
-                    ))}
-                  <Route path='*' element={<NotFound />} />
+                  <Route element={<ServerStateGuard />}>
+                    {[...serverRoutes, ...window.extensionContext.extensionRegistry.routes.serverRoutes]
+                      .filter((route) => !route.filter || route.filter())
+                      .map(({ path, element: Element, permission }) => (
+                        <Route key={path} element={<ServerPermissionGuard permission={permission ?? []} />}>
+                          <Route path={path} element={<Element />} />
+                        </Route>
+                      ))}
+                  </Route>
+                  <Route
+                    path='*'
+                    element={
+                      <ServerContentContainer title={t('elements.screenBlock.notFound.title', {})} hideTitleComponent>
+                        <ScreenBlock
+                          title={t('elements.screenBlock.notFound.title', {})}
+                          content={t('elements.screenBlock.notFound.content', {})}
+                        />
+                      </ServerContentContainer>
+                    }
+                  />
                 </Routes>
               </Suspense>
 
@@ -140,7 +154,12 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
               ))}
             </>
           ) : (
-            <NotFound />
+            <ServerContentContainer title={t('elements.screenBlock.notFound.title', {})} hideTitleComponent>
+              <ScreenBlock
+                title={t('elements.screenBlock.notFound.title', {})}
+                content={t('elements.screenBlock.notFound.content', {})}
+              />
+            </ServerContentContainer>
           )}
         </Container>
       </div>

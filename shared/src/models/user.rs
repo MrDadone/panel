@@ -78,13 +78,11 @@ impl PermissionManager {
         self.api_key_user_permissions = Some(api_key.user_permissions.clone());
         self.api_key_admin_permissions = Some(api_key.admin_permissions.clone());
         self.api_key_server_permissions = Some(api_key.server_permissions.clone());
-
         self
     }
 
     pub fn set_user_server_owner(mut self, is_owner: bool) -> Self {
         self.user_server_owner = is_owner;
-
         self
     }
 
@@ -93,43 +91,40 @@ impl PermissionManager {
         permissions: Option<Arc<Vec<compact_str::CompactString>>>,
     ) -> Self {
         self.server_subuser_permissions = permissions;
-
         self
     }
 
     pub fn has_user_permission(&self, permission: &str) -> Result<(), ApiResponse> {
-        if let Some(permissions) = &self.api_key_user_permissions {
-            if permissions.iter().any(|p| p == permission) {
-                return Ok(());
-            } else {
-                return Err(ApiResponse::error(format!(
-                    "you do not have permission to perform this action: {permission}"
-                ))
-                .with_status(StatusCode::FORBIDDEN));
-            }
-        }
-
-        Ok(())
-    }
-
-    pub fn has_admin_permission(&self, permission: &str) -> Result<(), ApiResponse> {
-        let has_role_permission = if !self.user_admin
-            && let Some(permissions) = &self.role_admin_permissions
+        if let Some(api_key_permissions) = &self.api_key_user_permissions
+            && !api_key_permissions.iter().any(|p| p == permission)
         {
-            permissions.iter().any(|p| p == permission)
-        } else {
-            self.user_admin
-        };
-
-        if !has_role_permission {
             return Err(ApiResponse::error(format!(
                 "you do not have permission to perform this action: {permission}"
             ))
             .with_status(StatusCode::FORBIDDEN));
         }
 
-        if let Some(permissions) = &self.api_key_admin_permissions
-            && !permissions.iter().any(|p| p == permission)
+        Ok(())
+    }
+
+    pub fn has_admin_permission(&self, permission: &str) -> Result<(), ApiResponse> {
+        let is_admin = self.user_admin;
+        let has_role_perm = self
+            .role_admin_permissions
+            .as_ref()
+            .is_some_and(|perms| perms.iter().any(|p| p == permission));
+
+        let has_base_permission = is_admin || has_role_perm;
+
+        if !has_base_permission {
+            return Err(ApiResponse::error(format!(
+                "you do not have permission to perform this action: {permission}"
+            ))
+            .with_status(StatusCode::FORBIDDEN));
+        }
+
+        if let Some(api_key_permissions) = &self.api_key_admin_permissions
+            && !api_key_permissions.iter().any(|p| p == permission)
         {
             return Err(ApiResponse::error(format!(
                 "you do not have permission to perform this action: {permission}"
@@ -141,37 +136,21 @@ impl PermissionManager {
     }
 
     pub fn has_server_permission(&self, permission: &str) -> Result<(), ApiResponse> {
-        if !self.user_admin
-            && self.server_subuser_permissions.is_none()
-            && self.role_server_permissions.is_none()
-        {
-            if let Some(api_key_permissions) = &self.api_key_server_permissions
-                && api_key_permissions.iter().all(|p| p != permission)
-            {
-                return Err(ApiResponse::error(format!(
-                    "you do not have permission to perform this action: {permission}"
-                ))
-                .with_status(StatusCode::FORBIDDEN));
-            }
+        let is_admin = self.user_admin;
 
-            return Ok(());
-        }
+        let has_role_perm = self
+            .role_server_permissions
+            .as_ref()
+            .is_some_and(|perms| perms.iter().any(|p| p == permission));
 
-        let has_role_permission = if !self.user_admin
-            && let Some(permissions) = &self.role_server_permissions
-        {
-            permissions.iter().any(|p| p == permission)
-        } else {
-            self.user_admin
-        };
+        let is_owner = self.user_server_owner;
 
-        let has_subuser_permission = if let Some(permissions) = &self.server_subuser_permissions {
-            permissions.iter().any(|p| p == permission)
-        } else {
-            self.user_server_owner
-        };
+        let has_subuser_perm = self
+            .server_subuser_permissions
+            .as_ref()
+            .is_some_and(|perms| perms.iter().any(|p| p == permission));
 
-        let has_base_permission = has_role_permission || has_subuser_permission;
+        let has_base_permission = is_admin || has_role_perm || is_owner || has_subuser_perm;
 
         if !has_base_permission {
             return Err(ApiResponse::error(format!(
@@ -782,12 +761,10 @@ impl User {
         ApiUser {
             uuid: self.uuid,
             username: self.username,
-            role: self.role.map(|r| r.name),
             avatar: self
                 .avatar
                 .as_ref()
                 .map(|a| storage_url_retriever.get_url(a)),
-            admin: self.admin,
             totp_enabled: self.totp_enabled,
             created: self.created.and_utc(),
         }
@@ -1125,10 +1102,8 @@ pub struct ApiUser {
     pub uuid: uuid::Uuid,
 
     pub username: compact_str::CompactString,
-    pub role: Option<compact_str::CompactString>,
     pub avatar: Option<String>,
 
-    pub admin: bool,
     pub totp_enabled: bool,
 
     pub created: chrono::DateTime<chrono::Utc>,

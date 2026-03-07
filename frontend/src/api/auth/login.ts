@@ -6,11 +6,16 @@ interface Data {
   captcha: string | null;
 }
 
-interface Response {
-  user?: User;
-  token?: string;
-  type: 'completed' | 'two_factor_required';
-}
+type Response =
+  | {
+      type: 'completed';
+      user: FullUser;
+    }
+  | {
+      type: 'two_factor_required';
+      user: User;
+      token: string;
+    };
 
 export default async ({ user, password, captcha }: Data): Promise<Response> => {
   return new Promise((resolve, reject) => {

@@ -19,6 +19,7 @@ export default function WebsocketListener() {
     updateServer,
     setImagePull,
     removeImagePull,
+    clearImagePulls,
     setStats,
     setBackupProgress,
     setBackupRestoreProgress,
@@ -37,6 +38,12 @@ export default function WebsocketListener() {
       })
       .catch((e) => console.error(e));
   };
+
+  useEffect(() => {
+    return () => {
+      clearImagePulls();
+    };
+  }, [clearImagePulls]);
 
   useEffect(() => {
     if (!socketConnected || !socketInstance) {

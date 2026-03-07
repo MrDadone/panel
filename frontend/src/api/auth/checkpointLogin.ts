@@ -6,7 +6,7 @@ interface Data {
 }
 
 interface Response {
-  user: User;
+  user: FullUser;
 }
 
 export default async ({ code, confirmation_token }: Data): Promise<Response> => {

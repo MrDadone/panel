@@ -11,6 +11,7 @@ export interface ServerSlice {
 
   setImagePull: (id: string, pull: ImagePullProgress) => void;
   removeImagePull: (id: string) => void;
+  clearImagePulls: () => void;
 }
 
 export const createServerSlice: StateCreator<ServerStore, [], [], ServerSlice> = (set): ServerSlice => ({
@@ -35,5 +36,9 @@ export const createServerSlice: StateCreator<ServerStore, [], [], ServerSlice> =
       const prev = new Map(state.imagePulls);
       state.imagePulls.delete(uuid);
       return { ...state, imagePulls: prev };
+    }),
+  clearImagePulls: () =>
+    set(() => {
+      return { imagePulls: new Map<string, ImagePullProgress>() };
     }),
 });

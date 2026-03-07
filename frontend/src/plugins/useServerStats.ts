@@ -9,13 +9,19 @@ export function useServerStats(server: AdminServer | Server) {
     return state.getServerResourceUsage(server.uuid) || null;
   });
 
+  const nodeUuid = 'nodeUuid' in server ? server.nodeUuid : server.node?.uuid;
+
   useEffect(() => {
-    if ('nodeUuid' in server) {
-      fetchNodeResources(server.nodeUuid);
-    } else if ('node' in server) {
-      fetchNodeResources(server.node.uuid);
-    }
-  }, [server, fetchNodeResources]);
+    if (!nodeUuid) return;
+
+    fetchNodeResources(nodeUuid);
+
+    const intervalId = setInterval(() => {
+      fetchNodeResources(nodeUuid);
+    }, 30500);
+
+    return () => clearInterval(intervalId);
+  }, [nodeUuid, fetchNodeResources]);
 
   return stats;
 }

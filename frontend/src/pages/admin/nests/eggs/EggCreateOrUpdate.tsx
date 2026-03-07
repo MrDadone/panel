@@ -108,8 +108,8 @@ export default function EggCreateOrUpdate({
       createEgg(contextNest.uuid, {
         ...adminEggSchema.parse(form.values),
         configScript: {
-          container: 'ghcr.io/ptero-eggs/installers:debian',
-          entrypoint: 'bash',
+          container: 'debian:latest',
+          entrypoint: '/bin/bash',
           content: '#!/bin/bash\n\n# Install script content goes here\n',
         },
       }),

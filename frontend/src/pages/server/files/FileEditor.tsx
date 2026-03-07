@@ -11,9 +11,9 @@ import { ServerCan } from '@/elements/Can.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import MonacoEditor from '@/elements/MonacoEditor.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import ScreenBlock from '@/elements/ScreenBlock.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { registerHoconLanguage, registerTomlLanguage } from '@/lib/monaco.ts';
-import NotFound from '@/pages/NotFound.tsx';
 import { useBlocker } from '@/plugins/useBlocker.ts';
 import { FileManagerProvider, useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -105,7 +105,11 @@ function FileEditorComponent() {
   };
 
   if (!['new', 'edit', 'image'].includes(params.action!)) {
-    return <NotFound />;
+    return (
+      <ServerContentContainer title='Not found' hideTitleComponent>
+        <ScreenBlock title='404' content='Editor not found' />
+      </ServerContentContainer>
+    );
   }
 
   const title = fileName
@@ -182,7 +186,9 @@ function FileEditorComponent() {
                       <img
                         src={content}
                         alt={fileName}
-                        style={{ imageRendering: imageViewerSmoothing ? undefined : 'pixelated' }}
+                        style={{
+                          imageRendering: imageViewerSmoothing ? undefined : 'pixelated',
+                        }}
                       />
                     </TransformComponent>
                   </TransformWrapper>

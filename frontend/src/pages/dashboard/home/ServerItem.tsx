@@ -186,6 +186,11 @@ export default function ServerItem({
                     <FontAwesomeIcon size='1x' icon={faBan} color='red' />
                     <p className='ml-2 text-sm'>{t('common.server.state.suspended', {})}</p>
                   </div>
+                ) : server.nodeMaintenanceEnabled ? (
+                  <div className='col-span-3 flex flex-row items-center justify-center'>
+                    <FontAwesomeIcon size='1x' icon={faBan} color='red' />
+                    <p className='ml-2 text-sm'>{t('common.server.state.nodeMaintenance', {})}</p>
+                  </div>
                 ) : server.status === 'installing' ? (
                   <div className='col-span-3 flex flex-row items-center justify-center'>
                     <Spinner size={16} />

@@ -7,7 +7,7 @@ const CurrentWindowProvider: FC<{ children: ReactNode; id: number | null }> = ({
       return null;
     }
 
-    return document.getElementById(`window_${id}_card`) as HTMLDivElement;
+    return (document.getElementsByClassName(`window_${id}_card`) as HTMLCollectionOf<HTMLDivElement>)[0] || null;
   }, [id]);
 
   const contextValue = useMemo(

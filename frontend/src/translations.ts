@@ -31,6 +31,7 @@ const baseTranslations = defineTranslations({
         cancel: 'Cancel',
         continue: 'Continue',
         skip: 'Skip',
+        okay: 'Okay',
         back: 'Back',
         next: 'Next',
         install: 'Install',
@@ -81,6 +82,7 @@ const baseTranslations = defineTranslations({
         noAllocation: 'No Allocation',
         state: {
           suspended: 'Suspended',
+          nodeMaintenance: 'Node is under Maintenance',
           restoringBackup: 'Restoring Backup',
           installing: 'Installing',
           InstallFailed: 'Install Failed',
@@ -174,6 +176,26 @@ const baseTranslations = defineTranslations({
           info: {
             title: 'Activity Details',
           },
+        },
+      },
+      screenBlock: {
+        permissionDenied: {
+          title: 'Permission Denied',
+          content: 'You do not have permission to access this page.',
+        },
+        notFound: {
+          title: 'Not Found',
+          content: 'The page you are looking for could not be found.',
+        },
+        serverConflict: {
+          title: 'Conflicting Server State',
+          contentSuspended: 'This server is suspended and cannot be accessed.',
+          contentNodeMaintenance:
+            'This server is on a node that is currently under maintenance and cannot be accessed.',
+          contentInstallFailed: 'This server failed to install and cannot be accessed until acknowledged.',
+          contentInstalling: 'This server is currently installing and cannot be accessed until completed.',
+          contentRestoringBackup:
+            'This server is currently restoring from a backup and cannot be accessed until completed.',
         },
       },
     },
@@ -700,6 +722,8 @@ const baseTranslations = defineTranslations({
           },
           message: {
             serverMarkedAs: 'Server marked as {state}...',
+            installFailed: 'Installation has failed.',
+            installCompleted: 'Installation has completed successfully.',
             transferFailed: 'Transfer has failed.',
             pullingImage: "Your Server is currently pulling it's docker image. Please wait...",
             pulling: 'Pulling',

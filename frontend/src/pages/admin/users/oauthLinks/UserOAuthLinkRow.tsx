@@ -11,7 +11,7 @@ import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
-export default function UserOAuthLinkRow({ user, userOAuthLink }: { user: User; userOAuthLink: UserOAuthLink }) {
+export default function UserOAuthLinkRow({ user, userOAuthLink }: { user: FullUser; userOAuthLink: UserOAuthLink }) {
   const { addToast } = useToast();
   const { removeUserOAuthLink } = useAdminStore();
 

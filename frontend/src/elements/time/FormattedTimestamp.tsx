@@ -1,13 +1,43 @@
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 import Tooltip from '../Tooltip.tsx';
 
 interface FormattedTimestampProps {
   timestamp: string | number | Date;
+  autoUpdate?: boolean;
   precise?: boolean;
 }
 
-function FormattedTimestamp({ timestamp, precise }: FormattedTimestampProps) {
+function FormattedTimestamp({ timestamp, autoUpdate = true, precise }: FormattedTimestampProps) {
+  const [, forceRender] = useState(0);
+
+  useEffect(() => {
+    if (!autoUpdate) return;
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const targetTime = new Date(timestamp).getTime();
+
+    const scheduleNextUpdate = () => {
+      const diffMs = Date.now() - targetTime;
+
+      if (diffMs < 60_000) {
+        timeoutId = setTimeout(() => {
+          forceRender((prev) => prev + 1);
+          scheduleNextUpdate();
+        }, 1000);
+      } else if (diffMs < 3_600_000) {
+        timeoutId = setTimeout(() => {
+          forceRender((prev) => prev + 1);
+          scheduleNextUpdate();
+        }, 60_000);
+      }
+    };
+
+    scheduleNextUpdate();
+
+    return () => clearTimeout(timeoutId);
+  }, [timestamp, autoUpdate]);
+
   return (
     <Tooltip label={formatDateTime(timestamp, precise)}>
       <span className='cursor-help'>{formatTimestamp(timestamp)}</span>

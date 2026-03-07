@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (roleUuid: string, page: number, search?: string): Promise<Pagination<User>> => {
+export default async (roleUuid: string, page: number, search?: string): Promise<Pagination<FullUser>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/roles/${roleUuid}/users`, {

@@ -2,7 +2,7 @@ import { axiosInstance } from '@/api/axios.ts';
 import { prepareCredentialForTransport } from '../me/security-keys/postSecurityKeyChallenge.ts';
 
 interface Response {
-  user: User;
+  user: FullUser;
 }
 
 export default async (uuid: string, challenge: PublicKeyCredential): Promise<Response> => {

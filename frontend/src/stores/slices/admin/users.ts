@@ -3,12 +3,12 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface UsersSlice {
-  users: Pagination<User>;
+  users: Pagination<FullUser>;
   userOAuthLinks: Pagination<UserOAuthLink>;
 
-  setUsers: (users: Pagination<User>) => void;
-  addUser: (user: User) => void;
-  removeUser: (user: User) => void;
+  setUsers: (users: Pagination<FullUser>) => void;
+  addUser: (user: FullUser) => void;
+  removeUser: (user: FullUser) => void;
 
   setUserOAuthLinks: (links: Pagination<UserOAuthLink>) => void;
   addUserOAuthLink: (link: UserOAuthLink) => void;
@@ -16,7 +16,7 @@ export interface UsersSlice {
 }
 
 export const createUsersSlice: StateCreator<AdminStore, [], [], UsersSlice> = (set): UsersSlice => ({
-  users: getEmptyPaginationSet<User>(),
+  users: getEmptyPaginationSet<FullUser>(),
   userOAuthLinks: getEmptyPaginationSet<UserOAuthLink>(),
 
   setUsers: (value) => set((state) => ({ ...state, users: value })),

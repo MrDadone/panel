@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router';
-import NotFound from '@/pages/NotFound.tsx';
+import ContentContainer from '@/elements/containers/ContentContainer.tsx';
+import ScreenBlock from '@/elements/ScreenBlock.tsx';
 import authenticationRoutes from '@/routers/routes/authenticationRoutes.ts';
 
 export default function AuthenticationRouter() {
@@ -10,7 +11,14 @@ export default function AuthenticationRouter() {
         .map(({ path, element: Element }) => (
           <Route key={path} path={path} element={<Element />} />
         ))}
-      <Route path='*' element={<NotFound />} />
+      <Route
+        path='*'
+        element={
+          <ContentContainer title='Not found'>
+            <ScreenBlock title='404' content='Page not found' />
+          </ContentContainer>
+        }
+      />
     </Routes>
   );
 }

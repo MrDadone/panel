@@ -9,7 +9,7 @@ import Table, { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 
-export default function AdminUserActivity({ user }: { user: User }) {
+export default function AdminUserActivity({ user }: { user: FullUser }) {
   const [userActivity, setUserActivity] = useState<Pagination<UserActivity>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({

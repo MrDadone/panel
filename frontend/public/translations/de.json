@@ -939,14 +939,14 @@
               "maximum": "Maximum"
             },
             "pullFile": {
-              "title": "Datei herunterladen (Pull)",
+              "title": "Datei herunterladen",
               "form": {
                 "fileUrl": "Datei-URL",
-                "query": "Suchanfrage",
+                "query": "Abfragen",
                 "fileName": "Dateiname"
               },
               "createdAs": "Diese Datei wird erstellt als ",
-              "pull": "Herunterladen (Pull)"
+              "pull": "Herunterladen"
             },
             "sftpDetails": {
               "title": "SFTP-Details",

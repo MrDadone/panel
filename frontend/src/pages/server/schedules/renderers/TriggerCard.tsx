@@ -59,6 +59,7 @@ export default function TriggerCard({ date, timezone, trigger }: TriggerCardProp
               })
                 .next()
                 .toDate()}
+              autoUpdate={false}
               precise
             />
             .

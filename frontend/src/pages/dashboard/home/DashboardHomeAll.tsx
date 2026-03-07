@@ -100,7 +100,10 @@ export default function DashboardHomeAll() {
   };
 
   return (
-    <AccountContentContainer title={t('pages.account.home.title', {})}>
+    <AccountContentContainer
+      title={t('pages.account.home.title', {})}
+      registry={window.extensionContext.extensionRegistry.pages.dashboard.home.containerAll}
+    >
       <DashboardHomeTitle />
 
       <Group mb='md' justify='space-between'>

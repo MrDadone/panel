@@ -279,6 +279,10 @@ export default function Terminal() {
         ),
       [SocketEvent.CONSOLE_OUTPUT]: (l) => addLine(l),
       [SocketEvent.INSTALL_OUTPUT]: (l) => addLine(l),
+      [SocketEvent.INSTALL_COMPLETED]: (s) => {
+        if (s === 'false') addLine(t('pages.server.console.message.installFailed', {}), true);
+        else addLine(t('pages.server.console.message.installCompleted', {}), true);
+      },
       [SocketEvent.TRANSFER_LOGS]: (l) => addLine(l),
       [SocketEvent.TRANSFER_STATUS]: (s) => {
         if (s === 'failure') addLine(t('pages.server.console.message.transferFailed', {}), true);
