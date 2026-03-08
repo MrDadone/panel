@@ -1,3 +1,4 @@
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -98,16 +99,18 @@ impl std::fmt::Display for Game {
     }
 }
 
-#[derive(ToSchema, Clone, Deserialize, Serialize)]
+#[derive(ToSchema, Clone, Deserialize, Serialize, Validate)]
 pub struct ScheduleVariable {
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
     pub variable: compact_str::CompactString,
 }
 
-#[derive(ToSchema, Clone, Deserialize, Serialize)]
+#[derive(ToSchema, Clone, Deserialize, Serialize, Validate)]
 #[serde(untagged)]
 pub enum ScheduleDynamicParameter {
-    Raw(compact_str::CompactString),
-    Variable(ScheduleVariable),
+    Raw(#[garde(length(chars, min = 1, max = 1024))] compact_str::CompactString),
+    Variable(#[garde(dive)] ScheduleVariable),
 }
 
 #[derive(ToSchema, Deserialize, Serialize)]
@@ -118,135 +121,196 @@ pub struct ScheduleAction {
     pub inner: ScheduleActionInner,
 }
 
-#[derive(ToSchema, Deserialize, Serialize, Clone)]
+#[derive(ToSchema, Validate, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "snake_case", tag = "type")]
 #[schema(rename_all = "snake_case")]
 pub enum ScheduleActionInner {
     Sleep {
+        #[garde(range(min = 1, max = 24 * 60 * 60))]
+        #[schema(minimum = 1, maximum = 86400)]
         duration: u64,
     },
     Ensure {
+        #[garde(dive)]
         condition: ScheduleCondition,
     },
     Format {
+        #[garde(length(chars, min = 1, max = 2048))]
+        #[schema(min_length = 1, max_length = 2048)]
         format: String,
+        #[garde(dive)]
         output_into: ScheduleVariable,
     },
     MatchRegex {
+        #[garde(dive)]
         input: ScheduleDynamicParameter,
 
+        #[garde(skip)]
         #[serde(with = "serde_regex")]
         #[schema(value_type = String, format = "regex")]
         regex: regex::Regex,
 
+        #[garde(skip)]
         output_into: Vec<Option<ScheduleVariable>>,
     },
     WaitForConsoleLine {
+        #[garde(skip)]
         ignore_failure: bool,
 
+        #[garde(dive)]
         contains: ScheduleDynamicParameter,
+        #[garde(range(min = 1, max = 24 * 60 * 60))]
+        #[schema(minimum = 1, maximum = 86400)]
         timeout: u64,
 
+        #[garde(dive)]
         output_into: Option<ScheduleVariable>,
     },
     SendPower {
+        #[garde(skip)]
         ignore_failure: bool,
 
+        #[garde(skip)]
         action: super::ServerPowerAction,
     },
     SendCommand {
+        #[garde(skip)]
         ignore_failure: bool,
 
+        #[garde(dive)]
         command: ScheduleDynamicParameter,
     },
     CreateBackup {
+        #[garde(skip)]
         ignore_failure: bool,
+        #[garde(skip)]
         foreground: bool,
 
+        #[garde(dive)]
         name: Option<ScheduleDynamicParameter>,
+        #[garde(skip)]
         ignored_files: Vec<compact_str::CompactString>,
     },
     CreateDirectory {
+        #[garde(skip)]
         ignore_failure: bool,
 
+        #[garde(dive)]
         root: ScheduleDynamicParameter,
+        #[garde(dive)]
         name: ScheduleDynamicParameter,
     },
     WriteFile {
+        #[garde(skip)]
         ignore_failure: bool,
+        #[garde(skip)]
         append: bool,
 
+        #[garde(dive)]
         file: ScheduleDynamicParameter,
+        #[garde(dive)]
         content: ScheduleDynamicParameter,
     },
     CopyFile {
+        #[garde(skip)]
         ignore_failure: bool,
+        #[garde(skip)]
         foreground: bool,
 
+        #[garde(dive)]
         file: ScheduleDynamicParameter,
+        #[garde(dive)]
         destination: ScheduleDynamicParameter,
     },
     DeleteFiles {
+        #[garde(dive)]
         root: ScheduleDynamicParameter,
+        #[garde(skip)]
         files: Vec<compact_str::CompactString>,
     },
     RenameFiles {
+        #[garde(dive)]
         root: ScheduleDynamicParameter,
+        #[garde(skip)]
         files: Vec<super::servers_server_files_rename::put::RequestBodyFiles>,
     },
     CompressFiles {
+        #[garde(skip)]
         ignore_failure: bool,
+        #[garde(skip)]
         foreground: bool,
 
+        #[garde(dive)]
         root: ScheduleDynamicParameter,
+        #[garde(skip)]
         files: Vec<compact_str::CompactString>,
+        #[garde(skip)]
         format: super::ArchiveFormat,
+        #[garde(dive)]
         name: ScheduleDynamicParameter,
     },
     DecompressFile {
+        #[garde(skip)]
         ignore_failure: bool,
+        #[garde(skip)]
         foreground: bool,
 
+        #[garde(dive)]
         root: ScheduleDynamicParameter,
+        #[garde(dive)]
         file: ScheduleDynamicParameter,
     },
     UpdateStartupVariable {
+        #[garde(skip)]
         ignore_failure: bool,
 
+        #[garde(dive)]
         env_variable: ScheduleDynamicParameter,
+        #[garde(dive)]
         value: ScheduleDynamicParameter,
     },
     UpdateStartupCommand {
+        #[garde(skip)]
         ignore_failure: bool,
 
+        #[garde(dive)]
         command: ScheduleDynamicParameter,
     },
     UpdateStartupDockerImage {
+        #[garde(skip)]
         ignore_failure: bool,
 
+        #[garde(dive)]
         image: ScheduleDynamicParameter,
     },
 }
 
-#[derive(ToSchema, Deserialize, Serialize, Clone)]
+#[derive(ToSchema, Validate, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "snake_case", tag = "type")]
 #[schema(rename_all = "snake_case")]
 pub enum ScheduleTrigger {
     Cron {
+        #[garde(skip)]
         #[schema(value_type = String, example = "* * * * * *")]
         schedule: Box<cron::Schedule>,
     },
     PowerAction {
+        #[garde(skip)]
         action: super::ServerPowerAction,
     },
     ServerState {
+        #[garde(skip)]
         state: super::ServerState,
     },
     BackupStatus {
+        #[garde(skip)]
         status: ServerBackupStatus,
     },
     ConsoleLine {
+        #[garde(length(chars, min = 1, max = 1024))]
+        #[schema(min_length = 1, max_length = 1024)]
         contains: String,
+        #[garde(dive)]
         output_into: Option<ScheduleVariable>,
     },
     Crash,
@@ -263,75 +327,101 @@ pub enum SchedulePreConditionComparator {
     GreaterThanOrEquals,
 }
 
-#[derive(ToSchema, Deserialize, Serialize, Clone)]
+#[derive(ToSchema, Validate, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "snake_case", tag = "type")]
 #[schema(rename_all = "snake_case", no_recursion)]
 pub enum SchedulePreCondition {
     None,
     And {
+        #[garde(dive)]
         conditions: Vec<SchedulePreCondition>,
     },
     Or {
+        #[garde(dive)]
         conditions: Vec<SchedulePreCondition>,
     },
     Not {
+        #[garde(dive)]
         condition: Box<SchedulePreCondition>,
     },
     ServerState {
+        #[garde(skip)]
         state: super::ServerState,
     },
     Uptime {
+        #[garde(skip)]
         comparator: SchedulePreConditionComparator,
+        #[garde(skip)]
         value: u64,
     },
     CpuUsage {
+        #[garde(skip)]
         comparator: SchedulePreConditionComparator,
+        #[garde(skip)]
         value: f64,
     },
     MemoryUsage {
+        #[garde(skip)]
         comparator: SchedulePreConditionComparator,
+        #[garde(skip)]
         value: u64,
     },
     DiskUsage {
+        #[garde(skip)]
         comparator: SchedulePreConditionComparator,
+        #[garde(skip)]
         value: u64,
     },
     FileExists {
+        #[garde(length(chars, min = 1, max = 255))]
+        #[schema(min_length = 1, max_length = 255)]
         file: String,
     },
 }
 
-#[derive(ToSchema, Deserialize, Serialize, Clone)]
+#[derive(ToSchema, Deserialize, Serialize, Clone, Validate)]
 #[serde(rename_all = "snake_case", tag = "type")]
 #[schema(rename_all = "snake_case", no_recursion)]
 pub enum ScheduleCondition {
     None,
     And {
+        #[garde(dive)]
         conditions: Vec<ScheduleCondition>,
     },
     Or {
+        #[garde(dive)]
         conditions: Vec<ScheduleCondition>,
     },
     Not {
+        #[garde(dive)]
         condition: Box<ScheduleCondition>,
     },
     VariableExists {
+        #[garde(dive)]
         variable: ScheduleVariable,
     },
     VariableEquals {
+        #[garde(dive)]
         variable: ScheduleVariable,
+        #[garde(dive)]
         equals: ScheduleDynamicParameter,
     },
     VariableContains {
+        #[garde(dive)]
         variable: ScheduleVariable,
+        #[garde(dive)]
         contains: ScheduleDynamicParameter,
     },
     VariableStartsWith {
+        #[garde(dive)]
         variable: ScheduleVariable,
+        #[garde(dive)]
         starts_with: ScheduleDynamicParameter,
     },
     VariableEndsWith {
+        #[garde(dive)]
         variable: ScheduleVariable,
+        #[garde(dive)]
         ends_with: ScheduleDynamicParameter,
     },
 }

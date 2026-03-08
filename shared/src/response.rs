@@ -180,7 +180,7 @@ where
         if let Some(error) = err.downcast_ref::<DisplayError>() {
             return ApiResponse::error(&error.message).with_status(error.status);
         } else if let Some(DatabaseError::Validation(error)) = err.downcast_ref::<DatabaseError>() {
-            let error_messages = crate::utils::flatten_validation_errors(error, "");
+            let error_messages = crate::utils::flatten_validation_errors(error);
 
             return ApiResponse::new_serialized(ApiError::new_strings_value(error_messages))
                 .with_status(axum::http::StatusCode::BAD_REQUEST);

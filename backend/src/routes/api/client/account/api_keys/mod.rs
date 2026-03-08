@@ -82,6 +82,7 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -94,23 +95,24 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 3, max = 31))]
+        #[garde(length(chars, min = 3, max = 31))]
         #[schema(min_length = 3, max_length = 31)]
         name: compact_str::CompactString,
+        #[garde(skip)]
         #[schema(value_type = Vec<String>)]
         allowed_ips: Vec<sqlx::types::ipnetwork::IpNetwork>,
 
-        #[validate(custom(function = "shared::permissions::validate_user_permissions"))]
+        #[garde(custom(shared::permissions::validate_user_permissions))]
         user_permissions: Vec<compact_str::CompactString>,
-        #[validate(custom(function = "shared::permissions::validate_admin_permissions"))]
+        #[garde(custom(shared::permissions::validate_admin_permissions))]
         admin_permissions: Vec<compact_str::CompactString>,
-        #[validate(custom(function = "shared::permissions::validate_server_permissions"))]
+        #[garde(custom(shared::permissions::validate_server_permissions))]
         server_permissions: Vec<compact_str::CompactString>,
 
+        #[garde(skip)]
         expires: Option<chrono::DateTime<chrono::Utc>>,
     }
 

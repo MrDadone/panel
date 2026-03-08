@@ -814,7 +814,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
 
                             let rules = rules.split('|').map(compact_str::CompactString::from).collect::<Vec<_>>();
 
-                            if rule_validator::validate_rules(&rules).is_err() {
+                            if rule_validator::validate_rules(&rules, &()).is_err() {
                                 continue;
                             }
 

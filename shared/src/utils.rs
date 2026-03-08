@@ -1,5 +1,5 @@
 use compact_str::ToCompactString;
-use validator::{Validate, ValidationErrors, ValidationErrorsKind};
+use garde::Validate;
 
 #[inline]
 pub fn slice_up_to(s: &str, max_len: usize) -> &str {
@@ -16,9 +16,12 @@ pub fn slice_up_to(s: &str, max_len: usize) -> &str {
 }
 
 #[inline]
-pub fn validate_data<T: Validate>(data: &T) -> Result<(), Vec<String>> {
+pub fn validate_data<T: Validate>(data: &T) -> Result<(), Vec<String>>
+where
+    T::Context: Default,
+{
     if let Err(err) = data.validate() {
-        let error_messages = flatten_validation_errors(&err, "");
+        let error_messages = flatten_validation_errors(&err);
 
         return Err(error_messages);
     }
@@ -26,36 +29,14 @@ pub fn validate_data<T: Validate>(data: &T) -> Result<(), Vec<String>> {
     Ok(())
 }
 
-pub fn flatten_validation_errors(errors: &ValidationErrors, prefix: &str) -> Vec<String> {
+pub fn flatten_validation_errors(errors: &garde::Report) -> Vec<String> {
     let mut messages = Vec::new();
 
-    for (field, kind) in errors.errors() {
-        let full_name = if prefix.is_empty() {
-            field.to_compact_string()
-        } else {
-            compact_str::format_compact!("{}.{}", prefix, field)
-        };
+    for (path, error) in errors.iter() {
+        let full_name = path.to_compact_string();
 
-        match kind {
-            ValidationErrorsKind::Field(field_errors) => {
-                for error in field_errors {
-                    if let Some(message) = &error.message {
-                        messages.push(format!("{full_name}: {message}"));
-                    } else {
-                        messages.push(format!("{full_name}: invalid {}", error.code));
-                    }
-                }
-            }
-            ValidationErrorsKind::Struct(nested_errors) => {
-                messages.extend(flatten_validation_errors(nested_errors, &full_name));
-            }
-            ValidationErrorsKind::List(list_errors) => {
-                for (index, nested_errors) in list_errors {
-                    let list_prefix = compact_str::format_compact!("{}[{}]", full_name, index);
-                    messages.extend(flatten_validation_errors(nested_errors, &list_prefix));
-                }
-            }
-        }
+        messages.push(format!("{full_name}: {}", error.message()));
     }
+
     messages
 }

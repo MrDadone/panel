@@ -3,6 +3,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod post {
     use axum::http::{HeaderMap, StatusCode};
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -12,14 +13,13 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 96, max = 96))]
+        #[garde(length(chars, min = 96, max = 96))]
         #[schema(min_length = 96, max_length = 96)]
         token: String,
-        #[validate(length(min = 8, max = 512))]
+        #[garde(length(chars, min = 8, max = 512))]
         #[schema(min_length = 8, max_length = 512)]
         new_password: String,
     }

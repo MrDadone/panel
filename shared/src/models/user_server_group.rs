@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -9,7 +10,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UserServerGroup {
@@ -143,13 +143,14 @@ impl UserServerGroup {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateUserServerGroupOptions {
+    #[garde(skip)]
     pub user_uuid: uuid::Uuid,
 
-    #[validate(length(min = 2, max = 31))]
+    #[garde(length(chars, min = 2, max = 31))]
     #[schema(min_length = 2, max_length = 31)]
     pub name: compact_str::CompactString,
 
-    #[validate(length(max = 100))]
+    #[garde(length(max = 100))]
     #[schema(max_length = 100)]
     pub server_order: Vec<uuid::Uuid>,
 }
@@ -198,11 +199,11 @@ impl CreatableModel for UserServerGroup {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
 pub struct UpdateUserServerGroupOptions {
-    #[validate(length(min = 2, max = 31))]
+    #[garde(length(chars, min = 2, max = 31))]
     #[schema(min_length = 2, max_length = 31, value_type = String)]
     pub name: Option<compact_str::CompactString>,
 
-    #[validate(length(max = 100))]
+    #[garde(length(max = 100))]
     #[schema(max_length = 100)]
     pub server_order: Option<Vec<uuid::Uuid>>,
 }

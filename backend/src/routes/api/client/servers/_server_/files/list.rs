@@ -3,6 +3,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod get {
     use axum::{extract::Query, http::StatusCode};
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -10,17 +11,17 @@ mod get {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Params {
-        #[validate(range(min = 1))]
+        #[garde(range(min = 1))]
         #[serde(default = "Pagination::default_page")]
-        pub page: i64,
-        #[validate(range(min = 1, max = 100))]
+        page: i64,
+        #[garde(range(min = 1, max = 100))]
         #[serde(default = "Pagination::default_per_page")]
-        pub per_page: i64,
+        per_page: i64,
 
+        #[garde(skip)]
         #[serde(default)]
         directory: String,
     }

@@ -6,6 +6,7 @@ mod hosts;
 
 mod get {
     use axum::{extract::Query, http::StatusCode};
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -16,25 +17,25 @@ mod get {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Params {
-        #[validate(range(min = 1))]
+        #[garde(range(min = 1))]
         #[serde(default = "Pagination::default_page")]
-        pub page: i64,
-        #[validate(range(min = 1, max = 100))]
+        page: i64,
+        #[garde(range(min = 1, max = 100))]
         #[serde(default = "Pagination::default_per_page")]
-        pub per_page: i64,
-        #[validate(length(min = 1, max = 100))]
+        per_page: i64,
+        #[garde(length(chars, min = 1, max = 100))]
         #[serde(
             default,
             deserialize_with = "shared::deserialize::deserialize_string_option"
         )]
-        pub search: Option<compact_str::CompactString>,
+        search: Option<compact_str::CompactString>,
 
+        #[garde(skip)]
         #[serde(default)]
-        pub include_password: bool,
+        include_password: bool,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -115,6 +116,7 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -128,16 +130,13 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         database_host_uuid: uuid::Uuid,
 
-        #[validate(
-            length(min = 3, max = 31),
-            regex(path = "*shared::models::server_database::DB_NAME_REGEX")
-        )]
+        #[garde(length(chars, min = 3, max = 31), pattern("^[a-zA-Z0-9_]+$"))]
         #[schema(min_length = 3, max_length = 31, pattern = "^[a-zA-Z0-9_]+$")]
         name: compact_str::CompactString,
     }

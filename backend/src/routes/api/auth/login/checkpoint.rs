@@ -13,6 +13,7 @@ pub struct TwoFactorRequiredJwt {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -24,16 +25,16 @@ mod post {
     };
     use tower_cookies::{Cookie, Cookies};
     use utoipa::ToSchema;
-    use validator::Validate;
 
     use crate::routes::api::auth::login::checkpoint::TwoFactorRequiredJwt;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 6, max = 10))]
+        #[garde(length(chars, min = 6, max = 10))]
         #[schema(min_length = 6, max_length = 10)]
         code: String,
 
+        #[garde(skip)]
         confirmation_token: String,
     }
 

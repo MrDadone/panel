@@ -1,4 +1,5 @@
 use crate::{models::InsertQueryBuilder, prelude::*};
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,7 +7,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LocationDatabaseHost {
@@ -152,7 +152,9 @@ impl LocationDatabaseHost {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateLocationDatabaseHostOptions {
+    #[garde(skip)]
     pub location_uuid: uuid::Uuid,
+    #[garde(skip)]
     pub database_host_uuid: uuid::Uuid,
 }
 

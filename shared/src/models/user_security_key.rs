@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -9,7 +10,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct UserSecurityKey {
@@ -172,12 +172,14 @@ impl UserSecurityKey {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateUserSecurityKeyOptions {
+    #[garde(skip)]
     pub user_uuid: uuid::Uuid,
 
-    #[validate(length(min = 3, max = 31))]
+    #[garde(length(chars, min = 3, max = 31))]
     #[schema(min_length = 3, max_length = 31)]
     pub name: compact_str::CompactString,
 
+    #[garde(skip)]
     #[schema(value_type = serde_json::Value)]
     pub registration: webauthn_rs::prelude::PasskeyRegistration,
 }
@@ -228,7 +230,7 @@ impl CreatableModel for UserSecurityKey {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
 pub struct UpdateUserSecurityKeyOptions {
-    #[validate(length(min = 3, max = 31))]
+    #[garde(length(chars, min = 3, max = 31))]
     #[schema(min_length = 3, max_length = 31)]
     pub name: Option<compact_str::CompactString>,
 }

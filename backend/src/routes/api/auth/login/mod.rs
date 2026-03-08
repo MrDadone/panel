@@ -7,6 +7,7 @@ mod security_key;
 mod post {
     use crate::routes::api::auth::login::checkpoint::TwoFactorRequiredJwt;
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -18,15 +19,16 @@ mod post {
     };
     use tower_cookies::{Cookie, Cookies};
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         user: String,
-        #[validate(length(max = 512))]
+        #[garde(length(max = 512))]
         #[schema(max_length = 512)]
         password: String,
 
+        #[garde(skip)]
         captcha: Option<String>,
     }
 

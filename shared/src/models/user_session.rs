@@ -5,6 +5,7 @@ use crate::{
     },
     prelude::*,
 };
+use garde::Validate;
 use rand::distr::SampleString;
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
@@ -14,7 +15,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UserSession {
@@ -197,10 +197,12 @@ impl UserSession {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateUserSessionOptions {
+    #[garde(skip)]
     pub user_uuid: uuid::Uuid,
+    #[garde(skip)]
     #[schema(value_type = String)]
     pub ip: sqlx::types::ipnetwork::IpNetwork,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     pub user_agent: compact_str::CompactString,
 }

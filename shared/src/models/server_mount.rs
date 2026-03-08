@@ -1,4 +1,5 @@
 use crate::{models::InsertQueryBuilder, prelude::*, storage::StorageUrlRetriever};
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,7 +7,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct ServerMount {
@@ -313,7 +313,9 @@ impl ServerMount {
 
 #[derive(Validate)]
 pub struct CreateServerMountOptions {
+    #[garde(skip)]
     pub server_uuid: uuid::Uuid,
+    #[garde(skip)]
     pub mount_uuid: uuid::Uuid,
 }
 

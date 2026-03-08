@@ -1,5 +1,6 @@
 use crate::{models::InsertQueryBuilder, prelude::*, storage::StorageUrlRetriever};
 use compact_str::ToCompactString;
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -7,7 +8,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct ServerActivity {
@@ -190,18 +190,26 @@ impl ServerActivity {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateServerActivityOptions {
+    #[garde(skip)]
     pub server_uuid: uuid::Uuid,
+    #[garde(skip)]
     pub user_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
     pub impersonator_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
     pub api_key_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
     pub schedule_uuid: Option<uuid::Uuid>,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub event: compact_str::CompactString,
+    #[garde(skip)]
     #[schema(value_type = Option<String>)]
     pub ip: Option<sqlx::types::ipnetwork::IpNetwork>,
+    #[garde(skip)]
     pub data: serde_json::Value,
 
+    #[garde(skip)]
     pub created: Option<chrono::NaiveDateTime>,
 }
 

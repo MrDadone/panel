@@ -5,6 +5,7 @@ use crate::{
     storage::StorageUrlRetriever,
 };
 use compact_str::ToCompactString;
+use garde::Validate;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type};
@@ -13,7 +14,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Debug, ToSchema, Serialize, Deserialize, Type, PartialEq, Eq, Hash, Clone, Copy)]
 #[serde(rename_all = "kebab-case")]
@@ -785,9 +785,11 @@ impl ServerBackup {
 
 #[derive(Validate)]
 pub struct CreateServerBackupOptions<'a> {
+    #[garde(skip)]
     pub server: &'a super::server::Server,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     pub name: compact_str::CompactString,
+    #[garde(skip)]
     pub ignored_files: Vec<compact_str::CompactString>,
 }
 
@@ -945,9 +947,10 @@ impl CreatableModel for ServerBackup {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
 pub struct UpdateServerBackupOptions {
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
+    #[garde(skip)]
     pub locked: Option<bool>,
 }
 

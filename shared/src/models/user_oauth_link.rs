@@ -1,4 +1,5 @@
 use crate::{models::InsertQueryBuilder, prelude::*, storage::StorageUrlRetriever};
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,7 +7,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct UserOAuthLink {
@@ -294,10 +294,12 @@ impl UserOAuthLink {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateUserOAuthLinkOptions {
+    #[garde(skip)]
     pub user_uuid: uuid::Uuid,
+    #[garde(skip)]
     pub oauth_provider_uuid: uuid::Uuid,
 
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub identifier: compact_str::CompactString,
 }

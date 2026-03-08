@@ -189,8 +189,7 @@ async fn main() {
                         if let Some(shared::database::DatabaseError::Validation(error)) =
                             err.downcast_ref::<shared::database::DatabaseError>()
                         {
-                            let error_messages =
-                                shared::utils::flatten_validation_errors(error, "");
+                            let error_messages = shared::utils::flatten_validation_errors(error);
 
                             eprintln!("{}", "validation error(s) occurred:".red());
                             for message in error_messages {

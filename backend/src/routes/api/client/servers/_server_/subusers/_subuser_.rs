@@ -123,6 +123,7 @@ mod delete {
 
 mod patch {
     use axum::{extract::Path, http::StatusCode};
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -134,12 +135,12 @@ mod patch {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(custom(function = "shared::permissions::validate_server_permissions"))]
+        #[garde(inner(custom(shared::permissions::validate_server_permissions)))]
         permissions: Option<Vec<compact_str::CompactString>>,
+        #[garde(skip)]
         ignored_files: Option<Vec<compact_str::CompactString>>,
     }
 
