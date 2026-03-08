@@ -46,7 +46,9 @@ nestify::nest! {
             pub version: compact_str::CompactString,
             pub container_type: wings_api::AppContainerType,
 
+            #[schema(inline)]
             pub memory: wings_api::system_overview::get::Response200Memory,
+            #[schema(inline)]
             pub servers: wings_api::system_overview::get::Response200Servers,
 
             pub architecture: compact_str::CompactString,

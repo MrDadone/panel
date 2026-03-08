@@ -52,7 +52,7 @@ mod put {
         url: Option<compact_str::CompactString>,
         #[garde(
             length(chars, min = 2, max = 15),
-            inner(custom(shared::validate_language))
+            inner(custom(shared::utils::validate_language))
         )]
         language: Option<compact_str::CompactString>,
         #[garde(skip)]

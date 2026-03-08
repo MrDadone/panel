@@ -241,8 +241,8 @@ pub struct CreateUserApiKeyOptions {
     #[garde(custom(crate::permissions::validate_server_permissions))]
     pub server_permissions: Vec<compact_str::CompactString>,
 
-    #[garde(skip)]
-    pub expires: Option<chrono::NaiveDateTime>,
+    #[garde(inner(custom(crate::utils::validate_time_in_future)))]
+    pub expires: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[async_trait::async_trait]
@@ -284,7 +284,7 @@ impl CreatableModel for UserApiKey {
             .set("user_permissions", &options.user_permissions)
             .set("admin_permissions", &options.admin_permissions)
             .set("server_permissions", &options.server_permissions)
-            .set("expires", options.expires);
+            .set("expires", options.expires.map(|d| d.naive_utc()));
 
         let row = query_builder
             .returning(&Self::columns_sql(None))
@@ -314,7 +314,7 @@ pub struct UpdateUserApiKeyOptions {
     #[garde(inner(custom(crate::permissions::validate_server_permissions)))]
     pub server_permissions: Option<Vec<compact_str::CompactString>>,
 
-    #[garde(skip)]
+    #[garde(inner(inner(custom(crate::utils::validate_time_in_future))))]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",

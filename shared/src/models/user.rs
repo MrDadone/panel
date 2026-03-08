@@ -812,7 +812,7 @@ pub struct CreateUserOptions {
     pub username: compact_str::CompactString,
     #[garde(email, length(max = 255))]
     #[schema(format = "email", max_length = 255)]
-    pub email: String,
+    pub email: compact_str::CompactString,
     #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub name_first: compact_str::CompactString,
@@ -826,7 +826,10 @@ pub struct CreateUserOptions {
     #[garde(skip)]
     pub admin: bool,
 
-    #[garde(length(chars, min = 2, max = 15), custom(crate::validate_language))]
+    #[garde(
+        length(chars, min = 2, max = 15),
+        custom(crate::utils::validate_language)
+    )]
     #[schema(min_length = 2, max_length = 15)]
     pub language: compact_str::CompactString,
 }
@@ -915,7 +918,7 @@ pub struct UpdateUserOptions {
     pub username: Option<compact_str::CompactString>,
     #[garde(email, length(max = 255))]
     #[schema(format = "email", max_length = 255)]
-    pub email: Option<String>,
+    pub email: Option<compact_str::CompactString>,
     #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub name_first: Option<compact_str::CompactString>,
@@ -931,7 +934,7 @@ pub struct UpdateUserOptions {
 
     #[garde(
         length(chars, min = 2, max = 15),
-        inner(custom(crate::validate_language))
+        inner(custom(crate::utils::validate_language))
     )]
     #[schema(min_length = 2, max_length = 15)]
     pub language: Option<compact_str::CompactString>,
@@ -1005,7 +1008,7 @@ impl UpdatableModel for User {
             self.username = username;
         }
         if let Some(email) = options.email {
-            self.email = email.into();
+            self.email = email;
         }
         if let Some(name_first) = options.name_first {
             self.name_first = name_first;

@@ -69,7 +69,7 @@ mod patch {
 
         #[garde(
             length(chars, min = 2, max = 15),
-            inner(custom(shared::validate_language))
+            inner(custom(shared::utils::validate_language))
         )]
         #[schema(min_length = 2, max_length = 15)]
         language: Option<compact_str::CompactString>,

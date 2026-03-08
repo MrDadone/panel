@@ -177,7 +177,7 @@ pub struct CreateServerSubuserOptions<'a> {
     pub server: &'a super::server::Server,
 
     #[garde(email)]
-    pub email: String,
+    pub email: compact_str::CompactString,
     #[garde(custom(crate::permissions::validate_server_permissions))]
     pub permissions: Vec<compact_str::CompactString>,
     #[garde(skip)]

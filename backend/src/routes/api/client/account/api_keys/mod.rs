@@ -112,7 +112,7 @@ mod post {
         #[garde(custom(shared::permissions::validate_server_permissions))]
         server_permissions: Vec<compact_str::CompactString>,
 
-        #[garde(skip)]
+        #[garde(inner(custom(shared::utils::validate_time_in_future)))]
         expires: Option<chrono::DateTime<chrono::Utc>>,
     }
 
@@ -164,7 +164,7 @@ mod post {
             user_permissions: data.user_permissions,
             admin_permissions: data.admin_permissions,
             server_permissions: data.server_permissions,
-            expires: data.expires.map(|dt| dt.naive_utc()),
+            expires: data.expires,
         };
         let (key, api_key) = match UserApiKey::create(&state, options).await {
             Ok(result) => result,
