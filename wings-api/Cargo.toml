@@ -23,3 +23,4 @@ rmp-serde = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 futures-util = { workspace = true }
+garde = { workspace = true }

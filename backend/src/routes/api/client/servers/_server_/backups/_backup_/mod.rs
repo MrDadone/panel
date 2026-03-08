@@ -180,6 +180,7 @@ mod delete {
 mod patch {
     use crate::routes::api::client::servers::_server_::backups::_backup_::GetServerBackup;
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -187,13 +188,13 @@ mod patch {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 1, max = 255))]
+        #[garde(length(chars, min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
         name: Option<compact_str::CompactString>,
+        #[garde(skip)]
         locked: Option<bool>,
     }
 

@@ -5,7 +5,7 @@ use crate::{
     storage::StorageUrlRetriever,
 };
 use axum::http::StatusCode;
-use regex::Regex;
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type};
 use std::{
@@ -14,11 +14,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 use webauthn_rs::prelude::CredentialID;
-
-pub static USERNAME_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[a-zA-Z0-9_]+$").expect("Failed to compile username regex"));
 
 #[derive(Clone)]
 pub enum AuthMethod {
@@ -803,35 +799,34 @@ impl User {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateUserOptions {
+    #[garde(skip)]
     pub role_uuid: Option<uuid::Uuid>,
 
-    #[validate(length(max = 255))]
+    #[garde(length(max = 255))]
     #[schema(max_length = 255)]
     pub external_id: Option<compact_str::CompactString>,
 
-    #[validate(length(min = 3, max = 15), regex(path = "*USERNAME_REGEX"))]
+    #[garde(length(chars, min = 3, max = 15), pattern("^[a-zA-Z0-9_]+$"))]
     #[schema(min_length = 3, max_length = 15)]
     #[schema(pattern = "^[a-zA-Z0-9_]+$")]
     pub username: compact_str::CompactString,
-    #[validate(email, length(max = 255))]
+    #[garde(email, length(max = 255))]
     #[schema(format = "email", max_length = 255)]
     pub email: String,
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub name_first: compact_str::CompactString,
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub name_last: compact_str::CompactString,
-    #[validate(length(min = 1, max = 512))]
+    #[garde(length(chars, min = 1, max = 512))]
     #[schema(min_length = 1, max_length = 512)]
     pub password: Option<String>,
 
+    #[garde(skip)]
     pub admin: bool,
 
-    #[validate(
-        length(min = 2, max = 15),
-        custom(function = "crate::validate_language")
-    )]
+    #[garde(length(chars, min = 2, max = 15), custom(crate::validate_language))]
     #[schema(min_length = 2, max_length = 15)]
     pub language: compact_str::CompactString,
 }
@@ -897,6 +892,7 @@ impl CreatableModel for User {
 
 #[derive(Default, ToSchema, Serialize, Deserialize, Validate)]
 pub struct UpdateUserOptions {
+    #[garde(skip)]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -904,7 +900,7 @@ pub struct UpdateUserOptions {
     )]
     pub role_uuid: Option<Option<uuid::Uuid>>,
 
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     #[serde(
         default,
@@ -913,28 +909,29 @@ pub struct UpdateUserOptions {
     )]
     pub external_id: Option<Option<compact_str::CompactString>>,
 
-    #[validate(length(min = 3, max = 15), regex(path = "*USERNAME_REGEX"))]
+    #[garde(length(chars, min = 3, max = 15), pattern("^[a-zA-Z0-9_]+$"))]
     #[schema(min_length = 3, max_length = 15)]
     #[schema(pattern = "^[a-zA-Z0-9_]+$")]
     pub username: Option<compact_str::CompactString>,
-    #[validate(email, length(max = 255))]
+    #[garde(email, length(max = 255))]
     #[schema(format = "email", max_length = 255)]
     pub email: Option<String>,
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub name_first: Option<compact_str::CompactString>,
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub name_last: Option<compact_str::CompactString>,
-    #[validate(length(min = 8, max = 512))]
+    #[garde(length(chars, min = 8, max = 512))]
     #[schema(min_length = 8, max_length = 512)]
     pub password: Option<Option<compact_str::CompactString>>,
 
+    #[garde(skip)]
     pub admin: Option<bool>,
 
-    #[validate(
-        length(min = 2, max = 15),
-        custom(function = "crate::validate_language")
+    #[garde(
+        length(chars, min = 2, max = 15),
+        inner(custom(crate::validate_language))
     )]
     #[schema(min_length = 2, max_length = 15)]
     pub language: Option<compact_str::CompactString>,

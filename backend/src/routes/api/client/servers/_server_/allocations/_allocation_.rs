@@ -90,6 +90,7 @@ mod delete {
 
 mod patch {
     use axum::{extract::Path, http::StatusCode};
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -101,14 +102,14 @@ mod patch {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(max = 1024))]
+        #[garde(length(max = 1024))]
         #[schema(max_length = 1024)]
         notes: Option<compact_str::CompactString>,
 
+        #[garde(skip)]
         primary: Option<bool>,
     }
 

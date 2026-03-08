@@ -4,6 +4,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 mod post {
     use crate::routes::api::admin::nests::_nest_::GetNest;
     use futures_util::StreamExt;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -15,10 +16,10 @@ mod post {
     };
     use std::collections::HashSet;
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         egg_uuids: HashSet<uuid::Uuid>,
     }
 

@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -9,7 +10,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Nest {
@@ -155,13 +155,13 @@ impl ByUuid for Nest {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateNestOptions {
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub author: compact_str::CompactString,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
 }
@@ -210,13 +210,13 @@ impl CreatableModel for Nest {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UpdateNestOptions {
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub author: Option<compact_str::CompactString>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     #[serde(
         default,

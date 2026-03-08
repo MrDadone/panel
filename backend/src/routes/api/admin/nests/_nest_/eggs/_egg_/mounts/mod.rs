@@ -86,6 +86,7 @@ mod get {
 mod post {
     use crate::routes::api::admin::nests::_nest_::{GetNest, eggs::_egg_::GetNestEgg};
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -98,10 +99,10 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         mount_uuid: uuid::Uuid,
     }
 

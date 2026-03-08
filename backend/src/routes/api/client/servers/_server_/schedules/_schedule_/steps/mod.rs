@@ -68,6 +68,7 @@ mod get {
 mod post {
     use crate::routes::api::client::servers::_server_::schedules::_schedule_::GetServerSchedule;
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -80,11 +81,12 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(dive)]
         action: wings_api::ScheduleActionInner,
+        #[garde(skip)]
         order: i16,
     }
 

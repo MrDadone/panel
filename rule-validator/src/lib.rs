@@ -1,12 +1,14 @@
 use std::collections::HashMap;
-use validator::ValidationError;
 
 mod rules;
 
-pub fn validate_rules(rules: &[compact_str::CompactString]) -> Result<(), ValidationError> {
+pub fn validate_rules(
+    rules: &[compact_str::CompactString],
+    _context: &(),
+) -> Result<(), garde::Error> {
     for rule in rules {
         if let Err(err) = rules::parse_validation_rule(rule) {
-            return Err(ValidationError::new("invalid").with_message(err.into()));
+            return Err(garde::Error::new(err));
         }
     }
 

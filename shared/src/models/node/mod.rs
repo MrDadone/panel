@@ -5,6 +5,7 @@ use crate::{
     },
     prelude::*,
 };
+use garde::Validate;
 use rand::distr::SampleString;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -13,7 +14,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 mod events;
 pub use events::NodeEvent;
@@ -499,27 +499,37 @@ impl ByUuid for Node {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateNodeOptions {
+    #[garde(skip)]
     pub location_uuid: uuid::Uuid,
+    #[garde(skip)]
     pub backup_configuration_uuid: Option<uuid::Uuid>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
+    #[garde(skip)]
     pub deployment_enabled: bool,
+    #[garde(skip)]
     pub maintenance_enabled: bool,
-    #[validate(length(min = 3, max = 255), url)]
+    #[garde(length(chars, min = 3, max = 255), url)]
     #[schema(min_length = 3, max_length = 255, format = "uri")]
     pub public_url: Option<compact_str::CompactString>,
-    #[validate(length(min = 3, max = 255), url)]
+    #[garde(length(chars, min = 3, max = 255), url)]
     #[schema(min_length = 3, max_length = 255, format = "uri")]
     pub url: compact_str::CompactString,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub sftp_host: Option<compact_str::CompactString>,
+    #[garde(range(min = 1))]
+    #[schema(minimum = 1)]
     pub sftp_port: u16,
+    #[garde(range(min = 1))]
+    #[schema(minimum = 1)]
     pub memory: i64,
+    #[garde(range(min = 1))]
+    #[schema(minimum = 1)]
     pub disk: i64,
 }
 
@@ -595,17 +605,19 @@ impl CreatableModel for Node {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UpdateNodeOptions {
+    #[garde(skip)]
     pub location_uuid: Option<uuid::Uuid>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
         with = "::serde_with::rust::double_option"
     )]
+    #[garde(skip)]
     pub backup_configuration_uuid: Option<Option<uuid::Uuid>>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     #[serde(
         default,
@@ -613,9 +625,11 @@ pub struct UpdateNodeOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub description: Option<Option<compact_str::CompactString>>,
+    #[garde(skip)]
     pub deployment_enabled: Option<bool>,
+    #[garde(skip)]
     pub maintenance_enabled: Option<bool>,
-    #[validate(length(min = 3, max = 255), url)]
+    #[garde(length(chars, min = 3, max = 255), url)]
     #[schema(min_length = 3, max_length = 255, format = "uri")]
     #[serde(
         default,
@@ -623,10 +637,10 @@ pub struct UpdateNodeOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub public_url: Option<Option<compact_str::CompactString>>,
-    #[validate(length(min = 3, max = 255), url)]
+    #[garde(length(chars, min = 3, max = 255), url)]
     #[schema(min_length = 3, max_length = 255, format = "uri")]
     pub url: Option<compact_str::CompactString>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     #[serde(
         default,
@@ -634,8 +648,14 @@ pub struct UpdateNodeOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub sftp_host: Option<Option<compact_str::CompactString>>,
+    #[garde(range(min = 1))]
+    #[schema(minimum = 1)]
     pub sftp_port: Option<u16>,
+    #[garde(range(min = 1))]
+    #[schema(minimum = 1)]
     pub memory: Option<i64>,
+    #[garde(range(min = 1))]
+    #[schema(minimum = 1)]
     pub disk: Option<i64>,
 }
 

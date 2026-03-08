@@ -82,6 +82,7 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -93,12 +94,11 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
     use webauthn_rs::prelude::CreationChallengeResponse;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 3, max = 31))]
+        #[garde(length(chars, min = 3, max = 31))]
         #[schema(min_length = 3, max_length = 31)]
         name: compact_str::CompactString,
     }

@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -9,7 +10,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Role {
@@ -156,16 +156,17 @@ impl ByUuid for Role {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateRoleOptions {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
+    #[garde(skip)]
     pub require_two_factor: bool,
-    #[validate(custom(function = "crate::permissions::validate_admin_permissions"))]
+    #[garde(custom(crate::permissions::validate_admin_permissions))]
     pub admin_permissions: Vec<compact_str::CompactString>,
-    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    #[garde(custom(crate::permissions::validate_server_permissions))]
     pub server_permissions: Vec<compact_str::CompactString>,
 }
 
@@ -215,10 +216,10 @@ impl CreatableModel for Role {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UpdateRoleOptions {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     #[serde(
         default,
@@ -226,10 +227,11 @@ pub struct UpdateRoleOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub description: Option<Option<compact_str::CompactString>>,
+    #[garde(skip)]
     pub require_two_factor: Option<bool>,
-    #[validate(custom(function = "crate::permissions::validate_admin_permissions"))]
+    #[garde(inner(custom(crate::permissions::validate_admin_permissions)))]
     pub admin_permissions: Option<Vec<compact_str::CompactString>>,
-    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    #[garde(inner(custom(crate::permissions::validate_server_permissions)))]
     pub server_permissions: Option<Vec<compact_str::CompactString>>,
 }
 

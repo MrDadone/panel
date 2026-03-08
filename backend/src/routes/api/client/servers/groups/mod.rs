@@ -45,6 +45,7 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -57,14 +58,13 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 2, max = 31))]
+        #[garde(length(chars, min = 2, max = 31))]
         #[schema(min_length = 2, max_length = 31)]
         name: compact_str::CompactString,
-        #[validate(length(max = 100))]
+        #[garde(length(max = 100))]
         #[schema(max_length = 100)]
         server_order: Vec<uuid::Uuid>,
     }

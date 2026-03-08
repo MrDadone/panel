@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -9,7 +10,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Location {
@@ -200,11 +200,12 @@ impl ByUuid for Location {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateLocationOptions {
+    #[garde(skip)]
     pub backup_configuration_uuid: Option<uuid::Uuid>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
 }
@@ -267,16 +268,17 @@ impl CreatableModel for Location {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UpdateLocationOptions {
+    #[garde(skip)]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
         with = "::serde_with::rust::double_option"
     )]
     pub backup_configuration_uuid: Option<Option<uuid::Uuid>>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     #[serde(
         default,

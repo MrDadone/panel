@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use rand::distr::SampleString;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -10,7 +11,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OAuthProvider {
@@ -393,51 +393,56 @@ impl ByUuid for OAuthProvider {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateOAuthProviderOptions {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
+    #[garde(skip)]
     pub enabled: bool,
+    #[garde(skip)]
     pub login_only: bool,
+    #[garde(skip)]
     pub link_viewable: bool,
+    #[garde(skip)]
     pub user_manageable: bool,
+    #[garde(skip)]
     pub basic_auth: bool,
 
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub client_id: compact_str::CompactString,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub client_secret: compact_str::CompactString,
 
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub auth_url: String,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub token_url: String,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub info_url: String,
-    #[validate(length(max = 255))]
+    #[garde(length(max = 255))]
     #[schema(max_length = 255)]
     pub scopes: Vec<compact_str::CompactString>,
 
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub identifier_path: String,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub email_path: Option<String>,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub username_path: Option<String>,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub name_first_path: Option<String>,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub name_last_path: Option<String>,
 }
@@ -507,10 +512,10 @@ impl CreatableModel for OAuthProvider {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UpdateOAuthProviderOptions {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     #[serde(
         default,
@@ -518,36 +523,41 @@ pub struct UpdateOAuthProviderOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub description: Option<Option<compact_str::CompactString>>,
+    #[garde(skip)]
     pub enabled: Option<bool>,
+    #[garde(skip)]
     pub login_only: Option<bool>,
+    #[garde(skip)]
     pub link_viewable: Option<bool>,
+    #[garde(skip)]
     pub user_manageable: Option<bool>,
+    #[garde(skip)]
     pub basic_auth: Option<bool>,
 
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub client_id: Option<compact_str::CompactString>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub client_secret: Option<compact_str::CompactString>,
 
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub auth_url: Option<String>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub token_url: Option<String>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub info_url: Option<String>,
-    #[validate(length(max = 255))]
+    #[garde(length(max = 255))]
     #[schema(max_length = 255)]
     pub scopes: Option<Vec<compact_str::CompactString>>,
 
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub identifier_path: Option<String>,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     #[serde(
         default,
@@ -555,7 +565,7 @@ pub struct UpdateOAuthProviderOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub email_path: Option<Option<String>>,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     #[serde(
         default,
@@ -563,7 +573,7 @@ pub struct UpdateOAuthProviderOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub username_path: Option<Option<String>>,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     #[serde(
         default,
@@ -571,7 +581,7 @@ pub struct UpdateOAuthProviderOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub name_first_path: Option<Option<String>>,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     #[serde(
         default,

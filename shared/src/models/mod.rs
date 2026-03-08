@@ -1,6 +1,7 @@
 use crate::database::DatabaseError;
 use compact_str::CompactStringExt;
 use futures_util::{StreamExt, TryStreamExt};
+use garde::Validate;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use sqlx::{
     Arguments, Postgres, QueryBuilder, Row,
@@ -14,7 +15,6 @@ use std::{
 };
 use tokio::sync::RwLock;
 use utoipa::ToSchema;
-use validator::Validate;
 
 pub mod admin_activity;
 pub mod backup_configuration;
@@ -56,11 +56,11 @@ pub mod user_ssh_key;
 
 #[derive(ToSchema, Validate, Deserialize)]
 pub struct PaginationParams {
-    #[validate(range(min = 1))]
+    #[garde(range(min = 1))]
     #[schema(minimum = 1)]
     #[serde(default = "Pagination::default_page")]
     pub page: i64,
-    #[validate(range(min = 1, max = 100))]
+    #[garde(range(min = 1, max = 100))]
     #[schema(minimum = 1, maximum = 100)]
     #[serde(default = "Pagination::default_per_page")]
     pub per_page: i64,
@@ -68,15 +68,15 @@ pub struct PaginationParams {
 
 #[derive(ToSchema, Validate, Deserialize)]
 pub struct PaginationParamsWithSearch {
-    #[validate(range(min = 1))]
+    #[garde(range(min = 1))]
     #[schema(minimum = 1)]
     #[serde(default = "Pagination::default_page")]
     pub page: i64,
-    #[validate(range(min = 1, max = 100))]
+    #[garde(range(min = 1, max = 100))]
     #[schema(minimum = 1, maximum = 100)]
     #[serde(default = "Pagination::default_per_page")]
     pub per_page: i64,
-    #[validate(length(min = 1, max = 128))]
+    #[garde(length(chars, min = 1, max = 128))]
     #[schema(min_length = 1, max_length = 128)]
     #[serde(
         default,

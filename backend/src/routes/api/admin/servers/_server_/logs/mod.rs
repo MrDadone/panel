@@ -5,6 +5,7 @@ mod install;
 
 mod get {
     use axum::{extract::Query, http::StatusCode};
+    use garde::Validate;
     use serde::Deserialize;
     use shared::{
         ApiError, GetState,
@@ -12,7 +13,6 @@ mod get {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     fn default_lines() -> u64 {
         100
@@ -20,7 +20,7 @@ mod get {
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Params {
-        #[validate(range(min = 1))]
+        #[garde(range(min = 1))]
         #[serde(default = "default_lines")]
         pub lines: u64,
     }

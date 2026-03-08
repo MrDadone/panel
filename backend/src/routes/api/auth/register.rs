@@ -3,6 +3,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -11,30 +12,27 @@ mod post {
     };
     use tower_cookies::{Cookie, Cookies};
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(
-            length(min = 3, max = 15),
-            regex(path = "*shared::models::user::USERNAME_REGEX")
-        )]
+        #[garde(length(chars, min = 3, max = 15), pattern("^[a-zA-Z0-9_]+$"))]
         #[schema(min_length = 3, max_length = 15)]
         #[schema(pattern = "^[a-zA-Z0-9_]+$")]
         username: String,
-        #[validate(email)]
+        #[garde(email)]
         #[schema(format = "email")]
         email: String,
-        #[validate(length(min = 2, max = 255))]
+        #[garde(length(chars, min = 2, max = 255))]
         #[schema(min_length = 2, max_length = 255)]
         name_first: String,
-        #[validate(length(min = 2, max = 255))]
+        #[garde(length(chars, min = 2, max = 255))]
         #[schema(min_length = 2, max_length = 255)]
         name_last: String,
-        #[validate(length(min = 8, max = 512))]
+        #[garde(length(chars, min = 8, max = 512))]
         #[schema(min_length = 8, max_length = 512)]
         password: String,
 
+        #[garde(skip)]
         captcha: Option<String>,
     }
 

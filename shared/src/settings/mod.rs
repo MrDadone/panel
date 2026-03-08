@@ -7,6 +7,7 @@ use crate::{
     prelude::{AsyncOptionExt, StringExt},
 };
 use compact_str::ToCompactString;
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -26,19 +27,27 @@ pub mod app;
 pub mod server;
 pub mod webauthn;
 
-#[derive(ToSchema, Serialize, Deserialize, Clone)]
+#[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum StorageDriver {
     Filesystem {
+        #[garde(length(chars, min = 1, max = 255))]
         path: compact_str::CompactString,
     },
     S3 {
+        #[garde(length(chars, min = 1, max = 255), url)]
         public_url: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 512))]
         access_key: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 512))]
         secret_key: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 63))]
         bucket: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 63))]
         region: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 255))]
         endpoint: compact_str::CompactString,
+        #[garde(skip)]
         path_style: bool,
     },
 }
@@ -54,53 +63,75 @@ impl StorageDriver {
     }
 }
 
-#[derive(ToSchema, Serialize, Deserialize, Clone)]
+#[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum MailMode {
     None,
     Smtp {
+        #[garde(length(chars, min = 1, max = 255))]
         host: compact_str::CompactString,
+        #[garde(skip)]
         port: u16,
+        #[garde(length(chars, min = 1, max = 255))]
         username: Option<compact_str::CompactString>,
+        #[garde(length(chars, min = 1, max = 255))]
         password: Option<compact_str::CompactString>,
+        #[garde(skip)]
         use_tls: bool,
 
+        #[garde(length(chars, min = 1, max = 255), email)]
         from_address: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 255))]
         from_name: Option<compact_str::CompactString>,
     },
     Sendmail {
+        #[garde(length(chars, min = 1, max = 255))]
         command: compact_str::CompactString,
 
+        #[garde(length(chars, min = 1, max = 255), email)]
         from_address: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 255))]
         from_name: Option<compact_str::CompactString>,
     },
     Filesystem {
+        #[garde(length(chars, min = 1, max = 255))]
         path: compact_str::CompactString,
 
+        #[garde(length(chars, min = 1, max = 255), email)]
         from_address: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 255))]
         from_name: Option<compact_str::CompactString>,
     },
 }
 
-#[derive(ToSchema, Serialize, Deserialize, Clone)]
+#[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum CaptchaProvider {
     None,
     Turnstile {
+        #[garde(length(chars, min = 1, max = 255))]
         site_key: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 255))]
         secret_key: compact_str::CompactString,
     },
     Recaptcha {
+        #[garde(skip)]
         v3: bool,
+        #[garde(length(chars, min = 1, max = 255))]
         site_key: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 255))]
         secret_key: compact_str::CompactString,
     },
     Hcaptcha {
+        #[garde(length(chars, min = 1, max = 255))]
         site_key: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 255))]
         secret_key: compact_str::CompactString,
     },
     FriendlyCaptcha {
+        #[garde(length(chars, min = 1, max = 255))]
         site_key: compact_str::CompactString,
+        #[garde(length(chars, min = 1, max = 255))]
         api_key: compact_str::CompactString,
     },
 }

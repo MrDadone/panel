@@ -4,6 +4,7 @@ use crate::{
     },
     prelude::*,
 };
+use garde::Validate;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -12,16 +13,18 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::{Validate, ValidationError};
 
 pub fn validate_docker_images(
     docker_images: &IndexMap<compact_str::CompactString, compact_str::CompactString>,
-) -> Result<(), ValidationError> {
+    _context: &(),
+) -> Result<(), garde::Error> {
     let mut seen_images = HashSet::new();
     for image in docker_images.values() {
         if !seen_images.insert(image) {
-            return Err(ValidationError::new("duplicate_docker_image")
-                .with_message(format!("duplicate docker image: {}", image).into()));
+            return Err(garde::Error::new(compact_str::format_compact!(
+                "duplicate docker image: {}",
+                image
+            )));
         }
     }
 
@@ -30,11 +33,14 @@ pub fn validate_docker_images(
 
 pub fn validate_config_allocations(
     config_allocations: &NestEggConfigAllocations,
-) -> Result<(), ValidationError> {
+    _context: &(),
+) -> Result<(), garde::Error> {
     if !config_allocations.user_self_assign.is_valid() {
-        return Err(ValidationError::new("invalid_port_range")
-            .with_message("port ranges must be 1024-65535 and start_port < end_port".into()));
+        return Err(garde::Error::new(
+            "port ranges must be 1024-65535 and start_port < end_port",
+        ));
     }
+
     Ok(())
 }
 
@@ -158,24 +164,28 @@ pub struct ExportedNestEggConfigsFilesFile {
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 pub struct ExportedNestEggConfigs {
+    #[garde(skip)]
     #[schema(inline)]
     #[serde(
         default,
         deserialize_with = "crate::deserialize::deserialize_nest_egg_config_files"
     )]
     pub files: IndexMap<compact_str::CompactString, ExportedNestEggConfigsFilesFile>,
+    #[garde(skip)]
     #[schema(inline)]
     #[serde(
         default,
         deserialize_with = "crate::deserialize::deserialize_pre_stringified"
     )]
     pub startup: NestEggConfigStartup,
+    #[garde(skip)]
     #[schema(inline)]
     #[serde(
         default,
         deserialize_with = "crate::deserialize::deserialize_nest_egg_config_stop"
     )]
     pub stop: NestEggConfigStop,
+    #[garde(skip)]
     #[schema(inline)]
     #[serde(default)]
     pub allocations: NestEggConfigAllocations,
@@ -183,51 +193,60 @@ pub struct ExportedNestEggConfigs {
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 pub struct ExportedNestEggScripts {
+    #[garde(skip)]
     #[schema(inline)]
     pub installation: NestEggConfigScript,
 }
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 pub struct ExportedNestEgg {
+    #[garde(skip)]
     #[serde(default = "uuid::Uuid::new_v4")]
     pub uuid: uuid::Uuid,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(max = 1024))]
+    #[garde(length(max = 1024))]
     #[schema(max_length = 1024)]
     #[serde(deserialize_with = "crate::deserialize::deserialize_string_option")]
     pub description: Option<compact_str::CompactString>,
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub author: compact_str::CompactString,
 
+    #[garde(skip)]
     #[schema(inline)]
     pub config: ExportedNestEggConfigs,
+    #[garde(skip)]
     #[schema(inline)]
     pub scripts: ExportedNestEggScripts,
 
-    #[validate(length(min = 1, max = 8192))]
+    #[garde(length(chars, min = 1, max = 8192))]
     #[schema(min_length = 1, max_length = 8192)]
     pub startup: compact_str::CompactString,
+    #[garde(skip)]
     #[serde(default)]
     pub force_outgoing_ip: bool,
+    #[garde(skip)]
     #[serde(default)]
     pub separate_port: bool,
 
+    #[garde(skip)]
     #[serde(
         default,
         deserialize_with = "crate::deserialize::deserialize_defaultable"
     )]
     pub features: Vec<compact_str::CompactString>,
-    #[validate(custom(function = "validate_docker_images"))]
+    #[garde(custom(validate_docker_images))]
     pub docker_images: IndexMap<compact_str::CompactString, compact_str::CompactString>,
+    #[garde(skip)]
     #[serde(
         default,
         deserialize_with = "crate::deserialize::deserialize_defaultable"
     )]
     pub file_denylist: Vec<compact_str::CompactString>,
 
+    #[garde(skip)]
     #[schema(inline)]
     pub variables: Vec<super::nest_egg_variable::ExportedNestEggVariable>,
 }
@@ -437,7 +456,7 @@ impl NestEgg {
         .await?;
 
         for variable in exported_egg.variables {
-            if rule_validator::validate_rules(&variable.rules).is_err() {
+            if rule_validator::validate_rules(&variable.rules, &()).is_err() {
                 continue;
             }
 
@@ -533,7 +552,7 @@ impl NestEgg {
         .await?;
 
         for (i, variable) in exported_egg.variables.iter().enumerate() {
-            if rule_validator::validate_rules(&variable.rules).is_err() {
+            if rule_validator::validate_rules(&variable.rules, &()).is_err() {
                 continue;
             }
 
@@ -821,36 +840,46 @@ impl ByUuid for NestEgg {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateNestEggOptions {
+    #[garde(skip)]
     pub nest_uuid: uuid::Uuid,
+    #[garde(skip)]
     pub egg_repository_egg_uuid: Option<uuid::Uuid>,
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub author: compact_str::CompactString,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
+    #[garde(skip)]
     #[schema(inline)]
     pub config_files: Vec<ProcessConfigurationFile>,
+    #[garde(skip)]
     #[schema(inline)]
     pub config_startup: NestEggConfigStartup,
+    #[garde(skip)]
     #[schema(inline)]
     pub config_stop: NestEggConfigStop,
+    #[garde(skip)]
     #[schema(inline)]
     pub config_script: NestEggConfigScript,
     #[schema(inline)]
-    #[validate(custom(function = "validate_config_allocations"))]
+    #[garde(custom(validate_config_allocations))]
     pub config_allocations: NestEggConfigAllocations,
-    #[validate(length(min = 1, max = 4096))]
+    #[garde(length(chars, min = 1, max = 4096))]
     #[schema(min_length = 1, max_length = 4096)]
     pub startup: compact_str::CompactString,
+    #[garde(skip)]
     pub force_outgoing_ip: bool,
+    #[garde(skip)]
     pub separate_port: bool,
+    #[garde(skip)]
     pub features: Vec<compact_str::CompactString>,
-    #[validate(custom(function = "validate_docker_images"))]
+    #[garde(custom(validate_docker_images))]
     pub docker_images: IndexMap<compact_str::CompactString, compact_str::CompactString>,
+    #[garde(skip)]
     pub file_denylist: Vec<compact_str::CompactString>,
 }
 
@@ -932,19 +961,20 @@ impl CreatableModel for NestEgg {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UpdateNestEggOptions {
+    #[garde(skip)]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
         with = "::serde_with::rust::double_option"
     )]
     pub egg_repository_egg_uuid: Option<Option<uuid::Uuid>>,
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub author: Option<compact_str::CompactString>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     #[serde(
         default,
@@ -952,25 +982,33 @@ pub struct UpdateNestEggOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub description: Option<Option<compact_str::CompactString>>,
+    #[garde(skip)]
     #[schema(inline)]
     pub config_files: Option<Vec<ProcessConfigurationFile>>,
+    #[garde(skip)]
     #[schema(inline)]
     pub config_startup: Option<NestEggConfigStartup>,
+    #[garde(skip)]
     #[schema(inline)]
     pub config_stop: Option<NestEggConfigStop>,
+    #[garde(skip)]
     #[schema(inline)]
     pub config_script: Option<NestEggConfigScript>,
     #[schema(inline)]
-    #[validate(custom(function = "validate_config_allocations"))]
+    #[garde(inner(custom(validate_config_allocations)))]
     pub config_allocations: Option<NestEggConfigAllocations>,
-    #[validate(length(min = 1, max = 4096))]
+    #[garde(length(chars, min = 1, max = 4096))]
     #[schema(min_length = 1, max_length = 4096)]
     pub startup: Option<compact_str::CompactString>,
+    #[garde(skip)]
     pub force_outgoing_ip: Option<bool>,
+    #[garde(skip)]
     pub separate_port: Option<bool>,
+    #[garde(skip)]
     pub features: Option<Vec<compact_str::CompactString>>,
-    #[validate(custom(function = "validate_docker_images"))]
+    #[garde(inner(custom(validate_docker_images)))]
     pub docker_images: Option<IndexMap<compact_str::CompactString, compact_str::CompactString>>,
+    #[garde(skip)]
     pub file_denylist: Option<Vec<compact_str::CompactString>>,
 }
 

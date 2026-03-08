@@ -83,6 +83,7 @@ mod get {
 mod post {
     use crate::routes::api::admin::nests::_nest_::GetNest;
     use axum::http::StatusCode;
+    use garde::Validate;
     use indexmap::IndexMap;
     use serde::{Deserialize, Serialize};
     use shared::{
@@ -96,43 +97,51 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         egg_repository_egg_uuid: Option<uuid::Uuid>,
 
-        #[validate(length(min = 2, max = 255))]
+        #[garde(length(chars, min = 2, max = 255))]
         #[schema(min_length = 2, max_length = 255)]
         author: compact_str::CompactString,
-        #[validate(length(min = 3, max = 255))]
+        #[garde(length(chars, min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: compact_str::CompactString,
-        #[validate(length(min = 1, max = 1024))]
+        #[garde(length(chars, min = 1, max = 1024))]
         #[schema(min_length = 1, max_length = 1024)]
         description: Option<compact_str::CompactString>,
 
+        #[garde(skip)]
         #[schema(inline)]
         config_files: Vec<shared::models::nest_egg::ProcessConfigurationFile>,
+        #[garde(skip)]
         #[schema(inline)]
         config_startup: shared::models::nest_egg::NestEggConfigStartup,
+        #[garde(skip)]
         #[schema(inline)]
         config_stop: shared::models::nest_egg::NestEggConfigStop,
+        #[garde(skip)]
         #[schema(inline)]
         config_script: shared::models::nest_egg::NestEggConfigScript,
         #[schema(inline)]
-        #[validate(custom(function = "shared::models::nest_egg::validate_config_allocations"))]
+        #[garde(custom(shared::models::nest_egg::validate_config_allocations))]
         config_allocations: shared::models::nest_egg::NestEggConfigAllocations,
 
-        #[validate(length(min = 1, max = 4096))]
+        #[garde(length(chars, min = 1, max = 4096))]
         #[schema(min_length = 1, max_length = 4096)]
         startup: compact_str::CompactString,
+        #[garde(skip)]
         force_outgoing_ip: bool,
+        #[garde(skip)]
         separate_port: bool,
 
+        #[garde(skip)]
         features: Vec<compact_str::CompactString>,
-        #[validate(custom(function = "shared::models::nest_egg::validate_docker_images"))]
+        #[garde(custom(shared::models::nest_egg::validate_docker_images))]
         docker_images: IndexMap<compact_str::CompactString, compact_str::CompactString>,
+        #[garde(skip)]
         file_denylist: Vec<compact_str::CompactString>,
     }
 

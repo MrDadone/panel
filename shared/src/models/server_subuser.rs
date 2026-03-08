@@ -3,6 +3,7 @@ use crate::{
     prelude::*,
     storage::StorageUrlRetriever,
 };
+use garde::Validate;
 use rand::distr::SampleString;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -11,7 +12,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct ServerSubuser {
@@ -173,12 +173,14 @@ impl ServerSubuser {
 
 #[derive(Validate)]
 pub struct CreateServerSubuserOptions<'a> {
+    #[garde(skip)]
     pub server: &'a super::server::Server,
 
-    #[validate(email)]
+    #[garde(email)]
     pub email: String,
-    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    #[garde(custom(crate::permissions::validate_server_permissions))]
     pub permissions: Vec<compact_str::CompactString>,
+    #[garde(skip)]
     pub ignored_files: Vec<compact_str::CompactString>,
 }
 
@@ -332,8 +334,9 @@ impl CreatableModel for ServerSubuser {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
 pub struct UpdateServerSubuserOptions {
-    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    #[garde(inner(custom(crate::permissions::validate_server_permissions)))]
     pub permissions: Option<Vec<compact_str::CompactString>>,
+    #[garde(skip)]
     pub ignored_files: Option<Vec<compact_str::CompactString>>,
 }
 
