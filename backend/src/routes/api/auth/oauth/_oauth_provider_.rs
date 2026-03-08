@@ -332,7 +332,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                         let secure = settings.app.url.starts_with("https://");
 
                         let username = oauth_provider.extract_username(&info)?.into();
-                        let email = oauth_provider.extract_email(&info)?;
+                        let email = oauth_provider.extract_email(&info)?.into();
                         let name_first = oauth_provider.extract_name_first(&info)?.into();
                         let name_last = oauth_provider.extract_name_last(&info)?.into();
 

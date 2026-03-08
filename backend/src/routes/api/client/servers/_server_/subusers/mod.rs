@@ -107,7 +107,7 @@ mod post {
     pub struct Payload {
         #[garde(email)]
         #[schema(format = "email")]
-        email: String,
+        email: compact_str::CompactString,
         #[garde(custom(shared::permissions::validate_server_permissions))]
         permissions: Vec<compact_str::CompactString>,
         #[garde(skip)]

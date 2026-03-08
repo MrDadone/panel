@@ -15,6 +15,31 @@ pub fn slice_up_to(s: &str, max_len: usize) -> &str {
     &s[..idx]
 }
 
+pub fn validate_language(
+    language: &compact_str::CompactString,
+    _context: &(),
+) -> Result<(), garde::Error> {
+    if !crate::FRONTEND_LANGUAGES.contains(language) {
+        return Err(garde::Error::new(compact_str::format_compact!(
+            "invalid language: {language}"
+        )));
+    }
+
+    Ok(())
+}
+
+pub fn validate_time_in_future(
+    time: &chrono::DateTime<chrono::Utc>,
+    _context: &(),
+) -> Result<(), garde::Error> {
+    let now = chrono::Utc::now();
+    if *time <= now {
+        return Err(garde::Error::new("time must be in the future"));
+    }
+
+    Ok(())
+}
+
 #[inline]
 pub fn validate_data<T: Validate>(data: &T) -> Result<(), Vec<String>>
 where

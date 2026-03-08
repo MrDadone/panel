@@ -138,7 +138,7 @@ impl shared::extensions::commands::CliCommand<CreateArgs> for CreateCommand {
                     role_uuid: None,
                     external_id: None,
                     username: username.into(),
-                    email,
+                    email: email.into(),
                     name_first: name_first.into(),
                     name_last: name_last.into(),
                     password: Some(password),

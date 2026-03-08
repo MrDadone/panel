@@ -224,16 +224,3 @@ pub static FRONTEND_LANGUAGES: LazyLock<Vec<compact_str::CompactString>> = LazyL
 
     languages
 });
-
-pub fn validate_language(
-    language: &compact_str::CompactString,
-    _context: &(),
-) -> Result<(), garde::Error> {
-    if !FRONTEND_LANGUAGES.contains(language) {
-        return Err(garde::Error::new(compact_str::format_compact!(
-            "invalid language: {language}"
-        )));
-    }
-
-    Ok(())
-}

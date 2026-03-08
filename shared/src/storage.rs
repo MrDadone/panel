@@ -99,7 +99,11 @@ impl Storage {
         match &settings.storage_driver {
             super::settings::StorageDriver::Filesystem { path: base_path } => {
                 let base_filesystem =
-                    crate::cap::CapFilesystem::async_new(base_path.into()).await?;
+                    match crate::cap::CapFilesystem::async_new(base_path.into()).await {
+                        Ok(base_filesystem) => base_filesystem,
+                        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+                        Err(err) => return Err(err.into()),
+                    };
                 drop(settings);
 
                 if let Err(err) = base_filesystem.async_remove_file(&path).await
@@ -170,6 +174,8 @@ impl Storage {
 
         match &settings.storage_driver {
             super::settings::StorageDriver::Filesystem { path: base_path } => {
+                tokio::fs::create_dir_all(base_path).await?;
+
                 let base_filesystem =
                     crate::cap::CapFilesystem::async_new(base_path.into()).await?;
                 drop(settings);
