@@ -1038,6 +1038,7 @@ declare global {
   interface UserSecurityKey {
     uuid: string;
     name: string;
+    credentialId: string;
     lastUsed: Date | null;
     created: Date;
   }
