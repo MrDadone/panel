@@ -813,6 +813,7 @@ const baseTranslations = defineTranslations({
             new: 'New',
             sftpDetails: 'SFTP Details',
             openInNewWindow: 'Open in new Window',
+            details: 'Details',
             rename: 'Rename',
             copy: 'Copy',
             move: 'Move',
@@ -932,6 +933,15 @@ const baseTranslations = defineTranslations({
               form: {
                 fileName: 'File Name',
               },
+            },
+            details: {
+              title: 'File Details',
+              path: 'Path',
+              mode: 'Mode',
+              size: 'Size',
+              mimeType: 'MIME Type',
+              lastModifiedAt: 'Last Modified At',
+              createdAt: 'Created At',
             },
             filePermissions: {
               title: 'File Permissions',

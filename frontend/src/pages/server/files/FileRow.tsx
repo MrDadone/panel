@@ -1,5 +1,3 @@
-import { faFile, faFolder } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { forwardRef, memo, useRef } from 'react';
 import { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
@@ -11,6 +9,7 @@ import FileRowContextMenu from '@/pages/server/files/FileRowContextMenu.tsx';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
+import FileRowIcon from './FileRowIcon.tsx';
 
 interface FileRowProps {
   file: DirectoryEntry;
@@ -119,7 +118,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
 
           <TableData>
             <span className='flex items-center gap-4 leading-[100%]'>
-              <FontAwesomeIcon className='text-gray-400' icon={file.file ? faFile : faFolder} />
+              <FileRowIcon className='text-gray-400' file={file} />
               {file.name}
             </span>
           </TableData>

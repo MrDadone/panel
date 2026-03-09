@@ -1,14 +1,16 @@
+import classNames from 'classnames';
 import { memo, useEffect, useState } from 'react';
 import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
 import Tooltip from '../Tooltip.tsx';
 
 interface FormattedTimestampProps {
   timestamp: string | number | Date;
+  className?: string;
   autoUpdate?: boolean;
   precise?: boolean;
 }
 
-function FormattedTimestamp({ timestamp, autoUpdate = true, precise }: FormattedTimestampProps) {
+function FormattedTimestamp({ timestamp, className, autoUpdate = true, precise }: FormattedTimestampProps) {
   const [, forceRender] = useState(0);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ function FormattedTimestamp({ timestamp, autoUpdate = true, precise }: Formatted
 
   return (
     <Tooltip label={formatDateTime(timestamp, precise)}>
-      <span className='cursor-help'>{formatTimestamp(timestamp)}</span>
+      <span className={classNames('cursor-help', className)}>{formatTimestamp(timestamp)}</span>
     </Tooltip>
   );
 }

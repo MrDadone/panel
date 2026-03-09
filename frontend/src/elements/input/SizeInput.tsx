@@ -1,7 +1,7 @@
-import { startTransition, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, startTransition, useEffect, useRef, useState } from 'react';
 import { closestUnit, formatUnitBytes, mbToBytes, UNITS, unitToBytes } from '@/lib/size.ts';
-import NumberInput from './NumberInput.tsx';
 import Select from './Select.tsx';
+import TextInput from './TextInput.tsx';
 
 interface SizeInputProps {
   label?: string;
@@ -62,32 +62,49 @@ export default function SizeInput({ mode, min, value, onChange, ...rest }: SizeI
     });
   };
 
-  const handleValueChange = (v: number | string) => {
-    if (typeof v === 'number') {
-      setDisplayValue(v);
+  const handleValueChange = (v: ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseInt(v.target.value, 10);
+    if (isNaN(newValue)) return;
 
-      if (v === -1) {
-        onChange(-1);
-        return;
-      }
+    setDisplayValue(newValue);
 
-      isInternalChange.current = true;
-      const newBytes = unitToBytes(unit, v);
-      onChange(mode === 'b' ? newBytes : newBytes / (1024 * 1024));
+    if (newValue === -1) {
+      onChange(-1);
+      return;
     }
+
+    isInternalChange.current = true;
+    const newBytes = unitToBytes(unit, newValue);
+    onChange(mode === 'b' ? newBytes : newBytes / (1024 * 1024));
   };
 
   return (
-    <div className='relative'>
-      <NumberInput {...rest} min={min} value={displayValue} onChange={handleValueChange} hideControls />
-      <Select
-        className='absolute bottom-0 right-0'
-        data={availableUnits}
-        value={unit}
-        onChange={handleUnitChange}
-        maw={72}
-        disabled={displayValue === -1}
-      />
-    </div>
+    <TextInput
+      {...rest}
+      type='number'
+      min={min}
+      value={displayValue}
+      onChange={handleValueChange}
+      rightSectionWidth={92}
+      rightSection={
+        <Select
+          data={availableUnits}
+          value={unit}
+          onChange={handleUnitChange}
+          styles={{
+            input: {
+              fontWeight: 500,
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
+              width: 92,
+              marginRight: -2,
+              marginTop: -5,
+            },
+          }}
+          rightSectionWidth={28}
+          disabled={displayValue === -1}
+        />
+      }
+    />
   );
 }
