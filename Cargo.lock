@@ -6044,6 +6044,7 @@ dependencies = [
  "async-trait",
  "axum",
  "base32",
+ "base64 0.22.1",
  "cap-std",
  "chrono",
  "chrono-tz",

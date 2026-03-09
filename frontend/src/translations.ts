@@ -507,6 +507,11 @@ const baseTranslations = defineTranslations({
         },
         securityKeys: {
           title: 'Security Keys',
+          table: {
+            columns: {
+              credentialId: 'Credential ID',
+            },
+          },
           modal: {
             createSecurityKey: {
               title: 'Create Security Key',

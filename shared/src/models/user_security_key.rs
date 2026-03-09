@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use base64::Engine;
 use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -164,6 +165,10 @@ impl UserSecurityKey {
         ApiUserSecurityKey {
             uuid: self.uuid,
             name: self.name,
+            credential_id: self.passkey.as_ref().map_or_else(
+                || "".to_string(),
+                |pk| base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(pk.cred_id()),
+            ),
             last_used: self.last_used.map(|dt| dt.and_utc()),
             created: self.created.and_utc(),
         }
@@ -325,6 +330,8 @@ pub struct ApiUserSecurityKey {
     pub uuid: uuid::Uuid,
 
     pub name: compact_str::CompactString,
+
+    pub credential_id: String,
 
     pub last_used: Option<chrono::DateTime<chrono::Utc>>,
     pub created: chrono::DateTime<chrono::Utc>,

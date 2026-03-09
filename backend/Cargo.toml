@@ -48,7 +48,7 @@ dialoguer = "0.12.0"
 cron = { workspace = true }
 webauthn-rs = { workspace = true }
 openssl = { version = "0.10.73", features = ["vendored"] }
-base64 = "0.22.1"
+base64 = { workspace = true }
 rust-s3 = { workspace = true }
 rustis = { workspace = true }
 dotenvy = { workspace = true }
