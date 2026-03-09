@@ -12,6 +12,7 @@ export type ModalType =
   | 'archive'
   | 'delete'
   | 'sftpDetails'
+  | 'details'
   | 'nameDirectory'
   | 'pullFile'
   | 'search'

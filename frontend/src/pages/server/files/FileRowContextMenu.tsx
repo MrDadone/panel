@@ -8,6 +8,7 @@ import {
   faFileShield,
   faFileZipper,
   faFolder,
+  faInfoCircle,
   faTrash,
   faWindowRestore,
 } from '@fortawesome/free-solid-svg-icons';
@@ -101,6 +102,12 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
               </MemoryRouter>,
             ),
           canAccess: useServerCan('files.read-content'),
+        },
+        {
+          icon: faInfoCircle,
+          label: t('pages.server.files.button.details', {}),
+          onClick: () => doOpenModal('details', [file]),
+          color: 'gray',
         },
         {
           icon: faFilePen,

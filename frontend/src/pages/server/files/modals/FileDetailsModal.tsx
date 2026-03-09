@@ -1,0 +1,70 @@
+import { ModalProps, Title } from '@mantine/core';
+import { join } from 'pathe';
+import Button from '@/elements/Button.tsx';
+import Code from '@/elements/Code.tsx';
+import Divider from '@/elements/Divider.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { bytesToString } from '@/lib/size.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
+import FileRowIcon from '../FileRowIcon.tsx';
+
+type Props = ModalProps & {
+  file: DirectoryEntry | null;
+};
+
+export default function FileDetailsModal({ file, opened, onClose }: Props) {
+  const { t } = useTranslations();
+  const { browsingDirectory } = useFileManager();
+
+  return (
+    <Modal title={t('pages.server.files.modal.details.title', {})} onClose={onClose} opened={opened} size='sm'>
+      <div className='flex flex-col space-y-1'>
+        <Title order={3} className='break-all'>
+          <FileRowIcon className='mr-2' file={file} />
+          {file?.name}
+        </Title>
+
+        <Divider className='my-2' />
+
+        <span className='flex flex-row items-center justify-between'>
+          <p className='text-gray-300! mr-4'>{t('pages.server.files.modal.details.path', {})}</p>
+          <Code className='break-all'>{join(browsingDirectory, file?.name || '')}</Code>
+        </span>
+        <span className='flex flex-row items-center justify-between'>
+          <p className='text-gray-300! mr-4'>{t('pages.server.files.modal.details.mode', {})}</p>
+          <Code>{file?.mode}</Code>
+        </span>
+        <span className='flex flex-row items-center justify-between'>
+          <p className='text-gray-300! mr-4'>{t('pages.server.files.modal.details.size', {})}</p>
+          <Code>
+            {bytesToString(file?.size || 0)} ({file?.size} bytes)
+          </Code>
+        </span>
+        <span className='flex flex-row items-center justify-between'>
+          <p className='text-gray-300! mr-4'>{t('pages.server.files.modal.details.mimeType', {})}</p>
+          <Code>{file?.mime}</Code>
+        </span>
+        <span className='flex flex-row items-center justify-between'>
+          <p className='text-gray-300! mr-4'>{t('pages.server.files.modal.details.lastModifiedAt', {})}</p>
+          <Code>
+            <FormattedTimestamp timestamp={file?.modified ?? 0} />
+          </Code>
+        </span>
+        <span className='flex flex-row items-center justify-between'>
+          <p className='text-gray-300! mr-4'>{t('pages.server.files.modal.details.createdAt', {})}</p>
+          <Code>
+            <FormattedTimestamp timestamp={file?.created ?? 0} />
+          </Code>
+        </span>
+      </div>
+
+      <ModalFooter>
+        <Button variant='default' onClick={onClose}>
+          {t('common.button.close', {})}
+        </Button>
+      </ModalFooter>
+    </Modal>
+  );
+}
