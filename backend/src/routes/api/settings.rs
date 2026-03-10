@@ -27,6 +27,7 @@ mod get {
 
         allow_overwriting_custom_docker_image: bool,
         allow_editing_startup_command: bool,
+        allow_acknowledging_installation_failure: bool,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -73,6 +74,9 @@ mod get {
                     .server
                     .allow_overwriting_custom_docker_image,
                 allow_editing_startup_command: settings.server.allow_editing_startup_command,
+                allow_acknowledging_installation_failure: settings
+                    .server
+                    .allow_acknowledging_installation_failure,
             },
         })
         .ok()

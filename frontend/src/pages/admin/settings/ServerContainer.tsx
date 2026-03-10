@@ -31,6 +31,7 @@ export default function ServerContainer() {
       allowOverwritingCustomDockerImage: false,
       allowEditingStartupCommand: false,
       allowViewingInstallationLogs: false,
+      allowAcknowledgingInstallationFailure: true,
       allowViewingTransferProgress: false,
     },
     validateInputOnBlur: true,
@@ -118,6 +119,12 @@ export default function ServerContainer() {
             description='If enabled, users with console read permissions will also be able to view installation logs via the websocket connection. If disabled, installation logs will only be available for admins.'
             key={form.key('allowViewingInstallationLogs')}
             {...form.getInputProps('allowViewingInstallationLogs', { type: 'checkbox' })}
+          />
+
+          <Switch
+            label='Allow Acknowledging Installation Failure'
+            description='If enabled, users will be able to acknowledge installation failures for servers that are in the "Install Failed" state, allowing them to attempt to start the server instead of having to wait for an admin. If disabled, only admins will be able to acknowledge installation failures.'
+            {...form.getInputProps('allowAcknowledgingInstallationFailure', { type: 'checkbox' })}
           />
 
           <Switch

@@ -438,7 +438,13 @@ export default function Terminal() {
               </Popover.Dropdown>
             </Popover>
             <Tooltip label={t('pages.server.console.tooltip.commandHistory', {})}>
-              <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setOpenModal('commandHistory')}>
+              <ActionIcon
+                size='xs'
+                variant='subtle'
+                color='gray'
+                disabled={server.status !== null || server.suspended}
+                onClick={() => setOpenModal('commandHistory')}
+              >
                 <FontAwesomeIcon icon={faClockRotateLeft} />
               </ActionIcon>
             </Tooltip>
@@ -484,7 +490,7 @@ export default function Terminal() {
         {imagePulls.size > 0 && (
           <span className='flex flex-col justify-end mt-4'>
             {t('pages.server.console.message.pullingImage', {})}
-            {Array.from(imagePulls).map(([id, progress]) => (
+            {imagePulls.entries().map(([id, progress]) => (
               <span key={id} className='flex flex-row w-full items-center whitespace-pre-wrap break-all'>
                 {progress.status === 'pulling'
                   ? t('pages.server.console.message.pulling', {})

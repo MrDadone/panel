@@ -198,6 +198,17 @@ const baseTranslations = defineTranslations({
           contentInstalling: 'This server is currently installing and cannot be accessed until completed.',
           contentRestoringBackup:
             'This server is currently restoring from a backup and cannot be accessed until completed.',
+          button: {
+            viewInstallLogs: 'View Installation Logs',
+            acknowledgeFailure: 'Acknowledge Failure',
+          },
+          modal: {
+            acknowledgeFailure: {
+              title: 'Acknowledge Installation Failure',
+              content:
+                'By acknowledging this installation failure, you are confirming that you are aware of the failed installation and have taken any necessary steps to resolve the issue. This will allow you to regain control over the server.',
+            },
+          },
         },
       },
     },
