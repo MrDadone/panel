@@ -106,7 +106,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
                 />
               ),
             )}
-          <div className='mt-auto'>
+          <div className='mt-auto pt-4'>
             <ServerSwitcher className='mb-2' />
             <Sidebar.Footer />
           </div>

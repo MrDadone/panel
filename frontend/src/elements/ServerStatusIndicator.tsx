@@ -10,6 +10,7 @@ import Tooltip from '@/elements/Tooltip.tsx';
 import { statusToColor } from '@/lib/server.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
+import Divider from './Divider.tsx';
 
 export default function ServerStatusIndicator() {
   const { t } = useTranslations();
@@ -55,7 +56,8 @@ export default function ServerStatusIndicator() {
 
   return (
     <div className='flex flex-col gap-2'>
-      <div className='flex justify-start items-center gap-3'>
+      <Divider my={2} />
+      <div className='flex justify-start items-center gap-3 pl-2.5'>
         <Group gap='xs'>
           <ServerCan action={['control.start', 'control.stop']} matchAny>
             <Tooltip label={t(buttonLabel, {})}>
