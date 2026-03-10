@@ -28,7 +28,6 @@ import FileNameModal from './modals/FileNameModal.tsx';
 function FileEditorComponent() {
   const params = useParams<'action'>();
 
-  const { impersonating } = useAuth();
   const { t } = useTranslations();
   const [searchParams, _] = useSearchParams();
   const navigate = useNavigate();
@@ -181,7 +180,10 @@ function FileEditorComponent() {
           </div>
           <div className='relative'>
             <div
-              className={`flex h-[calc(100vh-185px)] lg:h-[calc(100vh-${impersonating ? '199' : '119'}px)] max-w-full w-full z-1 absolute`}
+              ref={(el) => {
+                if (el) el.style.height = `calc(100vh - ${el.getBoundingClientRect().top}px)`;
+              }}
+              className='flex max-w-full w-full z-1 absolute'
             >
               {params.action === 'image' ? (
                 <div className='h-full w-full flex flex-row justify-center'>
