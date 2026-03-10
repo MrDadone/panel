@@ -128,11 +128,7 @@ function Footer() {
 
   return (
     <>
-      <div className='mt-auto'>
-        <Divider />
-      </div>
-
-      <div className='p-2 flex flex-row justify-between items-center min-h-fit'>
+      <div className='mt-auto p-2 flex flex-row justify-between items-center min-h-fit'>
         <NavLink
           to='/account'
           className='flex items-center flex-1 min-w-0'

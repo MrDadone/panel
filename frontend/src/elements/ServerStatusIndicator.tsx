@@ -10,6 +10,7 @@ import Tooltip from '@/elements/Tooltip.tsx';
 import { statusToColor } from '@/lib/server.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
+import Button from './Button.tsx';
 
 export default function ServerStatusIndicator() {
   const { t } = useTranslations();
@@ -79,24 +80,28 @@ export default function ServerStatusIndicator() {
           </ServerCan>
         </Group>
 
-        <div className='flex flex-col gap-1.5 justify-center'>
-          <div className='flex items-center gap-1.5 text-xs'>
-            <span className={classNames('rounded-full size-4 animate-pulse', statusToColor(state))} />
-            <span className='font-medium text-white leading-none'>{t(`common.enum.serverState.${state}`, {})}</span>
-          </div>
-
-          <div className='flex items-center gap-1.5 text-xs'>
-            <FontAwesomeIcon
-              icon={faTowerBroadcast}
-              className={`${socketConnected ? 'animate-pulse text-green-500' : 'text-white'} w-4`}
-            />
-            <span className='font-medium text-white leading-none'>
-              {socketConnected
-                ? t('common.enum.connectionStatus.connected', {})
-                : t('common.enum.connectionStatus.offline', {})}
-            </span>
-          </div>
+        <div className='flex items-center gap-1.5 text-xs'>
+          {socketConnected ? (
+            <>
+              <span className={classNames('rounded-full size-4 animate-pulse', statusToColor(state))} />
+              <span className='font-medium text-white leading-none'>{t(`common.enum.serverState.${state}`, {})}</span>
+            </>
+          ) : (
+            <>
+              <FontAwesomeIcon
+                icon={faTowerBroadcast}
+                className={`${socketConnected ? 'animate-pulse text-green-500' : 'text-white'} w-4`}
+              />
+              <span className='font-medium text-white leading-none'>
+                {socketConnected
+                  ? t('common.enum.connectionStatus.connected', {})
+                  : t('common.enum.connectionStatus.offline', {})}
+              </span>
+            </>
+          )}
         </div>
+
+        <div className='flex items-center gap-1.5 text-xs'></div>
       </div>
 
       <ConfirmationModal
