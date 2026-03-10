@@ -10,7 +10,6 @@ import Tooltip from '@/elements/Tooltip.tsx';
 import { statusToColor } from '@/lib/server.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
-import Button from './Button.tsx';
 
 export default function ServerStatusIndicator() {
   const { t } = useTranslations();

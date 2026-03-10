@@ -15,6 +15,7 @@ import ScreenBlock from '@/elements/ScreenBlock.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { registerHoconLanguage, registerTomlLanguage } from '@/lib/monaco.ts';
 import { useBlocker } from '@/plugins/useBlocker.ts';
+import { useAuth } from '@/providers/AuthProvider.tsx';
 import { FileManagerProvider, useFileManager } from '@/providers/FileManagerProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -27,6 +28,7 @@ import FileNameModal from './modals/FileNameModal.tsx';
 function FileEditorComponent() {
   const params = useParams<'action'>();
 
+  const { impersonating } = useAuth();
   const { t } = useTranslations();
   const [searchParams, _] = useSearchParams();
   const navigate = useNavigate();
@@ -178,7 +180,9 @@ function FileEditorComponent() {
             <FileBreadcrumbs inFileEditor path={join(decodeURIComponent(browsingDirectory), fileName)} />
           </div>
           <div className='relative'>
-            <div className='flex h-[calc(100vh-185px)] lg:h-[calc(100vh-119px)] max-w-full w-full z-1 absolute'>
+            <div
+              className={`flex h-[calc(100vh-185px)] lg:h-[calc(100vh-${impersonating ? '199' : '119'}px)] max-w-full w-full z-1 absolute`}
+            >
               {params.action === 'image' ? (
                 <div className='h-full w-full flex flex-row justify-center'>
                   <TransformWrapper minScale={0.5}>
