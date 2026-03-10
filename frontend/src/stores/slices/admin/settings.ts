@@ -37,6 +37,7 @@ export const createSettingsSlice: StateCreator<AdminStore, [], [], SettingsSlice
     allowOverwritingCustomDockerImage: true,
     allowEditingStartupCommand: false,
     allowViewingInstallationLogs: true,
+    allowAcknowledgingInstallationFailure: true,
     allowViewingTransferProgress: true,
   },
   webauthn: {
