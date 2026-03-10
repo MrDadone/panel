@@ -1,5 +1,4 @@
 import { faArrowUpRightFromSquare, faGraduationCap, faServer } from '@fortawesome/free-solid-svg-icons';
-import { Paper } from '@mantine/core';
 import { Suspense, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useParams } from 'react-router';
 import getServer from '@/api/server/getServer.ts';
