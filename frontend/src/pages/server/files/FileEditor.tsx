@@ -178,7 +178,12 @@ function FileEditorComponent() {
             <FileBreadcrumbs inFileEditor path={join(decodeURIComponent(browsingDirectory), fileName)} />
           </div>
           <div className='relative'>
-            <div className='flex h-[calc(100vh-185px)] lg:h-[calc(100vh-119px)] max-w-full w-full z-1 absolute'>
+            <div
+              ref={(el) => {
+                if (el) el.style.height = `calc(100vh - ${el.getBoundingClientRect().top}px)`;
+              }}
+              className='flex max-w-full w-full z-1 absolute'
+            >
               {params.action === 'image' ? (
                 <div className='h-full w-full flex flex-row justify-center'>
                   <TransformWrapper minScale={0.5}>
