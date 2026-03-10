@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import getWebsocketToken from '@/api/server/getWebsocketToken.ts';
 import { SocketRequest } from '@/plugins/useWebsocketEvent.ts';
@@ -7,32 +7,31 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 export default function WebsocketHandler() {
-  let updatingToken = false;
-
-  const { uuid } = useServerStore((state) => state.server);
+  const uuid = useServerStore((state) => state.server.uuid);
   const { socketInstance, setSocketInstance, setSocketConnectionState } = useServerStore();
   const { setState } = useServerStore();
   const { addToast } = useToast();
+  const updatingTokenRef = useRef(false);
   const navigate = useNavigate();
 
   const updateToken = (uuid: string, socket: Websocket) => {
-    if (updatingToken) {
+    if (updatingTokenRef.current) {
       return;
     }
 
-    updatingToken = true;
+    updatingTokenRef.current = true;
     getWebsocketToken(uuid)
       .then((data) => socket.setToken(data.token, true))
       .catch((error) => console.error(error))
-      .then(() => {
-        updatingToken = false;
+      .finally(() => {
+        updatingTokenRef.current = false;
       });
   };
 
   const connect = (uuid: string) => {
     const socket = new Websocket();
 
-    socket.on('auth success', () => {
+    socket.once('auth success', () => {
       setSocketConnectionState(true);
       socket.send(SocketRequest.CONFIGURE_SOCKET, ['transmission mode', 'binary']);
     });
@@ -67,19 +66,6 @@ export default function WebsocketHandler() {
       }
     });
 
-    socket.on('transfer status', (status: string) => {
-      if (status === 'starting' || status === 'success') {
-        return;
-      }
-
-      // This code forces a reconnection to the websocket which will connect us to the target node instead of the source node
-      // in order to be able to receive transfer logs from the target node.
-      socket.close();
-      setSocketConnectionState(false);
-      setSocketInstance(null);
-      connect(uuid);
-    });
-
     getWebsocketToken(uuid)
       .then((data) => {
         // Connect and then set the authentication token.
@@ -100,8 +86,6 @@ export default function WebsocketHandler() {
   }, [socketInstance]);
 
   useEffect(() => {
-    // If there is already an instance or there is no server, just exit out of this process
-    // since we don't need to make a new connection.
     if (socketInstance || !uuid) {
       return;
     }

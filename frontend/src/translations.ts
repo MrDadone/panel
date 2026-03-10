@@ -48,6 +48,8 @@ const baseTranslations = defineTranslations({
       },
       tooltip: {
         resetToDefault: 'Reset to default',
+        edit: 'Edit',
+        delete: 'Delete',
       },
       form: {
         name: 'Name',
@@ -338,6 +340,8 @@ const baseTranslations = defineTranslations({
           tooltip: {
             removeFromGroup: 'Remove from Group',
             addToGroup: 'Add to Group',
+            addServerToGroup: 'Add Server to Group',
+            groupActions: 'Group Actions',
             noGroups: 'No groups available to add server to',
             noGroup: 'This server is not in any group',
           },

@@ -66,7 +66,9 @@
         "search": "Search..."
       },
       "tooltip": {
-        "resetToDefault": "Reset to default"
+        "resetToDefault": "Reset to default",
+        "edit": "Edit",
+        "delete": "Delete"
       },
       "form": {
         "name": "Name",
@@ -351,6 +353,8 @@
           "tooltip": {
             "removeFromGroup": "Remove from Group",
             "addToGroup": "Add to Group",
+            "addServerToGroup": "Add Server to Group",
+            "groupActions": "Group Actions",
             "noGroups": "No groups available to add server to",
             "noGroup": "This server is not in any group"
           },
