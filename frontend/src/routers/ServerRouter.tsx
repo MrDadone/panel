@@ -1,4 +1,5 @@
 import { faArrowUpRightFromSquare, faGraduationCap, faServer } from '@fortawesome/free-solid-svg-icons';
+import { Paper } from '@mantine/core';
 import { Suspense, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useParams } from 'react-router';
 import getServer from '@/api/server/getServer.ts';
@@ -21,7 +22,6 @@ import serverRoutes from '@/routers/routes/serverRoutes.ts';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
 import ServerStateGuard from './guards/ServerStateGuard.tsx';
-import { Paper } from '@mantine/core';
 
 export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
   const { t } = useTranslations();
@@ -107,7 +107,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
                 />
               ),
             )}
-          <div className="mt-auto">
+          <div className='mt-auto'>
             <ServerSwitcher className='mb-2' />
             <Sidebar.Footer />
           </div>
