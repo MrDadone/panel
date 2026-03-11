@@ -13,6 +13,7 @@ export class FilesRegistry implements Registry {
     this.fileToolbar.mergeFrom(other.fileToolbar);
     this.fileActionBar.mergeFrom(other.fileActionBar);
     this.fileOperationsProgress.mergeFrom(other.fileOperationsProgress);
+    this.fileSettings.mergeFrom(other.fileSettings);
     this.fileEditorSettings.mergeFrom(other.fileEditorSettings);
     this.fileImageViewerSettings.mergeFrom(other.fileImageViewerSettings);
     this.newFileContextMenu.mergeFrom(other.newFileContextMenu);
