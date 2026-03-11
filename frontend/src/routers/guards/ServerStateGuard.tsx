@@ -44,7 +44,8 @@ export default function ServerStateGuard() {
       location.pathname !== `/server/${server.uuid}/` &&
       location.pathname !== `/server/${server.uuidShort}` &&
       location.pathname !== `/server/${server.uuidShort}/`) ||
-    server.nodeMaintenanceEnabled
+    server.nodeMaintenanceEnabled ||
+    server.status === 'install_failed'
   ) {
     return (
       <ServerContentContainer title={t('elements.screenBlock.serverConflict.title', {})} hideTitleComponent>
