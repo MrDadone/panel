@@ -816,7 +816,7 @@ const baseTranslations = defineTranslations({
         },
         files: {
           title: 'Files',
-          titleEditorViewing: 'Voewing {file}',
+          titleEditorViewing: 'Viewing {file}',
           titleEditorEditing: 'Editing {file}',
           titleEditorNew: 'New File',
           table: {
