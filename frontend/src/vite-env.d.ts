@@ -1090,6 +1090,7 @@ declare global {
     mode: string;
     modeBits: string;
     size: number;
+    sizePhysical: number;
     directory: boolean;
     file: boolean;
     symlink: boolean;

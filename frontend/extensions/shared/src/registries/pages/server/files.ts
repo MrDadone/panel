@@ -14,7 +14,7 @@ export class FilesRegistry implements Registry {
     this.fileActionBar.mergeFrom(other.fileActionBar);
     this.fileOperationsProgress.mergeFrom(other.fileOperationsProgress);
     this.fileEditorSettings.mergeFrom(other.fileEditorSettings);
-    this.fileImageViewierSettings.mergeFrom(other.fileImageViewierSettings);
+    this.fileImageViewerSettings.mergeFrom(other.fileImageViewerSettings);
     this.newFileContextMenu.mergeFrom(other.newFileContextMenu);
     this.fileContextMenu.mergeFrom(other.fileContextMenu);
 
@@ -28,8 +28,9 @@ export class FilesRegistry implements Registry {
   public fileToolbar: ComponentListRegistry = new ComponentListRegistry();
   public fileActionBar: ComponentListRegistry = new ComponentListRegistry();
   public fileOperationsProgress: ComponentListRegistry = new ComponentListRegistry();
+  public fileSettings: ComponentListRegistry = new ComponentListRegistry();
   public fileEditorSettings: ComponentListRegistry = new ComponentListRegistry();
-  public fileImageViewierSettings: ComponentListRegistry = new ComponentListRegistry();
+  public fileImageViewerSettings: ComponentListRegistry = new ComponentListRegistry();
   public newFileContextMenu: ContextMenuRegistry = new ContextMenuRegistry();
   public fileContextMenu: ContextMenuRegistry<{ file: DirectoryEntry }> = new ContextMenuRegistry();
 
@@ -65,13 +66,18 @@ export class FilesRegistry implements Registry {
     return this;
   }
 
+  public enterFileSettings(callback: (registry: ComponentListRegistry) => unknown): this {
+    callback(this.fileSettings);
+    return this;
+  }
+
   public enterFileEditorSettings(callback: (registry: ComponentListRegistry) => unknown): this {
     callback(this.fileEditorSettings);
     return this;
   }
 
   public enterFileImageViewerSettings(callback: (registry: ComponentListRegistry) => unknown): this {
-    callback(this.fileImageViewierSettings);
+    callback(this.fileImageViewerSettings);
     return this;
   }
 

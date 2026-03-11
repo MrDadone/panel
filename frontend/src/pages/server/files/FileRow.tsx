@@ -24,7 +24,8 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
   ref,
 ) {
   const canOpenActionBar = useServerCan(['files.read-content', 'files.archive', 'files.update', 'files.delete'], true);
-  const { browsingFastDirectory, doSelectFiles, addSelectedFile, removeSelectedFile, clickOnce } = useFileManager();
+  const { browsingFastDirectory, doSelectFiles, addSelectedFile, removeSelectedFile, clickOnce, preferPhysicalSize } =
+    useFileManager();
   const { settings } = useGlobalStore();
   const canOpenFile = useServerCan('files.read-content');
 
@@ -124,7 +125,9 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
           </TableData>
 
           <TableData>
-            <span className='flex items-center gap-4 leading-[100%]'>{bytesToString(file.size)}</span>
+            <span className='flex items-center gap-4 leading-[100%]'>
+              {bytesToString(preferPhysicalSize ? file.sizePhysical : file.size)}
+            </span>
           </TableData>
 
           <TableData className='hidden md:table-cell'>

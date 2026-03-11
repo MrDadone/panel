@@ -37,9 +37,15 @@ export default function FileDetailsModal({ file, opened, onClose }: Props) {
           <Code>{file?.mode}</Code>
         </span>
         <span className='flex flex-row items-center justify-between'>
-          <p className='text-gray-300! mr-4'>{t('pages.server.files.modal.details.size', {})}</p>
+          <p className='text-gray-300! mr-4'>{t('pages.server.files.modal.details.logicalSize', {})}</p>
           <Code>
-            {bytesToString(file?.size || 0)} ({file?.size} bytes)
+            {bytesToString(file?.size || 0)} ({file?.size} Bytes)
+          </Code>
+        </span>
+        <span className='flex flex-row items-center justify-between'>
+          <p className='text-gray-300! mr-4'>{t('pages.server.files.modal.details.physicalSize', {})}</p>
+          <Code>
+            {bytesToString(file?.sizePhysical || 0)} ({file?.sizePhysical} Bytes)
           </Code>
         </span>
         <span className='flex flex-row items-center justify-between'>

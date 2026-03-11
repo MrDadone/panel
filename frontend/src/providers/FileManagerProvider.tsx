@@ -31,6 +31,9 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const [modalDirectoryEntries, setModalDirectoryEntries] = useState<DirectoryEntry[]>([]);
   const [searchInfo, setSearchInfo] = useState<SearchInfo | null>(null);
   const [clickOnce, setClickOnce] = useState(localStorage.getItem('file_click_once') !== 'false');
+  const [preferPhysicalSize, setPreferPhysicalSize] = useState(
+    localStorage.getItem('file_prefer_physical_size') === 'true',
+  );
   const [editorMinimap, setEditorMinimap] = useState(localStorage.getItem('file_editor_minimap') === 'true');
   const [editorLineOverflow, setEditorLineOverflow] = useState(
     localStorage.getItem('file_editor_lineoverflow') === 'true',
@@ -136,6 +139,8 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
 
         clickOnce,
         setClickOnce,
+        preferPhysicalSize,
+        setPreferPhysicalSize,
         editorMinimap,
         setEditorMinimap,
         editorLineOverflow,
