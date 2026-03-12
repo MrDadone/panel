@@ -13,7 +13,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <MantineButton
         ref={ref}
         type={type}
-        className={classNames(className, loading ? 'cursor-wait!' : null, 'font-normal!')}
+        className={classNames(
+          className,
+          loading ? 'cursor-wait!' : null,
+          'font-normal!',
+          disabled && 'border! border-(--mantine-color-dark-4)! text-(--mantine-color-dimmed)!',
+        )}
         onClick={onClick}
         loading={disabled ? false : loading}
         disabled={disabled}

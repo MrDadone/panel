@@ -1,5 +1,4 @@
 import { ReactNode } from 'react';
-import minecraftBackground from '@/assets/minecraft_background.webp';
 import ContentContainer from '@/elements/containers/ContentContainer.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 
@@ -9,16 +8,13 @@ export default function AuthWrapper({ title, children }: { title?: string; child
   return (
     <ContentContainer title={settings.app.name}>
       <div className='flex items-center justify-center h-screen'>
-        <img
-          src={minecraftBackground}
-          alt='Minecraft Background'
-          className='hidden md:block w-1/2 h-full object-cover opacity-90'
-        />
-        <div className='md:w-1/2 h-full p-8'>
-          <div className='flex flex-col items-center justify-center h-full px-2 md:px-0'>
-            {title && <h1 className='text-3xl font-bold text-white mb-4'>{title}</h1>}
-            {children}
+        <div className='flex flex-col items-center justify-center h-full px-2 md:px-0 max-w-100 w-full'>
+          <div className='flex items-center w-full sm:w-fit gap-2 select-none mb-5'>
+            <img src={settings.app.icon} className='size-20' alt='Calagopus Icon' />
+            <h1 className='text-xl font-bold!'>{settings.app.name}</h1>
           </div>
+          {title && <h1 className='text-3xl font-bold text-white mb-4'>{title}</h1>}
+          {children}
         </div>
       </div>
     </ContentContainer>
