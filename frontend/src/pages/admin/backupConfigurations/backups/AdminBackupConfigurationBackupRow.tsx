@@ -1,6 +1,7 @@
 import { faFileArrowDown, faRotateLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import downloadNodeBackup from '@/api/admin/nodes/backups/downloadNodeBackup.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Code from '@/elements/Code.tsx';
@@ -9,6 +10,7 @@ import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
+import { adminNodeServerBackupSchema } from '@/lib/schemas/admin/nodes.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -16,7 +18,11 @@ import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import NodeBackupsDeleteModal from '../../nodes/backups/modals/NodeBackupsDeleteModal.tsx';
 import NodeBackupsRestoreModal from '../../nodes/backups/modals/NodeBackupsRestoreModal.tsx';
 
-export default function AdminBackupConfigurationBackupRow({ backup }: { backup: AdminNodeServerBackup }) {
+export default function AdminBackupConfigurationBackupRow({
+  backup,
+}: {
+  backup: z.infer<typeof adminNodeServerBackupSchema>;
+}) {
   const { t } = useTranslations();
   const { addToast } = useToast();
 

@@ -20,7 +20,7 @@ import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminOAuthProviderSchema } from '@/lib/schemas/admin/oauthProviders.ts';
+import { adminOAuthProviderSchema, adminOAuthProviderUpdateSchema } from '@/lib/schemas/admin/oauthProviders.ts';
 import { transformKeysToSnakeCase } from '@/lib/transformers.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -29,14 +29,14 @@ import { useGlobalStore } from '@/stores/global.ts';
 export default function OAuthProviderCreateOrUpdate({
   contextOAuthProvider,
 }: {
-  contextOAuthProvider?: AdminOAuthProvider;
+  contextOAuthProvider?: z.infer<typeof adminOAuthProviderSchema>;
 }) {
   const { addToast } = useToast();
   const { settings } = useGlobalStore();
 
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminOAuthProviderSchema>>({
+  const form = useForm<z.infer<typeof adminOAuthProviderUpdateSchema>>({
     mode: 'uncontrolled',
     initialValues: {
       name: '',
@@ -59,17 +59,17 @@ export default function OAuthProviderCreateOrUpdate({
       basicAuth: false,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminOAuthProviderSchema),
+    validate: zod4Resolver(adminOAuthProviderUpdateSchema),
   });
 
   const { loading, doCreateOrUpdate, doDelete } = useResourceForm<
-    z.infer<typeof adminOAuthProviderSchema>,
-    AdminOAuthProvider
+    z.infer<typeof adminOAuthProviderUpdateSchema>,
+    z.infer<typeof adminOAuthProviderSchema>
   >({
     form,
-    createFn: () => createOAuthProvider(adminOAuthProviderSchema.parse(form.getValues())),
+    createFn: () => createOAuthProvider(adminOAuthProviderUpdateSchema.parse(form.getValues())),
     updateFn: contextOAuthProvider
-      ? () => updateOAuthProvider(contextOAuthProvider.uuid, adminOAuthProviderSchema.parse(form.getValues()))
+      ? () => updateOAuthProvider(contextOAuthProvider.uuid, adminOAuthProviderUpdateSchema.parse(form.getValues()))
       : undefined,
     deleteFn: contextOAuthProvider ? () => deleteOAuthProvider(contextOAuthProvider.uuid) : undefined,
     doUpdate: !!contextOAuthProvider,
@@ -107,7 +107,7 @@ export default function OAuthProviderCreateOrUpdate({
 
     addToast('OAuth Provider exported.', 'success');
 
-    let data: Partial<AdminOAuthProvider> & {
+    let data: Partial<z.infer<typeof adminOAuthProviderSchema>> & {
       uuid?: string;
       created?: Date;
       clientId?: string;

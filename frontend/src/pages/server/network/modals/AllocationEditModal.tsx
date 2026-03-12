@@ -8,13 +8,13 @@ import updateAllocation from '@/api/server/allocations/updateAllocation.ts';
 import Button from '@/elements/Button.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
-import { serverAllocationsEditSchema } from '@/lib/schemas/server/allocations.ts';
+import { serverAllocationSchema, serverAllocationsEditSchema } from '@/lib/schemas/server/allocations.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  allocation: ServerAllocation;
+  allocation: z.infer<typeof serverAllocationSchema>;
 };
 
 export default function AllocationEditModal({ allocation, opened, onClose }: Props) {

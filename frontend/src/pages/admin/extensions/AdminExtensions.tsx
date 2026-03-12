@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import getAdminExtensions from '@/api/admin/extensions/getAdminExtensions.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import { adminBackendExtensionSchema } from '@/lib/schemas/admin/backendExtension.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import ExtensionCard from './ExtensionCard.tsx';
 
 export default function AdminExtensions() {
   const { addToast } = useToast();
-  const [backendExtensions, setBackendExtensions] = useState<AdminBackendExtension[] | null>(null);
+  const [backendExtensions, setBackendExtensions] = useState<z.infer<typeof adminBackendExtensionSchema>[] | null>(
+    null,
+  );
 
   useEffect(() => {
     getAdminExtensions()

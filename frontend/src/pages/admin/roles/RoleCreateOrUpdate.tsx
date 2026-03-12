@@ -16,16 +16,17 @@ import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import PermissionSelector from '@/elements/PermissionSelector.tsx';
-import { adminRoleSchema } from '@/lib/schemas/admin/roles.ts';
+import { adminRoleUpdateSchema } from '@/lib/schemas/admin/roles.ts';
+import { roleSchema } from '@/lib/schemas/user.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useGlobalStore } from '@/stores/global.ts';
 
-export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role }) {
+export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: z.infer<typeof roleSchema> }) {
   const { availablePermissions, setAvailablePermissions } = useGlobalStore();
 
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminRoleSchema>>({
+  const form = useForm<z.infer<typeof adminRoleUpdateSchema>>({
     mode: 'uncontrolled',
     initialValues: {
       name: '',
@@ -35,13 +36,18 @@ export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role
       serverPermissions: [],
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminRoleSchema),
+    validate: zod4Resolver(adminRoleUpdateSchema),
   });
 
-  const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminRoleSchema>, Role>({
+  const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<
+    z.infer<typeof adminRoleUpdateSchema>,
+    z.infer<typeof roleSchema>
+  >({
     form,
-    createFn: () => createRole(adminRoleSchema.parse(form.getValues())),
-    updateFn: contextRole ? () => updateRole(contextRole.uuid, adminRoleSchema.parse(form.getValues())) : undefined,
+    createFn: () => createRole(adminRoleUpdateSchema.parse(form.getValues())),
+    updateFn: contextRole
+      ? () => updateRole(contextRole.uuid, adminRoleUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextRole ? () => deleteRole(contextRole.uuid) : undefined,
     doUpdate: !!contextRole,
     basePath: '/admin/roles',

@@ -20,6 +20,7 @@ import {
   adminBackupConfigurationResticSchema,
   adminBackupConfigurationS3Schema,
   adminBackupConfigurationSchema,
+  adminBackupConfigurationUpdateSchema,
 } from '@/lib/schemas/admin/backupConfigurations.ts';
 import BackupRestic from '@/pages/admin/backupConfigurations/forms/BackupRestic.tsx';
 import BackupS3 from '@/pages/admin/backupConfigurations/forms/BackupS3.tsx';
@@ -28,11 +29,11 @@ import { useResourceForm } from '@/plugins/useResourceForm.ts';
 export default function BackupConfigurationCreateOrUpdate({
   contextBackupConfiguration,
 }: {
-  contextBackupConfiguration?: BackupConfiguration;
+  contextBackupConfiguration?: z.infer<typeof adminBackupConfigurationSchema>;
 }) {
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminBackupConfigurationSchema>>({
+  const form = useForm<Partial<z.infer<typeof adminBackupConfigurationUpdateSchema>>>({
     mode: 'uncontrolled',
     initialValues: {
       name: '',
@@ -41,7 +42,7 @@ export default function BackupConfigurationCreateOrUpdate({
       backupDisk: 'local',
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminBackupConfigurationSchema),
+    validate: zod4Resolver(adminBackupConfigurationUpdateSchema),
   });
 
   const backupConfigS3Form = useForm<z.infer<typeof adminBackupConfigurationS3Schema>>({
@@ -71,8 +72,8 @@ export default function BackupConfigurationCreateOrUpdate({
   });
 
   const { loading, doCreateOrUpdate, doDelete } = useResourceForm<
-    z.infer<typeof adminBackupConfigurationSchema>,
-    BackupConfiguration
+    Partial<z.infer<typeof adminBackupConfigurationUpdateSchema>>,
+    z.infer<typeof adminBackupConfigurationSchema>
   >({
     form,
     createFn: () =>

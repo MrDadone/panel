@@ -5,6 +5,7 @@ import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { startTransition, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import checkpointLogin from '@/api/auth/checkpointLogin.ts';
 import getOAuthProviders from '@/api/auth/getOAuthProviders.ts';
 import getSecurityKeys from '@/api/auth/getSecurityKeys.ts';
@@ -18,12 +19,14 @@ import PasswordInput from '@/elements/input/PasswordInput.tsx';
 import PinInput from '@/elements/input/PinInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { authPasswordSchema, authTotpSchema, authUsernameSchema } from '@/lib/schemas/auth.ts';
+import { oAuthProviderSchema } from '@/lib/schemas/generic.ts';
+import { userSchema } from '@/lib/schemas/user.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import AuthWrapper from './AuthWrapper.tsx';
 
 interface TwoFactorInformation {
-  user: User;
+  user: z.infer<typeof userSchema>;
   token: string;
 }
 
@@ -35,7 +38,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'username' | 'passkey' | 'password' | 'totp' | 'totp-recovery'>('username');
-  const [oAuthProviders, setOAuthProviders] = useState<OAuthProvider[]>([]);
+  const [oAuthProviders, setOAuthProviders] = useState<z.infer<typeof oAuthProviderSchema>[]>([]);
   const [passkeyUuid, setPasskeyUuid] = useState('');
   const [passkeyOptions, setPasskeyOptions] = useState<CredentialRequestOptions>();
   const [twoFactorInformation, setTwoFactorInformation] = useState<TwoFactorInformation | null>(null);

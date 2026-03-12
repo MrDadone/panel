@@ -16,7 +16,8 @@ import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminUserSchema } from '@/lib/schemas/admin/users.ts';
+import { adminFullUserSchema, adminUserUpdateSchema } from '@/lib/schemas/admin/users.ts';
+import { fullUserSchema, roleSchema } from '@/lib/schemas/user.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
@@ -24,7 +25,7 @@ import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 
-export default function UserCreateOrUpdate({ contextUser }: { contextUser?: FullUser }) {
+export default function UserCreateOrUpdate({ contextUser }: { contextUser?: z.infer<typeof fullUserSchema> }) {
   const { doImpersonate } = useAuth();
   const { settings, languages } = useGlobalStore();
   const { addToast } = useToast();
@@ -32,7 +33,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: Full
 
   const [openModal, setOpenModal] = useState<'delete' | 'disable_two_factor' | null>(null);
 
-  const form = useForm<z.infer<typeof adminUserSchema>>({
+  const form = useForm<z.infer<typeof adminUserUpdateSchema>>({
     mode: 'uncontrolled',
     initialValues: {
       username: '',
@@ -46,10 +47,15 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: Full
     },
   });
 
-  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminUserSchema>, FullUser>({
+  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<
+    z.infer<typeof adminUserUpdateSchema>,
+    z.infer<typeof adminFullUserSchema>
+  >({
     form,
-    createFn: () => createUser(adminUserSchema.parse(form.getValues())),
-    updateFn: contextUser ? () => updateUser(contextUser.uuid, adminUserSchema.parse(form.getValues())) : undefined,
+    createFn: () => createUser(adminUserUpdateSchema.parse(form.getValues())),
+    updateFn: contextUser
+      ? () => updateUser(contextUser.uuid, adminUserUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextUser ? () => deleteUser(contextUser.uuid) : undefined,
     doUpdate: !!contextUser,
     basePath: '/admin/users',
@@ -71,7 +77,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: Full
     }
   }, [contextUser]);
 
-  const roles = useSearchableResource<Role>({
+  const roles = useSearchableResource<z.infer<typeof roleSchema>>({
     fetcher: (search) => getRoles(1, search),
     defaultSearchValue: contextUser?.role?.name,
     canRequest: canReadRoles,

@@ -43,7 +43,9 @@ import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import { processConfigurationParserLabelMapping } from '@/lib/enums.ts';
-import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminEggRepositoryEggSchema, adminEggRepositorySchema } from '@/lib/schemas/admin/eggRepositories.ts';
+import { adminEggSchema, adminEggUpdateSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -53,8 +55,8 @@ export default function EggCreateOrUpdate({
   contextNest,
   contextEgg,
 }: {
-  contextNest: AdminNest;
-  contextEgg?: AdminNestEgg;
+  contextNest: z.infer<typeof adminNestSchema>;
+  contextEgg?: z.infer<typeof adminEggSchema>;
 }) {
   const { addToast } = useToast();
 
@@ -65,7 +67,7 @@ export default function EggCreateOrUpdate({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const form = useForm<z.infer<typeof adminEggSchema>>({
+  const form = useForm<z.infer<typeof adminEggUpdateSchema>>({
     mode: 'uncontrolled',
     initialValues: {
       eggRepositoryEggUuid: null,
@@ -97,17 +99,17 @@ export default function EggCreateOrUpdate({
       fileDenylist: [],
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminEggSchema),
+    validate: zod4Resolver(adminEggUpdateSchema),
   });
 
   const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<
-    z.infer<typeof adminEggSchema>,
-    AdminNestEgg
+    z.infer<typeof adminEggUpdateSchema>,
+    z.infer<typeof adminEggSchema>
   >({
     form,
     createFn: () =>
       createEgg(contextNest.uuid, {
-        ...adminEggSchema.parse(form.getValues()),
+        ...adminEggUpdateSchema.parse(form.getValues()),
         configScript: {
           container: 'debian:latest',
           entrypoint: '/bin/bash',
@@ -115,7 +117,7 @@ export default function EggCreateOrUpdate({
         },
       }),
     updateFn: contextEgg
-      ? () => updateEgg(contextNest.uuid, contextEgg.uuid, adminEggSchema.parse(form.getValues()))
+      ? () => updateEgg(contextNest.uuid, contextEgg.uuid, adminEggUpdateSchema.parse(form.getValues()))
       : undefined,
     deleteFn: contextEgg ? () => deleteEgg(contextNest.uuid, contextEgg.uuid) : undefined,
     doUpdate: !!contextEgg,
@@ -144,11 +146,11 @@ export default function EggCreateOrUpdate({
     }
   }, [contextEgg]);
 
-  const eggRepositories = useSearchableResource<AdminEggRepository>({
+  const eggRepositories = useSearchableResource<z.infer<typeof adminEggRepositorySchema>>({
     fetcher: (search) => getEggRepositories(1, search),
     defaultSearchValue: contextEgg?.eggRepositoryEgg?.eggRepository.name,
   });
-  const eggRepositoryEggs = useSearchableResource<AdminEggRepositoryEgg>({
+  const eggRepositoryEggs = useSearchableResource<z.infer<typeof adminEggRepositoryEggSchema>>({
     fetcher: (search) =>
       selectedEggRepositoryUuid
         ? getEggRepositoryEggs(selectedEggRepositoryUuid, 1, search)

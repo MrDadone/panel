@@ -1,5 +1,7 @@
 import { ContainerRegistry, Registry } from 'shared';
+import { z } from 'zod';
 import type { Props as ContainerProps } from '@/elements/containers/ServerContentContainer.tsx';
+import { serverDatabaseSchema } from '@/lib/schemas/server/databases.ts';
 import { ContextMenuRegistry } from '../../slices/contextMenu.ts';
 
 export class DatabasesRegistry implements Registry {
@@ -11,7 +13,8 @@ export class DatabasesRegistry implements Registry {
   }
 
   public container: ContainerRegistry<ContainerProps> = new ContainerRegistry();
-  public databaseContextMenu: ContextMenuRegistry<{ database: ServerDatabase }> = new ContextMenuRegistry();
+  public databaseContextMenu: ContextMenuRegistry<{ database: z.infer<typeof serverDatabaseSchema> }> =
+    new ContextMenuRegistry();
 
   public enterContainer(callback: (registry: ContainerRegistry<ContainerProps>) => unknown): this {
     callback(this.container);
@@ -19,7 +22,7 @@ export class DatabasesRegistry implements Registry {
   }
 
   public enterDatabaseContextMenu(
-    callback: (registry: ContextMenuRegistry<{ database: ServerDatabase }>) => unknown,
+    callback: (registry: ContextMenuRegistry<{ database: z.infer<typeof serverDatabaseSchema> }>) => unknown,
   ): this {
     callback(this.databaseContextMenu);
     return this;

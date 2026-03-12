@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import getDatabaseSize from '@/api/server/databases/getDatabaseSize.ts';
 import Code from '@/elements/Code.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
@@ -7,9 +8,10 @@ import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
+import { adminServerDatabaseSchema } from '@/lib/schemas/admin/servers.ts';
 import { bytesToString } from '@/lib/size.ts';
 
-export default function DatabaseRow({ database }: { database: AdminServerDatabase }) {
+export default function DatabaseRow({ database }: { database: z.infer<typeof adminServerDatabaseSchema> }) {
   const [size, setSize] = useState(0);
   const [sizeLoading, setSizeLoading] = useState(true);
   const host = `${database.host}:${database.port}`;

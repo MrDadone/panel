@@ -1,10 +1,16 @@
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { backupDiskLabelMapping } from '@/lib/enums.ts';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
 
-export default function BackupConfigurationRow({ backupConfiguration }: { backupConfiguration: BackupConfiguration }) {
+export default function BackupConfigurationRow({
+  backupConfiguration,
+}: {
+  backupConfiguration: z.infer<typeof adminBackupConfigurationSchema>;
+}) {
   return (
     <TableRow>
       <TableData>

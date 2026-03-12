@@ -1,14 +1,16 @@
 import QuickLRU from 'quick-lru';
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import getNodeResources from '@/api/me/servers/resources/getNodeResources.ts';
+import { userServerGroupSchema } from '@/lib/schemas/user.ts';
 import { UserStore } from '@/stores/user.ts';
 
 const CACHE_TTL_MS = 1000 * 30;
 
 export interface ServerSlice {
   servers: Pagination<Server>;
-  serverGroups: UserServerGroup[];
+  serverGroups: z.infer<typeof userServerGroupSchema>[];
 
   serverResourceUsage: QuickLRU<string, ResourceUsage>;
   resourceUsageTick: number;
@@ -17,9 +19,9 @@ export interface ServerSlice {
   _pendingNodeFetches: Map<string, Promise<void>>;
 
   setServers: (servers: Pagination<Server>) => void;
-  setServerGroups: (serverGroups: UserServerGroup[]) => void;
-  addServerGroup: (serverGroup: UserServerGroup) => void;
-  removeServerGroup: (serverGroup: UserServerGroup) => void;
+  setServerGroups: (serverGroups: z.infer<typeof userServerGroupSchema>[]) => void;
+  addServerGroup: (serverGroup: z.infer<typeof userServerGroupSchema>) => void;
+  removeServerGroup: (serverGroup: z.infer<typeof userServerGroupSchema>) => void;
   updateServerGroup: (uuid: string, data: { name?: string; serverOrder?: string[] }) => void;
 
   addServerResourceUsage: (serverUuid: string, usage: ResourceUsage) => void;

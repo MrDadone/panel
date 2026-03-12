@@ -1,6 +1,7 @@
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import deleteServerMount from '@/api/admin/servers/mounts/deleteServerMount.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Code from '@/elements/Code.tsx';
@@ -8,10 +9,17 @@ import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminServerMountSchema, adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
-export default function ServerMountRow({ server, mount }: { server: AdminServer; mount: AdminServerMount }) {
+export default function ServerMountRow({
+  server,
+  mount,
+}: {
+  server: z.infer<typeof adminServerSchema>;
+  mount: z.infer<typeof adminServerMountSchema>;
+}) {
   const { addToast } = useToast();
   const { removeServerMount } = useAdminStore();
 

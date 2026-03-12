@@ -14,13 +14,13 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminMountSchema } from '@/lib/schemas/admin/mounts.ts';
+import { adminMountSchema, adminMountUpdateSchema } from '@/lib/schemas/admin/mounts.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 
-export default function MountCreateOrUpdate({ contextMount }: { contextMount?: Mount }) {
+export default function MountCreateOrUpdate({ contextMount }: { contextMount?: z.infer<typeof adminMountSchema> }) {
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminMountSchema>>({
+  const form = useForm<z.infer<typeof adminMountUpdateSchema>>({
     mode: 'uncontrolled',
     initialValues: {
       name: '',
@@ -31,13 +31,18 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: M
       userMountable: false,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminMountSchema),
+    validate: zod4Resolver(adminMountUpdateSchema),
   });
 
-  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminMountSchema>, Mount>({
+  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<
+    z.infer<typeof adminMountUpdateSchema>,
+    z.infer<typeof adminMountSchema>
+  >({
     form,
-    createFn: () => createMount(adminMountSchema.parse(form.getValues())),
-    updateFn: contextMount ? () => updateMount(contextMount.uuid, adminMountSchema.parse(form.getValues())) : undefined,
+    createFn: () => createMount(adminMountUpdateSchema.parse(form.getValues())),
+    updateFn: contextMount
+      ? () => updateMount(contextMount.uuid, adminMountUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextMount ? () => deleteMount(contextMount.uuid) : undefined,
     doUpdate: !!contextMount,
     basePath: '/admin/locations',

@@ -1,6 +1,7 @@
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
+import { z } from 'zod';
 import deleteAssets from '@/api/admin/assets/deleteAssets.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import ActionBar from '@/elements/ActionBar.tsx';
@@ -9,6 +10,7 @@ import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { ObjectSet } from '@/lib/objectSet.ts';
+import { storageAssetSchema } from '@/lib/schemas/admin/assets.ts';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -16,7 +18,7 @@ export default function AssetActionBar({
   selectedAssets,
   invalidateAssets,
 }: {
-  selectedAssets: ObjectSet<StorageAsset, 'name'>;
+  selectedAssets: ObjectSet<z.infer<typeof storageAssetSchema>, 'name'>;
   invalidateAssets: () => void;
 }) {
   const { addToast } = useToast();

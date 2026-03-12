@@ -1,14 +1,16 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { serverBackupWithProgressSchema } from '@/lib/schemas/server/backups.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface BackupsSlice {
-  backups: Pagination<ServerBackupWithProgress>;
+  backups: Pagination<z.infer<typeof serverBackupWithProgressSchema>>;
 
-  setBackups: (backups: Pagination<ServerBackupWithProgress>) => void;
-  addBackup: (backups: ServerBackupWithProgress) => void;
-  removeBackup: (backups: ServerBackupWithProgress) => void;
-  updateBackup: (uuid: string, updatedProps: Partial<ServerBackupWithProgress>) => void;
+  setBackups: (backups: Pagination<z.infer<typeof serverBackupWithProgressSchema>>) => void;
+  addBackup: (backups: z.infer<typeof serverBackupWithProgressSchema>) => void;
+  removeBackup: (backups: z.infer<typeof serverBackupWithProgressSchema>) => void;
+  updateBackup: (uuid: string, updatedProps: Partial<z.infer<typeof serverBackupWithProgressSchema>>) => void;
   setBackupProgress: (uuid: string, progress: number, total: number) => void;
 
   backupRestoreProgress: number;
@@ -18,7 +20,7 @@ export interface BackupsSlice {
 }
 
 export const createBackupsSlice: StateCreator<ServerStore, [], [], BackupsSlice> = (set): BackupsSlice => ({
-  backups: getEmptyPaginationSet<ServerBackupWithProgress>(),
+  backups: getEmptyPaginationSet<z.infer<typeof serverBackupWithProgressSchema>>(),
 
   setBackups: (value) => set((state) => ({ ...state, backups: value })),
   addBackup: (backup) =>

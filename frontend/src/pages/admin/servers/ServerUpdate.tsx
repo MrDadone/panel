@@ -32,7 +32,11 @@ import TextArea from '@/elements/input/TextArea.tsx';
 // import TextInput from '@/elements/input/TextInput.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
-import { adminServerUpdateSchema } from '@/lib/schemas/admin/servers.ts';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
+import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
+import { adminServerSchema, adminServerUpdateSchema } from '@/lib/schemas/admin/servers.ts';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
@@ -45,7 +49,7 @@ const timezones = Object.keys(zones)
     label: zone,
   }));
 
-export default function ServerUpdate({ contextServer }: { contextServer: AdminServer }) {
+export default function ServerUpdate({ contextServer }: { contextServer: z.infer<typeof adminServerSchema> }) {
   const { t } = useTranslations();
   const canReadUsers = useAdminCan('users.read');
   const canReadNests = useAdminCan('nests.read');
@@ -86,7 +90,10 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
     validate: zod4Resolver(adminServerUpdateSchema),
   });
 
-  const { loading, doCreateOrUpdate } = useResourceForm<z.infer<typeof adminServerUpdateSchema>, AdminServer>({
+  const { loading, doCreateOrUpdate } = useResourceForm<
+    z.infer<typeof adminServerUpdateSchema>,
+    z.infer<typeof adminServerSchema>
+  >({
     form,
     updateFn: () => updateServer(contextServer.uuid, adminServerUpdateSchema.parse(form.getValues())),
     doUpdate: true,
@@ -117,24 +124,24 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
 
   const [selectedNestUuid, setSelectedNestUuid] = useState<string | null>(contextServer?.nest.uuid ?? '');
 
-  const users = useSearchableResource<FullUser>({
+  const users = useSearchableResource<z.infer<typeof fullUserSchema>>({
     fetcher: (search) => getUsers(1, search),
     defaultSearchValue: contextServer?.owner.username,
     canRequest: canReadUsers,
   });
-  const nests = useSearchableResource<AdminNest>({
+  const nests = useSearchableResource<z.infer<typeof adminNestSchema>>({
     fetcher: (search) => getNests(1, search),
     defaultSearchValue: contextServer?.nest.name,
     canRequest: canReadNests,
   });
-  const eggs = useSearchableResource<AdminNestEgg>({
+  const eggs = useSearchableResource<z.infer<typeof adminEggSchema>>({
     fetcher: (search) =>
       selectedNestUuid ? getEggs(selectedNestUuid, 1, search) : Promise.resolve(getEmptyPaginationSet()),
     defaultSearchValue: contextServer?.egg.name,
     deps: [selectedNestUuid],
     canRequest: canReadEggs,
   });
-  const backupConfigurations = useSearchableResource<BackupConfiguration>({
+  const backupConfigurations = useSearchableResource<z.infer<typeof adminBackupConfigurationSchema>>({
     fetcher: (search) => getBackupConfigurations(1, search),
     defaultSearchValue: contextServer?.backupConfiguration?.name,
     canRequest: canReadBackupConfigurations,

@@ -1,9 +1,11 @@
 import { ReactNode, startTransition, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getMe from '@/api/me/getMe.ts';
 import logout from '@/api/me/logout.ts';
 import Spinner from '@/elements/Spinner.tsx';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 import { AuthContext } from '@/providers/contexts/authContext.ts';
 import { useToast } from './ToastProvider.tsx';
 import { useTranslations } from './TranslationProvider.tsx';
@@ -16,7 +18,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<FullUser | null>(null);
+  const [user, setUser] = useState<z.infer<typeof fullUserSchema> | null>(null);
   const [impersonating, setImpersonating] = useState(window.localStorage.getItem('impersonatedUser') !== null);
 
   useEffect(() => {
@@ -37,7 +39,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       .finally(() => setLoading(false));
   }, []);
 
-  const doImpersonate = (user: FullUser) => {
+  const doImpersonate = (user: z.infer<typeof fullUserSchema>) => {
     localStorage.setItem('impersonatedUser', user.uuid);
 
     navigate('/');
@@ -46,7 +48,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     setImpersonating(true);
   };
 
-  const doLogin = (user: FullUser, doNavigate: boolean = true) => {
+  const doLogin = (user: z.infer<typeof fullUserSchema>, doNavigate: boolean = true) => {
     setUser(user);
     if (doNavigate) {
       navigate('/');

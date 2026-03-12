@@ -1,6 +1,7 @@
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import deleteEggMount from '@/api/admin/nests/eggs/mounts/deleteEggMount.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Code from '@/elements/Code.tsx';
@@ -8,10 +9,21 @@ import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
+import { adminNodeMountSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
-export default function EggMountRow({ nest, egg, mount }: { nest: AdminNest; egg: AdminNestEgg; mount: NodeMount }) {
+export default function EggMountRow({
+  nest,
+  egg,
+  mount,
+}: {
+  nest: z.infer<typeof adminNestSchema>;
+  egg: z.infer<typeof adminEggSchema>;
+  mount: z.infer<typeof adminNodeMountSchema>;
+}) {
   const { addToast } = useToast();
   const { removeEggMount } = useAdminStore();
 

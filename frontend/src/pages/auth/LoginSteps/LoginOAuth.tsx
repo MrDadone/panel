@@ -3,16 +3,18 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Alert, Divider, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import getOAuthProviders from '@/api/auth/getOAuthProviders.ts';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
+import { oAuthProviderSchema } from '@/lib/schemas/generic.ts';
 import AuthWrapper from '../AuthWrapper.tsx';
 
 export default function LoginOAuth() {
   const navigate = useNavigate();
 
   const [error, setError] = useState('');
-  const [oAuthProviders, setOAuthProviders] = useState<OAuthProvider[]>([]);
+  const [oAuthProviders, setOAuthProviders] = useState<z.infer<typeof oAuthProviderSchema>[]>([]);
 
   useEffect(() => {
     getOAuthProviders().then((oAuthProviders) => {

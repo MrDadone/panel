@@ -1,20 +1,12 @@
 import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
-import {
-  adminBackupConfigurationResticSchema,
-  adminBackupConfigurationS3Schema,
-  adminBackupConfigurationSchema,
-} from '@/lib/schemas/admin/backupConfigurations.ts';
+import { adminBackupConfigurationUpdateSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
 import { transformKeysToSnakeCase } from '@/lib/transformers.ts';
 
-interface Data extends z.infer<typeof adminBackupConfigurationSchema> {
-  backupConfigs: {
-    s3: z.infer<typeof adminBackupConfigurationS3Schema> | null;
-    restic: z.infer<typeof adminBackupConfigurationResticSchema> | null;
-  };
-}
-
-export default async (backupConfigUuid: string, data: Data): Promise<void> => {
+export default async (
+  backupConfigUuid: string,
+  data: z.infer<typeof adminBackupConfigurationUpdateSchema>,
+): Promise<void> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .patch(`/api/admin/backup-configurations/${backupConfigUuid}`, {

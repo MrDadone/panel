@@ -13,13 +13,13 @@ import AdminContentContainer from '@/elements/containers/AdminContentContainer.t
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
+import { adminNestSchema, adminNestUpdateSchema } from '@/lib/schemas/admin/nests.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 
-export default function NestCreateOrUpdate({ contextNest }: { contextNest?: AdminNest }) {
+export default function NestCreateOrUpdate({ contextNest }: { contextNest?: z.infer<typeof adminNestSchema> }) {
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminNestSchema>>({
+  const form = useForm<z.infer<typeof adminNestUpdateSchema>>({
     mode: 'uncontrolled',
     initialValues: {
       author: '',
@@ -27,13 +27,18 @@ export default function NestCreateOrUpdate({ contextNest }: { contextNest?: Admi
       description: null,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminNestSchema),
+    validate: zod4Resolver(adminNestUpdateSchema),
   });
 
-  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminNestSchema>, AdminNest>({
+  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<
+    z.infer<typeof adminNestUpdateSchema>,
+    z.infer<typeof adminNestSchema>
+  >({
     form,
-    createFn: () => createNest(adminNestSchema.parse(form.getValues())),
-    updateFn: contextNest ? () => updateNest(contextNest.uuid, adminNestSchema.parse(form.getValues())) : undefined,
+    createFn: () => createNest(adminNestUpdateSchema.parse(form.getValues())),
+    updateFn: contextNest
+      ? () => updateNest(contextNest.uuid, adminNestUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextNest ? () => deleteNest(contextNest.uuid) : undefined,
     doUpdate: !!contextNest,
     basePath: '/admin/nests',

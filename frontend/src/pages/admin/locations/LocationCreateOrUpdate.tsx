@@ -15,17 +15,18 @@ import Select from '@/elements/input/Select.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
+import { adminLocationSchema, adminLocationUpdateSchema } from '@/lib/schemas/admin/locations.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 
-export default ({ contextLocation }: { contextLocation?: Location }) => {
+export default ({ contextLocation }: { contextLocation?: z.infer<typeof adminLocationSchema> }) => {
   const canReadBackupConfigurations = useAdminCan('backup-configurations.read');
 
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminLocationSchema>>({
+  const form = useForm<z.infer<typeof adminLocationUpdateSchema>>({
     mode: 'uncontrolled',
     initialValues: {
       name: '',
@@ -33,14 +34,17 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
       backupConfigurationUuid: null,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminLocationSchema),
+    validate: zod4Resolver(adminLocationUpdateSchema),
   });
 
-  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminLocationSchema>, Location>({
+  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<
+    z.infer<typeof adminLocationUpdateSchema>,
+    z.infer<typeof adminLocationSchema>
+  >({
     form,
-    createFn: () => createLocation(adminLocationSchema.parse(form.getValues())),
+    createFn: () => createLocation(adminLocationUpdateSchema.parse(form.getValues())),
     updateFn: contextLocation
-      ? () => updateLocation(contextLocation.uuid, adminLocationSchema.parse(form.getValues()))
+      ? () => updateLocation(contextLocation.uuid, adminLocationUpdateSchema.parse(form.getValues()))
       : undefined,
     deleteFn: contextLocation ? () => deleteLocation(contextLocation.uuid) : undefined,
     doUpdate: !!contextLocation,
@@ -58,7 +62,7 @@ export default ({ contextLocation }: { contextLocation?: Location }) => {
     }
   }, [contextLocation]);
 
-  const backupConfigurations = useSearchableResource<BackupConfiguration>({
+  const backupConfigurations = useSearchableResource<z.infer<typeof adminBackupConfigurationSchema>>({
     fetcher: (search) => getBackupConfigurations(1, search),
     defaultSearchValue: contextLocation?.backupConfiguration?.name,
     canRequest: canReadBackupConfigurations,

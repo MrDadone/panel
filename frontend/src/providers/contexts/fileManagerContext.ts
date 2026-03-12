@@ -1,6 +1,7 @@
 import { createContext, RefObject, useContext } from 'react';
 import { z } from 'zod';
 import { ObjectSet } from '@/lib/objectSet.ts';
+import { serverBackupSchema } from '@/lib/schemas/server/backups.ts';
 import { serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
 import { FileUploader } from '@/plugins/useFileUpload.ts';
 
@@ -33,8 +34,8 @@ export interface FileManagerContextType {
   actingFiles: ObjectSet<DirectoryEntry, 'name'>;
   actingFilesSource: string | null;
   selectedFiles: ObjectSet<DirectoryEntry, 'name'>;
-  browsingBackup: ServerBackup | null;
-  setBrowsingBackup: (backup: ServerBackup | null) => void;
+  browsingBackup: z.infer<typeof serverBackupSchema> | null;
+  setBrowsingBackup: (backup: z.infer<typeof serverBackupSchema> | null) => void;
   browsingDirectory: string;
   setBrowsingDirectory: (directory: string) => void;
   browsingEntries: Pagination<DirectoryEntry>;

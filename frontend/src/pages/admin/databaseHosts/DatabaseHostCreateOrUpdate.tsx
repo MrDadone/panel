@@ -18,14 +18,18 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
-import { adminDatabaseHostCreateSchema, adminDatabaseHostUpdateSchema } from '@/lib/schemas/admin/databaseHosts.ts';
+import {
+  adminDatabaseHostCreateSchema,
+  adminDatabaseHostSchema,
+  adminDatabaseHostUpdateSchema,
+} from '@/lib/schemas/admin/databaseHosts.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function DatabaseHostCreateOrUpdate({
   contextDatabaseHost,
 }: {
-  contextDatabaseHost?: AdminDatabaseHost;
+  contextDatabaseHost?: z.infer<typeof adminDatabaseHostSchema>;
 }) {
   const { addToast } = useToast();
 
@@ -51,7 +55,7 @@ export default function DatabaseHostCreateOrUpdate({
 
   const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<
     z.infer<typeof adminDatabaseHostUpdateSchema>,
-    AdminDatabaseHost
+    z.infer<typeof adminDatabaseHostSchema>
   >({
     form,
     createFn: () => createDatabaseHost(adminDatabaseHostCreateSchema.parse(form.getValues())),

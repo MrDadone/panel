@@ -21,17 +21,19 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
+import { adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
+import { adminNodeSchema, adminNodeUpdateSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
-export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node }) {
+export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: z.infer<typeof adminNodeSchema> }) {
   const { addToast } = useToast();
 
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminNodeSchema>>({
+  const form = useForm<z.infer<typeof adminNodeUpdateSchema>>({
     mode: 'uncontrolled',
     initialValues: {
       locationUuid: '',
@@ -48,13 +50,18 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
       disk: 10240,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminNodeSchema),
+    validate: zod4Resolver(adminNodeUpdateSchema),
   });
 
-  const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminNodeSchema>, Node>({
+  const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<
+    z.infer<typeof adminNodeUpdateSchema>,
+    z.infer<typeof adminNodeSchema>
+  >({
     form,
-    createFn: () => createNode(adminNodeSchema.parse(form.getValues())),
-    updateFn: contextNode ? () => updateNode(contextNode.uuid, adminNodeSchema.parse(form.getValues())) : undefined,
+    createFn: () => createNode(adminNodeUpdateSchema.parse(form.getValues())),
+    updateFn: contextNode
+      ? () => updateNode(contextNode.uuid, adminNodeUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextNode ? () => deleteNode(contextNode.uuid) : undefined,
     doUpdate: !!contextNode,
     basePath: '/admin/nodes',
@@ -80,11 +87,11 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
     }
   }, [contextNode]);
 
-  const locations = useSearchableResource<Location>({
+  const locations = useSearchableResource<z.infer<typeof adminLocationSchema>>({
     fetcher: (search) => getLocations(1, search),
     defaultSearchValue: contextNode?.location.name,
   });
-  const backupConfigurations = useSearchableResource<BackupConfiguration>({
+  const backupConfigurations = useSearchableResource<z.infer<typeof adminBackupConfigurationSchema>>({
     fetcher: (search) => getBackupConfigurations(1, search),
     defaultSearchValue: contextNode?.backupConfiguration?.name,
   });

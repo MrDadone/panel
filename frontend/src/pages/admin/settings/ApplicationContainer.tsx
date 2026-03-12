@@ -15,6 +15,7 @@ import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import { storageAssetSchema } from '@/lib/schemas/admin/assets.ts';
 import { adminSettingsApplicationSchema } from '@/lib/schemas/admin/settings.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
@@ -48,7 +49,7 @@ export default function ApplicationContainer() {
     validate: zod4Resolver(adminSettingsApplicationSchema),
   });
 
-  const assets = useSearchableResource<StorageAsset>({
+  const assets = useSearchableResource<z.infer<typeof storageAssetSchema>>({
     fetcher: () => getAssets(1),
     canRequest: canReadAssets,
   });

@@ -40,7 +40,12 @@ import Spinner from '@/elements/Spinner.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import VariableContainer from '@/elements/VariableContainer.tsx';
-import { adminServerCreateSchema } from '@/lib/schemas/admin/servers.ts';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
+import { adminEggSchema, adminEggVariableSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
+import { adminNodeAllocationSchema, adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerCreateSchema, adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 import { formatAllocation } from '@/lib/server.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
@@ -106,7 +111,10 @@ export default function ServerCreate() {
     validate: zod4Resolver(adminServerCreateSchema),
   });
 
-  const { loading, doCreateOrUpdate } = useResourceForm<z.infer<typeof adminServerCreateSchema>, AdminServer>({
+  const { loading, doCreateOrUpdate } = useResourceForm<
+    z.infer<typeof adminServerCreateSchema>,
+    z.infer<typeof adminServerSchema>
+  >({
     form,
     createFn: () => createServer(adminServerCreateSchema.parse(form.getValues())),
     doUpdate: false,
@@ -117,41 +125,41 @@ export default function ServerCreate() {
 
   const [eggVariablesLoading, setEggVariablesLoading] = useState(false);
   const [selectedNestUuid, setSelectedNestUuid] = useState<string | null>('');
-  const [eggVariables, setEggVariables] = useState<NestEggVariable[]>([]);
+  const [eggVariables, setEggVariables] = useState<z.infer<typeof adminEggVariableSchema>[]>([]);
 
-  const nodes = useSearchableResource<Node>({
+  const nodes = useSearchableResource<z.infer<typeof adminNodeSchema>>({
     fetcher: (search) => getNodes(1, search),
     canRequest: canReadNodes,
   });
-  const users = useSearchableResource<FullUser>({
+  const users = useSearchableResource<z.infer<typeof fullUserSchema>>({
     fetcher: (search) => getUsers(1, search),
     canRequest: canReadUsers,
   });
-  const nests = useSearchableResource<AdminNest>({
+  const nests = useSearchableResource<z.infer<typeof adminNestSchema>>({
     fetcher: (search) => getNests(1, search),
     canRequest: canReadNests,
   });
-  const eggs = useSearchableResource<AdminNestEgg>({
+  const eggs = useSearchableResource<z.infer<typeof adminEggSchema>>({
     fetcher: (search) =>
       selectedNestUuid ? getEggs(selectedNestUuid, 1, search) : Promise.resolve(getEmptyPaginationSet()),
     deps: [selectedNestUuid],
     canRequest: canReadEggs,
   });
-  const availablePrimaryAllocations = useSearchableResource<NodeAllocation>({
+  const availablePrimaryAllocations = useSearchableResource<z.infer<typeof adminNodeAllocationSchema>>({
     fetcher: (search) =>
       form.getValues().nodeUuid
         ? getAvailableNodeAllocations(form.getValues().nodeUuid, 1, search)
         : Promise.resolve(getEmptyPaginationSet()),
     deps: [form.getValues().nodeUuid],
   });
-  const availableAllocations = useSearchableResource<NodeAllocation>({
+  const availableAllocations = useSearchableResource<z.infer<typeof adminNodeAllocationSchema>>({
     fetcher: (search) =>
       form.getValues().nodeUuid
         ? getAvailableNodeAllocations(form.getValues().nodeUuid, 1, search)
         : Promise.resolve(getEmptyPaginationSet()),
     deps: [form.getValues().nodeUuid],
   });
-  const backupConfigurations = useSearchableResource<BackupConfiguration>({
+  const backupConfigurations = useSearchableResource<z.infer<typeof adminBackupConfigurationSchema>>({
     fetcher: (search) => getBackupConfigurations(1, search),
     canRequest: canReadBackupConfigurations,
   });

@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import { z } from 'zod';
 import getNodeBackups from '@/api/admin/nodes/backups/getNodeBackups.ts';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import Table from '@/elements/Table.tsx';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useAdminStore } from '@/stores/admin.tsx';
 import NodeBackupRow from './NodeBackupRow.tsx';
 
-export default function AdminNodeBackups({ node }: { node: Node }) {
+export default function AdminNodeBackups({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const { nodeBackups, setNodeBackups } = useAdminStore();
 
   const [showDetachedNodeBackups, setShowDetachedNodeBackups] = useState(false);

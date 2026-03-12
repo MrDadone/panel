@@ -11,7 +11,7 @@ import {
   schedulePreConditionLabelMapping,
   serverPowerStateLabelMapping,
 } from '@/lib/enums.ts';
-import { serverSchedulePreConditionSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverScheduleComparator, serverSchedulePreConditionSchema } from '@/lib/schemas/server/schedules.ts';
 
 const maxConditionDepth = 3;
 
@@ -56,7 +56,10 @@ export default function SchedulePreConditionBuilder({ condition, onChange, depth
     }
   };
 
-  const handleNestedConditionChange = (index: number, newCondition: SchedulePreCondition) => {
+  const handleNestedConditionChange = (
+    index: number,
+    newCondition: z.infer<typeof serverSchedulePreConditionSchema>,
+  ) => {
     if (condition.type === 'and' || condition.type === 'or') {
       const newConditions = [...condition.conditions];
       newConditions[index] = newCondition;
@@ -115,7 +118,9 @@ export default function SchedulePreConditionBuilder({ condition, onChange, depth
             <Select
               label='Comparator'
               value={condition.comparator}
-              onChange={(value) => value && onChange({ ...condition, comparator: value as ScheduleComparator })}
+              onChange={(value) =>
+                value && onChange({ ...condition, comparator: value as z.infer<typeof serverScheduleComparator> })
+              }
               data={Object.entries(scheduleComparatorLabelMapping).map(([value, label]) => ({
                 value,
                 label,

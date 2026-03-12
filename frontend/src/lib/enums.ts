@@ -43,7 +43,14 @@ import {
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import { z } from 'zod';
-import { serverScheduleStepActionSchema } from '@/lib/schemas/server/schedules.ts';
+import { databaseType } from '@/lib/schemas/generic.ts';
+import {
+  serverScheduleComparator,
+  serverScheduleConditionSchema,
+  serverSchedulePreConditionSchema,
+  serverScheduleStepActionSchema,
+  serverScheduleTriggerSchema,
+} from '@/lib/schemas/server/schedules.ts';
 
 export const captchaProviderTypeLabelMapping: Record<CaptchaProvider['type'], string> = {
   none: 'None',
@@ -70,7 +77,7 @@ export const processConfigurationParserLabelMapping: Record<ProcessConfiguration
   toml: 'TOML',
 };
 
-export const databaseTypeLabelMapping: Record<DatabaseType, string> = {
+export const databaseTypeLabelMapping: Record<z.infer<typeof databaseType>, string> = {
   mysql: 'MySQL',
   postgres: 'PostgreSQL',
 };
@@ -119,7 +126,10 @@ export const streamingArchiveFormatLabelMapping: Record<StreamingArchiveFormat, 
   zip: '.zip',
 };
 
-export const schedulePreConditionLabelMapping: Record<SchedulePreCondition['type'], string> = {
+export const schedulePreConditionLabelMapping: Record<
+  z.infer<typeof serverSchedulePreConditionSchema>['type'],
+  string
+> = {
   none: 'None',
   and: 'AND (All must be true)',
   or: 'OR (Any must be true)',
@@ -132,7 +142,7 @@ export const schedulePreConditionLabelMapping: Record<SchedulePreCondition['type
   file_exists: 'File Exists',
 };
 
-export const scheduleConditionLabelMapping: Record<ScheduleCondition['type'], string> = {
+export const scheduleConditionLabelMapping: Record<z.infer<typeof serverScheduleConditionSchema>['type'], string> = {
   none: 'None',
   and: 'AND (All must be true)',
   or: 'OR (Any must be true)',
@@ -144,7 +154,7 @@ export const scheduleConditionLabelMapping: Record<ScheduleCondition['type'], st
   variable_ends_with: 'Variable Ends With',
 };
 
-export const scheduleComparatorLabelMapping: Record<ScheduleComparator, string> = {
+export const scheduleComparatorLabelMapping: Record<z.infer<typeof serverScheduleComparator>, string> = {
   smaller_than: 'Smaller Than',
   smaller_than_or_equals: 'Smaller Than or Equals',
   equal: 'Equals',
@@ -152,7 +162,7 @@ export const scheduleComparatorLabelMapping: Record<ScheduleComparator, string> 
   greater_than_or_equals: 'Greater Than or Equals',
 };
 
-export const scheduleComparatorOperatorMapping: Record<ScheduleComparator, string> = {
+export const scheduleComparatorOperatorMapping: Record<z.infer<typeof serverScheduleComparator>, string> = {
   smaller_than: '<',
   smaller_than_or_equals: '<=',
   equal: '==',
@@ -180,7 +190,7 @@ export const serverBackupStatusLabelMapping: Record<ServerBackupStatus, string> 
   failed: 'Failed',
 };
 
-export const scheduleStepLabelMapping: Record<ScheduleAction['type'], string> = {
+export const scheduleStepLabelMapping: Record<z.infer<typeof serverScheduleStepActionSchema>['type'], string> = {
   sleep: 'Sleep',
   ensure: 'Ensure',
   format: 'Format',
@@ -264,7 +274,7 @@ export const scheduleStepDefaultMapping: Record<
   copy_file: {
     type: 'copy_file',
     ignoreFailure: false,
-    append: false,
+    foreground: false,
     file: '/source.txt',
     destination: '/destination.txt',
   },
@@ -312,7 +322,7 @@ export const scheduleStepDefaultMapping: Record<
   },
 };
 
-export const scheduleStepIconMapping: Record<ScheduleAction['type'], IconDefinition> = {
+export const scheduleStepIconMapping: Record<z.infer<typeof serverScheduleStepActionSchema>['type'], IconDefinition> = {
   sleep: faHourglass,
   ensure: faEquals,
   format: faTextSlash,
@@ -373,7 +383,7 @@ export const permissionCategoryIconMapping: Record<string, IconDefinition> = {
   users: faUsers,
 };
 
-export const scheduleTriggerIconMapping: Record<ScheduleTrigger['type'], IconDefinition> = {
+export const scheduleTriggerIconMapping: Record<z.infer<typeof serverScheduleTriggerSchema>['type'], IconDefinition> = {
   cron: faStopwatch,
   power_action: faPowerOff,
   server_state: faServer,
@@ -382,7 +392,7 @@ export const scheduleTriggerIconMapping: Record<ScheduleTrigger['type'], IconDef
   crash: faSkull,
 };
 
-export const scheduleTriggerColorMapping: Record<ScheduleTrigger['type'], string> = {
+export const scheduleTriggerColorMapping: Record<z.infer<typeof serverScheduleTriggerSchema>['type'], string> = {
   cron: 'blue',
   power_action: 'orange',
   server_state: 'green',
@@ -391,7 +401,7 @@ export const scheduleTriggerColorMapping: Record<ScheduleTrigger['type'], string
   crash: 'red',
 };
 
-export const scheduleTriggerLabelMapping: Record<ScheduleTrigger['type'], string> = {
+export const scheduleTriggerLabelMapping: Record<z.infer<typeof serverScheduleTriggerSchema>['type'], string> = {
   cron: 'Cron',
   power_action: 'Power Action',
   server_state: 'Server State',
@@ -400,7 +410,10 @@ export const scheduleTriggerLabelMapping: Record<ScheduleTrigger['type'], string
   crash: 'Crash',
 };
 
-export const scheduleTriggerDefaultMapping: Record<ScheduleTrigger['type'], ScheduleTrigger> = {
+export const scheduleTriggerDefaultMapping: Record<
+  z.infer<typeof serverScheduleTriggerSchema>['type'],
+  z.infer<typeof serverScheduleTriggerSchema>
+> = {
   cron: { type: 'cron', schedule: '' },
   power_action: { type: 'power_action', action: 'start' },
   server_state: { type: 'server_state', state: 'running' },

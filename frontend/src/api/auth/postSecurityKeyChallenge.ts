@@ -1,8 +1,10 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 import { prepareCredentialForTransport } from '../me/security-keys/postSecurityKeyChallenge.ts';
 
 interface Response {
-  user: FullUser;
+  user: z.infer<typeof fullUserSchema>;
 }
 
 export default async (uuid: string, challenge: PublicKeyCredential): Promise<Response> => {

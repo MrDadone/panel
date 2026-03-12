@@ -15,20 +15,20 @@ import AdminContentContainer from '@/elements/containers/AdminContentContainer.t
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminEggRepositorySchema } from '@/lib/schemas/admin/eggRepositories.ts';
+import { adminEggRepositorySchema, adminEggRepositoryUpdateSchema } from '@/lib/schemas/admin/eggRepositories.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function EggRepositoryCreateOrUpdate({
   contextEggRepository,
 }: {
-  contextEggRepository?: AdminEggRepository;
+  contextEggRepository?: z.infer<typeof adminEggRepositorySchema>;
 }) {
   const { addToast } = useToast();
 
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminEggRepositorySchema>>({
+  const form = useForm<z.infer<typeof adminEggRepositoryUpdateSchema>>({
     mode: 'uncontrolled',
     initialValues: {
       name: '',
@@ -36,17 +36,17 @@ export default function EggRepositoryCreateOrUpdate({
       gitRepository: '',
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminEggRepositorySchema),
+    validate: zod4Resolver(adminEggRepositoryUpdateSchema),
   });
 
   const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<
-    AdminUpdateEggRepository,
-    AdminEggRepository
+    z.infer<typeof adminEggRepositoryUpdateSchema>,
+    z.infer<typeof adminEggRepositorySchema>
   >({
     form,
-    createFn: () => createEggRepository(adminEggRepositorySchema.parse(form.getValues())),
+    createFn: () => createEggRepository(adminEggRepositoryUpdateSchema.parse(form.getValues())),
     updateFn: contextEggRepository
-      ? () => updateEggRepository(contextEggRepository.uuid, adminEggRepositorySchema.parse(form.getValues()))
+      ? () => updateEggRepository(contextEggRepository.uuid, adminEggRepositoryUpdateSchema.parse(form.getValues()))
       : undefined,
     deleteFn: contextEggRepository ? () => deleteEggRepository(contextEggRepository.uuid) : undefined,
     doUpdate: !!contextEggRepository,

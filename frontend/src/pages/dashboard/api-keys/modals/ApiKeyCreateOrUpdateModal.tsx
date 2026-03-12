@@ -13,23 +13,15 @@ import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import PermissionSelector from '@/elements/PermissionSelector.tsx';
+import { userApiKeySchema, userApiKeyUpdateSchema } from '@/lib/schemas/user/apiKeys.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useUserStore } from '@/stores/user.ts';
 
-const schema = z.object({
-  name: z.string().min(3).max(31),
-  allowedIps: z.ipv4().or(z.ipv6()).or(z.cidrv4()).or(z.cidrv6()).array(),
-  userPermissions: z.array(z.string()),
-  serverPermissions: z.array(z.string()),
-  adminPermissions: z.array(z.string()),
-  expires: z.date().nullable(),
-});
-
 type Props = ModalProps & {
-  contextApiKey?: UserApiKey;
+  contextApiKey?: z.infer<typeof userApiKeySchema>;
 };
 
 export default function ApiKeyCreateOrUpdateModal({ contextApiKey, opened, onClose }: Props) {
@@ -40,7 +32,7 @@ export default function ApiKeyCreateOrUpdateModal({ contextApiKey, opened, onClo
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(false);
-  const form = useForm<z.infer<typeof schema>>({
+  const form = useForm<z.infer<typeof userApiKeyUpdateSchema>>({
     initialValues: {
       name: '',
       allowedIps: [],
@@ -50,7 +42,7 @@ export default function ApiKeyCreateOrUpdateModal({ contextApiKey, opened, onClo
       expires: null,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(schema),
+    validate: zod4Resolver(userApiKeyUpdateSchema),
   });
 
   useEffect(() => {

@@ -12,7 +12,8 @@ import Select from '@/elements/input/Select.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal } from '@/elements/modals/Modal.tsx';
-import { adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
+import { adminLocationUpdateSchema } from '@/lib/schemas/admin/locations.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -32,7 +33,7 @@ export default function LocationCreateOrUpdateModal({
   const canReadBackupConfigurations = useAdminCan('backup-configurations.read');
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof adminLocationSchema>>({
+  const form = useForm<z.infer<typeof adminLocationUpdateSchema>>({
     mode: 'uncontrolled',
     initialValues: {
       name: '',
@@ -40,10 +41,10 @@ export default function LocationCreateOrUpdateModal({
       backupConfigurationUuid: null,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminLocationSchema),
+    validate: zod4Resolver(adminLocationUpdateSchema),
   });
 
-  const backupConfigurations = useSearchableResource<BackupConfiguration>({
+  const backupConfigurations = useSearchableResource<z.infer<typeof adminBackupConfigurationSchema>>({
     fetcher: (search) => getBackupConfigurations(1, search),
     defaultSearchValue: '',
     canRequest: canReadBackupConfigurations,
@@ -56,7 +57,7 @@ export default function LocationCreateOrUpdateModal({
 
     setLoading(true);
     try {
-      await createLocation(adminLocationSchema.parse(form.getValues()));
+      await createLocation(adminLocationUpdateSchema.parse(form.getValues()));
       addToast('Location created.', 'success');
       form.reset();
       onLocationCreated();

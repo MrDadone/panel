@@ -1,19 +1,21 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { adminEggRepositorySchema } from '@/lib/schemas/admin/eggRepositories.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface EggRepositoriesSlice {
-  eggRepositories: Pagination<AdminEggRepository>;
+  eggRepositories: Pagination<z.infer<typeof adminEggRepositorySchema>>;
 
-  setEggRepositories: (eggRepositories: Pagination<AdminEggRepository>) => void;
-  addEggRepository: (eggRepository: AdminEggRepository) => void;
-  removeEggRepository: (eggRepository: AdminEggRepository) => void;
+  setEggRepositories: (eggRepositories: Pagination<z.infer<typeof adminEggRepositorySchema>>) => void;
+  addEggRepository: (eggRepository: z.infer<typeof adminEggRepositorySchema>) => void;
+  removeEggRepository: (eggRepository: z.infer<typeof adminEggRepositorySchema>) => void;
 }
 
 export const createEggRepositoriesSlice: StateCreator<AdminStore, [], [], EggRepositoriesSlice> = (
   set,
 ): EggRepositoriesSlice => ({
-  eggRepositories: getEmptyPaginationSet<AdminEggRepository>(),
+  eggRepositories: getEmptyPaginationSet<z.infer<typeof adminEggRepositorySchema>>(),
   setEggRepositories: (value) => set((state) => ({ ...state, eggRepositories: value })),
   addEggRepository: (eggRepository) =>
     set((state) => ({

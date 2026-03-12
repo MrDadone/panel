@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
+import { z } from 'zod';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { useUserStore } from '@/stores/user.ts';
 
-export function useServerStats(server: AdminServer | Server) {
+export function useServerStats(server: z.infer<typeof adminServerSchema> | Server) {
   const fetchNodeResources = useUserStore((state) => state.fetchNodeResources);
 
   const stats = useUserStore((state) => {
