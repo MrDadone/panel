@@ -43,7 +43,7 @@ export default function AdminServerManagement({ server }: { server: AdminServer 
         </Card>
         <Card className='h-fit!'>
           <Stack gap='xs'>
-            {server.suspended ? (
+            {server.isSuspended ? (
               <>
                 <Title order={2}>Unsuspend</Title>
                 <Text size='sm'>

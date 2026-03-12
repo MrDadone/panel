@@ -262,7 +262,8 @@ declare global {
     backupConfiguration: BackupConfiguration | null;
     nest: AdminNest;
     status: ServerStatus | null;
-    suspended: boolean;
+    isSuspended: boolean;
+    isTransferring: boolean;
     name: string;
     description: string | null;
     limits: AdminServerLimits;
@@ -341,8 +342,9 @@ declare global {
     allocation: ServerAllocation | null;
     egg: NestEgg;
     status: ServerStatus | null;
-    suspended: boolean;
+    isSuspended: boolean;
     isOwner: boolean;
+    isTransferring: boolean;
     permissions: string[];
     locationUuid: string;
     locationName: string;

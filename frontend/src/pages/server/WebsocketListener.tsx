@@ -23,6 +23,7 @@ export default function WebsocketListener() {
     setStats,
     setBackupProgress,
     setBackupRestoreProgress,
+    setTransferProgress,
     updateBackup,
     setRunningScheduleStep,
     setScheduleSteps,
@@ -132,6 +133,17 @@ export default function WebsocketListener() {
     }
 
     setBackupRestoreProgress(wsData.progress, wsData.total);
+  });
+
+  useWebsocketEvent(SocketEvent.TRANSFER_PROGRESS, (data) => {
+    let wsData: { archive_progress: number; network_progress: number; total: number };
+    try {
+      wsData = JSON.parse(data);
+    } catch {
+      return;
+    }
+
+    setTransferProgress(wsData.archive_progress, wsData.network_progress, wsData.total);
   });
 
   useWebsocketEvent(SocketEvent.BACKUP_RESTORE_COMPLETED, () => {

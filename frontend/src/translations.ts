@@ -84,10 +84,11 @@ const baseTranslations = defineTranslations({
         noAllocation: 'No Allocation',
         state: {
           suspended: 'Suspended',
+          transferring: 'Server is being transferred',
           nodeMaintenance: 'Node is under Maintenance',
           restoringBackup: 'Restoring Backup',
           installing: 'Installing',
-          InstallFailed: 'Install Failed',
+          installFailed: 'Install Failed',
         },
       },
       enum: {
@@ -194,6 +195,8 @@ const baseTranslations = defineTranslations({
           contentSuspended: 'This server is suspended and cannot be accessed.',
           contentNodeMaintenance:
             'This server is on a node that is currently under maintenance and cannot be accessed.',
+          contentTransferring:
+            'This server is currently being transferred and cannot be accessed until the transfer is complete.',
           contentInstallFailed: 'This server failed to install and cannot be accessed until acknowledged.',
           contentInstalling: 'This server is currently installing and cannot be accessed until completed.',
           contentRestoringBackup:
@@ -737,6 +740,8 @@ const baseTranslations = defineTranslations({
             installCancelled: 'Server install cancelled.',
           },
           notification: {
+            nodeMaintenance: 'Your Server is on a node that is currently under maintenance.',
+            transferring: 'Your Server is currently being transferred to another node.',
             restoringBackup: 'Your Server is currently restoring from a backup. Please wait...',
             installing: 'Your Server is currently being installed. Please wait...',
           },

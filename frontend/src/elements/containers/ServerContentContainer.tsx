@@ -44,7 +44,14 @@ export default function ServerContentContainer(props: Props) {
   } = props;
 
   const { t } = useTranslations();
-  const { server, updateServer, backupRestoreProgress, backupRestoreTotal } = useServerStore();
+  const {
+    server,
+    updateServer,
+    backupRestoreProgress,
+    transferProgressArchive,
+    backupRestoreTotal,
+    transferProgressTotal,
+  } = useServerStore();
   const { id } = useCurrentWindow();
   const { addToast } = useToast();
 
@@ -71,7 +78,21 @@ export default function ServerContentContainer(props: Props) {
 
   return (
     <ContentContainer title={`${title} | ${server.name}`}>
-      {fullscreen ? null : server.status === 'restoring_backup' ? (
+      {fullscreen ? null : server.isTransferring ? (
+        <div className='mt-2 px-4 lg:px-6 mb-4'>
+          <Notification loading>
+            {t('pages.server.console.notification.transferring', {})}
+            <Tooltip
+              label={`${bytesToString(transferProgressArchive)} / ${bytesToString(transferProgressTotal)}`}
+              innerClassName='w-full'
+            >
+              <Progress
+                value={transferProgressArchive > 0 ? (transferProgressArchive / transferProgressTotal) * 100 : 0}
+              />
+            </Tooltip>
+          </Notification>
+        </div>
+      ) : server.status === 'restoring_backup' ? (
         <div className='mt-2 px-4 lg:px-6 mb-4'>
           <Notification loading>
             {t('pages.server.console.notification.restoringBackup', {})}
@@ -99,6 +120,10 @@ export default function ServerContentContainer(props: Props) {
               </Button>
             </ServerCan>
           </Notification>
+        </div>
+      ) : server.nodeMaintenanceEnabled ? (
+        <div className='mt-2 px-4 lg:px-6 mb-4'>
+          <Notification>{t('pages.server.console.notification.nodeMaintenance', {})}</Notification>
         </div>
       ) : null}
 

@@ -442,7 +442,7 @@ export default function Terminal() {
                 size='xs'
                 variant='subtle'
                 color='gray'
-                disabled={server.status !== null || server.suspended}
+                disabled={server.status !== null || server.isSuspended || server.isTransferring}
                 onClick={() => setOpenModal('commandHistory')}
               >
                 <FontAwesomeIcon icon={faClockRotateLeft} />

@@ -29,7 +29,7 @@ function ServerSwitcherOption({ server }: { server: Server }) {
   return (
     <div className='flex items-center gap-2'>
       <span
-        className={`w-2 h-2 rounded-full shrink-0 ${getStatusColor(stats?.state, server.status, server.suspended)}`}
+        className={`w-2 h-2 rounded-full shrink-0 ${getStatusColor(stats?.state, server.status, server.isSuspended)}`}
       />
       <span className='truncate'>{server.name}</span>
     </div>

@@ -10,11 +10,13 @@ import { createStartupSlice, StartupSlice } from '@/stores/slices/server/startup
 import { createStateSlice, StateSlice } from '@/stores/slices/server/state.ts';
 import { createStatsSlice, StatsSlice } from '@/stores/slices/server/stats.ts';
 import { createSubusersSlice, SubusersSlice } from '@/stores/slices/server/subusers.ts';
+import { createTransferSlice, TransferSlice } from '@/stores/slices/server/transfer.ts';
 import { createWebsocketSlice, WebsocketSlice } from '@/stores/slices/server/websocket.ts';
 
 export interface ServerStore
   extends AllocationsSlice,
     BackupsSlice,
+    TransferSlice,
     DatabasesSlice,
     FilesSlice,
     SchedulesSlice,
@@ -35,6 +37,7 @@ export const createServerStore = () =>
     Object.assign(initialState, {
       ...createAllocationsSlice(...a),
       ...createBackupsSlice(...a),
+      ...createTransferSlice(...a),
       ...createDatabasesSlice(...a),
       ...createFilesSlice(...a),
       ...createSchedulesSlice(...a),

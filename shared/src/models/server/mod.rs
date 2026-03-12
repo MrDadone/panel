@@ -1446,7 +1446,8 @@ impl Server {
             nest: self.nest.into_admin_api_object(),
             backup_configuration,
             status: self.status,
-            suspended: self.suspended,
+            is_suspended: self.suspended,
+            is_transferring: self.destination_node.is_some(),
             name: self.name,
             description: self.description,
             limits: AdminApiServerLimits {
@@ -1496,7 +1497,6 @@ impl Server {
             uuid_short: compact_str::format_compact!("{:08x}", self.uuid_short),
             allocation: self.allocation.map(|a| a.into_api_object(allocation_uuid)),
             egg: self.egg.into_api_object(),
-            is_owner: self.owner.uuid == user.uuid,
             permissions: if user.admin {
                 vec!["*".into()]
             } else {
@@ -1517,7 +1517,9 @@ impl Server {
             }),
             sftp_port: node.sftp_port,
             status: self.status,
-            suspended: self.suspended,
+            is_suspended: self.suspended,
+            is_owner: self.owner.uuid == user.uuid,
+            is_transferring: self.destination_node.is_some(),
             name: self.name,
             description: self.description,
             limits: ApiServerLimits {
@@ -2229,7 +2231,9 @@ pub struct AdminApiServer {
     pub backup_configuration: Option<super::backup_configuration::AdminApiBackupConfiguration>,
 
     pub status: Option<ServerStatus>,
-    pub suspended: bool,
+
+    pub is_suspended: bool,
+    pub is_transferring: bool,
 
     pub name: compact_str::CompactString,
     pub description: Option<compact_str::CompactString>,
@@ -2262,9 +2266,10 @@ pub struct ApiServer {
     pub egg: super::nest_egg::ApiNestEgg,
 
     pub status: Option<ServerStatus>,
-    pub suspended: bool,
 
     pub is_owner: bool,
+    pub is_suspended: bool,
+    pub is_transferring: bool,
     pub permissions: Vec<compact_str::CompactString>,
 
     pub location_uuid: uuid::Uuid,

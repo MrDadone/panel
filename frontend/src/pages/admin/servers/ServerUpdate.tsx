@@ -159,7 +159,7 @@ export default function ServerUpdate({ contextServer }: { contextServer: AdminSe
     <AdminSubContentContainer title='Update Server' titleOrder={2}>
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack>
-          {contextServer.suspended && (
+          {contextServer.isSuspended && (
             <Alert title='Server Suspended' color='orange' icon={<FontAwesomeIcon icon={faCircleInfo} />}>
               This server is suspended.
             </Alert>

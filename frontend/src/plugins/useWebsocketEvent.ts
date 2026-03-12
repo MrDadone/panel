@@ -15,6 +15,7 @@ export enum SocketEvent {
   STATS = 'stats',
   TRANSFER_LOGS = 'transfer logs',
   TRANSFER_STATUS = 'transfer status',
+  TRANSFER_PROGRESS = 'transfer progress',
   BACKUP_STARTED = 'backup started',
   BACKUP_PROGRESS = 'backup progress',
   BACKUP_COMPLETED = 'backup completed',

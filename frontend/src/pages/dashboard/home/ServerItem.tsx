@@ -181,10 +181,15 @@ export default function ServerItem({
               <div className='flex flex-col justify-between'>
                 <Divider my='md' />
 
-                {server.suspended ? (
+                {server.isSuspended ? (
                   <div className='col-span-3 flex flex-row items-center justify-center'>
                     <FontAwesomeIcon size='1x' icon={faBan} color='red' />
                     <p className='ml-2 text-sm'>{t('common.server.state.suspended', {})}</p>
+                  </div>
+                ) : server.isTransferring ? (
+                  <div className='col-span-3 flex flex-row items-center justify-center'>
+                    <Spinner size={16} />
+                    <p className='ml-2 text-sm'>{t('common.server.state.transferring', {})}</p>
                   </div>
                 ) : server.nodeMaintenanceEnabled ? (
                   <div className='col-span-3 flex flex-row items-center justify-center'>
@@ -204,7 +209,7 @@ export default function ServerItem({
                 ) : server.status === 'install_failed' ? (
                   <div className='col-span-3 flex flex-row items-center justify-center'>
                     <FontAwesomeIcon size='1x' icon={faTriangleExclamation} color='yellow' />
-                    <p className='ml-2 text-sm'>{t('common.server.state.InstallFailed', {})}</p>
+                    <p className='ml-2 text-sm'>{t('common.server.state.installFailed', {})}</p>
                   </div>
                 ) : !stats ? (
                   <div className='col-span-3 flex flex-row items-center justify-center'>

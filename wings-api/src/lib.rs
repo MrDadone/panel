@@ -448,6 +448,17 @@ pub enum TransferArchiveFormat {
     TarZstd,
 }
 
+nestify::nest! {
+    #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct TransferProgress {
+        #[schema(inline)]
+        pub archive_progress: u64,
+        #[schema(inline)]
+        pub network_progress: u64,
+        #[schema(inline)]
+        pub total: u64,
+    }
+}
+
 #[derive(Debug, ToSchema, Deserialize, Serialize, Clone, Copy)]
 pub enum WebsocketEvent {
     #[serde(rename = "auth success")]
@@ -652,6 +663,18 @@ pub mod servers_power {
         }
 
         pub type Response = Response202;
+    }
+}
+pub mod servers_utilization {
+    use super::*;
+
+    pub mod get {
+        use super::*;
+
+        type Response200 = IndexMap<compact_str::CompactString, ResourceUsage>;
+        pub type Response404 = ApiError;
+
+        pub type Response = Response200;
     }
 }
 pub mod servers_server {
@@ -1614,6 +1637,24 @@ pub mod servers_server_transfer {
         pub type Response = Response202;
     }
 }
+pub mod servers_server_utilization {
+    use super::*;
+
+    pub mod get {
+        use super::*;
+
+        nestify::nest! {
+            #[derive(Debug, ToSchema, Deserialize, Serialize, Clone)] pub struct Response200 {
+                #[schema(inline)]
+                pub utilization: ResourceUsage,
+            }
+        }
+
+        pub type Response404 = ApiError;
+
+        pub type Response = Response200;
+    }
+}
 pub mod servers_server_version {
     use super::*;
 
@@ -2282,6 +2323,15 @@ pub mod system_upgrade {
 }
 pub mod transfers {
     use super::*;
+
+    pub mod get {
+        use super::*;
+
+        type Response200 = IndexMap<compact_str::CompactString, TransferProgress>;
+        pub type Response404 = ApiError;
+
+        pub type Response = Response200;
+    }
 
     pub mod post {
         use super::*;
