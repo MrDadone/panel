@@ -254,7 +254,7 @@ mod post {
             timezone: data.timezone,
             hugepages_passthrough_enabled: data.hugepages_passthrough_enabled,
             kvm_passthrough_enabled: data.kvm_passthrough_enabled,
-            feature_limits: data.feature_limits,
+            feature_limits: data.feature_limits.clone(),
             variables: server_variables,
         };
         let server = match Server::create(&state, options).await {

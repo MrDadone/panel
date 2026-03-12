@@ -7,6 +7,8 @@ edition = { workspace = true }
 [dependencies]
 wings-api = { workspace = true }
 rule-validator = { workspace = true }
+schema-extension-core = { workspace = true }
+schema-extension-derive = { workspace = true }
 rustis = { workspace = true }
 rust-s3 = { workspace = true }
 reqwest = { workspace = true }

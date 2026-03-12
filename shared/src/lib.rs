@@ -38,6 +38,7 @@ pub mod telemetry;
 pub mod utils;
 
 pub use payload::Payload;
+pub use schema_extension_core::Extendible;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GIT_COMMIT: &str = env!("CARGO_GIT_COMMIT");

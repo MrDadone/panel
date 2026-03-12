@@ -1397,6 +1397,18 @@ impl Server {
     ) -> Result<AdminApiServer, anyhow::Error> {
         let allocation_uuid = self.allocation.as_ref().map(|a| a.uuid);
 
+        let feature_limits = ApiServerFeatureLimits::init_hooks(&self, database).await?;
+        let feature_limits = finish_extendible!(
+            ApiServerFeatureLimits {
+                allocations: self.allocation_limit,
+                databases: self.database_limit,
+                backups: self.backup_limit,
+                schedules: self.schedule_limit,
+            },
+            feature_limits,
+            database
+        )?;
+
         let (node, backup_configuration, egg) = tokio::join!(
             async {
                 match self.node.fetch_cached(database).await {
@@ -1446,12 +1458,7 @@ impl Server {
                 io_weight: self.io_weight,
             },
             pinned_cpus: self.pinned_cpus,
-            feature_limits: ApiServerFeatureLimits {
-                allocations: self.allocation_limit,
-                databases: self.database_limit,
-                backups: self.backup_limit,
-                schedules: self.schedule_limit,
-            },
+            feature_limits,
             startup: self.startup,
             image: self.image,
             auto_kill: self.auto_kill,
@@ -1471,6 +1478,18 @@ impl Server {
     ) -> Result<ApiServer, anyhow::Error> {
         let allocation_uuid = self.allocation.as_ref().map(|a| a.uuid);
         let node = self.node.fetch_cached(database).await?;
+
+        let feature_limits = ApiServerFeatureLimits::init_hooks(&self, database).await?;
+        let feature_limits = finish_extendible!(
+            ApiServerFeatureLimits {
+                allocations: self.allocation_limit,
+                databases: self.database_limit,
+                backups: self.backup_limit,
+                schedules: self.schedule_limit,
+            },
+            feature_limits,
+            database
+        )?;
 
         Ok(ApiServer {
             uuid: self.uuid,
@@ -1507,12 +1526,7 @@ impl Server {
                 swap: self.swap,
                 disk: self.disk,
             },
-            feature_limits: ApiServerFeatureLimits {
-                allocations: self.allocation_limit,
-                databases: self.database_limit,
-                backups: self.backup_limit,
-                schedules: self.schedule_limit,
-            },
+            feature_limits,
             startup: self.startup,
             image: self.image,
             auto_kill: self.auto_kill,
@@ -2182,7 +2196,10 @@ pub struct ApiServerLimits {
     pub disk: i64,
 }
 
-#[derive(ToSchema, Validate, Serialize, Deserialize, Clone, Copy)]
+#[schema_extension_derive::extendible]
+#[init_args(Server, crate::database::Database)]
+#[hook_args(crate::database::Database)]
+#[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 pub struct ApiServerFeatureLimits {
     #[garde(range(min = 0))]
     #[schema(minimum = 0)]
