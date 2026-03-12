@@ -877,14 +877,13 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
 
                             let row = sqlx::query(
                                 r#"
-                                INSERT INTO database_hosts (name, public, type, host, port, username, password, created)
-                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                                INSERT INTO database_hosts (name, type, host, port, username, password, created)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7)
                                 ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
                                 RETURNING uuid
                                 "#,
                             )
                             .bind(name)
-                            .bind(true)
                             .bind(shared::models::database_host::DatabaseType::Mysql)
                             .bind(host)
                             .bind(port as i32)

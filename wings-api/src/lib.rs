@@ -206,7 +206,7 @@ nestify::nest! {
         #[schema(inline)]
         pub running: bool,
         #[schema(inline)]
-        pub errors: IndexMap<compact_str::CompactString, compact_str::CompactString>,
+        pub errors: IndexMap<uuid::Uuid, compact_str::CompactString>,
         #[schema(inline)]
         pub step: Option<uuid::Uuid>,
     }
@@ -671,7 +671,7 @@ pub mod servers_utilization {
     pub mod get {
         use super::*;
 
-        type Response200 = IndexMap<compact_str::CompactString, ResourceUsage>;
+        type Response200 = IndexMap<uuid::Uuid, ResourceUsage>;
         pub type Response404 = ApiError;
 
         pub type Response = Response200;
@@ -2327,7 +2327,7 @@ pub mod transfers {
     pub mod get {
         use super::*;
 
-        type Response200 = IndexMap<compact_str::CompactString, TransferProgress>;
+        type Response200 = IndexMap<uuid::Uuid, TransferProgress>;
         pub type Response404 = ApiError;
 
         pub type Response = Response200;
