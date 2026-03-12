@@ -1,5 +1,6 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import moveEggs from '@/api/admin/nests/eggs/moveEggs.ts';
 import getNests from '@/api/admin/nests/getNests.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -7,6 +8,8 @@ import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { ObjectSet } from '@/lib/objectSet.ts';
+import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -16,13 +19,17 @@ export default function EggsMoveModal({
   invalidateEggs,
   opened,
   onClose,
-}: ModalProps & { nest: AdminNest; selectedEggs: ObjectSet<AdminNestEgg, 'uuid'>; invalidateEggs: () => void }) {
+}: ModalProps & {
+  nest: z.infer<typeof adminNestSchema>;
+  selectedEggs: ObjectSet<z.infer<typeof adminEggSchema>, 'uuid'>;
+  invalidateEggs: () => void;
+}) {
   const { addToast } = useToast();
 
   const [loading, setLoading] = useState(false);
-  const [selectedNest, setSelectedNest] = useState<AdminNest | null>(null);
+  const [selectedNest, setSelectedNest] = useState<z.infer<typeof adminNestSchema> | null>(null);
 
-  const nests = useSearchableResource<AdminNest>({ fetcher: (search) => getNests(1, search) });
+  const nests = useSearchableResource<z.infer<typeof adminNestSchema>>({ fetcher: (search) => getNests(1, search) });
 
   const doMove = () => {
     if (!selectedNest) {

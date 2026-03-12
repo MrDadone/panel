@@ -1,18 +1,26 @@
 import { faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
+import { z } from 'zod';
 import deleteNodeAllocations from '@/api/admin/nodes/allocations/deleteNodeAllocations.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import NodeAllocationsUpdateModal from './modals/NodeAllocationsUpdateModal.tsx';
 
-export default function AllocationActionBar({ node, loadAllocations }: { node: Node; loadAllocations: () => void }) {
+export default function AllocationActionBar({
+  node,
+  loadAllocations,
+}: {
+  node: z.infer<typeof adminNodeSchema>;
+  loadAllocations: () => void;
+}) {
   const { addToast } = useToast();
   const { removeNodeAllocations, selectedNodeAllocations, setSelectedNodeAllocations } = useAdminStore();
 

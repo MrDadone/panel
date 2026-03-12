@@ -1,4 +1,6 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 
 interface Data {
   code: string;
@@ -6,7 +8,7 @@ interface Data {
 }
 
 interface Response {
-  user: FullUser;
+  user: z.infer<typeof fullUserSchema>;
 }
 
 export default async ({ code, confirmation_token }: Data): Promise<Response> => {

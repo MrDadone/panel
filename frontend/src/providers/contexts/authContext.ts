@@ -1,12 +1,14 @@
 import { createContext, useContext } from 'react';
+import { z } from 'zod';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 
 export interface AuthContextType {
-  user: FullUser | null;
+  user: z.infer<typeof fullUserSchema> | null;
   impersonating: boolean;
 
-  setUser: (user: FullUser | null) => void;
-  doImpersonate: (user: FullUser) => void;
-  doLogin: (user: FullUser, doNavigate?: boolean) => void;
+  setUser: (user: z.infer<typeof fullUserSchema> | null) => void;
+  doImpersonate: (user: z.infer<typeof fullUserSchema>) => void;
+  doLogin: (user: z.infer<typeof fullUserSchema>, doNavigate?: boolean) => void;
   doLogout: () => void;
 }
 

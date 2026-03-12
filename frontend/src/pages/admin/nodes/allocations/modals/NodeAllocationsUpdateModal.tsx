@@ -1,10 +1,12 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useEffect, useMemo, useState } from 'react';
+import { z } from 'zod';
 import updateNodeAllocations from '@/api/admin/nodes/allocations/updateNodeAllocations.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
@@ -13,7 +15,7 @@ export default function NodeAllocationsUpdateModal({
   loadAllocations,
   opened,
   onClose,
-}: ModalProps & { node: Node; loadAllocations: () => void }) {
+}: ModalProps & { node: z.infer<typeof adminNodeSchema>; loadAllocations: () => void }) {
   const { addToast } = useToast();
   const { selectedNodeAllocations, setSelectedNodeAllocations } = useAdminStore();
 

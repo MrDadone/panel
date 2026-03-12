@@ -1,10 +1,12 @@
 import { ModalProps } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updateServerGroup from '@/api/me/servers/groups/updateServerGroup.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { userServerGroupSchema } from '@/lib/schemas/user.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -18,7 +20,7 @@ export default function ServerAddGroupModal({ server, opened, onClose }: Props) 
   const { addToast } = useToast();
   const { serverGroups, updateServerGroup: updateStateServerGroup } = useUserStore();
 
-  const [selectedServerGroup, setSelectedServerGroup] = useState<UserServerGroup | null>(null);
+  const [selectedServerGroup, setSelectedServerGroup] = useState<z.infer<typeof userServerGroupSchema> | null>(null);
   const [loading, setLoading] = useState(false);
 
   const doAdd = () => {

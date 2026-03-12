@@ -2,6 +2,7 @@ import { faArchive } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import getBackupConfigurationStats, {
   type BackupStats,
 } from '@/api/admin/backup-configurations/getBackupConfigurationStats.ts';
@@ -10,13 +11,14 @@ import Card from '@/elements/Card.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function AdminBackupConfigurationStats({
   backupConfiguration,
 }: {
-  backupConfiguration: BackupConfiguration;
+  backupConfiguration: z.infer<typeof adminBackupConfigurationSchema>;
 }) {
   const { addToast } = useToast();
 

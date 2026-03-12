@@ -18,7 +18,7 @@ export default function StorageFilesystem({
 
   return (
     <Stack mt='md'>
-      <TextInput withAsterisk label='Path' placeholder='Path' {...form.getInputProps('path')} />
+      <TextInput withAsterisk label='Path' placeholder='Path' key={form.key('path')} {...form.getInputProps('path')} />
     </Stack>
   );
 }

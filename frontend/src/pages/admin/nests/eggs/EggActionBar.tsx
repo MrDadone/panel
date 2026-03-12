@@ -1,6 +1,7 @@
 import { faArrowTurnUp, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
+import { z } from 'zod';
 import deleteEggs from '@/api/admin/nests/eggs/deleteEggs.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import ActionBar from '@/elements/ActionBar.tsx';
@@ -9,6 +10,8 @@ import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { ObjectSet } from '@/lib/objectSet.ts';
+import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import EggsMoveModal from './modals/EggsMoveModal.tsx';
@@ -18,8 +21,8 @@ export default function EggActionBar({
   selectedEggs,
   invalidateEggs,
 }: {
-  nest: AdminNest;
-  selectedEggs: ObjectSet<AdminNestEgg, 'uuid'>;
+  nest: z.infer<typeof adminNestSchema>;
+  selectedEggs: ObjectSet<z.infer<typeof adminEggSchema>, 'uuid'>;
   invalidateEggs: () => void;
 }) {
   const { addToast } = useToast();

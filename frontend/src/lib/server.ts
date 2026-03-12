@@ -1,6 +1,12 @@
+import { z } from 'zod';
+import { adminNodeAllocationSchema } from '@/lib/schemas/admin/nodes.ts';
+import { serverAllocationSchema } from '@/lib/schemas/server/allocations.ts';
 import { getTranslations } from '@/providers/TranslationProvider.tsx';
 
-export function formatAllocation(allocation?: ServerAllocation | NodeAllocation | null, separatePort: boolean = false) {
+export function formatAllocation(
+  allocation?: z.infer<typeof serverAllocationSchema> | z.infer<typeof adminNodeAllocationSchema> | null,
+  separatePort: boolean = false,
+) {
   return allocation
     ? separatePort
       ? allocation.ipAlias || allocation.ip

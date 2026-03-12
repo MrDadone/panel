@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MouseEvent as ReactMouseEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
 import getAssets from '@/api/admin/assets/getAssets.ts';
 import { AdminCan } from '@/elements/Can.tsx';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
@@ -7,6 +8,7 @@ import SelectionArea from '@/elements/SelectionArea.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Table from '@/elements/Table.tsx';
 import { ObjectSet } from '@/lib/objectSet.ts';
+import { storageAssetSchema } from '@/lib/schemas/admin/assets.ts';
 import { assetTableColumns } from '@/lib/tableColumns.ts';
 import AssetUpload from '@/pages/admin/assets/AssetUpload.tsx';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
@@ -16,9 +18,11 @@ import AssetRow from './AssetRow.tsx';
 export default function AdminAssets() {
   const queryClient = useQueryClient();
 
-  const selectedAssetsPreviousRef = useRef<StorageAsset[]>([]);
+  const selectedAssetsPreviousRef = useRef<z.infer<typeof storageAssetSchema>[]>([]);
 
-  const [selectedAssets, setSelectedAssets] = useState(new ObjectSet<StorageAsset, 'name'>('name'));
+  const [selectedAssets, setSelectedAssets] = useState(
+    new ObjectSet<z.infer<typeof storageAssetSchema>, 'name'>('name'),
+  );
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
@@ -41,7 +45,7 @@ export default function AdminAssets() {
     [selectedAssets],
   );
 
-  const onSelected = useCallback((selected: StorageAsset[]) => {
+  const onSelected = useCallback((selected: z.infer<typeof storageAssetSchema>[]) => {
     setSelectedAssets(new ObjectSet('name', [...selectedAssetsPreviousRef.current, ...selected.values()]));
   }, []);
 
@@ -49,14 +53,14 @@ export default function AdminAssets() {
     setSelectedAssets(new ObjectSet('name', []));
   }, []);
 
-  const addSelectedAsset = (asset: StorageAsset) =>
+  const addSelectedAsset = (asset: z.infer<typeof storageAssetSchema>) =>
     setSelectedAssets((prev) => {
       const next = new ObjectSet('name', prev.values());
       next.add(asset);
       return next;
     });
 
-  const removeSelectedAsset = (asset: StorageAsset) =>
+  const removeSelectedAsset = (asset: z.infer<typeof storageAssetSchema>) =>
     setSelectedAssets((prev) => {
       const next = new ObjectSet('name', prev.values());
       next.delete(asset);

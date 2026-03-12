@@ -1,6 +1,7 @@
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { memo, startTransition, useEffect, useMemo, useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getServerGroups from '@/api/me/servers/groups/getServerGroups.ts';
 import updateServerGroupsOrder from '@/api/me/servers/groups/updateServerGroupsOrder.ts';
@@ -8,6 +9,7 @@ import Button from '@/elements/Button.tsx';
 import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
 import { DndContainer, DndItem, SortableItem } from '@/elements/DragAndDrop.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import { userServerGroupSchema } from '@/lib/schemas/user.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -15,7 +17,7 @@ import DashboardHomeTitle from './DashboardHomeTitle.tsx';
 import ServerGroupCreateModal from './modals/ServerGroupCreateModal.tsx';
 import ServerGroupItem from './ServerGroupItem.tsx';
 
-interface DndServerGroup extends UserServerGroup, DndItem {
+interface DndServerGroup extends z.infer<typeof userServerGroupSchema>, DndItem {
   id: string;
 }
 

@@ -1,16 +1,21 @@
 import { useState } from 'react';
+import { z } from 'zod';
 import getUserServers from '@/api/admin/users/servers/getUserServers.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import Table from '@/elements/Table.tsx';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
 import ServerRow from '@/pages/admin/servers/ServerRow.tsx';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 
-export default function AdminUserServers({ user }: { user: FullUser }) {
+export default function AdminUserServers({ user }: { user: z.infer<typeof fullUserSchema> }) {
   const [showOwnedUserServers, setShowOwnedUserServers] = useState(false);
-  const [userServers, setUserServers] = useState<Pagination<AdminServer>>(getEmptyPaginationSet());
+  const [userServers, setUserServers] = useState<Pagination<z.infer<typeof adminServerSchema>>>(
+    getEmptyPaginationSet(),
+  );
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getUserServers(user.uuid, page, search, showOwnedUserServers),

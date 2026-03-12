@@ -8,13 +8,13 @@ import updateDatabase from '@/api/server/databases/updateDatabase.ts';
 import Button from '@/elements/Button.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
-import { serverDatabaseEditSchema } from '@/lib/schemas/server/databases.ts';
+import { serverDatabaseEditSchema, serverDatabaseSchema } from '@/lib/schemas/server/databases.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  database: ServerDatabase;
+  database: z.infer<typeof serverDatabaseSchema>;
 };
 
 export default function DatabaseEditModal({ database, opened, onClose }: Props) {

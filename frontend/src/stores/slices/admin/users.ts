@@ -1,23 +1,25 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { adminFullUserSchema, adminUserOAuthLinkSchema } from '@/lib/schemas/admin/users.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface UsersSlice {
-  users: Pagination<FullUser>;
-  userOAuthLinks: Pagination<UserOAuthLink>;
+  users: Pagination<z.infer<typeof adminFullUserSchema>>;
+  userOAuthLinks: Pagination<z.infer<typeof adminUserOAuthLinkSchema>>;
 
-  setUsers: (users: Pagination<FullUser>) => void;
-  addUser: (user: FullUser) => void;
-  removeUser: (user: FullUser) => void;
+  setUsers: (users: Pagination<z.infer<typeof adminFullUserSchema>>) => void;
+  addUser: (user: z.infer<typeof adminFullUserSchema>) => void;
+  removeUser: (user: z.infer<typeof adminFullUserSchema>) => void;
 
-  setUserOAuthLinks: (links: Pagination<UserOAuthLink>) => void;
-  addUserOAuthLink: (link: UserOAuthLink) => void;
-  removeUserOAuthLink: (link: UserOAuthLink) => void;
+  setUserOAuthLinks: (links: Pagination<z.infer<typeof adminUserOAuthLinkSchema>>) => void;
+  addUserOAuthLink: (link: z.infer<typeof adminUserOAuthLinkSchema>) => void;
+  removeUserOAuthLink: (link: z.infer<typeof adminUserOAuthLinkSchema>) => void;
 }
 
 export const createUsersSlice: StateCreator<AdminStore, [], [], UsersSlice> = (set): UsersSlice => ({
-  users: getEmptyPaginationSet<FullUser>(),
-  userOAuthLinks: getEmptyPaginationSet<UserOAuthLink>(),
+  users: getEmptyPaginationSet<z.infer<typeof adminFullUserSchema>>(),
+  userOAuthLinks: getEmptyPaginationSet<z.infer<typeof adminUserOAuthLinkSchema>>(),
 
   setUsers: (value) => set((state) => ({ ...state, users: value })),
   addUser: (user) =>

@@ -1,11 +1,13 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
+import { serverVariableSchema } from '@/lib/schemas/server/startup.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface StartupSlice {
-  variables: ServerVariable[];
+  variables: z.infer<typeof serverVariableSchema>[];
 
-  setVariables: (variables: ServerVariable[]) => void;
-  updateVariable: (envVariable: string, updatedProps: Partial<ServerVariable>) => void;
+  setVariables: (variables: z.infer<typeof serverVariableSchema>[]) => void;
+  updateVariable: (envVariable: string, updatedProps: Partial<z.infer<typeof serverVariableSchema>>) => void;
 }
 
 export const createStartupSlice: StateCreator<ServerStore, [], [], StartupSlice> = (set): StartupSlice => ({

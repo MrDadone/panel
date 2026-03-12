@@ -43,7 +43,9 @@ import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import { processConfigurationParserLabelMapping } from '@/lib/enums.ts';
-import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminEggRepositoryEggSchema, adminEggRepositorySchema } from '@/lib/schemas/admin/eggRepositories.ts';
+import { adminEggSchema, adminEggUpdateSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -53,8 +55,8 @@ export default function EggCreateOrUpdate({
   contextNest,
   contextEgg,
 }: {
-  contextNest: AdminNest;
-  contextEgg?: AdminNestEgg;
+  contextNest: z.infer<typeof adminNestSchema>;
+  contextEgg?: z.infer<typeof adminEggSchema>;
 }) {
   const { addToast } = useToast();
 
@@ -65,7 +67,8 @@ export default function EggCreateOrUpdate({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const form = useForm<z.infer<typeof adminEggSchema>>({
+  const form = useForm<z.infer<typeof adminEggUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       eggRepositoryEggUuid: null,
       author: '',
@@ -96,17 +99,17 @@ export default function EggCreateOrUpdate({
       fileDenylist: [],
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminEggSchema),
+    validate: zod4Resolver(adminEggUpdateSchema),
   });
 
   const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<
-    z.infer<typeof adminEggSchema>,
-    AdminNestEgg
+    z.infer<typeof adminEggUpdateSchema>,
+    z.infer<typeof adminEggSchema>
   >({
     form,
     createFn: () =>
       createEgg(contextNest.uuid, {
-        ...adminEggSchema.parse(form.values),
+        ...adminEggUpdateSchema.parse(form.getValues()),
         configScript: {
           container: 'debian:latest',
           entrypoint: '/bin/bash',
@@ -114,7 +117,7 @@ export default function EggCreateOrUpdate({
         },
       }),
     updateFn: contextEgg
-      ? () => updateEgg(contextNest.uuid, contextEgg.uuid, adminEggSchema.parse(form.values))
+      ? () => updateEgg(contextNest.uuid, contextEgg.uuid, adminEggUpdateSchema.parse(form.getValues()))
       : undefined,
     deleteFn: contextEgg ? () => deleteEgg(contextNest.uuid, contextEgg.uuid) : undefined,
     doUpdate: !!contextEgg,
@@ -143,11 +146,11 @@ export default function EggCreateOrUpdate({
     }
   }, [contextEgg]);
 
-  const eggRepositories = useSearchableResource<AdminEggRepository>({
+  const eggRepositories = useSearchableResource<z.infer<typeof adminEggRepositorySchema>>({
     fetcher: (search) => getEggRepositories(1, search),
     defaultSearchValue: contextEgg?.eggRepositoryEgg?.eggRepository.name,
   });
-  const eggRepositoryEggs = useSearchableResource<AdminEggRepositoryEgg>({
+  const eggRepositoryEggs = useSearchableResource<z.infer<typeof adminEggRepositoryEggSchema>>({
     fetcher: (search) =>
       selectedEggRepositoryUuid
         ? getEggRepositoryEggs(selectedEggRepositoryUuid, 1, search)
@@ -269,17 +272,35 @@ export default function EggCreateOrUpdate({
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack>
           <Group grow>
-            <TextInput withAsterisk label='Author' placeholder='Author' {...form.getInputProps('author')} />
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Author'
+              placeholder='Author'
+              key={form.key('author')}
+              {...form.getInputProps('author')}
+            />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
           </Group>
 
-          <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
+          <TextArea
+            label='Description'
+            placeholder='Description'
+            rows={3}
+            key={form.key('description')}
+            {...form.getInputProps('description')}
+          />
 
           <Group grow>
             <Select
@@ -308,6 +329,7 @@ export default function EggCreateOrUpdate({
               clearable
               searchValue={eggRepositoryEggs.search}
               onSearchChange={eggRepositoryEggs.setSearch}
+              key={form.key('eggRepositoryEggUuid')}
               {...form.getInputProps('eggRepositoryEggUuid')}
             />
           </Group>
@@ -319,12 +341,14 @@ export default function EggCreateOrUpdate({
                 label='Startup Done'
                 placeholder='Startup Done'
                 description='Console message indicating startup completion.'
+                key={form.key('configStartup.done')}
                 {...form.getInputProps('configStartup.done')}
               />
 
               <Switch
                 label='Strip ANSI from startup messages'
                 description='Removes ANSI control characters from the console output before matching startup completion.'
+                key={form.key('configStartup.stripAnsi')}
                 {...form.getInputProps('configStartup.stripAnsi', { type: 'checkbox' })}
               />
             </Group>
@@ -341,16 +365,18 @@ export default function EggCreateOrUpdate({
                   { label: 'Send Signal', value: 'signal' },
                   { label: 'Docker Stop', value: 'docker' },
                 ]}
+                key={form.key('configStop.type')}
                 {...form.getInputProps('configStop.type')}
               />
-              {form.values.configStop.type === 'command' ? (
+              {form.getValues().configStop.type === 'command' ? (
                 <TextInput
                   withAsterisk
                   label='Stop Command'
                   placeholder='Stop Command'
+                  key={form.key('configStop.value')}
                   {...form.getInputProps('configStop.value')}
                 />
-              ) : form.values.configStop.type === 'signal' ? (
+              ) : form.getValues().configStop.type === 'signal' ? (
                 <Select
                   withAsterisk
                   label='Stop Signal'
@@ -362,8 +388,9 @@ export default function EggCreateOrUpdate({
                     { label: 'SIGQUIT', value: 'SIGQUIT' },
                     { label: 'SIGKILL', value: 'SIGKILL' },
                   ]}
+                  key={form.key('configStop.value')}
                   {...form.getInputProps('configStop.value')}
-                  value={form.values.configStop.value || 'SIGKILL'}
+                  value={form.getValues().configStop.value || 'SIGKILL'}
                 />
               ) : null}
             </Group>
@@ -375,12 +402,14 @@ export default function EggCreateOrUpdate({
                 <Switch
                   label='User Self Assign'
                   description='Allow users to create their own allocations from a specified port range.'
+                  key={form.key('configAllocations.userSelfAssign.enabled')}
                   {...form.getInputProps('configAllocations.userSelfAssign.enabled', { type: 'checkbox' })}
                 />
 
                 <Switch
                   label='Require Primary Allocation'
                   description='Whether users must always have a primary allocation.'
+                  key={form.key('configAllocations.userSelfAssign.requirePrimaryAllocation')}
                   {...form.getInputProps('configAllocations.userSelfAssign.requirePrimaryAllocation', {
                     type: 'checkbox',
                   })}
@@ -391,11 +420,13 @@ export default function EggCreateOrUpdate({
                 <NumberInput
                   label='Automatic Allocation Start'
                   placeholder='Automatic Allocation Start'
+                  key={form.key('configAllocations.userSelfAssign.startPort')}
                   {...form.getInputProps('configAllocations.userSelfAssign.startPort')}
                 />
                 <NumberInput
                   label='Automatic Allocation End'
                   placeholder='Automatic Allocation End'
+                  key={form.key('configAllocations.userSelfAssign.endPort')}
                   {...form.getInputProps('configAllocations.userSelfAssign.endPort')}
                 />
               </Group>
@@ -403,10 +434,10 @@ export default function EggCreateOrUpdate({
           </TitleCard>
 
           <TitleCard title='Config Files Configuration' icon={<FontAwesomeIcon icon={faFileText} size='sm' />}>
-            {form.values.configFiles.length === 0 ? (
+            {form.getValues().configFiles.length === 0 ? (
               <p className='mb-2'>No config files defined.</p>
             ) : (
-              form.values.configFiles.map((_, index) => (
+              form.getValues().configFiles.map((_, index) => (
                 <Card key={index} className='flex flex-row! justify-between mb-2'>
                   <Stack w='100%'>
                     <Group grow>
@@ -414,6 +445,7 @@ export default function EggCreateOrUpdate({
                         withAsterisk
                         label='File Path'
                         placeholder='File Path'
+                        key={form.key(`configFiles.${index}.file`)}
                         {...form.getInputProps(`configFiles.${index}.file`)}
                       />
                       <Select
@@ -424,32 +456,36 @@ export default function EggCreateOrUpdate({
                           label,
                           value,
                         }))}
+                        key={form.key(`configFiles.${index}.parser`)}
                         {...form.getInputProps(`configFiles.${index}.parser`)}
                       />
                     </Group>
 
                     <div className='flex flex-col'>
-                      {form.values.configFiles[index].replace.length === 0 ? (
+                      {form.getValues().configFiles[index].replace.length === 0 ? (
                         <p className='mb-2'>No replacements defined.</p>
                       ) : (
-                        form.values.configFiles[index].replace.map((_, replaceIndex) => (
+                        form.getValues().configFiles[index].replace.map((_, replaceIndex) => (
                           <Card key={replaceIndex} className='flex flex-row! mb-2'>
                             <Group grow w='100%'>
                               <TextInput
                                 withAsterisk
                                 label='Match'
                                 placeholder='Match'
+                                key={form.key(`configFiles.${index}.replace.${replaceIndex}.match`)}
                                 {...form.getInputProps(`configFiles.${index}.replace.${replaceIndex}.match`)}
                               />
                               <TextInput
                                 label='If Value'
                                 placeholder='If Value'
+                                key={form.key(`configFiles.${index}.replace.${replaceIndex}.ifValue`)}
                                 {...form.getInputProps(`configFiles.${index}.replace.${replaceIndex}.ifValue`)}
                               />
                               <TextInput
                                 withAsterisk
                                 label='Replace With'
                                 placeholder='Replace With'
+                                key={form.key(`configFiles.${index}.replace.${replaceIndex}.replaceWith`)}
                                 {...form.getInputProps(`configFiles.${index}.replace.${replaceIndex}.replaceWith`)}
                               />
                             </Group>
@@ -461,8 +497,8 @@ export default function EggCreateOrUpdate({
                               className='ml-4'
                               onClick={() =>
                                 form.setValues({
-                                  ...form.values,
-                                  configFiles: form.values.configFiles.map((configFile, i) => {
+                                  ...form.getValues(),
+                                  configFiles: form.getValues().configFiles.map((configFile, i) => {
                                     if (i !== index) return configFile;
                                     return {
                                       ...configFile,
@@ -482,8 +518,8 @@ export default function EggCreateOrUpdate({
                         variant='light'
                         onClick={() =>
                           form.setValues({
-                            ...form.values,
-                            configFiles: form.values.configFiles.map((configFile, i) => {
+                            ...form.getValues(),
+                            configFiles: form.getValues().configFiles.map((configFile, i) => {
                               if (i !== index) return configFile;
                               return {
                                 ...configFile,
@@ -514,8 +550,8 @@ export default function EggCreateOrUpdate({
                     className='ml-4'
                     onClick={() =>
                       form.setValues({
-                        ...form.values,
-                        configFiles: form.values.configFiles.filter((_, i) => i !== index),
+                        ...form.getValues(),
+                        configFiles: form.getValues().configFiles.filter((_, i) => i !== index),
                       })
                     }
                   >
@@ -529,9 +565,9 @@ export default function EggCreateOrUpdate({
               variant='light'
               onClick={() =>
                 form.setValues({
-                  ...form.values,
+                  ...form.getValues(),
                   configFiles: [
-                    ...form.values.configFiles,
+                    ...form.getValues().configFiles,
                     {
                       file: '',
                       parser: 'file',
@@ -547,26 +583,47 @@ export default function EggCreateOrUpdate({
             </Button>
           </TitleCard>
 
-          <TextInput withAsterisk label='Startup' placeholder='Startup' {...form.getInputProps('startup')} />
+          <TextInput
+            withAsterisk
+            label='Startup'
+            placeholder='Startup'
+            key={form.key('startup')}
+            {...form.getInputProps('startup')}
+          />
 
           <Group grow>
-            <Switch label='Force Outgoing IP' {...form.getInputProps('forceOutgoingIp', { type: 'checkbox' })} />
+            <Switch
+              label='Force Outgoing IP'
+              key={form.key('forceOutgoingIp')}
+              {...form.getInputProps('forceOutgoingIp', { type: 'checkbox' })}
+            />
             <Switch
               label='Separate IP and Port'
               description='Separates the primary IP and Port in the Console page instead of joining them with ":"'
+              key={form.key('separatePort')}
               {...form.getInputProps('separatePort', { type: 'checkbox' })}
             />
           </Group>
 
           <Group grow>
-            <TagsInput label='Features' placeholder='Feature' {...form.getInputProps('features')} />
-            <TagsInput label='File Deny List' placeholder='File Deny List' {...form.getInputProps('fileDenylist')} />
+            <TagsInput
+              label='Features'
+              placeholder='Feature'
+              key={form.key('features')}
+              {...form.getInputProps('features')}
+            />
+            <TagsInput
+              label='File Deny List'
+              placeholder='File Deny List'
+              key={form.key('fileDenylist')}
+              {...form.getInputProps('fileDenylist')}
+            />
           </Group>
 
           <MultiKeyValueInput
             label='Docker Images'
             withAsterisk
-            options={form.values.dockerImages}
+            options={form.getValues().dockerImages}
             onChange={(e) => form.setFieldValue('dockerImages', e)}
           />
         </Stack>

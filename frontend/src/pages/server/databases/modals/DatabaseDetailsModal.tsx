@@ -1,16 +1,18 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import rotateDatabasePassword from '@/api/server/databases/rotateDatabasePassword.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { serverDatabaseSchema } from '@/lib/schemas/server/databases.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  database: ServerDatabase;
+  database: z.infer<typeof serverDatabaseSchema>;
 };
 
 export default function DatabaseDetailsModal({ database, opened, onClose }: Props) {

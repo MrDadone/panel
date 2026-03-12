@@ -1,17 +1,19 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { serverDatabaseSchema } from '@/lib/schemas/server/databases.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface DatabasesSlice {
-  databases: Pagination<ServerDatabase>;
+  databases: Pagination<z.infer<typeof serverDatabaseSchema>>;
 
-  setDatabases: (databases: Pagination<ServerDatabase>) => void;
-  addDatabase: (database: ServerDatabase) => void;
-  removeDatabase: (database: ServerDatabase) => void;
+  setDatabases: (databases: Pagination<z.infer<typeof serverDatabaseSchema>>) => void;
+  addDatabase: (database: z.infer<typeof serverDatabaseSchema>) => void;
+  removeDatabase: (database: z.infer<typeof serverDatabaseSchema>) => void;
 }
 
 export const createDatabasesSlice: StateCreator<ServerStore, [], [], DatabasesSlice> = (set): DatabasesSlice => ({
-  databases: getEmptyPaginationSet<ServerDatabase>(),
+  databases: getEmptyPaginationSet<z.infer<typeof serverDatabaseSchema>>(),
 
   setDatabases: (value) => set((state) => ({ ...state, databases: value })),
   addDatabase: (database) =>

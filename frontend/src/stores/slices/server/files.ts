@@ -1,14 +1,16 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
+import { serverFileOperationSchema } from '@/lib/schemas/server/files.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface FilesSlice {
-  fileOperations: Map<string, FileOperation>;
-  setFileOperation: (uuid: string, operation: FileOperation) => void;
+  fileOperations: Map<string, z.infer<typeof serverFileOperationSchema>>;
+  setFileOperation: (uuid: string, operation: z.infer<typeof serverFileOperationSchema>) => void;
   removeFileOperation: (uuid: string) => void;
 }
 
 export const createFilesSlice: StateCreator<ServerStore, [], [], FilesSlice> = (set, get): FilesSlice => ({
-  fileOperations: new Map<string, FileOperation>(),
+  fileOperations: new Map<string, z.infer<typeof serverFileOperationSchema>>(),
   setFileOperation: (uuid, operation) =>
     set((state) => {
       const newMap = new Map(state.fileOperations);

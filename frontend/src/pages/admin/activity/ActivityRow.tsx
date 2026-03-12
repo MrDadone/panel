@@ -1,11 +1,13 @@
 import { Group } from '@mantine/core';
+import { z } from 'zod';
 import ActivityInfoButton from '@/elements/activity/ActivityInfoButton.tsx';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { activitySchema } from '@/lib/schemas/activity.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
-export default function ActivityRow({ activity }: { activity: AdminActivity }) {
+export default function ActivityRow({ activity }: { activity: z.infer<typeof activitySchema> }) {
   const { t } = useTranslations();
 
   return (

@@ -211,7 +211,7 @@ rendererMap.addRenderer(
         To: <ScheduleDynamicParameterRenderer value={a.destination} />
       </Text>
       <Text size='xs' c='dimmed'>
-        Append: {a.append ? 'Yes' : 'No'} | Ignore Failure: {a.ignoreFailure ? 'Yes' : 'No'}
+        Foreground: {a.foreground ? 'Yes' : 'No'} | Ignore Failure: {a.ignoreFailure ? 'Yes' : 'No'}
       </Text>
     </Stack>
   ),
