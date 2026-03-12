@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -9,23 +10,23 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 pub struct ExportedNestEggVariable {
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(max = 1024))]
+    #[garde(length(max = 1024))]
     #[schema(max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
+    #[garde(skip)]
     #[serde(default, alias = "sort")]
     pub order: i16,
 
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub env_variable: compact_str::CompactString,
-    #[validate(length(max = 1024))]
+    #[garde(length(max = 1024))]
     #[schema(max_length = 1024)]
     #[serde(
         default,
@@ -33,10 +34,14 @@ pub struct ExportedNestEggVariable {
     )]
     pub default_value: Option<String>,
 
+    #[garde(skip)]
     pub user_viewable: bool,
+    #[garde(skip)]
     pub user_editable: bool,
+    #[garde(skip)]
     #[serde(default)]
     pub secret: bool,
+    #[garde(skip)]
     #[serde(
         default,
         deserialize_with = "crate::deserialize::deserialize_nest_egg_variable_rules"
@@ -221,31 +226,36 @@ impl NestEggVariable {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateNestEggVariableOptions {
+    #[garde(skip)]
     pub egg_uuid: uuid::Uuid,
 
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
 
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
 
+    #[garde(skip)]
     pub order: i16,
 
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub env_variable: compact_str::CompactString,
 
-    #[validate(length(max = 1024))]
+    #[garde(length(max = 1024))]
     #[schema(max_length = 1024)]
     pub default_value: Option<String>,
 
+    #[garde(skip)]
     pub user_viewable: bool,
+    #[garde(skip)]
     pub user_editable: bool,
+    #[garde(skip)]
     pub secret: bool,
 
-    #[validate(custom(function = "rule_validator::validate_rules"))]
+    #[garde(custom(rule_validator::validate_rules))]
     pub rules: Vec<compact_str::CompactString>,
 }
 
@@ -300,11 +310,11 @@ impl CreatableModel for NestEggVariable {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
 pub struct UpdateNestEggVariableOptions {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
 
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     #[serde(
         default,
@@ -313,13 +323,14 @@ pub struct UpdateNestEggVariableOptions {
     )]
     pub description: Option<Option<compact_str::CompactString>>,
 
+    #[garde(skip)]
     pub order: Option<i16>,
 
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub env_variable: Option<compact_str::CompactString>,
 
-    #[validate(length(max = 1024))]
+    #[garde(length(max = 1024))]
     #[schema(max_length = 1024)]
     #[serde(
         default,
@@ -328,11 +339,14 @@ pub struct UpdateNestEggVariableOptions {
     )]
     pub default_value: Option<Option<String>>,
 
+    #[garde(skip)]
     pub user_viewable: Option<bool>,
+    #[garde(skip)]
     pub user_editable: Option<bool>,
+    #[garde(skip)]
     pub secret: Option<bool>,
 
-    #[validate(custom(function = "rule_validator::validate_rules"))]
+    #[garde(inner(custom(rule_validator::validate_rules)))]
     pub rules: Option<Vec<compact_str::CompactString>>,
 }
 

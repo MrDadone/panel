@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -9,7 +10,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct UserSshKey {
@@ -136,12 +136,14 @@ impl UserSshKey {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateUserSshKeyOptions {
+    #[garde(skip)]
     pub user_uuid: uuid::Uuid,
 
-    #[validate(length(min = 3, max = 31))]
+    #[garde(length(chars, min = 3, max = 31))]
     #[schema(min_length = 3, max_length = 31)]
     pub name: compact_str::CompactString,
 
+    #[garde(skip)]
     #[schema(value_type = String)]
     #[serde(deserialize_with = "crate::deserialize::deserialize_public_key")]
     pub public_key: russh::keys::PublicKey,
@@ -199,7 +201,7 @@ impl CreatableModel for UserSshKey {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
 pub struct UpdateUserSshKeyOptions {
-    #[validate(length(min = 3, max = 31))]
+    #[garde(length(chars, min = 3, max = 31))]
     #[schema(min_length = 3, max_length = 31)]
     pub name: Option<compact_str::CompactString>,
 }

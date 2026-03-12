@@ -5,6 +5,7 @@ mod _backup_;
 
 mod get {
     use axum::{extract::Query, http::StatusCode};
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -14,23 +15,23 @@ mod get {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Params {
-        #[validate(range(min = 1))]
+        #[garde(range(min = 1))]
         #[serde(default = "Pagination::default_page")]
-        pub page: i64,
-        #[validate(range(min = 1, max = 100))]
+        page: i64,
+        #[garde(range(min = 1, max = 100))]
         #[serde(default = "Pagination::default_per_page")]
-        pub per_page: i64,
-        #[validate(length(min = 1, max = 100))]
+        per_page: i64,
+        #[garde(length(chars, min = 1, max = 100))]
         #[serde(
             default,
             deserialize_with = "shared::deserialize::deserialize_string_option"
         )]
-        pub search: Option<compact_str::CompactString>,
+        search: Option<compact_str::CompactString>,
 
+        #[garde(skip)]
         #[serde(default)]
         detached: bool,
     }

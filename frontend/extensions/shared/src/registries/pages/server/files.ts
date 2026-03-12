@@ -1,7 +1,10 @@
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { ContainerRegistry, Registry } from 'shared';
 import type { Props as ContainerProps } from '@/elements/containers/ServerContentContainer.tsx';
 import { ComponentListRegistry } from '../../slices/componentList.ts';
 import { ContextMenuRegistry } from '../../slices/contextMenu.ts';
+
+type FileIconHandler = (file: DirectoryEntry) => IconDefinition | undefined;
 
 export class FilesRegistry implements Registry {
   public mergeFrom(other: this): this {
@@ -10,10 +13,13 @@ export class FilesRegistry implements Registry {
     this.fileToolbar.mergeFrom(other.fileToolbar);
     this.fileActionBar.mergeFrom(other.fileActionBar);
     this.fileOperationsProgress.mergeFrom(other.fileOperationsProgress);
+    this.fileSettings.mergeFrom(other.fileSettings);
     this.fileEditorSettings.mergeFrom(other.fileEditorSettings);
-    this.fileImageViewierSettings.mergeFrom(other.fileImageViewierSettings);
+    this.fileImageViewerSettings.mergeFrom(other.fileImageViewerSettings);
     this.newFileContextMenu.mergeFrom(other.newFileContextMenu);
     this.fileContextMenu.mergeFrom(other.fileContextMenu);
+
+    this.fileIconHandlers.push(...other.fileIconHandlers);
 
     return this;
   }
@@ -23,10 +29,18 @@ export class FilesRegistry implements Registry {
   public fileToolbar: ComponentListRegistry = new ComponentListRegistry();
   public fileActionBar: ComponentListRegistry = new ComponentListRegistry();
   public fileOperationsProgress: ComponentListRegistry = new ComponentListRegistry();
+  public fileSettings: ComponentListRegistry = new ComponentListRegistry();
   public fileEditorSettings: ComponentListRegistry = new ComponentListRegistry();
-  public fileImageViewierSettings: ComponentListRegistry = new ComponentListRegistry();
+  public fileImageViewerSettings: ComponentListRegistry = new ComponentListRegistry();
   public newFileContextMenu: ContextMenuRegistry = new ContextMenuRegistry();
   public fileContextMenu: ContextMenuRegistry<{ file: DirectoryEntry }> = new ContextMenuRegistry();
+
+  public fileIconHandlers: FileIconHandler[] = [];
+
+  public addFileIconHandler(handler: FileIconHandler): this {
+    this.fileIconHandlers.push(handler);
+    return this;
+  }
 
   public enterContainer(callback: (registry: ContainerRegistry<ContainerProps>) => unknown): this {
     callback(this.container);
@@ -53,13 +67,18 @@ export class FilesRegistry implements Registry {
     return this;
   }
 
+  public enterFileSettings(callback: (registry: ComponentListRegistry) => unknown): this {
+    callback(this.fileSettings);
+    return this;
+  }
+
   public enterFileEditorSettings(callback: (registry: ComponentListRegistry) => unknown): this {
     callback(this.fileEditorSettings);
     return this;
   }
 
   public enterFileImageViewerSettings(callback: (registry: ComponentListRegistry) => unknown): this {
-    callback(this.fileImageViewierSettings);
+    callback(this.fileImageViewerSettings);
     return this;
   }
 

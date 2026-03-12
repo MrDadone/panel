@@ -53,6 +53,7 @@ export default function DashboardSecurityKeys() {
         <Table
           columns={[
             t('common.table.columns.name', {}),
+            t('pages.account.securityKeys.table.columns.credentialId', {}),
             t('common.table.columns.lastUsed', {}),
             t('common.table.columns.created', {}),
             '',

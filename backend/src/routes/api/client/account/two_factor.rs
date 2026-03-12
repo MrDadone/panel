@@ -66,6 +66,7 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -77,14 +78,13 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(equal = 6))]
+        #[garde(length(equal = 6))]
         #[schema(min_length = 6, max_length = 6)]
         code: String,
-        #[validate(length(max = 512))]
+        #[garde(length(max = 512))]
         #[schema(max_length = 512)]
         password: String,
     }
@@ -174,6 +174,7 @@ mod post {
 
 mod delete {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -185,14 +186,13 @@ mod delete {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 6, max = 10))]
+        #[garde(length(chars, min = 6, max = 10))]
         #[schema(min_length = 6, max_length = 10)]
         code: String,
-        #[validate(length(max = 512))]
+        #[garde(length(max = 512))]
         #[schema(max_length = 512)]
         password: String,
     }

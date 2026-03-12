@@ -97,6 +97,9 @@ nestify::nest! {
         #[schema(inline)]
         pub size: u64,
         #[schema(inline)]
+        #[serde(default)]
+        pub size_physical: u64,
+        #[schema(inline)]
         pub directory: bool,
         #[schema(inline)]
         pub file: bool,
@@ -252,6 +255,8 @@ nestify::nest! {
         pub invocation: compact_str::CompactString,
         #[schema(inline)]
         pub skip_egg_scripts: bool,
+        #[schema(inline)]
+        pub entrypoint: Option<Vec<compact_str::CompactString>>,
         #[schema(inline)]
         pub environment: IndexMap<compact_str::CompactString, serde_json::Value>,
         #[schema(inline)]
@@ -507,6 +512,8 @@ pub enum WebsocketEvent {
     TransferLogs,
     #[serde(rename = "transfer status")]
     TransferStatus,
+    #[serde(rename = "transfer progress")]
+    TransferProgress,
     #[serde(rename = "schedule started")]
     ScheduleStarted,
     #[serde(rename = "schedule step status")]
@@ -1838,7 +1845,7 @@ pub mod system_config {
                     #[schema(inline)]
                     pub disk_check_interval: u64,
                     #[schema(inline)]
-                    pub disk_check_threads: u64,
+                    pub disk_check_use_inotify: bool,
                     #[schema(inline)]
                     pub disk_limiter_mode: DiskLimiterMode,
                     #[schema(inline)]
@@ -2115,6 +2122,8 @@ pub mod system_config {
                 pub allow_cors_private_network: bool,
                 #[schema(inline)]
                 pub ignore_panel_config_updates: bool,
+                #[schema(inline)]
+                pub ignore_panel_wings_upgrades: bool,
             }
         }
 

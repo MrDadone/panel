@@ -14,7 +14,6 @@ use std::{
     time::Instant,
 };
 use utoipa::ToSchema;
-use validator::ValidationError;
 
 pub mod cache;
 pub mod cap;
@@ -225,12 +224,3 @@ pub static FRONTEND_LANGUAGES: LazyLock<Vec<compact_str::CompactString>> = LazyL
 
     languages
 });
-
-pub fn validate_language(language: &compact_str::CompactString) -> Result<(), ValidationError> {
-    if !FRONTEND_LANGUAGES.contains(language) {
-        return Err(ValidationError::new("language")
-            .with_message(format!("invalid language: {language}").into()));
-    }
-
-    Ok(())
-}

@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -10,26 +11,27 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone)]
 pub struct BackupConfigsS3 {
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub access_key: compact_str::CompactString,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub secret_key: compact_str::CompactString,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub bucket: compact_str::CompactString,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub region: compact_str::CompactString,
-    #[validate(length(min = 1, max = 255), url)]
+    #[garde(length(chars, min = 1, max = 255), url)]
     #[schema(min_length = 1, max_length = 255, format = "uri")]
     pub endpoint: compact_str::CompactString,
+    #[garde(skip)]
     pub path_style: bool,
+    #[garde(skip)]
     pub part_size: u64,
 }
 
@@ -89,11 +91,13 @@ impl BackupConfigsS3 {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone)]
 pub struct BackupConfigsRestic {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub repository: compact_str::CompactString,
+    #[garde(skip)]
     pub retry_lock_seconds: u64,
 
+    #[garde(skip)]
     pub environment: IndexMap<compact_str::CompactString, compact_str::CompactString>,
 }
 
@@ -134,9 +138,9 @@ impl BackupConfigsRestic {
 
 #[derive(ToSchema, Serialize, Deserialize, Default, Validate, Clone)]
 pub struct BackupConfigs {
-    #[validate(nested)]
+    #[garde(dive)]
     pub s3: Option<BackupConfigsS3>,
-    #[validate(nested)]
+    #[garde(dive)]
     pub restic: Option<BackupConfigsRestic>,
 }
 
@@ -336,15 +340,17 @@ impl ByUuid for BackupConfiguration {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateBackupConfigurationOptions {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
+    #[garde(skip)]
     pub maintenance_enabled: bool,
+    #[garde(skip)]
     pub backup_disk: super::server_backup::BackupDisk,
-    #[validate(nested)]
+    #[garde(dive)]
     pub backup_configs: BackupConfigs,
 }
 
@@ -399,10 +405,10 @@ impl CreatableModel for BackupConfiguration {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UpdateBackupConfigurationOptions {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     #[serde(
         default,
@@ -410,9 +416,11 @@ pub struct UpdateBackupConfigurationOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub description: Option<Option<compact_str::CompactString>>,
+    #[garde(skip)]
     pub maintenance_enabled: Option<bool>,
+    #[garde(skip)]
     pub backup_disk: Option<super::server_backup::BackupDisk>,
-    #[validate(nested)]
+    #[garde(dive)]
     pub backup_configs: Option<BackupConfigs>,
 }
 

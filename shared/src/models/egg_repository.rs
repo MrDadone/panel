@@ -4,6 +4,7 @@ use crate::{
 };
 use compact_str::ToCompactString;
 use futures_util::StreamExt;
+use garde::Validate;
 use git2::FetchOptions;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -13,7 +14,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct EggRepository {
@@ -238,13 +238,13 @@ impl EggRepository {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateEggRepositoryOptions {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(max = 1024))]
+    #[garde(length(max = 1024))]
     #[schema(max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
-    #[validate(url)]
+    #[garde(url)]
     #[schema(example = "https://github.com/example/repo.git", format = "uri")]
     pub git_repository: compact_str::CompactString,
 }
@@ -293,10 +293,10 @@ impl CreatableModel for EggRepository {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UpdateEggRepositoryOptions {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
-    #[validate(length(max = 1024))]
+    #[garde(length(max = 1024))]
     #[schema(max_length = 1024)]
     #[serde(
         default,
@@ -304,7 +304,7 @@ pub struct UpdateEggRepositoryOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub description: Option<Option<compact_str::CompactString>>,
-    #[validate(url)]
+    #[garde(url)]
     #[schema(example = "https://github.com/example/repo.git", format = "uri")]
     pub git_repository: Option<compact_str::CompactString>,
 }

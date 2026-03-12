@@ -55,6 +55,7 @@ mod get {
 mod post {
     use crate::routes::api::admin::nests::_nest_::{GetNest, eggs::_egg_::GetNestEgg};
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -67,29 +68,32 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 3, max = 255))]
+        #[garde(length(chars, min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: compact_str::CompactString,
-        #[validate(length(max = 1024))]
+        #[garde(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
+        #[garde(skip)]
         order: i16,
 
-        #[validate(length(min = 1, max = 255))]
+        #[garde(length(chars, min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
         env_variable: compact_str::CompactString,
-        #[validate(length(max = 1024))]
+        #[garde(length(max = 1024))]
         #[schema(max_length = 1024)]
         default_value: Option<String>,
 
+        #[garde(skip)]
         user_viewable: bool,
+        #[garde(skip)]
         user_editable: bool,
+        #[garde(skip)]
         secret: bool,
-        #[validate(custom(function = "rule_validator::validate_rules"))]
+        #[garde(custom(rule_validator::validate_rules))]
         rules: Vec<compact_str::CompactString>,
     }
 

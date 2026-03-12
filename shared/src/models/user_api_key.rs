@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use rand::distr::SampleString;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -10,7 +11,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UserApiKey {
@@ -224,22 +224,25 @@ impl UserApiKey {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateUserApiKeyOptions {
+    #[garde(skip)]
     pub user_uuid: uuid::Uuid,
 
-    #[validate(length(min = 3, max = 31))]
+    #[garde(length(chars, min = 3, max = 31))]
     #[schema(min_length = 3, max_length = 31)]
     pub name: compact_str::CompactString,
+    #[garde(skip)]
     #[schema(value_type = Vec<String>)]
     pub allowed_ips: Vec<sqlx::types::ipnetwork::IpNetwork>,
 
-    #[validate(custom(function = "crate::permissions::validate_user_permissions"))]
+    #[garde(custom(crate::permissions::validate_user_permissions))]
     pub user_permissions: Vec<compact_str::CompactString>,
-    #[validate(custom(function = "crate::permissions::validate_admin_permissions"))]
+    #[garde(custom(crate::permissions::validate_admin_permissions))]
     pub admin_permissions: Vec<compact_str::CompactString>,
-    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    #[garde(custom(crate::permissions::validate_server_permissions))]
     pub server_permissions: Vec<compact_str::CompactString>,
 
-    pub expires: Option<chrono::NaiveDateTime>,
+    #[garde(inner(custom(crate::utils::validate_time_in_future)))]
+    pub expires: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[async_trait::async_trait]
@@ -281,7 +284,7 @@ impl CreatableModel for UserApiKey {
             .set("user_permissions", &options.user_permissions)
             .set("admin_permissions", &options.admin_permissions)
             .set("server_permissions", &options.server_permissions)
-            .set("expires", options.expires);
+            .set("expires", options.expires.map(|d| d.naive_utc()));
 
         let row = query_builder
             .returning(&Self::columns_sql(None))
@@ -297,19 +300,21 @@ impl CreatableModel for UserApiKey {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
 pub struct UpdateUserApiKeyOptions {
-    #[validate(length(min = 3, max = 31))]
+    #[garde(length(chars, min = 3, max = 31))]
     #[schema(min_length = 3, max_length = 31)]
     pub name: Option<compact_str::CompactString>,
+    #[garde(skip)]
     #[schema(value_type = Vec<String>)]
     pub allowed_ips: Option<Vec<sqlx::types::ipnetwork::IpNetwork>>,
 
-    #[validate(custom(function = "crate::permissions::validate_user_permissions"))]
+    #[garde(inner(custom(crate::permissions::validate_user_permissions)))]
     pub user_permissions: Option<Vec<compact_str::CompactString>>,
-    #[validate(custom(function = "crate::permissions::validate_admin_permissions"))]
+    #[garde(inner(custom(crate::permissions::validate_admin_permissions)))]
     pub admin_permissions: Option<Vec<compact_str::CompactString>>,
-    #[validate(custom(function = "crate::permissions::validate_server_permissions"))]
+    #[garde(inner(custom(crate::permissions::validate_server_permissions)))]
     pub server_permissions: Option<Vec<compact_str::CompactString>>,
 
+    #[garde(inner(inner(custom(crate::utils::validate_time_in_future))))]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",

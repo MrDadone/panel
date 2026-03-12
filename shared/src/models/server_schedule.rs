@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -9,18 +10,21 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(ToSchema, Validate, Serialize, Deserialize)]
 pub struct ExportedServerSchedule {
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub name: compact_str::CompactString,
+    #[garde(skip)]
     pub enabled: bool,
 
+    #[garde(dive)]
     pub triggers: Vec<wings_api::ScheduleTrigger>,
+    #[garde(dive)]
     pub condition: wings_api::SchedulePreCondition,
 
+    #[garde(dive)]
     pub steps: Vec<super::server_schedule_step::ExportedServerScheduleStep>,
 }
 
@@ -219,12 +223,16 @@ impl ServerSchedule {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateServerScheduleOptions {
+    #[garde(skip)]
     pub server_uuid: uuid::Uuid,
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub name: compact_str::CompactString,
+    #[garde(skip)]
     pub enabled: bool,
+    #[garde(dive)]
     pub triggers: Vec<wings_api::ScheduleTrigger>,
+    #[garde(dive)]
     pub condition: wings_api::SchedulePreCondition,
 }
 
@@ -274,11 +282,14 @@ impl CreatableModel for ServerSchedule {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
 pub struct UpdateServerScheduleOptions {
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
+    #[garde(skip)]
     pub enabled: Option<bool>,
+    #[garde(dive)]
     pub triggers: Option<Vec<wings_api::ScheduleTrigger>>,
+    #[garde(dive)]
     pub condition: Option<wings_api::SchedulePreCondition>,
 }
 

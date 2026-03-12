@@ -48,6 +48,8 @@ const baseTranslations = defineTranslations({
       },
       tooltip: {
         resetToDefault: 'Reset to default',
+        edit: 'Edit',
+        delete: 'Delete',
       },
       form: {
         name: 'Name',
@@ -196,6 +198,17 @@ const baseTranslations = defineTranslations({
           contentInstalling: 'This server is currently installing and cannot be accessed until completed.',
           contentRestoringBackup:
             'This server is currently restoring from a backup and cannot be accessed until completed.',
+          button: {
+            viewInstallLogs: 'View Installation Logs',
+            acknowledgeFailure: 'Acknowledge Failure',
+          },
+          modal: {
+            acknowledgeFailure: {
+              title: 'Acknowledge Installation Failure',
+              content:
+                'By acknowledging this installation failure, you are confirming that you are aware of the failed installation and have taken any necessary steps to resolve the issue. This will allow you to regain control over the server.',
+            },
+          },
         },
       },
     },
@@ -338,6 +351,8 @@ const baseTranslations = defineTranslations({
           tooltip: {
             removeFromGroup: 'Remove from Group',
             addToGroup: 'Add to Group',
+            addServerToGroup: 'Add Server to Group',
+            groupActions: 'Group Actions',
             noGroups: 'No groups available to add server to',
             noGroup: 'This server is not in any group',
           },
@@ -507,6 +522,11 @@ const baseTranslations = defineTranslations({
         },
         securityKeys: {
           title: 'Security Keys',
+          table: {
+            columns: {
+              credentialId: 'Credential ID',
+            },
+          },
           modal: {
             createSecurityKey: {
               title: 'Create Security Key',
@@ -796,7 +816,7 @@ const baseTranslations = defineTranslations({
         },
         files: {
           title: 'Files',
-          titleEditorViewing: 'Voewing {file}',
+          titleEditorViewing: 'Viewing {file}',
           titleEditorEditing: 'Editing {file}',
           titleEditorNew: 'New File',
           table: {
@@ -808,6 +828,7 @@ const baseTranslations = defineTranslations({
             new: 'New',
             sftpDetails: 'SFTP Details',
             openInNewWindow: 'Open in new Window',
+            details: 'Details',
             rename: 'Rename',
             copy: 'Copy',
             move: 'Move',
@@ -850,6 +871,7 @@ const baseTranslations = defineTranslations({
           },
           settings: {
             clickOnce: 'Click once to open file or folder',
+            preferPhysicalSize: 'Show physical size instead of logical size',
             editorMinimap: 'Show File Minimap',
             editorLineOverflow: 'Wrap Line Overflow',
             imageViewerSmoothing: 'Smoothen Image (Anti-Aliasing)',
@@ -927,6 +949,16 @@ const baseTranslations = defineTranslations({
               form: {
                 fileName: 'File Name',
               },
+            },
+            details: {
+              title: 'File Details',
+              path: 'Path',
+              mode: 'Mode',
+              logicalSize: 'Logical Size',
+              physicalSize: 'Physical Size',
+              mimeType: 'MIME Type',
+              lastModifiedAt: 'Last Modified At',
+              createdAt: 'Created At',
             },
             filePermissions: {
               title: 'File Permissions',

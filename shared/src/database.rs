@@ -231,7 +231,7 @@ pub enum DatabaseError {
     Sqlx(sqlx::Error),
     Serde(serde_json::Error),
     Any(anyhow::Error),
-    Validation(validator::ValidationErrors),
+    Validation(garde::Report),
     InvalidRelation(InvalidRelationError),
 }
 
@@ -275,9 +275,9 @@ impl From<sqlx::Error> for DatabaseError {
     }
 }
 
-impl From<validator::ValidationErrors> for DatabaseError {
+impl From<garde::Report> for DatabaseError {
     #[inline]
-    fn from(value: validator::ValidationErrors) -> Self {
+    fn from(value: garde::Report) -> Self {
         Self::Validation(value)
     }
 }

@@ -1019,6 +1019,7 @@ declare global {
   interface UserSecurityKey {
     uuid: string;
     name: string;
+    credentialId: string;
     lastUsed: Date | null;
     created: Date;
   }
@@ -1070,6 +1071,7 @@ declare global {
     mode: string;
     modeBits: string;
     size: number;
+    sizePhysical: number;
     directory: boolean;
     file: boolean;
     symlink: boolean;
@@ -1232,6 +1234,7 @@ declare global {
       maxSchedulesStepCount: number;
       allowOverwritingCustomDockerImage: boolean;
       allowEditingStartupCommand: boolean;
+      allowAcknowledgingInstallationFailure: boolean;
     };
   }
 
@@ -1263,6 +1266,7 @@ declare global {
       allowOverwritingCustomDockerImage: boolean;
       allowEditingStartupCommand: boolean;
       allowViewingInstallationLogs: boolean;
+      allowAcknowledgingInstallationFailure: boolean;
       allowViewingTransferProgress: boolean;
     };
     activity: {

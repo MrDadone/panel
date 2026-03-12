@@ -6,6 +6,7 @@ use crate::{
     storage::StorageUrlRetriever,
 };
 use compact_str::ToCompactString;
+use garde::Validate;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type};
@@ -14,7 +15,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 mod events;
 pub use events::ServerEvent;
@@ -1279,6 +1279,7 @@ impl Server {
                 },
                 suspended: self.suspended,
                 invocation: self.startup,
+                entrypoint: None,
                 skip_egg_scripts: false,
                 environment: variables
                     .into_iter()
@@ -1552,45 +1553,58 @@ impl ByUuid for Server {
 
 #[derive(ToSchema, Validate, Deserialize)]
 pub struct CreateServerOptions {
+    #[garde(skip)]
     pub node_uuid: uuid::Uuid,
+    #[garde(skip)]
     pub owner_uuid: uuid::Uuid,
+    #[garde(skip)]
     pub egg_uuid: uuid::Uuid,
+    #[garde(skip)]
     pub backup_configuration_uuid: Option<uuid::Uuid>,
 
+    #[garde(skip)]
     pub allocation_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
     pub allocation_uuids: Vec<uuid::Uuid>,
 
+    #[garde(skip)]
     pub start_on_completion: bool,
+    #[garde(skip)]
     pub skip_installer: bool,
 
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     pub external_id: Option<compact_str::CompactString>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     pub description: Option<compact_str::CompactString>,
 
-    #[validate(nested)]
+    #[garde(dive)]
     pub limits: AdminApiServerLimits,
+    #[garde(inner(range(min = 0)))]
     pub pinned_cpus: Vec<i16>,
 
-    #[validate(length(min = 1, max = 8192))]
+    #[garde(length(chars, min = 1, max = 8192))]
     #[schema(min_length = 1, max_length = 8192)]
     pub startup: compact_str::CompactString,
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub image: compact_str::CompactString,
+    #[garde(skip)]
     #[schema(value_type = Option<String>)]
     pub timezone: Option<chrono_tz::Tz>,
 
+    #[garde(skip)]
     pub hugepages_passthrough_enabled: bool,
+    #[garde(skip)]
     pub kvm_passthrough_enabled: bool,
 
-    #[validate(nested)]
+    #[garde(dive)]
     pub feature_limits: ApiServerFeatureLimits,
+    #[garde(skip)]
     pub variables: HashMap<uuid::Uuid, compact_str::CompactString>,
 }
 
@@ -1790,8 +1804,11 @@ impl CreatableModel for Server {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UpdateServerOptions {
+    #[garde(skip)]
     pub owner_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
     pub egg_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -1799,9 +1816,10 @@ pub struct UpdateServerOptions {
     )]
     pub backup_configuration_uuid: Option<Option<uuid::Uuid>>,
 
+    #[garde(skip)]
     pub suspended: Option<bool>,
 
-    #[validate(length(min = 1, max = 255))]
+    #[garde(length(chars, min = 1, max = 255))]
     #[schema(min_length = 1, max_length = 255)]
     #[serde(
         default,
@@ -1809,10 +1827,10 @@ pub struct UpdateServerOptions {
         with = "::serde_with::rust::double_option"
     )]
     pub external_id: Option<Option<compact_str::CompactString>>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: Option<compact_str::CompactString>,
-    #[validate(length(min = 1, max = 1024))]
+    #[garde(length(chars, min = 1, max = 1024))]
     #[schema(min_length = 1, max_length = 1024)]
     #[serde(
         default,
@@ -1821,16 +1839,18 @@ pub struct UpdateServerOptions {
     )]
     pub description: Option<Option<compact_str::CompactString>>,
 
-    #[validate(nested)]
+    #[garde(dive)]
     pub limits: Option<AdminApiServerLimits>,
+    #[garde(inner(inner(range(min = 0))))]
     pub pinned_cpus: Option<Vec<i16>>,
 
-    #[validate(length(min = 1, max = 8192))]
+    #[garde(length(chars, min = 1, max = 8192))]
     #[schema(min_length = 1, max_length = 8192)]
     pub startup: Option<compact_str::CompactString>,
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub image: Option<compact_str::CompactString>,
+    #[garde(skip)]
     #[schema(value_type = Option<Option<String>>)]
     #[serde(
         default,
@@ -1839,10 +1859,12 @@ pub struct UpdateServerOptions {
     )]
     pub timezone: Option<Option<chrono_tz::Tz>>,
 
+    #[garde(skip)]
     pub hugepages_passthrough_enabled: Option<bool>,
+    #[garde(skip)]
     pub kvm_passthrough_enabled: Option<bool>,
 
-    #[validate(nested)]
+    #[garde(dive)]
     pub feature_limits: Option<ApiServerFeatureLimits>,
 }
 
@@ -2124,54 +2146,54 @@ pub struct RemoteApiServer {
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone, Copy)]
 pub struct AdminApiServerLimits {
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub cpu: i32,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub memory: i64,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub memory_overhead: i64,
-    #[validate(range(min = -1))]
+    #[garde(range(min = -1))]
     #[schema(minimum = -1)]
     pub swap: i64,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub disk: i64,
-    #[validate(range(min = 0, max = 1000))]
+    #[garde(range(min = 0, max = 1000))]
     #[schema(minimum = 0, maximum = 1000)]
     pub io_weight: Option<i16>,
 }
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone, Copy)]
 pub struct ApiServerLimits {
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub cpu: i32,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub memory: i64,
-    #[validate(range(min = -1))]
+    #[garde(range(min = -1))]
     #[schema(minimum = -1)]
     pub swap: i64,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub disk: i64,
 }
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone, Copy)]
 pub struct ApiServerFeatureLimits {
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub allocations: i32,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub databases: i32,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub backups: i32,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub schedules: i32,
 }

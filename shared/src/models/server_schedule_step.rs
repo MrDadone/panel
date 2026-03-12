@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -9,11 +10,12 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
-#[derive(ToSchema, Serialize, Deserialize)]
+#[derive(ToSchema, Validate, Serialize, Deserialize)]
 pub struct ExportedServerScheduleStep {
+    #[garde(dive)]
     pub action: wings_api::ScheduleActionInner,
+    #[garde(skip)]
     pub order: i16,
 }
 
@@ -158,8 +160,11 @@ impl ServerScheduleStep {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateServerScheduleStepOptions {
+    #[garde(skip)]
     pub schedule_uuid: uuid::Uuid,
+    #[garde(dive)]
     pub action: wings_api::ScheduleActionInner,
+    #[garde(skip)]
     pub order: i16,
 }
 
@@ -207,7 +212,9 @@ impl CreatableModel for ServerScheduleStep {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
 pub struct UpdateServerScheduleStepOptions {
+    #[garde(dive)]
     pub action: Option<wings_api::ScheduleActionInner>,
+    #[garde(skip)]
     pub order: Option<i16>,
 }
 

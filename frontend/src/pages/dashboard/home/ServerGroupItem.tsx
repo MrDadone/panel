@@ -23,6 +23,7 @@ import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
 import ServerItem from '@/pages/dashboard/home/ServerItem.tsx';
 import { useBulkPowerActions } from '@/plugins/useBulkPowerActions.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -163,15 +164,17 @@ export default function ServerGroupItem({
             />
             <Menu shadow='md' width={200} position='bottom-end'>
               <Menu.Target>
-                <ActionIcon
-                  variant='subtle'
-                  color='gray'
-                  size='sm'
-                  disabled={groupActionLoading !== null}
-                  loading={groupActionLoading !== null}
-                >
-                  <FontAwesomeIcon icon={faEllipsisVertical} className='w-3.5 h-3.5' />
-                </ActionIcon>
+                <Tooltip label={t('pages.account.home.tooltip.groupActions', {})}>
+                  <ActionIcon
+                    variant='subtle'
+                    color='gray'
+                    size='sm'
+                    disabled={groupActionLoading !== null}
+                    loading={groupActionLoading !== null}
+                  >
+                    <FontAwesomeIcon icon={faEllipsisVertical} className='w-3.5 h-3.5' />
+                  </ActionIcon>
+                </Tooltip>
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Label>{t('pages.account.home.bulkActions.groupActions', {})}</Menu.Label>
@@ -201,15 +204,21 @@ export default function ServerGroupItem({
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
-            <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('add-server')}>
-              <FontAwesomeIcon icon={faPlus} className='w-3.5 h-3.5' />
-            </ActionIcon>
-            <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('edit')}>
-              <FontAwesomeIcon icon={faPen} className='w-3.5 h-3.5' />
-            </ActionIcon>
-            <ActionIcon variant='subtle' color='red' size='sm' onClick={() => setOpenModal('delete')}>
-              <FontAwesomeIcon icon={faTrash} className='w-3.5 h-3.5' />
-            </ActionIcon>
+            <Tooltip label={t('pages.account.home.tooltip.addServerToGroup', {})}>
+              <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('add-server')}>
+                <FontAwesomeIcon icon={faPlus} className='w-3.5 h-3.5' />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('common.tooltip.edit', {})}>
+              <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('edit')}>
+                <FontAwesomeIcon icon={faPen} className='w-3.5 h-3.5' />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('common.tooltip.delete', {})}>
+              <ActionIcon variant='subtle' color='red' size='sm' onClick={() => setOpenModal('delete')}>
+                <FontAwesomeIcon icon={faTrash} className='w-3.5 h-3.5' />
+              </ActionIcon>
+            </Tooltip>
           </div>
         </div>
 

@@ -4,6 +4,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 mod post {
     use axum::http::StatusCode;
     use chrono::Datelike;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -16,7 +17,6 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Deserialize, Serialize)]
     #[serde(rename_all = "snake_case")]
@@ -28,9 +28,10 @@ mod post {
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         provider: SshKeyProvider,
 
-        #[validate(length(min = 3, max = 31))]
+        #[garde(length(chars, min = 3, max = 31))]
         #[schema(min_length = 3, max_length = 31)]
         username: String,
     }

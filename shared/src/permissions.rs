@@ -5,7 +5,6 @@ use std::{
     sync::{LazyLock, RwLock, RwLockReadGuard},
 };
 use utoipa::ToSchema;
-use validator::ValidationError;
 
 #[derive(ToSchema, Serialize, Clone)]
 pub struct PermissionGroup {
@@ -51,11 +50,12 @@ impl PermissionMap {
     pub fn validate_permissions(
         &self,
         permissions: &[compact_str::CompactString],
-    ) -> Result<(), ValidationError> {
+    ) -> Result<(), garde::Error> {
         for permission in permissions {
             if !self.list().contains(&**permission) {
-                return Err(ValidationError::new("permissions")
-                    .with_message(format!("invalid permission: {permission}").into()));
+                return Err(garde::Error::new(compact_str::format_compact!(
+                    "invalid permission: {permission}"
+                )));
             }
         }
 
@@ -177,7 +177,8 @@ pub fn get_user_permissions() -> RwLockReadGuard<'static, PermissionMap> {
 #[inline]
 pub fn validate_user_permissions(
     permissions: &[compact_str::CompactString],
-) -> Result<(), ValidationError> {
+    _context: &(),
+) -> Result<(), garde::Error> {
     get_user_permissions().validate_permissions(permissions)
 }
 
@@ -440,7 +441,8 @@ pub fn get_admin_permissions() -> RwLockReadGuard<'static, PermissionMap> {
 #[inline]
 pub fn validate_admin_permissions(
     permissions: &[compact_str::CompactString],
-) -> Result<(), ValidationError> {
+    _context: &(),
+) -> Result<(), garde::Error> {
     get_admin_permissions().validate_permissions(permissions)
 }
 
@@ -659,6 +661,7 @@ pub fn get_server_permissions() -> RwLockReadGuard<'static, PermissionMap> {
 #[inline]
 pub fn validate_server_permissions(
     permissions: &[compact_str::CompactString],
-) -> Result<(), ValidationError> {
+    _context: &(),
+) -> Result<(), garde::Error> {
     get_server_permissions().validate_permissions(permissions)
 }

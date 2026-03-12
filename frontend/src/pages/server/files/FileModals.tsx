@@ -9,6 +9,7 @@ import FileSearchModal from '@/pages/server/files/modals/FileSearchModal.tsx';
 import PullFileModal from '@/pages/server/files/modals/PullFileModal.tsx';
 import SftpDetailsModal from '@/pages/server/files/modals/SftpDetailsModal.tsx';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
+import FileDetailsModal from './modals/FileDetailsModal.tsx';
 
 export default function FileModals() {
   const { openModal, modalDirectoryEntries, doCloseModal } = useFileManager();
@@ -18,6 +19,7 @@ export default function FileModals() {
       <FileCopyModal file={modalDirectoryEntries[0]} opened={openModal === 'copy'} onClose={doCloseModal} />
       <FileCopyRemoteModal files={modalDirectoryEntries} opened={openModal === 'copy-remote'} onClose={doCloseModal} />
       <FileRenameModal file={modalDirectoryEntries[0]} opened={openModal === 'rename'} onClose={doCloseModal} />
+      <FileDetailsModal file={modalDirectoryEntries[0]} opened={openModal === 'details'} onClose={doCloseModal} />
       <FilePermissionsModal
         file={modalDirectoryEntries[0]}
         opened={openModal === 'permissions'}

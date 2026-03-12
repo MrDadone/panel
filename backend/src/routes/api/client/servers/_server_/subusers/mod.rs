@@ -89,6 +89,7 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -101,17 +102,18 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(email)]
+        #[garde(email)]
         #[schema(format = "email")]
-        email: String,
-        #[validate(custom(function = "shared::permissions::validate_server_permissions"))]
+        email: compact_str::CompactString,
+        #[garde(custom(shared::permissions::validate_server_permissions))]
         permissions: Vec<compact_str::CompactString>,
+        #[garde(skip)]
         ignored_files: Vec<compact_str::CompactString>,
 
+        #[garde(skip)]
         captcha: Option<String>,
     }
 

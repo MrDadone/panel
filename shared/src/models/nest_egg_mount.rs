@@ -1,4 +1,5 @@
 use crate::{models::InsertQueryBuilder, prelude::*};
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -6,7 +7,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 #[derive(Serialize, Deserialize)]
 pub struct NestEggMount {
@@ -194,7 +194,9 @@ impl NestEggMount {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateNestEggMountOptions {
+    #[garde(skip)]
     pub egg_uuid: uuid::Uuid,
+    #[garde(skip)]
     pub mount_uuid: uuid::Uuid,
 }
 

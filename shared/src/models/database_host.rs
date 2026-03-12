@@ -2,6 +2,7 @@ use crate::{
     models::{InsertQueryBuilder, UpdateQueryBuilder},
     prelude::*,
 };
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type};
 use std::{
@@ -11,7 +12,6 @@ use std::{
 };
 use tokio::sync::Mutex;
 use utoipa::ToSchema;
-use validator::Validate;
 
 pub enum DatabaseTransaction<'a> {
     Mysql(sqlx::Transaction<'a, sqlx::MySql>),
@@ -324,27 +324,34 @@ impl ByUuid for DatabaseHost {
 
 #[derive(ToSchema, Deserialize, Validate)]
 pub struct CreateDatabaseHostOptions {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
+    #[garde(skip)]
     pub r#type: DatabaseType,
 
+    #[garde(skip)]
     pub deployment_enabled: bool,
+    #[garde(skip)]
     pub maintenance_enabled: bool,
 
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub public_host: Option<compact_str::CompactString>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub host: compact_str::CompactString,
+    #[garde(range(min = 1))]
+    #[schema(minimum = 1)]
     pub public_port: Option<u16>,
+    #[garde(range(min = 1))]
+    #[schema(minimum = 1)]
     pub port: u16,
 
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub username: compact_str::CompactString,
-    #[validate(length(min = 1, max = 512))]
+    #[garde(length(chars, min = 1, max = 512))]
     #[schema(min_length = 1, max_length = 512)]
     pub password: compact_str::CompactString,
 }
@@ -403,14 +410,16 @@ impl CreatableModel for DatabaseHost {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UpdateDatabaseHostOptions {
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     name: Option<compact_str::CompactString>,
 
+    #[garde(skip)]
     deployment_enabled: Option<bool>,
+    #[garde(skip)]
     maintenance_enabled: Option<bool>,
 
-    #[validate(length(max = 255))]
+    #[garde(length(max = 255))]
     #[schema(max_length = 255)]
     #[serde(
         default,
@@ -418,7 +427,7 @@ pub struct UpdateDatabaseHostOptions {
         with = "::serde_with::rust::double_option"
     )]
     public_host: Option<Option<compact_str::CompactString>>,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     host: Option<compact_str::CompactString>,
     #[serde(
@@ -426,13 +435,17 @@ pub struct UpdateDatabaseHostOptions {
         skip_serializing_if = "Option::is_none",
         with = "::serde_with::rust::double_option"
     )]
+    #[garde(range(min = 1))]
+    #[schema(minimum = 1)]
     public_port: Option<Option<u16>>,
+    #[garde(range(min = 1))]
+    #[schema(minimum = 1)]
     port: Option<u16>,
 
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     username: Option<compact_str::CompactString>,
-    #[validate(length(min = 1, max = 512))]
+    #[garde(length(chars, min = 1, max = 512))]
     #[schema(min_length = 1, max_length = 512)]
     password: Option<compact_str::CompactString>,
 }

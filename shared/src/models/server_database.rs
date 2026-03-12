@@ -6,8 +6,8 @@ use crate::{
     prelude::*,
     storage::StorageUrlRetriever,
 };
+use garde::Validate;
 use rand::distr::SampleString;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
 use std::{
@@ -15,11 +15,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
-
-pub static DB_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^[a-zA-Z0-9_]+$").expect("Failed to compile database name regex")
-});
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ServerDatabase {
@@ -414,10 +409,12 @@ impl ServerDatabase {
 
 #[derive(Validate)]
 pub struct CreateServerDatabaseOptions<'a> {
+    #[garde(skip)]
     pub server: &'a super::server::Server,
+    #[garde(skip)]
     pub database_host: &'a super::database_host::DatabaseHost,
 
-    #[validate(length(min = 3, max = 31), regex(path = "*DB_NAME_REGEX"))]
+    #[garde(length(chars, min = 3, max = 31), pattern("^[a-zA-Z0-9_]+$"))]
     pub name: compact_str::CompactString,
 }
 
@@ -570,6 +567,7 @@ impl CreatableModel for ServerDatabase {
 
 #[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
 pub struct UpdateServerDatabaseOptions {
+    #[garde(skip)]
     pub locked: Option<bool>,
 }
 

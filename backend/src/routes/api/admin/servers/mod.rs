@@ -76,6 +76,7 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -87,61 +88,72 @@ mod post {
     };
     use std::collections::HashMap;
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Serialize, Deserialize)]
     pub struct PayloadVariable {
-        #[validate(length(min = 1, max = 255))]
+        #[garde(length(chars, min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
         env_variable: String,
-        #[validate(length(max = 4096))]
+        #[garde(length(max = 4096))]
         #[schema(max_length = 4096)]
         value: String,
     }
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         node_uuid: uuid::Uuid,
+        #[garde(skip)]
         owner_uuid: uuid::Uuid,
+        #[garde(skip)]
         egg_uuid: uuid::Uuid,
+        #[garde(skip)]
         backup_configuration_uuid: Option<uuid::Uuid>,
 
+        #[garde(skip)]
         allocation_uuid: Option<uuid::Uuid>,
+        #[garde(skip)]
         allocation_uuids: Vec<uuid::Uuid>,
 
+        #[garde(skip)]
         start_on_completion: bool,
+        #[garde(skip)]
         skip_installer: bool,
 
-        #[validate(length(max = 255))]
+        #[garde(length(max = 255))]
         #[schema(max_length = 255)]
         external_id: Option<compact_str::CompactString>,
-        #[validate(length(min = 3, max = 255))]
+        #[garde(length(chars, min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: compact_str::CompactString,
-        #[validate(length(max = 1024))]
+        #[garde(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
 
-        #[validate(nested)]
+        #[garde(dive)]
         limits: shared::models::server::AdminApiServerLimits,
+        #[garde(inner(range(min = 0)))]
         pinned_cpus: Vec<i16>,
 
-        #[validate(length(min = 1, max = 8192))]
+        #[garde(length(chars, min = 1, max = 8192))]
         #[schema(min_length = 1, max_length = 8192)]
         startup: compact_str::CompactString,
-        #[validate(length(min = 2, max = 255))]
+        #[garde(length(chars, min = 2, max = 255))]
         #[schema(min_length = 2, max_length = 255)]
         image: compact_str::CompactString,
+        #[garde(skip)]
         #[schema(value_type = Option<String>)]
         timezone: Option<chrono_tz::Tz>,
 
+        #[garde(skip)]
         hugepages_passthrough_enabled: bool,
+        #[garde(skip)]
         kvm_passthrough_enabled: bool,
 
-        #[validate(nested)]
+        #[garde(dive)]
         feature_limits: shared::models::server::ApiServerFeatureLimits,
         #[schema(inline)]
-        #[validate(nested)]
+        #[garde(dive)]
         variables: Vec<PayloadVariable>,
     }
 

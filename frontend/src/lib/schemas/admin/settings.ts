@@ -4,7 +4,7 @@ import { nullableString } from '@/lib/transformers.ts';
 export const adminSettingsApplicationSchema = z.object({
   name: z.string().min(1).max(64),
   icon: z.string().min(1).max(255),
-  url: z.url(),
+  url: z.url().max(255),
   language: z.string(),
   twoFactorRequirement: z.enum(['admins', 'all_users', 'none']),
   telemetryEnabled: z.boolean(),
@@ -17,27 +17,27 @@ export const adminSettingsCaptchaProviderNoneSchema = z.object({
 
 export const adminSettingsCaptchaProviderTurnstileSchema = z.object({
   type: z.literal('turnstile'),
-  siteKey: z.string(),
-  secretKey: z.string(),
+  siteKey: z.string().min(1).max(255),
+  secretKey: z.string().min(1).max(255),
 });
 
 export const adminSettingsCaptchaProviderRecaptchaSchema = z.object({
   type: z.literal('recaptcha'),
-  siteKey: z.string(),
-  secretKey: z.string(),
+  siteKey: z.string().min(1).max(255),
+  secretKey: z.string().min(1).max(255),
   v3: z.boolean(),
 });
 
 export const adminSettingsCaptchaProviderHcaptchaSchema = z.object({
   type: z.literal('hcaptcha'),
-  siteKey: z.string(),
-  secretKey: z.string(),
+  siteKey: z.string().min(1).max(255),
+  secretKey: z.string().min(1).max(255),
 });
 
 export const adminSettingsCaptchaProviderFriendlyCaptchaSchema = z.object({
   type: z.literal('friendly_captcha'),
-  siteKey: z.string(),
-  apiKey: z.string(),
+  siteKey: z.string().min(1).max(255),
+  apiKey: z.string().min(1).max(255),
 });
 
 export const adminSettingsCaptchaProviderSchema = z.discriminatedUnion('type', [
@@ -54,27 +54,27 @@ export const adminSettingsEmailNoneSchema = z.object({
 
 export const adminSettingsEmailSmtpSchema = z.object({
   type: z.literal('smtp'),
-  host: z.string(),
-  port: z.number(),
-  username: z.preprocess(nullableString, z.string().nullable()),
-  password: z.preprocess(nullableString, z.string().nullable()),
+  host: z.string().min(1).max(255),
+  port: z.number().min(1),
+  username: z.preprocess(nullableString, z.string().min(1).max(255).nullable()),
+  password: z.preprocess(nullableString, z.string().min(1).max(255).nullable()),
   useTls: z.boolean(),
-  fromAddress: z.email(),
-  fromName: z.preprocess(nullableString, z.string().nullable()),
+  fromAddress: z.email().max(255),
+  fromName: z.preprocess(nullableString, z.string().min(1).max(255).nullable()),
 });
 
 export const adminSettingsEmailSendmailSchema = z.object({
   type: z.literal('sendmail'),
-  command: z.string(),
-  fromAddress: z.email(),
-  fromName: z.preprocess(nullableString, z.string().nullable()),
+  command: z.string().min(1).max(255),
+  fromAddress: z.email().max(255),
+  fromName: z.preprocess(nullableString, z.string().min(1).max(255).nullable()),
 });
 
 export const adminSettingsEmailFilesystemSchema = z.object({
   type: z.literal('filesystem'),
-  path: z.string(),
-  fromAddress: z.email(),
-  fromName: z.preprocess(nullableString, z.string().nullable()),
+  path: z.string().min(1).max(255),
+  fromAddress: z.email().max(255),
+  fromName: z.preprocess(nullableString, z.string().min(1).max(255).nullable()),
 });
 
 export const adminSettingsEmailSchema = z.discriminatedUnion('type', [
@@ -85,7 +85,7 @@ export const adminSettingsEmailSchema = z.discriminatedUnion('type', [
 ]);
 
 export const adminSettingsEmailTestSchema = z.object({
-  email: z.email(),
+  email: z.email().max(255),
 });
 
 export const adminSettingsServerSchema = z.object({
@@ -96,6 +96,7 @@ export const adminSettingsServerSchema = z.object({
   allowOverwritingCustomDockerImage: z.boolean(),
   allowEditingStartupCommand: z.boolean(),
   allowViewingInstallationLogs: z.boolean(),
+  allowAcknowledgingInstallationFailure: z.boolean(),
   allowViewingTransferProgress: z.boolean(),
 });
 
@@ -109,17 +110,17 @@ export const adminSettingsActivitySchema = z.object({
 
 export const adminSettingsStorageFilesystemSchema = z.object({
   type: z.literal('filesystem'),
-  path: z.string().startsWith('/'),
+  path: z.string().min(1).max(255),
 });
 
 export const adminSettingsStorageS3Schema = z.object({
   type: z.literal('s3'),
-  accessKey: z.string(),
-  secretKey: z.string(),
-  bucket: z.string(),
-  region: z.string(),
-  publicUrl: z.string(),
-  endpoint: z.string(),
+  accessKey: z.string().min(1).max(512),
+  secretKey: z.string().min(1).max(512),
+  bucket: z.string().min(1).max(63),
+  region: z.string().min(1).max(63),
+  publicUrl: z.url().max(255),
+  endpoint: z.string().min(1).max(255),
   pathStyle: z.boolean(),
 });
 
@@ -130,5 +131,5 @@ export const adminSettingsStorageSchema = z.discriminatedUnion('type', [
 
 export const adminSettingsWebauthnSchema = z.object({
   rpId: z.string().min(1).max(255),
-  rpOrigin: z.url(),
+  rpOrigin: z.url().max(255),
 });

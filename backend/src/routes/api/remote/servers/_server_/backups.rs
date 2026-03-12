@@ -2,6 +2,7 @@ use super::State;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod post {
+    use garde::Validate;
     use reqwest::StatusCode;
     use serde::{Deserialize, Serialize};
     use shared::{
@@ -13,16 +14,17 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         schedule_uuid: Option<uuid::Uuid>,
 
-        #[validate(length(min = 1, max = 255))]
+        #[garde(length(chars, min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
         name: Option<compact_str::CompactString>,
 
+        #[garde(skip)]
         ignored_files: Vec<compact_str::CompactString>,
     }
 

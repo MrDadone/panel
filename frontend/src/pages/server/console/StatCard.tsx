@@ -32,7 +32,7 @@ export default function StatCard({
       </ThemeIcon>
       <div className='flex flex-col ml-4 w-full'>
         <div className='w-full flex justify-between'>
-          <span className='text-sm text-gray-400 font-bold'>{label}</span>
+          <span className='text-sm text-left text-gray-400 font-bold'>{label}</span>
           {popover && (
             <Popover position='bottom' withArrow shadow='md'>
               <Popover.Target>
