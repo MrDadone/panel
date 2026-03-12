@@ -1,4 +1,5 @@
 import { SelectProps } from '@mantine/core';
+import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import getServers from '@/api/server/getServers.ts';
 import Select from '@/elements/input/Select.tsx';
@@ -36,7 +37,7 @@ function ServerSwitcherOption({ server }: { server: Server }) {
   );
 }
 
-export default function ServerSwitcher({ className }: { className?: string }) {
+export default function ServerSwitcher({ className, isServer }: { className?: string; isServer?: boolean }) {
   const currentServer = useServerStore((state) => state.server);
   const location = useLocation();
   const navigate = useNavigate();
@@ -54,12 +55,16 @@ export default function ServerSwitcher({ className }: { className?: string }) {
     return <ServerSwitcherOption server={server} />;
   };
 
-  const handleChange = (value: string | null) => {
-    if (value) {
-      const currentPath = location.pathname.replace(/^\/server\/[^/]+/, '');
-      navigate(`/server/${value}${currentPath}${location.search}${location.hash}`);
-    }
-  };
+  const handleChange = useCallback(
+    (value: string | null) => {
+      if (value) {
+        const currentPath = location.pathname.replace(/^\/server\/[^/]+/, '');
+        if (isServer) navigate(`/server/${value}${currentPath}${location.search}${location.hash}`);
+        else navigate(`/server/${value}`);
+      }
+    },
+    [location, isServer],
+  );
 
   return (
     <Select
