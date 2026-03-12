@@ -64,7 +64,7 @@ export default function ServerSwitcher({ className }: { className?: string }) {
   return (
     <Select
       className={className}
-      placeholder={currentServer?.name}
+      placeholder={currentServer.name ? currentServer.name : 'Select a Server'}
       data={otherServers.map((server) => ({
         label: server.name,
         value: server.uuid,

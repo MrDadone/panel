@@ -24,7 +24,7 @@ export default function LoginOAuth() {
 
   return (
     <AuthWrapper>
-      <Stack>
+      <Stack className='w-full'>
         {error && (
           <Alert
             icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
@@ -36,15 +36,14 @@ export default function LoginOAuth() {
             {error}
           </Alert>
         )}
+
+        <div>
+          <Title order={2}>Authenticate with OAuth</Title>
+          <Text className='text-neutral-400!'>Choose any of the providers below to login</Text>
+        </div>
+
         <Card>
           <Stack>
-            <Title order={2} ta='center'>
-              Authenticate with OAuth
-            </Title>
-            <Text c='dimmed' ta='center'>
-              Choose any of the providers below to login
-            </Text>
-
             {oAuthProviders.map((oAuthProvider) => (
               <a key={oAuthProvider.uuid} href={`/api/auth/oauth/redirect/${oAuthProvider.uuid}`}>
                 <Button leftSection={<FontAwesomeIcon icon={faFingerprint} />} size='md' fullWidth>
