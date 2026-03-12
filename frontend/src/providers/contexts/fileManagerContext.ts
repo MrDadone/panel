@@ -55,6 +55,8 @@ export interface FileManagerContextType {
 
   clickOnce: boolean;
   setClickOnce: (state: boolean) => void;
+  preferPhysicalSize: boolean;
+  setPreferPhysicalSize: (state: boolean) => void;
   editorMinimap: boolean;
   setEditorMinimap: (state: boolean) => void;
   editorLineOverflow: boolean;

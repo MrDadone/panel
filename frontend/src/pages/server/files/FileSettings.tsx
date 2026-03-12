@@ -9,11 +9,15 @@ import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 export default function FileSettings() {
   const { t } = useTranslations();
-  const { clickOnce, setClickOnce } = useFileManager();
+  const { clickOnce, preferPhysicalSize, setClickOnce, setPreferPhysicalSize } = useFileManager();
 
   useEffect(() => {
     localStorage.setItem('file_click_once', String(clickOnce));
   }, [clickOnce]);
+
+  useEffect(() => {
+    localStorage.setItem('file_prefer_physical_size', String(preferPhysicalSize));
+  }, [preferPhysicalSize]);
 
   return (
     <Popover position='bottom' withArrow shadow='md'>
@@ -23,11 +27,30 @@ export default function FileSettings() {
         </Button>
       </Popover.Target>
       <Popover.Dropdown>
-        <Checkbox
-          label={t('pages.server.files.settings.clickOnce', {})}
-          checked={clickOnce}
-          onChange={(e) => setClickOnce(e.target.checked)}
-        />
+        <div className='flex flex-col space-y-2'>
+          {window.extensionContext.extensionRegistry.pages.server.files.fileSettings.prependedComponents.map(
+            (Component, i) => (
+              <Component key={`files-settings-prepended-${i}`} />
+            ),
+          )}
+
+          <Checkbox
+            label={t('pages.server.files.settings.clickOnce', {})}
+            checked={clickOnce}
+            onChange={(e) => setClickOnce(e.target.checked)}
+          />
+          <Checkbox
+            label={t('pages.server.files.settings.preferPhysicalSize', {})}
+            checked={preferPhysicalSize}
+            onChange={(e) => setPreferPhysicalSize(e.target.checked)}
+          />
+
+          {window.extensionContext.extensionRegistry.pages.server.files.fileSettings.appendedComponents.map(
+            (Component, i) => (
+              <Component key={`files-settings-appended-${i}`} />
+            ),
+          )}
+        </div>
       </Popover.Dropdown>
     </Popover>
   );

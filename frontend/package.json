@@ -28,7 +28,7 @@
     "@fortawesome/free-brands-svg-icons": "^7.2.0",
     "@fortawesome/free-solid-svg-icons": "^7.2.0",
     "@fortawesome/react-fontawesome": "^3.2.0",
-    "@friendlycaptcha/sdk": "^0.1.37",
+    "@friendlycaptcha/sdk": "^0.2.0",
     "@hcaptcha/react-hcaptcha": "^2.0.2",
     "@mantine/core": "^8.3.16",
     "@mantine/dates": "^8.3.16",
@@ -72,7 +72,7 @@
     "react-google-recaptcha": "^3.1.0",
     "react-markdown": "^10.1.0",
     "react-qr-code": "^2.0.18",
-    "react-rnd": "^10.5.2",
+    "react-rnd": "^10.5.3",
     "react-router": "^7.13.1",
     "react-spinners": "^0.17.0",
     "react-zoom-pan-pinch": "^3.7.0",
@@ -89,6 +89,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.5",
+    "@rolldown/plugin-babel": "^0.2.0",
+    "@types/events": "^3.0.3",
     "@types/grecaptcha": "^3.0.9",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.12.0",
@@ -96,8 +98,8 @@
     "@types/react-dom": "^19.2.3",
     "@types/react-google-recaptcha": "^2.1.9",
     "@types/semver": "^7.7.1",
-    "@typescript/native-preview": "7.0.0-dev.20260307.1",
-    "@vitejs/plugin-react": "^5.1.4",
+    "@typescript/native-preview": "7.0.0-dev.20260303.1",
+    "@vitejs/plugin-react": "6.0.0-beta.0",
     "babel-plugin-react-compiler": "^1.0.0",
     "globals": "^17.4.0",
     "monaco-editor": "^0.55.1",
@@ -105,10 +107,9 @@
     "typedoc": "^0.28.17",
     "typedoc-plugin-rename-defaults": "^0.7.3",
     "typedoc-plugin-zod": "^1.4.3",
-    "vite": "npm:rolldown-vite@^7.3.1",
+    "vite": "8.0.0-beta.18",
     "vite-multiple-assets": "^2.2.6",
-    "vite-plugin-static-copy": "^3.2.0",
-    "vite-tsconfig-paths": "^6.1.1"
+    "vite-plugin-static-copy": "^3.2.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

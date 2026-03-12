@@ -1279,6 +1279,7 @@ impl Server {
                 },
                 suspended: self.suspended,
                 invocation: self.startup,
+                entrypoint: None,
                 skip_egg_scripts: false,
                 environment: variables
                     .into_iter()

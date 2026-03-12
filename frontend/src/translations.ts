@@ -871,6 +871,7 @@ const baseTranslations = defineTranslations({
           },
           settings: {
             clickOnce: 'Click once to open file or folder',
+            preferPhysicalSize: 'Show physical size instead of logical size',
             editorMinimap: 'Show File Minimap',
             editorLineOverflow: 'Wrap Line Overflow',
             imageViewerSmoothing: 'Smoothen Image (Anti-Aliasing)',
@@ -953,7 +954,8 @@ const baseTranslations = defineTranslations({
               title: 'File Details',
               path: 'Path',
               mode: 'Mode',
-              size: 'Size',
+              logicalSize: 'Logical Size',
+              physicalSize: 'Physical Size',
               mimeType: 'MIME Type',
               lastModifiedAt: 'Last Modified At',
               createdAt: 'Created At',

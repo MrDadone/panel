@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import type { LanguageData } from 'shared';
 import { defineConfig } from 'vite';
 import dynamicPublicDirectory from 'vite-multiple-assets';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 // Minifies all JSON translation files in the dist/translations/ directory after build
 const minifyTranslations = () => {
@@ -81,17 +81,16 @@ const minifyTranslations = () => {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react({
-      babel: {
-        overrides: [
-          {
-            include: ['./src/elements/**/*.{ts,tsx}', './src/pages/**/*.{ts,tsx}'],
-            plugins: ['babel-plugin-react-compiler'],
-          },
-        ],
-      },
+    react(),
+    babel({
+      presets: [reactCompilerPreset()],
+      //overrides: [
+      //  {
+      //    include: ['./src/elements/**/*.{ts,tsx}', './src/pages/**/*.{ts,tsx}'],
+      //    plugins: ['babel-plugin-react-compiler'],
+      //  },
+      //],
     }),
-    tsconfigPaths(),
     tailwindcss(),
     dynamicPublicDirectory(['public/**', 'extensions/*/public/**'], {
       dst(path) {
@@ -153,6 +152,9 @@ export default defineConfig({
       '/avatars': `http://localhost:${process.env.BACKEND_PORT ?? 8000}`,
     },
     allowedHosts: true,
+  },
+  resolve: {
+    tsconfigPaths: true,
   },
   publicDir: false,
 });

@@ -7,7 +7,7 @@ export function useServerStats(server: z.infer<typeof adminServerSchema> | Serve
   const fetchNodeResources = useUserStore((state) => state.fetchNodeResources);
 
   const stats = useUserStore((state) => {
-    const _tick = state.resourceUsageTick;
+    console.debug('useServerStats - resourceUsageTick:', state.resourceUsageTick);
     return state.getServerResourceUsage(server.uuid) || null;
   });
 
