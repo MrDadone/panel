@@ -81,8 +81,13 @@ export default function DatabaseHostCreateOrUpdate({
   }, [contextDatabaseHost]);
 
   const doTest = () => {
+    if (!contextDatabaseHost) {
+      return;
+    }
+
     setLoading(true);
-    testDatabaseHost(contextDatabaseHost!.uuid)
+
+    testDatabaseHost(contextDatabaseHost.uuid)
       .then(() => {
         addToast('Test successfully completed', 'success');
       })

@@ -71,19 +71,12 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                         return Ok(1);
                     }
                 };
-                let source_app_key = match std::env::var("APP_KEY")
-                    .map(|v| BASE64_ENGINE.decode(v.trim_start_matches("base64:")))
-                {
-                    Ok(Ok(value)) => Arc::new(value),
-                    Ok(Err(err)) => {
-                        eprintln!(
-                            "{}: {:#?}",
-                            "failed to read pterodactyl environment APP_KEY".red(),
-                            err
-                        );
-
-                        return Ok(1);
-                    }
+                let source_app_key = match std::env::var("APP_KEY").map(|v| {
+                    BASE64_ENGINE
+                        .decode(v.trim_start_matches("base64:"))
+                        .unwrap_or_else(|_| v.as_bytes().to_vec())
+                }) {
+                    Ok(value) => Arc::new(value),
                     Err(err) => {
                         eprintln!(
                             "{}: {:#?}",

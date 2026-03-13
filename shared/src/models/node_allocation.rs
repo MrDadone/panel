@@ -90,6 +90,58 @@ impl NodeAllocation {
         Ok(())
     }
 
+    pub async fn get_random(
+        database: &crate::database::Database,
+        node_uuid: uuid::Uuid,
+        start_port: u16,
+        end_port: u16,
+        amount: i64,
+    ) -> Result<Vec<uuid::Uuid>, crate::database::DatabaseError> {
+        let rows = sqlx::query(
+            r#"
+            WITH eligible_ips AS (
+                SELECT node_allocations.ip
+                FROM node_allocations
+                LEFT JOIN server_allocations ON server_allocations.allocation_uuid = node_allocations.uuid
+                WHERE
+                    node_allocations.node_uuid = $1
+                    AND node_allocations.port BETWEEN $2 AND $3
+                    AND server_allocations.uuid IS NULL
+                GROUP BY node_allocations.ip
+                HAVING COUNT(*) >= $4
+            ),
+            random_ip AS (
+                SELECT ip FROM eligible_ips ORDER BY RANDOM() LIMIT 1
+            )
+            SELECT node_allocations.uuid
+            FROM node_allocations
+            LEFT JOIN server_allocations ON server_allocations.allocation_uuid = node_allocations.uuid
+            WHERE
+                node_allocations.node_uuid = $1
+                AND node_allocations.port BETWEEN $2 AND $3
+                AND server_allocations.uuid IS NULL
+                AND node_allocations.ip = (SELECT ip FROM random_ip)
+            ORDER BY RANDOM()
+            LIMIT $4
+            "#,
+        )
+        .bind(node_uuid)
+        .bind(start_port as i32)
+        .bind(end_port as i32)
+        .bind(amount)
+        .fetch_all(database.write())
+        .await?;
+
+        if rows.len() != amount as usize {
+            return Err(anyhow::anyhow!("only found {} available allocations", rows.len()).into());
+        }
+
+        Ok(rows
+            .into_iter()
+            .map(|row| row.get::<uuid::Uuid, _>("uuid"))
+            .collect())
+    }
+
     pub async fn by_node_uuid_uuid(
         database: &crate::database::Database,
         node_uuid: uuid::Uuid,

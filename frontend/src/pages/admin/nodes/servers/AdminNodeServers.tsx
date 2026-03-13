@@ -10,11 +10,12 @@ import Table from '@/elements/Table.tsx';
 import { ObjectSet } from '@/lib/objectSet.ts';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
 import ServerRow from '@/pages/admin/servers/ServerRow.tsx';
-import BulkActionBar from '@/pages/dashboard/home/BulkActionBar.tsx';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
+import BulkActionBar from './BulkActionBar.tsx';
+import ServersTransferModal from './modals/ServersTransferModal.tsx';
 
 export default function AdminNodeServers({ node }: { node: Node }) {
   const { t, tItem } = useTranslations();
@@ -25,6 +26,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
   const [sKeyPressed, setSKeyPressed] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState<ServerPowerAction | null>(null);
   const [allActionLoading, setAllActionLoading] = useState<ServerPowerAction | null>(null);
+  const [openModal, setOpenModal] = useState<'transfer' | null>(null);
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getNodeServers(node.uuid, page, search),
@@ -89,6 +91,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
 
   const handleBulkPowerAction = async (action: ServerPowerAction) => {
     setBulkActionLoading(action);
+
     sendNodeServersPowerAction(node.uuid, selectedServers.keys(), action)
       .then((successful) => {
         const failed = selectedServers.size - successful;
@@ -131,6 +134,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
 
   const handleAllPowerAction = async (action: ServerPowerAction) => {
     setAllActionLoading(action);
+
     sendNodeServersPowerAction(node.uuid, [], action)
       .then((successful) => {
         const failed = nodeServers.total - successful;
@@ -189,6 +193,14 @@ export default function AdminNodeServers({ node }: { node: Node }) {
 
   return (
     <>
+      <ServersTransferModal
+        contextNode={node}
+        servers={selectedServers}
+        clearSelected={() => setSelectedServers(new ObjectSet('uuid'))}
+        opened={openModal === 'transfer'}
+        onClose={() => setOpenModal(null)}
+      />
+
       <AdminSubContentContainer
         title='Node Servers'
         titleOrder={2}
@@ -219,6 +231,13 @@ export default function AdminNodeServers({ node }: { node: Node }) {
               disabled={(allActionLoading !== null && allActionLoading !== 'stop') || nodeServers.total === 0}
             >
               {t('pages.server.console.power.stop', {})} ({nodeServers.total})
+            </Button>
+            <Button
+              color='gray'
+              onClick={() => setOpenModal('transfer')}
+              disabled={allActionLoading !== null || nodeServers.total === 0}
+            >
+              Transfer ({nodeServers.total})
             </Button>
           </Group>
         }
@@ -253,7 +272,8 @@ export default function AdminNodeServers({ node }: { node: Node }) {
       <BulkActionBar
         selectedCount={selectedServers.size}
         onClear={() => setSelectedServers(new ObjectSet('uuid'))}
-        onAction={handleBulkPowerAction}
+        onPowerAction={handleBulkPowerAction}
+        onTransfer={() => setOpenModal('transfer')}
         loading={bulkActionLoading}
       />
     </>

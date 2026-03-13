@@ -451,6 +451,27 @@ impl ServerBackup {
         })
     }
 
+    pub async fn all_uuids_by_server_uuid(
+        database: &crate::database::Database,
+        server_uuid: uuid::Uuid,
+    ) -> Result<Vec<uuid::Uuid>, crate::database::DatabaseError> {
+        let rows = sqlx::query(
+            r#"
+            SELECT server_backups.uuid
+            FROM server_backups
+            WHERE server_backups.server_uuid = $1 AND server_backups.deleted IS NULL
+            "#,
+        )
+        .bind(server_uuid)
+        .fetch_all(database.read())
+        .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|row| row.get::<uuid::Uuid, _>("uuid"))
+            .collect())
+    }
+
     pub async fn all_by_server_uuid(
         database: &crate::database::Database,
         server_uuid: uuid::Uuid,

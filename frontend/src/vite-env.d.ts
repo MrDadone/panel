@@ -368,6 +368,12 @@ declare global {
     created: Date;
   }
 
+  interface TransferProgress {
+    archiveProgress: number;
+    networkProgress: number;
+    total: number;
+  }
+
   interface ImagePullProgress {
     status: 'pulling' | 'extracting';
     progress: number;

@@ -3,14 +3,12 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod post {
     use axum::http::StatusCode;
-    use compact_str::ToCompactString;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        jwt::BasePayload,
         models::{
-            ByUuid, EventEmittingModel, admin_activity::GetAdminActivityLogger, node::Node,
-            server::GetServer, user::GetPermissionManager,
+            ByUuid, admin_activity::GetAdminActivityLogger, node::Node, server::GetServer,
+            user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
@@ -34,7 +32,7 @@ mod post {
     struct Response {}
 
     #[utoipa::path(post, path = "/", responses(
-        (status = OK, body = inline(Response)),
+        (status = ACCEPTED, body = inline(Response)),
         (status = CONFLICT, body = ApiError),
         (status = NOT_FOUND, body = ApiError),
     ), params(
@@ -75,118 +73,38 @@ mod post {
             }
         };
 
-        let mut transaction = state.database.write().begin().await?;
-
-        let destination_allocation_uuid = if let Some(allocation_uuid) = data.allocation_uuid {
-            Some(
-                sqlx::query!(
-                    "INSERT INTO server_allocations (server_uuid, allocation_uuid)
-                    VALUES ($1, $2)
-                    ON CONFLICT DO NOTHING
-                    RETURNING uuid",
-                    server.uuid,
-                    allocation_uuid
-                )
-                .fetch_one(&mut *transaction)
-                .await?
-                .uuid,
-            )
-        } else {
-            None
-        };
-
-        sqlx::query!(
-            "UPDATE servers
-            SET destination_node_uuid = $2, destination_allocation_uuid = $3
-            WHERE servers.uuid = $1",
-            server.uuid,
-            destination_node.uuid,
-            destination_allocation_uuid
-        )
-        .execute(&mut *transaction)
-        .await?;
-
-        if !data.allocation_uuids.is_empty() {
-            sqlx::query!(
-                "INSERT INTO server_allocations (server_uuid, allocation_uuid)
-                SELECT $1, UNNEST($2::uuid[])
-                ON CONFLICT DO NOTHING",
-                server.uuid,
-                &data.allocation_uuids
-            )
-            .execute(&mut *transaction)
-            .await?;
-        }
-
-        let token = destination_node.create_jwt(
-            &state.database,
-            &state.jwt,
-            &BasePayload {
-                issuer: "panel".into(),
-                subject: Some(server.uuid.to_string()),
-                audience: Vec::new(),
-                expiration_time: Some(chrono::Utc::now().timestamp() + 600),
-                not_before: None,
-                issued_at: Some(chrono::Utc::now().timestamp()),
-                jwt_id: server.node.uuid.to_string(),
-            },
-        )?;
-
-        transaction.commit().await?;
-
-        let mut url = destination_node.url.clone();
-        url.set_path("/api/transfers");
-
-        if let Err(err) = server
-            .node
-            .fetch_cached(&state.database)
-            .await?
-            .api_client(&state.database)
-            .await?
-            .post_servers_server_transfer(
-                server.uuid,
-                &wings_api::servers_server_transfer::post::RequestBody {
-                    url: url.to_compact_string(),
-                    token: format!("Bearer {token}").into(),
+        let server_uuid = server.uuid;
+        let destination_node_uuid = destination_node.uuid;
+        server
+            .0
+            .transfer(
+                &state,
+                shared::models::server::ServerTransferOptions {
+                    destination_node,
+                    allocation_uuid: data.allocation_uuid,
+                    allocation_uuids: data.allocation_uuids,
                     backups: data.backups,
-                    delete_backups: data.delete_source_backups,
+                    delete_source_backups: data.delete_source_backups,
                     archive_format: data.archive_format,
                     compression_level: data.compression_level,
-                    multiplex_streams: data.multiplex_channels,
+                    multiplex_channels: data.multiplex_channels,
                 },
             )
-            .await
-        {
-            tracing::error!("failed to transfer server to node: {:?}", err);
-
-            return ApiResponse::error("failed to transfer server to node")
-                .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                .ok();
-        }
+            .await?;
 
         activity_logger
             .log(
                 "server:transfer",
                 serde_json::json!({
-                    "uuid": server.uuid,
-                    "destination_node_uuid": destination_node.uuid,
-                    "allocation_uuid": destination_allocation_uuid,
-                    "allocation_uuids": data.allocation_uuids,
+                    "uuid": server_uuid,
+                    "destination_node_uuid": destination_node_uuid,
                 }),
             )
             .await;
 
-        shared::models::server::Server::get_event_emitter().emit(
-            state.0,
-            shared::models::server::ServerEvent::TransferStarted {
-                server: Box::new(server.0),
-                destination_node: Box::new(destination_node),
-                destination_allocation: destination_allocation_uuid,
-                destination_allocations: data.allocation_uuids,
-            },
-        );
-
-        ApiResponse::new_serialized(Response {}).ok()
+        ApiResponse::new_serialized(Response {})
+            .with_status(StatusCode::ACCEPTED)
+            .ok()
     }
 }
 

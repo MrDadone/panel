@@ -1,5 +1,6 @@
 import {
   faArchive,
+  faArrowUpLong,
   faCog,
   faComputer,
   faExternalLink,
@@ -24,6 +25,7 @@ import AdminNodeMounts from './mounts/AdminNodeMounts.tsx';
 import NodeCreateOrUpdate from './NodeCreateOrUpdate.tsx';
 import AdminNodeServers from './servers/AdminNodeServers.tsx';
 import AdminNodeStatistics from './statistics/AdminNodeStatistics.tsx';
+import AdminNodeTransfers from './transfers/AdminNodeTransfers.tsx';
 
 export default function NodeView() {
   const params = useParams<'id'>();
@@ -99,7 +101,14 @@ export default function NodeView() {
             icon: faComputer,
             path: `/servers`,
             element: <AdminNodeServers node={node} />,
-            permission: 'nodes.read',
+            permission: 'servers.read',
+          },
+          {
+            name: 'Outgoing Transfers',
+            icon: faArrowUpLong,
+            path: `/transfers`,
+            element: <AdminNodeTransfers node={node} />,
+            permission: 'nodes.transfers',
           },
         ]}
       />

@@ -1,13 +1,9 @@
 use super::State;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-mod power;
-mod resources;
-mod transfer;
-mod transfers;
-
 mod get {
-    use axum::{extract::Query, http::StatusCode};
+    use axum::extract::Query;
+    use indexmap::IndexMap;
     use serde::Serialize;
     use shared::{
         ApiError, GetState,
@@ -23,11 +19,12 @@ mod get {
     struct Response {
         #[schema(inline)]
         servers: Pagination<shared::models::server::AdminApiServer>,
+        transfers: IndexMap<uuid::Uuid, wings_api::TransferProgress>,
     }
 
     #[utoipa::path(get, path = "/", responses(
         (status = OK, body = inline(Response)),
-        (status = NOT_FOUND, body = ApiError),
+        (status = UNAUTHORIZED, body = ApiError),
     ), params(
         (
             "node" = uuid::Uuid,
@@ -55,22 +52,24 @@ mod get {
         node: GetNode,
         Query(params): Query<PaginationParamsWithSearch>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&params) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
+        permissions.has_admin_permission("nodes.transfers")?;
 
-        permissions.has_admin_permission("servers.read")?;
-
-        let servers = Server::by_node_uuid_with_pagination(
-            &state.database,
-            node.uuid,
-            params.page,
-            params.per_page,
-            params.search.as_deref(),
-        )
-        .await?;
+        let (servers, transfers) = tokio::try_join!(
+            Server::by_node_uuid_transferring_with_pagination(
+                &state.database,
+                node.uuid,
+                params.page,
+                params.per_page,
+                params.search.as_deref()
+            ),
+            async {
+                Ok(node
+                    .api_client(&state.database)
+                    .await?
+                    .get_transfers()
+                    .await?)
+            },
+        )?;
 
         let storage_url_retriever = state.storage.retrieve_urls().await?;
 
@@ -80,6 +79,7 @@ mod get {
                     server.into_admin_api_object(&state.database, &storage_url_retriever)
                 })
                 .await?,
+            transfers,
         })
         .ok()
     }
@@ -87,10 +87,6 @@ mod get {
 
 pub fn router(state: &State) -> OpenApiRouter<State> {
     OpenApiRouter::new()
-        .nest("/power", power::router(state))
-        .nest("/transfer", transfer::router(state))
-        .nest("/resources", resources::router(state))
-        .nest("/transfers", transfers::router(state))
         .routes(routes!(get::route))
         .with_state(state.clone())
 }

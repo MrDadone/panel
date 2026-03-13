@@ -27,14 +27,18 @@ export default function NodeMountAddModal({ node, opened, onClose }: ModalProps 
   }, [opened]);
 
   const doAdd = () => {
+    if (!selectedMount) {
+      return;
+    }
+
     setLoading(true);
 
-    createNodeMount(node.uuid, selectedMount!.uuid)
+    createNodeMount(node.uuid, selectedMount.uuid)
       .then(() => {
         addToast('Node Mount added.', 'success');
 
         onClose();
-        addNodeMount({ mount: selectedMount!, created: new Date() });
+        addNodeMount({ mount: selectedMount, created: new Date() });
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');

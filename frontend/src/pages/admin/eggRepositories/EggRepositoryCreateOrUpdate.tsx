@@ -64,8 +64,13 @@ export default function EggRepositoryCreateOrUpdate({
   }, [contextEggRepository]);
 
   const doSync = () => {
+    if (!contextEggRepository) {
+      return;
+    }
+
     setLoading(true);
-    syncEggRepository(contextEggRepository!.uuid)
+
+    syncEggRepository(contextEggRepository.uuid)
       .then((found) => {
         addToast(`Egg Repository synchronised, found ${found} Egg${found === 1 ? '' : 's'}.`, 'success');
       })
