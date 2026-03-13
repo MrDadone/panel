@@ -1,9 +1,9 @@
-name: Release Nightly
+name: Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "release-*"
 
 env:
   BIN_NAME: panel-rs
@@ -157,6 +157,42 @@ jobs:
           name: ${{ env.PROJECT_NAME }}-${{ matrix.build }}
           path: dist/${{ env.BIN_NAME }}-${{ matrix.build }}${{ matrix.binary_suffix }}
 
+  publish-draft-release:
+    name: Publish Draft Release
+    needs: [dist]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Determine if pre-release and strip prefix
+        id: release_info
+        run: |
+          RAW_TAG="${{ github.ref_name }}"
+          VERSION="${RAW_TAG#release-}"
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          if [[ "$VERSION" == *-* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.release_info.outputs.version }}
+          draft: true
+          prerelease: ${{ steps.release_info.outputs.is_prerelease == 'true' }}
+          generate_release_notes: true
+          files: artifacts/*/*
+
   create-multiarch-image:
     name: Create multi-arch Docker image
     needs: [dist]
@@ -197,13 +233,40 @@ jobs:
 
           chmod +x .docker/*/panel-rs
 
+      - name: Extract version and determine tags
+        id: prep_tags
+        run: |
+          RAW_TAG="${{ github.ref_name }}"
+          VERSION="${RAW_TAG#release-}"
+
+          DOCKER_TAGS="ghcr.io/${{ env.REPO_NAME }}:${VERSION}"
+
+          if [[ "$VERSION" == *-* ]]; then
+            DOCKER_TAGS="$DOCKER_TAGS,ghcr.io/${{ env.REPO_NAME }}:latest-pre"
+          else
+            DOCKER_TAGS="$DOCKER_TAGS,ghcr.io/${{ env.REPO_NAME }}:latest"
+          fi
+
+          echo "DOCKER_TAGS=$DOCKER_TAGS" >> $GITHUB_ENV
+
+          # Determine heavy tags
+          HEAVY_TAGS="ghcr.io/${{ env.REPO_NAME }}:${VERSION}-heavy"
+
+          if [[ "$VERSION" == *-* ]]; then
+            HEAVY_TAGS="$HEAVY_TAGS,ghcr.io/${{ env.REPO_NAME }}:latest-pre-heavy"
+          else
+            HEAVY_TAGS="$HEAVY_TAGS,ghcr.io/${{ env.REPO_NAME }}:heavy"
+          fi
+
+          echo "HEAVY_TAGS=$HEAVY_TAGS" >> $GITHUB_ENV
+
       - name: Build & push multi-arch image
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/riscv64,linux/ppc64le
           push: true
-          tags: ghcr.io/${{ env.REPO_NAME }}:nightly
+          tags: ${{ env.DOCKER_TAGS }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -214,6 +277,6 @@ jobs:
           file: Dockerfile.heavy
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ env.REPO_NAME }}:nightly-heavy
+          tags: ${{ env.HEAVY_TAGS }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
