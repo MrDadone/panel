@@ -27,7 +27,7 @@ export const adminEggSchema = z.object({
       ),
     }),
   ),
-  configScript: adminEggConfigScriptSchema,
+  configScript: z.lazy(() => adminEggConfigScriptSchema),
   configStartup: z.object({
     done: z.array(z.string()),
     stripAnsi: z.boolean(),

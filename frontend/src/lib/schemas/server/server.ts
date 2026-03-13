@@ -26,8 +26,8 @@ export const serverEggSchema = z.object({
 export const serverSchema = z.object({
   uuid: z.string(),
   uuidShort: z.string(),
-  allocation: serverAllocationSchema.nullable(),
-  egg: serverEggSchema,
+  allocation: z.lazy(() => serverAllocationSchema).nullable(),
+  egg: z.lazy(() => serverEggSchema),
   status: serverStatus.nullable(),
   isSuspended: z.boolean(),
   isOwner: z.boolean(),
@@ -42,15 +42,15 @@ export const serverSchema = z.object({
   sftpPort: z.number().int().min(1).max(65535),
   name: z.string(),
   description: z.string().nullable(),
-  limits: adminServerLimitsSchema,
-  featureLimits: adminServerFeatureLimitsSchema,
+  limits: z.lazy(() => adminServerLimitsSchema),
+  featureLimits: z.lazy(() => adminServerFeatureLimitsSchema),
   startup: z.string(),
   image: z.string(),
   autoKill: z.object({
     enabled: z.boolean(),
     seconds: z.number().int().nonnegative(),
   }),
-  autoStartBehavior: serverAutostartBehavior,
+  autoStartBehavior: z.lazy(() => serverAutostartBehavior),
   timezone: z.string().nullable(),
   created: z.coerce.date(),
 });
@@ -65,7 +65,7 @@ export const serverResourceUsageSchema = z.object({
   memoryBytes: z.number(),
   memoryLimitBytes: z.number(),
   diskBytes: z.number(),
-  state: serverPowerState,
+  state: z.lazy(() => serverPowerState),
   network: z.object({
     rxBytes: z.number(),
     txBytes: z.number(),

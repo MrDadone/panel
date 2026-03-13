@@ -2,6 +2,8 @@ import { Modal as MantineModal, Stack, Text, useModalsStack } from '@mantine/cor
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
+// https://github.com/rosskhanas/react-qr-code/issues/251
+import QRCode_import from 'react-qr-code';
 import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import enableTwoFactor from '@/api/me/account/enableTwoFactor.ts';
@@ -18,9 +20,7 @@ import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
-// https://github.com/rosskhanas/react-qr-code/issues/251
-import QRCode_import from "react-qr-code";
-const QRCode = (QRCode_import as unknown as {default: typeof QRCode_import}).default;
+const QRCode = (QRCode_import as unknown as { default: typeof QRCode_import }).default;
 
 export interface TwoFactorSetupResponse {
   otpUrl: string;

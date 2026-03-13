@@ -12,7 +12,7 @@ export const adminUserSchema = z.object({
   password: z.preprocess(nullableString, z.string().nullable()),
   admin: z.boolean(),
   language: z.string(),
-  role: roleSchema,
+  role: z.lazy(() => roleSchema),
   created: z.date(),
 });
 
@@ -21,7 +21,7 @@ export const adminFullUserSchema = adminUserSchema.extend({
   totpEnabled: z.boolean(),
   totpLastUsed: z.date().nullable(),
   requireTwoFactor: z.boolean(),
-  toastPosition: userToastPosition,
+  toastPosition: z.lazy(() => userToastPosition),
   startOnGroupedServers: z.boolean(),
   hasPassword: z.boolean(),
 });
@@ -38,7 +38,7 @@ export const adminUserUpdateSchema = adminUserSchema
 
 export const adminUserOAuthLinkSchema = z.object({
   uuid: z.string(),
-  oauthProvider: oAuthProviderSchema,
+  oauthProvider: z.lazy(() => oAuthProviderSchema),
   identifier: z.string(),
   lastUsed: z.date().nullable(),
   created: z.date(),

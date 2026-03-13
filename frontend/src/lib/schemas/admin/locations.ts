@@ -7,7 +7,7 @@ export const adminLocationSchema = z.object({
   uuid: z.string(),
   name: z.string().min(3).max(255),
   description: z.preprocess(nullableString, z.string().max(1024).nullable()),
-  backupConfiguration: adminBackupConfigurationSchema,
+  backupConfiguration: z.lazy(() => adminBackupConfigurationSchema),
   created: z.string(),
 });
 
