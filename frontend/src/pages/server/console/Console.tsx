@@ -196,14 +196,14 @@ export default function Terminal() {
   }, []);
 
   useEffect(() => {
-    let pingInterval: NodeJS.Timeout;
+    let pingInterval: ReturnType<typeof setInterval>;
 
     if (socketConnected && socketInstance) {
       const pingFn = () => {
         const start = Date.now();
         socketInstance.send(SocketRequest.PING);
 
-        let timeout: NodeJS.Timeout | null = null;
+        let timeout: ReturnType<typeof setTimeout> | null = null;
         const handlePong = () => {
           const latency = Date.now() - start;
           setWebsocketPing(latency);

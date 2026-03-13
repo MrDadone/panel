@@ -134,5 +134,5 @@ const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
 };
 
-export { WindowProvider };
 export { useWindows } from './contexts/windowContext.ts';
+export { WindowProvider };

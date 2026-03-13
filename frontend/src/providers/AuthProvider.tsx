@@ -91,5 +91,5 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export { AuthProvider };
 export { useAuth } from './contexts/authContext.ts';
+export { AuthProvider };

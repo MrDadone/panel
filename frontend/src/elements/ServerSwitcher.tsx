@@ -1,10 +1,12 @@
 import { SelectProps } from '@mantine/core';
+import classNames from 'classnames';
 import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import getServers from '@/api/server/getServers.ts';
 import Select from '@/elements/input/Select.tsx';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useServerStats } from '@/plugins/useServerStats.ts';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 const getStatusColor = (powerState?: ServerPowerState, status?: ServerStatus | null, suspended?: boolean) => {
@@ -30,7 +32,10 @@ function ServerSwitcherOption({ server }: { server: Server }) {
   return (
     <div className='flex items-center gap-2'>
       <span
-        className={`w-2 h-2 rounded-full shrink-0 ${getStatusColor(stats?.state, server.status, server.isSuspended)}`}
+        className={classNames(
+          'w-2 h-2 rounded-full shrink-0',
+          getStatusColor(stats?.state, server.status, server.isSuspended),
+        )}
       />
       <span className='truncate'>{server.name}</span>
     </div>
@@ -38,6 +43,7 @@ function ServerSwitcherOption({ server }: { server: Server }) {
 }
 
 export default function ServerSwitcher({ className, isServer }: { className?: string; isServer?: boolean }) {
+  const { t } = useTranslations();
   const currentServer = useServerStore((state) => state.server);
   const location = useLocation();
   const navigate = useNavigate();
@@ -59,6 +65,7 @@ export default function ServerSwitcher({ className, isServer }: { className?: st
     (value: string | null) => {
       if (value) {
         const currentPath = location.pathname.replace(/^\/server\/[^/]+/, '');
+
         if (isServer) navigate(`/server/${value}${currentPath}${location.search}${location.hash}`);
         else navigate(`/server/${value}`);
       }
@@ -69,7 +76,7 @@ export default function ServerSwitcher({ className, isServer }: { className?: st
   return (
     <Select
       className={className}
-      placeholder={currentServer.name ? currentServer.name : 'Select a Server'}
+      placeholder={currentServer.name ? currentServer.name : t('common.input.search', {})}
       data={otherServers.map((server) => ({
         label: server.name,
         value: server.uuid,

@@ -166,5 +166,5 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export { FileManagerProvider };
 export { useFileManager } from './contexts/fileManagerContext.ts';
+export { FileManagerProvider };
