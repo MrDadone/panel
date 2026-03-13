@@ -1,18 +1,20 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { userSecurityKeySchema } from '@/lib/schemas/user/securityKeys.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface SecurityKeySlice {
-  securityKeys: Pagination<UserSecurityKey>;
+  securityKeys: Pagination<z.infer<typeof userSecurityKeySchema>>;
 
-  setSecurityKeys: (keys: Pagination<UserSecurityKey>) => void;
-  addSecurityKey: (key: UserSecurityKey) => void;
-  removeSecurityKey: (key: UserSecurityKey) => void;
-  updateSecurityKey: (uuid: string, data: Partial<UserSecurityKey>) => void;
+  setSecurityKeys: (keys: Pagination<z.infer<typeof userSecurityKeySchema>>) => void;
+  addSecurityKey: (key: z.infer<typeof userSecurityKeySchema>) => void;
+  removeSecurityKey: (key: z.infer<typeof userSecurityKeySchema>) => void;
+  updateSecurityKey: (uuid: string, data: Partial<z.infer<typeof userSecurityKeySchema>>) => void;
 }
 
 export const createSecurityKeysSlice: StateCreator<UserStore, [], [], SecurityKeySlice> = (set): SecurityKeySlice => ({
-  securityKeys: getEmptyPaginationSet<UserSecurityKey>(),
+  securityKeys: getEmptyPaginationSet<z.infer<typeof userSecurityKeySchema>>(),
 
   setSecurityKeys: (value) => set((state) => ({ ...state, securityKeys: value })),
   addSecurityKey: (key) =>

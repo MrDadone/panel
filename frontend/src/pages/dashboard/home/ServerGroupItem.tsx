@@ -25,6 +25,7 @@ import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import { serverPowerAction, serverSchema } from '@/lib/schemas/server/server.ts';
 import { userServerGroupSchema } from '@/lib/schemas/user.ts';
 import ServerItem from '@/pages/dashboard/home/ServerItem.tsx';
 import { useBulkPowerActions } from '@/plugins/useBulkPowerActions.ts';
@@ -45,7 +46,7 @@ function insertItems<T>(list: T[], items: T[], startIndex: number): T[] {
   return result;
 }
 
-interface DndServer extends Server, DndItem {
+interface DndServer extends z.infer<typeof serverSchema>, DndItem {
   id: string;
 }
 
@@ -65,7 +66,7 @@ export default function ServerGroupItem({
   const [isExpanded, setIsExpanded] = useState(
     localStorage.getItem(`server-group-expanded-${serverGroup.uuid}`) !== 'false',
   );
-  const [servers, setServers] = useState(getEmptyPaginationSet<Server>());
+  const [servers, setServers] = useState(getEmptyPaginationSet<z.infer<typeof serverSchema>>());
   const [openModal, setOpenModal] = useState<'edit' | 'delete' | 'add-server' | null>(null);
 
   const { handleBulkPowerAction, bulkActionLoading: groupActionLoading } = useBulkPowerActions();
@@ -91,7 +92,7 @@ export default function ServerGroupItem({
       });
   };
 
-  const handleGroupPowerAction = async (action: ServerPowerAction) => {
+  const handleGroupPowerAction = async (action: z.infer<typeof serverPowerAction>) => {
     await handleBulkPowerAction(serverGroup.serverOrder, action);
   };
 

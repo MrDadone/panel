@@ -11,3 +11,8 @@ export const serverVariableSchema = z.object({
   rules: z.array(z.string()),
   created: z.date(),
 });
+
+export const serverEnvVariableSchema = z.object({
+  envVariable: z.string(),
+  value: z.string(),
+});

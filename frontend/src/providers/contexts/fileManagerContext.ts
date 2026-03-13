@@ -2,7 +2,7 @@ import { createContext, RefObject, useContext } from 'react';
 import { z } from 'zod';
 import { ObjectSet } from '@/lib/objectSet.ts';
 import { serverBackupSchema } from '@/lib/schemas/server/backups.ts';
-import { serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
+import { serverDirectoryEntrySchema, serverFilesSearchSchema } from '@/lib/schemas/server/files.ts';
 import { FileUploader } from '@/plugins/useFileUpload.ts';
 
 export type ModalType =
@@ -31,15 +31,15 @@ export interface FileManagerContextType {
   folderInputRef: RefObject<HTMLInputElement | null>;
 
   actingMode: ActingFileMode | null;
-  actingFiles: ObjectSet<DirectoryEntry, 'name'>;
+  actingFiles: ObjectSet<z.infer<typeof serverDirectoryEntrySchema>, 'name'>;
   actingFilesSource: string | null;
-  selectedFiles: ObjectSet<DirectoryEntry, 'name'>;
+  selectedFiles: ObjectSet<z.infer<typeof serverDirectoryEntrySchema>, 'name'>;
   browsingBackup: z.infer<typeof serverBackupSchema> | null;
   setBrowsingBackup: (backup: z.infer<typeof serverBackupSchema> | null) => void;
   browsingDirectory: string;
   setBrowsingDirectory: (directory: string) => void;
-  browsingEntries: Pagination<DirectoryEntry>;
-  setBrowsingEntries: (entries: Pagination<DirectoryEntry>) => void;
+  browsingEntries: Pagination<z.infer<typeof serverDirectoryEntrySchema>>;
+  setBrowsingEntries: (entries: Pagination<z.infer<typeof serverDirectoryEntrySchema>>) => void;
   page: number;
   setPage: (page: number) => void;
   browsingWritableDirectory: boolean;
@@ -48,8 +48,8 @@ export interface FileManagerContextType {
   setBrowsingFastDirectory: (state: boolean) => void;
   openModal: ModalType;
   setOpenModal: (modal: ModalType) => void;
-  modalDirectoryEntries: DirectoryEntry[];
-  setModalDirectoryEntries: (files: DirectoryEntry[]) => void;
+  modalDirectoryEntries: z.infer<typeof serverDirectoryEntrySchema>[];
+  setModalDirectoryEntries: (files: z.infer<typeof serverDirectoryEntrySchema>[]) => void;
   searchInfo: SearchInfo | null;
   setSearchInfo: (info: SearchInfo | null) => void;
 
@@ -66,12 +66,12 @@ export interface FileManagerContextType {
 
   invalidateFilemanager: () => void;
   fileUploader: FileUploader;
-  doActFiles: (mode: ActingFileMode | null, files: DirectoryEntry[]) => void;
+  doActFiles: (mode: ActingFileMode | null, files: z.infer<typeof serverDirectoryEntrySchema>[]) => void;
   clearActingFiles: () => void;
-  doSelectFiles: (files: DirectoryEntry[]) => void;
-  addSelectedFile: (file: DirectoryEntry) => void;
-  removeSelectedFile: (file: DirectoryEntry) => void;
-  doOpenModal: (modal: ModalType, entries?: DirectoryEntry[]) => void;
+  doSelectFiles: (files: z.infer<typeof serverDirectoryEntrySchema>[]) => void;
+  addSelectedFile: (file: z.infer<typeof serverDirectoryEntrySchema>) => void;
+  removeSelectedFile: (file: z.infer<typeof serverDirectoryEntrySchema>) => void;
+  doOpenModal: (modal: ModalType, entries?: z.infer<typeof serverDirectoryEntrySchema>[]) => void;
   doCloseModal: () => void;
 }
 

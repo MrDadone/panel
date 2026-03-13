@@ -87,3 +87,5 @@ export const adminEggVariableUpdateSchema = adminEggVariableSchema
   .extend({
     secret: z.boolean(),
   });
+
+export const processConfigurationConfigParser = z.enum(['file', 'yaml', 'properties', 'ini', 'json', 'xml', 'toml']);

@@ -1,4 +1,6 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { archiveFormat, compressionLevel } from '@/lib/schemas/server/files.ts';
 import { transformKeysToSnakeCase } from '@/lib/transformers.ts';
 
 interface Data {
@@ -9,8 +11,8 @@ interface Data {
   allocationRespectEggPortRange: boolean;
   transferBackups: boolean;
   deleteSourceBackups: boolean;
-  archiveFormat: ArchiveFormat;
-  compressionLevel: CompressionLevel | null;
+  archiveFormat: z.infer<typeof archiveFormat>;
+  compressionLevel: z.infer<typeof compressionLevel> | null;
   multiplexChannels: number;
 }
 

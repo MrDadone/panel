@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
-import { userSshKeySchema } from '@/lib/schemas/user/sshKeys.ts';
+import { userSshKeyProvider, userSshKeySchema } from '@/lib/schemas/user/sshKeys.ts';
 
 interface Data {
-  provider: SshKeyProvider;
+  provider: z.infer<typeof userSshKeyProvider>;
   username: string;
 }
 

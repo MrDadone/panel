@@ -4,9 +4,11 @@ import { ActionIcon, Group } from '@mantine/core';
 import classNames from 'classnames';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { z } from 'zod';
 import { ServerCan } from '@/elements/Can.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import { serverPowerAction } from '@/lib/schemas/server/server.ts';
 import { statusToColor } from '@/lib/server.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
@@ -22,7 +24,7 @@ export default function ServerStatusIndicator() {
 
   const killable = state === 'stopping';
 
-  const onPowerAction = (action: ServerPowerAction | 'kill-confirmed') => {
+  const onPowerAction = (action: z.infer<typeof serverPowerAction> | 'kill-confirmed') => {
     if (action === 'kill') {
       return setOpen(true);
     }

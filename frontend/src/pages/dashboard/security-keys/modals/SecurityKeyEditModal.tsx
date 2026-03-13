@@ -8,6 +8,7 @@ import updateSecurityKey from '@/api/me/security-keys/updateSecurityKey.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { userSecurityKeySchema } from '@/lib/schemas/user/securityKeys.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -17,7 +18,7 @@ const schema = z.object({
 });
 
 type Props = ModalProps & {
-  securityKey: UserSecurityKey;
+  securityKey: z.infer<typeof userSecurityKeySchema>;
 };
 
 export default function SecurityKeyEditModal({ securityKey, opened, onClose }: Props) {

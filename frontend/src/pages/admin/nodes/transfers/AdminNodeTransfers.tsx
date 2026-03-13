@@ -5,7 +5,7 @@ import { getEmptyPaginationSet } from '@/api/axios.ts';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
-import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminNodeSchema, adminNodeTransferProgressSchema } from '@/lib/schemas/admin/nodes.ts';
 import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import ServerRow from './ServerRow.tsx';
@@ -13,7 +13,7 @@ import ServerRow from './ServerRow.tsx';
 export default function AdminNodeTransfers({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const [nodeTransferringServers, setNodeTransferringServers] = useState<{
     servers: Pagination<z.infer<typeof adminServerSchema>>;
-    transfers: Record<string, TransferProgress>;
+    transfers: Record<string, z.infer<typeof adminNodeTransferProgressSchema>>;
   }>({
     servers: getEmptyPaginationSet(),
     transfers: {},

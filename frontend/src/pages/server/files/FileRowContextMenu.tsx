@@ -13,12 +13,15 @@ import {
   faWindowRestore,
 } from '@fortawesome/free-solid-svg-icons';
 import { createSearchParams, MemoryRouter } from 'react-router';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import decompressFile from '@/api/server/files/decompressFile.ts';
 import downloadFiles from '@/api/server/files/downloadFiles.ts';
 import ContextMenu, { ContextMenuItem } from '@/elements/ContextMenu.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
 import { isArchiveType, isEditableFile, isViewableArchive, isViewableImage } from '@/lib/files.ts';
+import { streamingArchiveFormat } from '@/lib/schemas/generic.ts';
+import { serverDirectoryEntrySchema } from '@/lib/schemas/server/files.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/contexts/toastContext.ts';
 import { useWindows } from '@/providers/contexts/windowContext.ts';
@@ -29,7 +32,7 @@ import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
 
 interface FileRowContextMenuProps {
-  file: DirectoryEntry;
+  file: z.infer<typeof serverDirectoryEntrySchema>;
   children: (props: { items: ContextMenuItem[]; openMenu: (x: number, y: number) => void }) => React.ReactNode;
 }
 
@@ -56,7 +59,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
     });
   };
 
-  const doDownload = (archiveFormat: StreamingArchiveFormat) => {
+  const doDownload = (archiveFormat: z.infer<typeof streamingArchiveFormat>) => {
     downloadFiles(server.uuid, browsingDirectory, [file.name], file.directory, archiveFormat)
       .then(({ url }) => {
         addToast(t('pages.server.files.toast.downloadStarted', {}), 'success');
@@ -165,7 +168,7 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
             ? Object.entries(streamingArchiveFormatLabelMapping).map(([mime, label]) => ({
                 icon: faFileArrowDown,
                 label: t('common.button.downloadAs', { format: label }),
-                onClick: () => doDownload(mime as StreamingArchiveFormat),
+                onClick: () => doDownload(mime as z.infer<typeof streamingArchiveFormat>),
                 color: 'gray',
               }))
             : [],

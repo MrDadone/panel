@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import getNodeResources from '@/api/me/servers/resources/getNodeResources.ts';
+import { serverResourceUsageSchema, serverSchema } from '@/lib/schemas/server/server.ts';
 import { userServerGroupSchema } from '@/lib/schemas/user.ts';
 import { UserStore } from '@/stores/user.ts';
 
@@ -9,10 +10,10 @@ const CACHE_TTL_MS = 1000 * 30;
 const POLL_INTERVAL_MS = 30500;
 
 export interface ServerSlice {
-  servers: Pagination<Server>;
+  servers: Pagination<z.infer<typeof serverSchema>>;
   serverGroups: z.infer<typeof userServerGroupSchema>[];
 
-  serverResourceUsage: Record<string, ResourceUsage>;
+  serverResourceUsage: Record<string, z.infer<typeof serverResourceUsageSchema>>;
   resourceUsageTick: number;
 
   _nodeFetchTimestamps: Map<string, number>;
@@ -20,20 +21,20 @@ export interface ServerSlice {
   _nodeSubscribers: Map<string, number>;
   _nodeIntervals: Map<string, ReturnType<typeof setInterval>>;
 
-  setServers: (servers: Pagination<Server>) => void;
+  setServers: (servers: Pagination<z.infer<typeof serverSchema>>) => void;
   setServerGroups: (serverGroups: z.infer<typeof userServerGroupSchema>[]) => void;
   addServerGroup: (serverGroup: z.infer<typeof userServerGroupSchema>) => void;
   removeServerGroup: (serverGroup: z.infer<typeof userServerGroupSchema>) => void;
   updateServerGroup: (uuid: string, data: { name?: string; serverOrder?: string[] }) => void;
 
-  addServerResourceUsage: (serverUuid: string, usage: ResourceUsage) => void;
-  getServerResourceUsage: (uuid: string) => ResourceUsage | undefined;
+  addServerResourceUsage: (serverUuid: string, usage: z.infer<typeof serverResourceUsageSchema>) => void;
+  getServerResourceUsage: (uuid: string) => z.infer<typeof serverResourceUsageSchema> | undefined;
   fetchNodeResources: (nodeUuid: string) => Promise<void>;
   subscribeToNode: (nodeUuid: string) => () => void;
 }
 
 export const createServersSlice: StateCreator<UserStore, [], [], ServerSlice> = (set, get) => ({
-  servers: getEmptyPaginationSet<Server>(),
+  servers: getEmptyPaginationSet<z.infer<typeof serverSchema>>(),
   serverGroups: [],
 
   serverResourceUsage: {},

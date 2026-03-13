@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import { serverPowerAction } from '@/lib/schemas/server/server.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
@@ -13,7 +15,7 @@ export default function ServerPowerControls() {
 
   const killable = state === 'stopping';
 
-  const onButtonClick = (action: ServerPowerAction | 'kill-confirmed') => {
+  const onButtonClick = (action: z.infer<typeof serverPowerAction> | 'kill-confirmed') => {
     if (action === 'kill') {
       return setOpen(true);
     }

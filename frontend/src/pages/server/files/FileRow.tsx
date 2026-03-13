@@ -1,9 +1,11 @@
 import { forwardRef, memo, useRef } from 'react';
+import { z } from 'zod';
 import { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { isEditableFile, isViewableArchive, isViewableImage } from '@/lib/files.ts';
+import { serverDirectoryEntrySchema } from '@/lib/schemas/server/files.ts';
 import { bytesToString } from '@/lib/size.ts';
 import FileRowContextMenu from '@/pages/server/files/FileRowContextMenu.tsx';
 import { useServerCan } from '@/plugins/usePermissions.ts';
@@ -12,7 +14,7 @@ import { useGlobalStore } from '@/stores/global.ts';
 import FileRowIcon from './FileRowIcon.tsx';
 
 interface FileRowProps {
-  file: DirectoryEntry;
+  file: z.infer<typeof serverDirectoryEntrySchema>;
   handleOpen: () => void;
   isSelected: boolean;
   isActing: boolean;
@@ -32,7 +34,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
   const toggleSelected = () => (isSelected ? removeSelectedFile(file) : addSelectedFile(file));
 
   const clickCount = useRef(0);
-  const clickTimer = useRef<NodeJS.Timeout | null>(null);
+  const clickTimer = useRef<number | null>(null);
 
   const handleClick = (e: React.MouseEvent<HTMLTableRowElement>) => {
     clickCount.current += 1;

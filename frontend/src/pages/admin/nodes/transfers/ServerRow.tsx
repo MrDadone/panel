@@ -6,12 +6,13 @@ import Progress from '@/elements/Progress.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminNodeTransferProgressSchema } from '@/lib/schemas/admin/nodes.ts';
 import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { bytesToString } from '@/lib/size.ts';
 
 interface ServerRowProps {
   server: z.infer<typeof adminServerSchema>;
-  transferProgress?: TransferProgress;
+  transferProgress?: z.infer<typeof adminNodeTransferProgressSchema>;
 }
 
 const ServerRow = memo(

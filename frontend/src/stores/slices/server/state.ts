@@ -1,10 +1,12 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
+import { serverPowerState } from '@/lib/schemas/server/server.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface StateSlice {
-  state: ServerPowerState;
+  state: z.infer<typeof serverPowerState>;
 
-  setState: (status: ServerPowerState) => void;
+  setState: (status: z.infer<typeof serverPowerState>) => void;
 }
 
 export const createStateSlice: StateCreator<ServerStore, [], [], StateSlice> = (set): StateSlice => ({

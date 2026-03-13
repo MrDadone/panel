@@ -11,6 +11,7 @@ import Table from '@/elements/Table.tsx';
 import { ObjectSet } from '@/lib/objectSet.ts';
 import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import { serverPowerAction } from '@/lib/schemas/server/server.ts';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
 import ServerRow from '@/pages/admin/servers/ServerRow.tsx';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
@@ -31,8 +32,8 @@ export default function AdminNodeServers({ node }: { node: z.infer<typeof adminN
   );
   const selectedServersPreviousRef = useRef<z.infer<typeof adminServerSchema>[]>([]);
   const [sKeyPressed, setSKeyPressed] = useState(false);
-  const [bulkActionLoading, setBulkActionLoading] = useState<ServerPowerAction | null>(null);
-  const [allActionLoading, setAllActionLoading] = useState<ServerPowerAction | null>(null);
+  const [bulkActionLoading, setBulkActionLoading] = useState<z.infer<typeof serverPowerAction> | null>(null);
+  const [allActionLoading, setAllActionLoading] = useState<z.infer<typeof serverPowerAction> | null>(null);
   const [openModal, setOpenModal] = useState<'transfer' | null>(null);
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
@@ -96,14 +97,17 @@ export default function AdminNodeServers({ node }: { node: z.infer<typeof adminN
     }
   };
 
-  const handleBulkPowerAction = async (action: ServerPowerAction) => {
+  const handleBulkPowerAction = async (action: z.infer<typeof serverPowerAction>) => {
     setBulkActionLoading(action);
 
     sendNodeServersPowerAction(node.uuid, selectedServers.keys(), action)
       .then((successful) => {
         const failed = selectedServers.size - successful;
 
-        const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
+        const actionPastTenseMap: Record<
+          z.infer<typeof serverPowerAction>,
+          'started' | 'stopped' | 'restarted' | 'killed'
+        > = {
           start: 'started',
           stop: 'stopped',
           restart: 'restarted',
@@ -139,14 +143,17 @@ export default function AdminNodeServers({ node }: { node: z.infer<typeof adminN
       });
   };
 
-  const handleAllPowerAction = async (action: ServerPowerAction) => {
+  const handleAllPowerAction = async (action: z.infer<typeof serverPowerAction>) => {
     setAllActionLoading(action);
 
     sendNodeServersPowerAction(node.uuid, [], action)
       .then((successful) => {
         const failed = nodeServers.total - successful;
 
-        const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
+        const actionPastTenseMap: Record<
+          z.infer<typeof serverPowerAction>,
+          'started' | 'stopped' | 'restarted' | 'killed'
+        > = {
           start: 'started',
           stop: 'stopped',
           restart: 'restarted',

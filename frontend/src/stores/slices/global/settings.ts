@@ -1,19 +1,21 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
+import { publicSettingsSchema } from '@/lib/schemas/settings.ts';
 import { GlobalStore } from '@/stores/global.ts';
 
 export interface SettingsSlice {
   serverListShowOthers: boolean;
-  settings: PublicSettings;
+  settings: z.infer<typeof publicSettingsSchema>;
   languages: string[];
 
   setServerListShowOthers: (show: boolean) => void;
-  setSettings: (settings: PublicSettings) => void;
+  setSettings: (settings: z.infer<typeof publicSettingsSchema>) => void;
   setLanguages: (languages: string[]) => void;
 }
 
 export const createSettingsSlice: StateCreator<GlobalStore, [], [], SettingsSlice> = (set): SettingsSlice => ({
   serverListShowOthers: false,
-  settings: {} as PublicSettings,
+  settings: {} as z.infer<typeof publicSettingsSchema>,
   languages: [],
 
   setServerListShowOthers: (value) => set((state) => ({ ...state, serverListShowOthers: value })),

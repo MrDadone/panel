@@ -8,6 +8,8 @@ import {
   IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
 import { ComponentType } from 'react';
+import { z } from 'zod';
+import { oobeStepKey } from '@/lib/schemas/oobe.ts';
 import OobeConfiguration from '@/pages/oobe/OobeConfiguration.tsx';
 import OobeFinished from '@/pages/oobe/OobeFinished.tsx';
 import OobeLocation from '@/pages/oobe/OobeLocation.tsx';
@@ -19,12 +21,12 @@ import { OobeComponentProps } from '@/routers/OobeRouter.tsx';
 
 export interface OobeStep {
   path: string;
-  stepKey: OobeStepKey | null;
+  stepKey: z.infer<typeof oobeStepKey> | null;
   label: string | null;
   icon: IconDefinition | null;
   component: ComponentType<OobeComponentProps>;
   preAuth?: boolean;
-  skipTo?: OobeStepKey;
+  skipTo?: z.infer<typeof oobeStepKey>;
 }
 export const steps: OobeStep[] = [
   {

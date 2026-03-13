@@ -61,3 +61,9 @@ export const adminNodeMountSchema = z.object({
   mount: adminMountSchema,
   created: z.date(),
 });
+
+export const adminNodeTransferProgressSchema = z.object({
+  archiveProgress: z.number(),
+  networkProgress: z.number(),
+  total: z.number(),
+});
