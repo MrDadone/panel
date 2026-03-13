@@ -1,10 +1,12 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { adminOAuthUserLinkSchema } from '@/lib/schemas/admin/oauthProviders.ts';
 
 export default async (
   oauthProviderUuid: string,
   page: number,
   search?: string,
-): Promise<Pagination<AdminUserOAuthLink>> => {
+): Promise<Pagination<z.infer<typeof adminOAuthUserLinkSchema>>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/oauth-providers/${oauthProviderUuid}/users`, {

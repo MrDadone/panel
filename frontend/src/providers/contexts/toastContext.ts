@@ -1,4 +1,6 @@
 import { createContext, useContext } from 'react';
+import { z } from 'zod';
+import { userToastPosition } from '@/lib/schemas/user.ts';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -9,8 +11,8 @@ export interface Toast {
 }
 
 interface ToastContextType {
-  toastPosition: UserToastPosition;
-  setToastPosition: (position: UserToastPosition) => void;
+  toastPosition: z.infer<typeof userToastPosition>;
+  setToastPosition: (position: z.infer<typeof userToastPosition>) => void;
 
   addToast: (message: string, type?: ToastType) => number;
   dismissToast: (id: number) => void;

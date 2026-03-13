@@ -1,6 +1,7 @@
 import { faPencil, faStar, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteAllocation from '@/api/server/allocations/deleteAllocation.ts';
 import updateAllocation from '@/api/server/allocations/updateAllocation.ts';
@@ -10,13 +11,14 @@ import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { serverAllocationSchema } from '@/lib/schemas/server/allocations.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import AllocationEditModal from './modals/AllocationEditModal.tsx';
 
-export default function AllocationRow({ allocation }: { allocation: ServerAllocation }) {
+export default function AllocationRow({ allocation }: { allocation: z.infer<typeof serverAllocationSchema> }) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { server, allocations, removeAllocation, setAllocations, updateServer } = useServerStore();

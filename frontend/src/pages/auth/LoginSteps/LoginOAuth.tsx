@@ -3,16 +3,18 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Alert, Divider, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import getOAuthProviders from '@/api/auth/getOAuthProviders.ts';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
+import { oAuthProviderSchema } from '@/lib/schemas/generic.ts';
 import AuthWrapper from '../AuthWrapper.tsx';
 
 export default function LoginOAuth() {
   const navigate = useNavigate();
 
   const [error, setError] = useState('');
-  const [oAuthProviders, setOAuthProviders] = useState<OAuthProvider[]>([]);
+  const [oAuthProviders, setOAuthProviders] = useState<z.infer<typeof oAuthProviderSchema>[]>([]);
 
   useEffect(() => {
     getOAuthProviders().then((oAuthProviders) => {
@@ -22,7 +24,7 @@ export default function LoginOAuth() {
 
   return (
     <AuthWrapper>
-      <Stack>
+      <Stack className='w-full'>
         {error && (
           <Alert
             icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
@@ -34,15 +36,14 @@ export default function LoginOAuth() {
             {error}
           </Alert>
         )}
+
+        <div>
+          <Title order={2}>Authenticate with OAuth</Title>
+          <Text className='text-neutral-400!'>Choose any of the providers below to login</Text>
+        </div>
+
         <Card>
           <Stack>
-            <Title order={2} ta='center'>
-              Authenticate with OAuth
-            </Title>
-            <Text c='dimmed' ta='center'>
-              Choose any of the providers below to login
-            </Text>
-
             {oAuthProviders.map((oAuthProvider) => (
               <a key={oAuthProvider.uuid} href={`/api/auth/oauth/redirect/${oAuthProvider.uuid}`}>
                 <Button leftSection={<FontAwesomeIcon icon={faFingerprint} />} size='md' fullWidth>

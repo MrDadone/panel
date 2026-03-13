@@ -2,16 +2,18 @@ import { faGlobe, faHeart, faHeartBroken } from '@fortawesome/free-solid-svg-ico
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
 import Code from '@/elements/Code.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { parseVersion } from '@/lib/version.ts';
 import { useAdminStore } from '@/stores/admin.tsx';
 
-export default function NodeRow({ node }: { node: Node }) {
+export default function NodeRow({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const { latestVersions } = useAdminStore();
 
   const [version, setVersion] = useState<string | null>(null);

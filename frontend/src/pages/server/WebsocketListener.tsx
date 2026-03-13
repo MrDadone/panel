@@ -1,5 +1,7 @@
 import { QueryFilters, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { z } from 'zod';
+import { serverFileOperationSchema } from '@/lib/schemas/server/files.ts';
 import { transformKeysToCamelCase } from '@/lib/transformers.ts';
 import useWebsocketEvent, { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -179,9 +181,9 @@ export default function WebsocketListener() {
   });
 
   useWebsocketEvent(SocketEvent.OPERATION_PROGRESS, (uuid, data) => {
-    let wsData: FileOperation;
+    let wsData: z.infer<typeof serverFileOperationSchema>;
     try {
-      wsData = transformKeysToCamelCase(JSON.parse(data)) as FileOperation;
+      wsData = transformKeysToCamelCase(JSON.parse(data)) as z.infer<typeof serverFileOperationSchema>;
     } catch {
       return;
     }

@@ -40,7 +40,12 @@ import Spinner from '@/elements/Spinner.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import VariableContainer from '@/elements/VariableContainer.tsx';
-import { adminServerCreateSchema } from '@/lib/schemas/admin/servers.ts';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
+import { adminEggSchema, adminEggVariableSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
+import { adminNodeAllocationSchema, adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerCreateSchema, adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 import { formatAllocation } from '@/lib/server.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
@@ -67,6 +72,7 @@ export default function ServerCreate() {
   const [openModal, setOpenModal] = useState<'confirm-no-allocation' | null>(null);
 
   const form = useForm<z.infer<typeof adminServerCreateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       externalId: null,
       name: '',
@@ -105,9 +111,12 @@ export default function ServerCreate() {
     validate: zod4Resolver(adminServerCreateSchema),
   });
 
-  const { loading, doCreateOrUpdate } = useResourceForm<z.infer<typeof adminServerCreateSchema>, AdminServer>({
+  const { loading, doCreateOrUpdate } = useResourceForm<
+    z.infer<typeof adminServerCreateSchema>,
+    z.infer<typeof adminServerSchema>
+  >({
     form,
-    createFn: () => createServer(adminServerCreateSchema.parse(form.values)),
+    createFn: () => createServer(adminServerCreateSchema.parse(form.getValues())),
     doUpdate: false,
     basePath: '/admin/servers',
     resourceName: 'Server',
@@ -116,62 +125,62 @@ export default function ServerCreate() {
 
   const [eggVariablesLoading, setEggVariablesLoading] = useState(false);
   const [selectedNestUuid, setSelectedNestUuid] = useState<string | null>('');
-  const [eggVariables, setEggVariables] = useState<NestEggVariable[]>([]);
+  const [eggVariables, setEggVariables] = useState<z.infer<typeof adminEggVariableSchema>[]>([]);
 
-  const nodes = useSearchableResource<Node>({
+  const nodes = useSearchableResource<z.infer<typeof adminNodeSchema>>({
     fetcher: (search) => getNodes(1, search),
     canRequest: canReadNodes,
   });
-  const users = useSearchableResource<FullUser>({
+  const users = useSearchableResource<z.infer<typeof fullUserSchema>>({
     fetcher: (search) => getUsers(1, search),
     canRequest: canReadUsers,
   });
-  const nests = useSearchableResource<AdminNest>({
+  const nests = useSearchableResource<z.infer<typeof adminNestSchema>>({
     fetcher: (search) => getNests(1, search),
     canRequest: canReadNests,
   });
-  const eggs = useSearchableResource<AdminNestEgg>({
+  const eggs = useSearchableResource<z.infer<typeof adminEggSchema>>({
     fetcher: (search) =>
       selectedNestUuid ? getEggs(selectedNestUuid, 1, search) : Promise.resolve(getEmptyPaginationSet()),
     deps: [selectedNestUuid],
     canRequest: canReadEggs,
   });
-  const availablePrimaryAllocations = useSearchableResource<NodeAllocation>({
+  const availablePrimaryAllocations = useSearchableResource<z.infer<typeof adminNodeAllocationSchema>>({
     fetcher: (search) =>
-      form.values.nodeUuid
-        ? getAvailableNodeAllocations(form.values.nodeUuid, 1, search)
+      form.getValues().nodeUuid
+        ? getAvailableNodeAllocations(form.getValues().nodeUuid, 1, search)
         : Promise.resolve(getEmptyPaginationSet()),
-    deps: [form.values.nodeUuid],
+    deps: [form.getValues().nodeUuid],
   });
-  const availableAllocations = useSearchableResource<NodeAllocation>({
+  const availableAllocations = useSearchableResource<z.infer<typeof adminNodeAllocationSchema>>({
     fetcher: (search) =>
-      form.values.nodeUuid
-        ? getAvailableNodeAllocations(form.values.nodeUuid, 1, search)
+      form.getValues().nodeUuid
+        ? getAvailableNodeAllocations(form.getValues().nodeUuid, 1, search)
         : Promise.resolve(getEmptyPaginationSet()),
-    deps: [form.values.nodeUuid],
+    deps: [form.getValues().nodeUuid],
   });
-  const backupConfigurations = useSearchableResource<BackupConfiguration>({
+  const backupConfigurations = useSearchableResource<z.infer<typeof adminBackupConfigurationSchema>>({
     fetcher: (search) => getBackupConfigurations(1, search),
     canRequest: canReadBackupConfigurations,
   });
 
   useEffect(() => {
-    const egg = eggs.items.find((egg) => egg.uuid === form.values.eggUuid);
+    const egg = eggs.items.find((egg) => egg.uuid === form.getValues().eggUuid);
     if (!egg) {
       return;
     }
 
     form.setFieldValue('image', Object.values(egg.dockerImages)[0] ?? '');
     form.setFieldValue('startup', egg.startup);
-  }, [form.values.eggUuid, eggs.items]);
+  }, [form.getValues().eggUuid, eggs.items]);
 
   useEffect(() => {
-    if (!selectedNestUuid || !form.values.eggUuid) {
+    if (!selectedNestUuid || !form.getValues().eggUuid) {
       return;
     }
 
     setEggVariablesLoading(true);
-    getEggVariables(selectedNestUuid, form.values.eggUuid)
+    getEggVariables(selectedNestUuid, form.getValues().eggUuid)
       .then((variables) => {
         setEggVariables(variables);
       })
@@ -179,7 +188,7 @@ export default function ServerCreate() {
         addToast(httpErrorToHuman(err), 'error');
       })
       .finally(() => setEggVariablesLoading(false));
-  }, [selectedNestUuid, form.values.eggUuid]);
+  }, [selectedNestUuid, form.getValues().eggUuid]);
 
   return (
     <AdminContentContainer title='Create Server' titleOrder={2}>
@@ -211,11 +220,13 @@ export default function ServerCreate() {
                     withAsterisk
                     label='Server Name'
                     placeholder='My Game Server'
+                    key={form.key('name')}
                     {...form.getInputProps('name')}
                   />
                   <TextInput
                     label='External ID'
                     placeholder='Optional external identifier'
+                    key={form.key('externalId')}
                     {...form.getInputProps('externalId')}
                   />
                 </Group>
@@ -224,6 +235,7 @@ export default function ServerCreate() {
                   label='Description'
                   placeholder='Server description'
                   rows={3}
+                  key={form.key('description')}
                   {...form.getInputProps('description')}
                 />
               </Stack>
@@ -244,6 +256,7 @@ export default function ServerCreate() {
                     searchValue={nodes.search}
                     onSearchChange={nodes.setSearch}
                     disabled={!canReadNodes}
+                    key={form.key('nodeUuid')}
                     {...form.getInputProps('nodeUuid')}
                   />
                   <Select
@@ -258,6 +271,7 @@ export default function ServerCreate() {
                     searchValue={users.search}
                     onSearchChange={users.setSearch}
                     disabled={!canReadUsers}
+                    key={form.key('ownerUuid')}
                     {...form.getInputProps('ownerUuid')}
                   />
                 </Group>
@@ -290,6 +304,7 @@ export default function ServerCreate() {
                     searchable
                     searchValue={eggs.search}
                     onSearchChange={eggs.setSearch}
+                    key={form.key('eggUuid')}
                     {...form.getInputProps('eggUuid')}
                   />
                 </Group>
@@ -308,6 +323,7 @@ export default function ServerCreate() {
                     allowDeselect
                     clearable
                     disabled={!canReadBackupConfigurations}
+                    key={form.key('backupConfigurationUuid')}
                     {...form.getInputProps('backupConfigurationUuid')}
                   />
                 </Group>
@@ -325,6 +341,7 @@ export default function ServerCreate() {
                     description='The CPU Limit in % that the server can use, 1 thread = 100%'
                     placeholder='100'
                     min={0}
+                    key={form.key('limits.cpu')}
                     {...form.getInputProps('limits.cpu')}
                   />
                   <SizeInput
@@ -333,7 +350,7 @@ export default function ServerCreate() {
                     description='The amount of swap to give this server, -1 will not set a limit'
                     mode='mb'
                     min={-1}
-                    value={form.values.limits.swap}
+                    value={form.getValues().limits.swap}
                     onChange={(value) => form.setFieldValue('limits.swap', value)}
                   />
                 </Group>
@@ -345,7 +362,7 @@ export default function ServerCreate() {
                     description='The Memory limit of the server container, 0 will not set a limit'
                     mode='mb'
                     min={0}
-                    value={form.values.limits.memory}
+                    value={form.getValues().limits.memory}
                     onChange={(value) => form.setFieldValue('limits.memory', value)}
                   />
                   <SizeInput
@@ -354,7 +371,7 @@ export default function ServerCreate() {
                     description='Hidden Memory that will be added to the container'
                     mode='mb'
                     min={0}
-                    value={form.values.limits.memoryOverhead}
+                    value={form.getValues().limits.memoryOverhead}
                     onChange={(value) => form.setFieldValue('limits.memoryOverhead', value)}
                   />
                 </Group>
@@ -366,12 +383,13 @@ export default function ServerCreate() {
                     description='The disk limit of the server, this is a soft-limit unless disk limiter configured on wings'
                     mode='mb'
                     min={0}
-                    value={form.values.limits.disk}
+                    value={form.getValues().limits.disk}
                     onChange={(value) => form.setFieldValue('limits.disk', value)}
                   />
                   <NumberInput
                     label='IO Weight'
                     description='The relative IO Weight of the server container compared to other containers, 0-1000, may not work on all systems'
+                    key={form.key('limits.ioWeight')}
                     {...form.getInputProps('limits.ioWeight')}
                   />
                 </Group>
@@ -386,12 +404,13 @@ export default function ServerCreate() {
                     label='Docker Image'
                     placeholder='ghcr.io/...'
                     data={Object.entries(
-                      eggs.items.find((egg) => egg.uuid === form.values.eggUuid)?.dockerImages || {},
+                      eggs.items.find((egg) => egg.uuid === form.getValues().eggUuid)?.dockerImages || {},
                     ).map(([label, value]) => ({
                       label,
                       value,
                     }))}
                     searchable
+                    key={form.key('image')}
                     {...form.getInputProps('image')}
                   />
                   <Select
@@ -406,6 +425,7 @@ export default function ServerCreate() {
                       ...timezones,
                     ]}
                     searchable
+                    key={form.key('timezone')}
                     {...form.getInputProps('timezone')}
                   />
                 </Group>
@@ -420,12 +440,13 @@ export default function ServerCreate() {
                       <ActionIcon
                         variant='subtle'
                         disabled={
-                          form.values.startup === eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup
+                          form.getValues().startup ===
+                          eggs.items.find((e) => e.uuid === form.getValues().eggUuid)?.startup
                         }
                         onClick={() =>
                           form.setFieldValue(
                             'startup',
-                            eggs.items.find((e) => e.uuid === form.values.eggUuid)?.startup || '',
+                            eggs.items.find((e) => e.uuid === form.getValues().eggUuid)?.startup || '',
                           )
                         }
                       >
@@ -433,6 +454,7 @@ export default function ServerCreate() {
                       </ActionIcon>
                     </Tooltip>
                   }
+                  key={form.key('startup')}
                   {...form.getInputProps('startup')}
                 />
 
@@ -440,6 +462,7 @@ export default function ServerCreate() {
                   <Switch
                     label='Start on Completion'
                     description='Start server after installation completes'
+                    key={form.key('startOnCompletion')}
                     {...form.getInputProps('startOnCompletion', {
                       type: 'checkbox',
                     })}
@@ -447,6 +470,7 @@ export default function ServerCreate() {
                   <Switch
                     label='Skip Installer'
                     description='Skip running the install script'
+                    key={form.key('skipInstaller')}
                     {...form.getInputProps('skipInstaller', {
                       type: 'checkbox',
                     })}
@@ -456,6 +480,7 @@ export default function ServerCreate() {
                 <Switch
                   label='Enable Hugepages Passthrough'
                   description='Enable hugepages passthrough for the server (mounts /dev/hugepages into the container)'
+                  key={form.key('hugepagesPassthroughEnabled')}
                   {...form.getInputProps('hugepagesPassthroughEnabled', {
                     type: 'checkbox',
                   })}
@@ -464,6 +489,7 @@ export default function ServerCreate() {
                 <Switch
                   label='Enable KVM Passthrough'
                   description='Enable KVM passthrough for the server (allows access to /dev/kvm inside the container)'
+                  key={form.key('kvmPassthroughEnabled')}
                   {...form.getInputProps('kvmPassthroughEnabled', {
                     type: 'checkbox',
                   })}
@@ -481,6 +507,7 @@ export default function ServerCreate() {
                     label='Allocations'
                     placeholder='0'
                     min={0}
+                    key={form.key('featureLimits.allocations')}
                     {...form.getInputProps('featureLimits.allocations')}
                   />
                   <NumberInput
@@ -488,6 +515,7 @@ export default function ServerCreate() {
                     label='Databases'
                     placeholder='0'
                     min={0}
+                    key={form.key('featureLimits.databases')}
                     {...form.getInputProps('featureLimits.databases')}
                   />
                   <NumberInput
@@ -495,6 +523,7 @@ export default function ServerCreate() {
                     label='Backups'
                     placeholder='0'
                     min={0}
+                    key={form.key('featureLimits.backups')}
                     {...form.getInputProps('featureLimits.backups')}
                   />
                   <NumberInput
@@ -502,6 +531,7 @@ export default function ServerCreate() {
                     label='Schedules'
                     placeholder='0'
                     min={0}
+                    key={form.key('featureLimits.schedules')}
                     {...form.getInputProps('featureLimits.schedules')}
                   />
                 </Group>
@@ -514,9 +544,9 @@ export default function ServerCreate() {
                   <Select
                     label='Primary Allocation'
                     placeholder='Primary Allocation'
-                    disabled={!form.values.nodeUuid}
+                    disabled={!form.getValues().nodeUuid}
                     data={availablePrimaryAllocations.items
-                      .filter((alloc) => !form.values.allocationUuids.includes(alloc.uuid))
+                      .filter((alloc) => !form.getValues().allocationUuids.includes(alloc.uuid))
                       .map((alloc) => ({
                         label: formatAllocation(alloc),
                         value: alloc.uuid,
@@ -525,14 +555,15 @@ export default function ServerCreate() {
                     searchValue={availablePrimaryAllocations.search}
                     onSearchChange={availablePrimaryAllocations.setSearch}
                     allowDeselect
+                    key={form.key('allocationUuid')}
                     {...form.getInputProps('allocationUuid')}
                   />
                   <MultiSelect
                     label='Additional Allocations'
                     placeholder='Additional Allocations'
-                    disabled={!form.values.nodeUuid}
+                    disabled={!form.getValues().nodeUuid}
                     data={availableAllocations.items
-                      .filter((alloc) => alloc.uuid !== form.values.allocationUuid)
+                      .filter((alloc) => alloc.uuid !== form.getValues().allocationUuid)
                       .map((alloc) => ({
                         label: formatAllocation(alloc),
                         value: alloc.uuid,
@@ -540,6 +571,7 @@ export default function ServerCreate() {
                     searchable
                     searchValue={availableAllocations.search}
                     onSearchChange={availableAllocations.setSearch}
+                    key={form.key('allocationUuids')}
                     {...form.getInputProps('allocationUuids')}
                   />
                 </Group>
@@ -549,7 +581,7 @@ export default function ServerCreate() {
 
           <TitleCard title='Variables' icon={<FontAwesomeIcon icon={faPlay} />}>
             <Stack>
-              {!selectedNestUuid || !form.values.eggUuid ? (
+              {!selectedNestUuid || !form.getValues().eggUuid ? (
                 <Alert>Please select an egg before you can configure variables.</Alert>
               ) : eggVariablesLoading ? (
                 <Spinner.Centered />
@@ -566,7 +598,7 @@ export default function ServerCreate() {
                       loading={loading}
                       overrideReadonly
                       value={
-                        form.values.variables.find((v) => v.envVariable === variable.envVariable)?.value ??
+                        form.getValues().variables.find((v) => v.envVariable === variable.envVariable)?.value ??
                         variable.defaultValue ??
                         ''
                       }

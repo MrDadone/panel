@@ -1,13 +1,14 @@
 import { Stack } from '@mantine/core';
+import { UseFormReturnType } from '@mantine/form';
+import { z } from 'zod';
 import Switch from '@/elements/input/Switch.tsx';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 export default function StepDecompressFile({
-  action,
-  setAction,
+  form,
 }: {
-  action: ScheduleActionDecompressFile;
-  setAction: (action: ScheduleActionDecompressFile) => void;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <Stack>
@@ -15,26 +16,18 @@ export default function StepDecompressFile({
         withAsterisk
         label='Root Path'
         placeholder='/'
-        value={action.root}
-        onChange={(v) => setAction({ ...action, root: v })}
+        value={form.getInputProps('action.root').value}
+        onChange={(v) => form.setFieldValue('action.root', v)}
       />
       <ScheduleDynamicParameterInput
         withAsterisk
         label='File'
         placeholder='backup.tar.gz'
-        value={action.file}
-        onChange={(v) => setAction({ ...action, file: v })}
+        value={form.getInputProps('action.file').value}
+        onChange={(v) => form.setFieldValue('action.file', v)}
       />
-      <Switch
-        label='Run in Foreground'
-        checked={action.foreground}
-        onChange={(e) => setAction({ ...action, foreground: e.target.checked })}
-      />
-      <Switch
-        label='Ignore Failure'
-        checked={action.ignoreFailure}
-        onChange={(e) => setAction({ ...action, ignoreFailure: e.target.checked })}
-      />
+      <Switch label='Run in Foreground' {...form.getInputProps('action.foreground', { type: 'checkbox' })} />
+      <Switch label='Ignore Failure' {...form.getInputProps('action.ignoreFailure', { type: 'checkbox' })} />
     </Stack>
   );
 }

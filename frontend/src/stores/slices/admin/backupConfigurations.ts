@@ -1,19 +1,21 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface BackupConfigurationsSlice {
-  backupConfigurations: Pagination<BackupConfiguration>;
+  backupConfigurations: Pagination<z.infer<typeof adminBackupConfigurationSchema>>;
 
-  setBackupConfigurations: (backupConfigurations: Pagination<BackupConfiguration>) => void;
-  addBackupConfiguration: (backupConfigurations: BackupConfiguration) => void;
-  removeBackupConfiguration: (backupConfigurations: BackupConfiguration) => void;
+  setBackupConfigurations: (backupConfigurations: Pagination<z.infer<typeof adminBackupConfigurationSchema>>) => void;
+  addBackupConfiguration: (backupConfigurations: z.infer<typeof adminBackupConfigurationSchema>) => void;
+  removeBackupConfiguration: (backupConfigurations: z.infer<typeof adminBackupConfigurationSchema>) => void;
 }
 
 export const createBackupConfigurationsSlice: StateCreator<AdminStore, [], [], BackupConfigurationsSlice> = (
   set,
 ): BackupConfigurationsSlice => ({
-  backupConfigurations: getEmptyPaginationSet<BackupConfiguration>(),
+  backupConfigurations: getEmptyPaginationSet<z.infer<typeof adminBackupConfigurationSchema>>(),
 
   setBackupConfigurations: (value) => set((state) => ({ ...state, backupConfigurations: value })),
   addBackupConfiguration: (backupConfiguration) =>

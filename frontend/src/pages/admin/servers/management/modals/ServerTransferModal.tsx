@@ -1,6 +1,7 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import getAvailableNodeAllocations from '@/api/admin/nodes/allocations/getAvailableNodeAllocations.ts';
 import getNodes from '@/api/admin/nodes/getNodes.ts';
 import postTransfer from '@/api/admin/servers/postTransfer.ts';
@@ -15,11 +16,18 @@ import Switch from '@/elements/input/Switch.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { Modal } from '@/elements/modals/Modal.tsx';
 import { archiveFormatLabelMapping, compressionLevelLabelMapping } from '@/lib/enums.ts';
+import { adminNodeAllocationSchema, adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import { serverBackupSchema } from '@/lib/schemas/server/backups.ts';
 import { formatAllocation } from '@/lib/server.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
-export default function ServerTransferModal({ server, opened, onClose }: ModalProps & { server: AdminServer }) {
+export default function ServerTransferModal({
+  server,
+  opened,
+  onClose,
+}: ModalProps & { server: z.infer<typeof adminServerSchema> }) {
   const { addToast } = useToast();
   const navigate = useNavigate();
 
@@ -33,22 +41,24 @@ export default function ServerTransferModal({ server, opened, onClose }: ModalPr
   const [compressionLevel, setCompressionLevel] = useState<CompressionLevel>('good_compression');
   const [multiplexChannels, setMultiplexChannels] = useState(0);
 
-  const nodes = useSearchableResource<Node>({ fetcher: (search) => getNodes(1, search) });
-  const availablePrimaryAllocations = useSearchableResource<NodeAllocation>({
+  const nodes = useSearchableResource<z.infer<typeof adminNodeSchema>>({ fetcher: (search) => getNodes(1, search) });
+  const availablePrimaryAllocations = useSearchableResource<z.infer<typeof adminNodeAllocationSchema>>({
     fetcher: (search) =>
       selectedNodeUuid
         ? getAvailableNodeAllocations(selectedNodeUuid, 1, search)
         : Promise.resolve(getEmptyPaginationSet()),
     deps: [selectedNodeUuid],
   });
-  const availableAllocations = useSearchableResource<NodeAllocation>({
+  const availableAllocations = useSearchableResource<z.infer<typeof adminNodeAllocationSchema>>({
     fetcher: (search) =>
       selectedNodeUuid
         ? getAvailableNodeAllocations(selectedNodeUuid, 1, search)
         : Promise.resolve(getEmptyPaginationSet()),
     deps: [selectedNodeUuid],
   });
-  const backups = useSearchableResource<ServerBackup>({ fetcher: (search) => getBackups(server.uuid, 1, search) });
+  const backups = useSearchableResource<z.infer<typeof serverBackupSchema>>({
+    fetcher: (search) => getBackups(server.uuid, 1, search),
+  });
 
   const closeAll = () => {
     onClose();

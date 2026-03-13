@@ -4,6 +4,7 @@ import { NavLink, Route, Routes } from 'react-router';
 import Container from '@/elements/Container.tsx';
 import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
 import ScreenBlock from '@/elements/ScreenBlock.tsx';
+import ServerSwitcher from '@/elements/ServerSwitcher.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { isAdmin } from '@/lib/permissions.ts';
@@ -52,7 +53,10 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
               />
             ))}
 
-          <Sidebar.Footer />
+          <div className='mt-auto pt-4'>
+            <ServerSwitcher className='mb-2' />
+            <Sidebar.Footer />
+          </div>
         </Sidebar>
       )}
 

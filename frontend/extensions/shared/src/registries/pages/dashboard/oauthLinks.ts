@@ -1,4 +1,6 @@
 import { ContainerRegistry, Registry } from 'shared';
+import { z } from 'zod';
+import { userOAuthLinkSchema } from '@/lib/schemas/user/oAuth.ts';
 import { ContextMenuRegistry } from '../../slices/contextMenu.ts';
 
 export class OAuthLinksRegistry implements Registry {
@@ -10,7 +12,8 @@ export class OAuthLinksRegistry implements Registry {
   }
 
   public container: ContainerRegistry = new ContainerRegistry();
-  public oauthLinkContextMenu: ContextMenuRegistry<{ oauthLink: UserOAuthLink }> = new ContextMenuRegistry();
+  public oauthLinkContextMenu: ContextMenuRegistry<{ oauthLink: z.infer<typeof userOAuthLinkSchema> }> =
+    new ContextMenuRegistry();
 
   public enterContainer(callback: (registry: ContainerRegistry) => unknown): this {
     callback(this.container);
@@ -18,7 +21,7 @@ export class OAuthLinksRegistry implements Registry {
   }
 
   public enterOauthLinkContextMenu(
-    callback: (registry: ContextMenuRegistry<{ oauthLink: UserOAuthLink }>) => unknown,
+    callback: (registry: ContextMenuRegistry<{ oauthLink: z.infer<typeof userOAuthLinkSchema> }>) => unknown,
   ): this {
     callback(this.oauthLinkContextMenu);
     return this;

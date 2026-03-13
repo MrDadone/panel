@@ -22,22 +22,59 @@ export default function StorageS3({ form }: { form: UseFormReturnType<z.infer<ty
   return (
     <Stack mt='md'>
       <Group grow>
-        <TextInput withAsterisk label='Access Key' placeholder='Access Key' {...form.getInputProps('accessKey')} />
-        <PasswordInput withAsterisk label='Secret Key' placeholder='Secret Key' {...form.getInputProps('secretKey')} />
+        <TextInput
+          withAsterisk
+          label='Access Key'
+          placeholder='Access Key'
+          key={form.key('accessKey')}
+          {...form.getInputProps('accessKey')}
+        />
+        <PasswordInput
+          withAsterisk
+          label='Secret Key'
+          placeholder='Secret Key'
+          key={form.key('secretKey')}
+          {...form.getInputProps('secretKey')}
+        />
       </Group>
 
       <Group grow>
-        <TextInput withAsterisk label='Bucket' placeholder='Bucket' {...form.getInputProps('bucket')} />
-        <TextInput withAsterisk label='Region' placeholder='Region' {...form.getInputProps('region')} />
+        <TextInput
+          withAsterisk
+          label='Bucket'
+          placeholder='Bucket'
+          key={form.key('bucket')}
+          {...form.getInputProps('bucket')}
+        />
+        <TextInput
+          withAsterisk
+          label='Region'
+          placeholder='Region'
+          key={form.key('region')}
+          {...form.getInputProps('region')}
+        />
       </Group>
 
       <Group grow>
-        <TextInput withAsterisk label='Public URL' placeholder='Public URL' {...form.getInputProps('publicUrl')} />
-        <TextInput withAsterisk label='Endpoint' placeholder='Endpoint' {...form.getInputProps('endpoint')} />
+        <TextInput
+          withAsterisk
+          label='Public URL'
+          placeholder='Public URL'
+          key={form.key('publicUrl')}
+          {...form.getInputProps('publicUrl')}
+        />
+        <TextInput
+          withAsterisk
+          label='Endpoint'
+          placeholder='Endpoint'
+          key={form.key('endpoint')}
+          {...form.getInputProps('endpoint')}
+        />
       </Group>
 
       <Switch
         label={form.values.pathStyle ? 'Using path-style URLs' : 'Using virtual-hosted-style URLs'}
+        key={form.key('pathStyle')}
         {...form.getInputProps('pathStyle', { type: 'checkbox' })}
       />
     </Stack>

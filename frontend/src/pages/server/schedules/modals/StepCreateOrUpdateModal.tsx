@@ -1,7 +1,10 @@
 import { faSave } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Divider, ModalProps, Stack, Text } from '@mantine/core';
-import { useState } from 'react';
+import { useForm } from '@mantine/form';
+import { zod4Resolver } from 'mantine-form-zod-resolver';
+import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import createScheduleStep from '@/api/server/schedules/steps/createScheduleStep.ts';
 import updateScheduleStep from '@/api/server/schedules/steps/updateScheduleStep.ts';
@@ -9,6 +12,11 @@ import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { scheduleStepDefaultMapping, scheduleStepLabelMapping } from '@/lib/enums.ts';
+import {
+  serverScheduleSchema,
+  serverScheduleStepSchema,
+  serverScheduleStepUpdateSchema,
+} from '@/lib/schemas/server/schedules.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import StepCompressFiles from '../steps/StepCompressFiles.tsx';
@@ -31,11 +39,11 @@ import StepWaitForConsoleLine from '../steps/StepWaitForConsoleLine.tsx';
 import StepWriteFile from '../steps/StepWriteFile.tsx';
 
 type Props = ModalProps & {
-  schedule: ServerSchedule;
-  propStep?: ScheduleStep;
+  schedule: z.infer<typeof serverScheduleSchema>;
+  propStep?: z.infer<typeof serverScheduleStepSchema>;
   nextStepOrder?: number;
-  onStepCreate?: (step: ScheduleStep) => void;
-  onStepUpdate?: (step: ScheduleStep) => void;
+  onStepCreate?: (step: z.infer<typeof serverScheduleStepSchema>) => void;
+  onStepUpdate?: (step: z.infer<typeof serverScheduleStepSchema>) => void;
 };
 
 export default function StepCreateOrUpdateModal({
@@ -52,30 +60,40 @@ export default function StepCreateOrUpdateModal({
 
   const [loading, setLoading] = useState(false);
 
-  const [step, setStep] = useState<ScheduleStep>(
-    propStep ||
-      ({
-        action: scheduleStepDefaultMapping.sleep,
-        order: 1,
-      } as ScheduleStep),
-  );
+  const form = useForm<z.infer<typeof serverScheduleStepUpdateSchema>>({
+    initialValues: {
+      order: nextStepOrder ?? 1,
+      action: scheduleStepDefaultMapping.sleep,
+    },
+    validateInputOnBlur: true,
+    validate: zod4Resolver(serverScheduleStepSchema),
+  });
+
+  useEffect(() => {
+    if (propStep) {
+      form.setValues({
+        order: propStep.order,
+        action: propStep.action,
+      });
+    }
+  }, [propStep]);
 
   const doCreateOrUpdate = () => {
     setLoading(true);
 
     if (propStep) {
-      updateScheduleStep(server.uuid, schedule.uuid, propStep.uuid, step)
+      updateScheduleStep(server.uuid, schedule.uuid, propStep.uuid, form.values)
         .then(() => {
           onClose();
           addToast('Schedule step updated.', 'success');
-          onStepUpdate?.(step);
+          onStepUpdate?.({ ...propStep, ...form.values });
         })
         .catch((msg) => {
           addToast(httpErrorToHuman(msg), 'error');
         })
         .finally(() => setLoading(false));
     } else {
-      createScheduleStep(server.uuid, schedule.uuid, { ...step, order: nextStepOrder! })
+      createScheduleStep(server.uuid, schedule.uuid, form.values)
         .then((step) => {
           onClose();
           addToast('Schedule step created.', 'success');
@@ -97,51 +115,48 @@ export default function StepCreateOrUpdateModal({
             value,
             label,
           }))}
-          value={step.action.type}
-          onChange={(value) =>
-            setStep({ ...step, action: scheduleStepDefaultMapping[value as ScheduleAction['type']] })
-          }
           searchable
+          {...form.getInputProps('action.type')}
         />
 
         <Divider />
 
-        {step.action.type === 'sleep' ? (
-          <StepSleep action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'ensure' ? (
-          <StepEnsure action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'format' ? (
-          <StepFormat action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'match_regex' ? (
-          <StepMatchRegex action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'wait_for_console_line' ? (
-          <StepWaitForConsoleLine action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'send_power' ? (
-          <StepSendPower action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'send_command' ? (
-          <StepSendCommand action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'create_backup' ? (
-          <StepCreateBackup action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'create_directory' ? (
-          <StepCreateDirectory action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'write_file' ? (
-          <StepWriteFile action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'copy_file' ? (
-          <StepCopyFile action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'delete_files' ? (
-          <StepDeleteFiles action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'rename_files' ? (
-          <StepRenameFiles action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'compress_files' ? (
-          <StepCompressFiles action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'decompress_file' ? (
-          <StepDecompressFile action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'update_startup_variable' ? (
-          <StepUpdateStartupVariable action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'update_startup_command' ? (
-          <StepUpdateStartupCommand action={step.action} setAction={(action) => setStep({ ...step, action })} />
-        ) : step.action.type === 'update_startup_docker_image' ? (
-          <StepUpdateStartupDockerImage action={step.action} setAction={(action) => setStep({ ...step, action })} />
+        {form.values.action.type === 'sleep' ? (
+          <StepSleep form={form} />
+        ) : form.values.action.type === 'ensure' ? (
+          <StepEnsure form={form} />
+        ) : form.values.action.type === 'format' ? (
+          <StepFormat form={form} />
+        ) : form.values.action.type === 'match_regex' ? (
+          <StepMatchRegex form={form} />
+        ) : form.values.action.type === 'wait_for_console_line' ? (
+          <StepWaitForConsoleLine form={form} />
+        ) : form.values.action.type === 'send_power' ? (
+          <StepSendPower form={form} />
+        ) : form.values.action.type === 'send_command' ? (
+          <StepSendCommand form={form} />
+        ) : form.values.action.type === 'create_backup' ? (
+          <StepCreateBackup form={form} />
+        ) : form.values.action.type === 'create_directory' ? (
+          <StepCreateDirectory form={form} />
+        ) : form.values.action.type === 'write_file' ? (
+          <StepWriteFile form={form} />
+        ) : form.values.action.type === 'copy_file' ? (
+          <StepCopyFile form={form} />
+        ) : form.values.action.type === 'delete_files' ? (
+          <StepDeleteFiles form={form} />
+        ) : form.values.action.type === 'rename_files' ? (
+          <StepRenameFiles form={form} />
+        ) : form.values.action.type === 'compress_files' ? (
+          <StepCompressFiles form={form} />
+        ) : form.values.action.type === 'decompress_file' ? (
+          <StepDecompressFile form={form} />
+        ) : form.values.action.type === 'update_startup_variable' ? (
+          <StepUpdateStartupVariable form={form} />
+        ) : form.values.action.type === 'update_startup_command' ? (
+          <StepUpdateStartupCommand form={form} />
+        ) : form.values.action.type === 'update_startup_docker_image' ? (
+          <StepUpdateStartupDockerImage form={form} />
         ) : (
           <Text c='dimmed'>Select an action type to configure</Text>
         )}

@@ -20,7 +20,7 @@ export default function EmailSendmail({
 
   return (
     <Stack mt='md'>
-      <TextInput label='Command' placeholder='Command' {...form.getInputProps('command')} />
+      <TextInput label='Command' placeholder='Command' key={form.key('command')} {...form.getInputProps('command')} />
 
       <Group grow>
         <TextInput
@@ -29,7 +29,12 @@ export default function EmailSendmail({
           placeholder='From Address'
           {...form.getInputProps('fromAddress')}
         />
-        <TextInput label='From Name' placeholder='From Name' {...form.getInputProps('fromName')} />
+        <TextInput
+          label='From Name'
+          placeholder='From Name'
+          key={form.key('fromName')}
+          {...form.getInputProps('fromName')}
+        />
       </Group>
     </Stack>
   );

@@ -1,13 +1,16 @@
 import { forwardRef } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 
 interface EggRowProps {
-  nest: AdminNest;
-  egg: AdminNestEgg;
+  nest: z.infer<typeof adminNestSchema>;
+  egg: z.infer<typeof adminEggSchema>;
   showSelection?: boolean;
   isSelected?: boolean;
   onSelectionChange?: (selected: boolean) => void;

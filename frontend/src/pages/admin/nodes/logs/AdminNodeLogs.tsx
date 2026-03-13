@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import stripAnsi from 'strip-ansi';
+import { z } from 'zod';
 import { axiosInstance, httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
@@ -7,6 +8,7 @@ import NumberInput from '@/elements/input/NumberInput.tsx';
 import Select from '@/elements/input/Select.tsx';
 import MonacoEditor from '@/elements/MonacoEditor.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -16,7 +18,7 @@ interface NodeLog {
   lastModified: Date;
 }
 
-export default function AdminNodeLogs({ node }: { node: Node }) {
+export default function AdminNodeLogs({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const { addToast } = useToast();
 
   const [logs, setLogs] = useState<NodeLog[]>([]);

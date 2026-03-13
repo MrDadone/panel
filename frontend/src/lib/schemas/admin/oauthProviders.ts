@@ -1,7 +1,9 @@
 import { z } from 'zod';
+import { adminFullUserSchema } from '@/lib/schemas/admin/users.ts';
 import { nullableString } from '@/lib/transformers.ts';
 
 export const adminOAuthProviderSchema = z.object({
+  uuid: z.string(),
   name: z.string().min(3).max(255),
   description: z.preprocess(nullableString, z.string().max(1024).nullable()),
   clientId: z.string().min(3).max(255),
@@ -20,4 +22,18 @@ export const adminOAuthProviderSchema = z.object({
   linkViewable: z.boolean(),
   userManageable: z.boolean(),
   basicAuth: z.boolean(),
+  created: z.date(),
+});
+
+export const adminOAuthProviderUpdateSchema = adminOAuthProviderSchema.omit({
+  uuid: true,
+  created: true,
+});
+
+export const adminOAuthUserLinkSchema = z.object({
+  uuid: z.string(),
+  user: adminFullUserSchema,
+  identifier: z.string(),
+  lastUsed: z.date().nullable(),
+  created: z.date(),
 });

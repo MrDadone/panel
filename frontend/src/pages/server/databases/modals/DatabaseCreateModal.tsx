@@ -11,6 +11,7 @@ import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
+import { databaseHostSchema } from '@/lib/schemas/generic.ts';
 import { serverDatabaseCreateSchema } from '@/lib/schemas/server/databases.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -21,7 +22,7 @@ export default function DatabaseCreateModal({ opened, onClose }: ModalProps) {
   const { addToast } = useToast();
   const { server, addDatabase } = useServerStore();
 
-  const [databaseHosts, setDatabaseHosts] = useState<DatabaseHost[]>([]);
+  const [databaseHosts, setDatabaseHosts] = useState<z.infer<typeof databaseHostSchema>[]>([]);
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof serverDatabaseCreateSchema>>({

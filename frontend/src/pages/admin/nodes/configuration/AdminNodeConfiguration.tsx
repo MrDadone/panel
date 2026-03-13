@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group, Stack, Title, Tooltip } from '@mantine/core';
 import jsYaml from 'js-yaml';
 import { useState } from 'react';
+import { z } from 'zod';
 import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
@@ -10,9 +11,10 @@ import HljsCode from '@/elements/HljsCode.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { handleCopyToClipboard } from '@/lib/copy.ts';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
-export default function AdminNodeConfiguration({ node }: { node: Node }) {
+export default function AdminNodeConfiguration({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const { addToast } = useToast();
   const [remote, setRemote] = useState(window.location.origin);
   const [apiPort, setApiPort] = useState(parseInt(new URL(node.url).port || '8080'));

@@ -9,11 +9,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { z } from 'zod';
 import getServer from '@/api/admin/servers/getServer.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import AdminServerAllocations from '@/pages/admin/servers/allocations/AdminServerAllocations.tsx';
 import AdminServerLogs from '@/pages/admin/servers/logs/AdminServerLogs.tsx';
 import AdminServerManagement from '@/pages/admin/servers/management/AdminServerManagement.tsx';
@@ -25,7 +27,7 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 export default function ServerView() {
   const params = useParams<'id'>();
   const { addToast } = useToast();
-  const [server, setServer] = useState<AdminServer | null>(null);
+  const [server, setServer] = useState<z.infer<typeof adminServerSchema> | null>(null);
 
   useEffect(() => {
     if (params.id) {

@@ -1,17 +1,19 @@
 import { forwardRef } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { storageAssetSchema } from '@/lib/schemas/admin/assets.ts';
 import { bytesToString } from '@/lib/size.ts';
 
 interface AssetRowProps {
-  asset: StorageAsset;
+  asset: z.infer<typeof storageAssetSchema>;
   isSelected: boolean;
 
-  addSelectedAsset: (asset: StorageAsset) => void;
-  removeSelectedAsset: (asset: StorageAsset) => void;
+  addSelectedAsset: (asset: z.infer<typeof storageAssetSchema>) => void;
+  removeSelectedAsset: (asset: z.infer<typeof storageAssetSchema>) => void;
 }
 
 const AssetRow = forwardRef<HTMLTableRowElement, AssetRowProps>(function AssetRow(

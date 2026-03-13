@@ -8,6 +8,7 @@ import updateServerGroup from '@/api/me/servers/groups/updateServerGroup.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { userServerGroupSchema } from '@/lib/schemas/user.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -17,7 +18,7 @@ const schema = z.object({
 });
 
 type Props = ModalProps & {
-  serverGroup: UserServerGroup;
+  serverGroup: z.infer<typeof userServerGroupSchema>;
 };
 
 export default function ServerGroupEditModal({ serverGroup, opened, onClose }: Props) {

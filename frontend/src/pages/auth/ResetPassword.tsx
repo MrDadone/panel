@@ -55,7 +55,7 @@ export default function ResetPassword() {
 
   return (
     <AuthWrapper>
-      <div className='flex flex-col space-y-4 mb-4'>
+      <div className='flex flex-col space-y-4 mb-4 w-full'>
         {error && (
           <Alert
             icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
@@ -69,16 +69,13 @@ export default function ResetPassword() {
         )}
       </div>
 
-      <Stack>
+      <Stack className='w-full'>
+        <div>
+          <Title order={2}>Reset Password</Title>
+          <Text className='text-neutral-400!'>Please enter your new password</Text>
+        </div>
         <Card>
           <Stack>
-            <Title order={2} ta='center'>
-              Reset Password
-            </Title>
-            <Text c='dimmed' ta='center'>
-              Please enter your new password
-            </Text>
-
             <PasswordInput placeholder='Password' {...form.getInputProps('password')} />
             <PasswordInput placeholder='Confirm Password' {...form.getInputProps('confirmPassword')} />
 

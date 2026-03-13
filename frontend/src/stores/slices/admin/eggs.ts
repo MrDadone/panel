@@ -1,28 +1,31 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { adminEggSchema, adminEggVariableSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNodeMountSchema } from '@/lib/schemas/admin/nodes.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface EggsSlice {
-  eggs: Pagination<AdminNestEgg>;
-  eggMounts: Pagination<NodeMount>;
-  eggVariables: NestEggVariable[];
+  eggs: Pagination<z.infer<typeof adminEggSchema>>;
+  eggMounts: Pagination<z.infer<typeof adminNodeMountSchema>>;
+  eggVariables: z.infer<typeof adminEggVariableSchema>[];
 
-  setEggs: (eggs: Pagination<AdminNestEgg>) => void;
-  addEgg: (egg: AdminNestEgg) => void;
-  removeEgg: (egg: AdminNestEgg) => void;
+  setEggs: (eggs: Pagination<z.infer<typeof adminEggSchema>>) => void;
+  addEgg: (egg: z.infer<typeof adminEggSchema>) => void;
+  removeEgg: (egg: z.infer<typeof adminEggSchema>) => void;
 
-  setEggMounts: (mounts: Pagination<NodeMount>) => void;
-  addEggMount: (mount: NodeMount) => void;
-  removeEggMount: (mount: NodeMount) => void;
+  setEggMounts: (mounts: Pagination<z.infer<typeof adminNodeMountSchema>>) => void;
+  addEggMount: (mount: z.infer<typeof adminNodeMountSchema>) => void;
+  removeEggMount: (mount: z.infer<typeof adminNodeMountSchema>) => void;
 
-  setEggVariables: (variables: NestEggVariable[]) => void;
-  addEggVariable: (variables: NestEggVariable) => void;
-  removeEggVariable: (variables: NestEggVariable) => void;
+  setEggVariables: (variables: z.infer<typeof adminEggVariableSchema>[]) => void;
+  addEggVariable: (variables: z.infer<typeof adminEggVariableSchema>) => void;
+  removeEggVariable: (variables: z.infer<typeof adminEggVariableSchema>) => void;
 }
 
 export const createEggsSlice: StateCreator<AdminStore, [], [], EggsSlice> = (set): EggsSlice => ({
-  eggs: getEmptyPaginationSet<AdminNestEgg>(),
-  eggMounts: getEmptyPaginationSet<NodeMount>(),
+  eggs: getEmptyPaginationSet<z.infer<typeof adminEggSchema>>(),
+  eggMounts: getEmptyPaginationSet<z.infer<typeof adminNodeMountSchema>>(),
   eggVariables: [],
 
   setEggs: (value) => set((state) => ({ ...state, eggs: value })),

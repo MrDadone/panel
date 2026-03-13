@@ -10,6 +10,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import { createSearchParams, useNavigate } from 'react-router';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteBackup from '@/api/server/backups/deleteBackup.ts';
 import downloadBackup from '@/api/server/backups/downloadBackup.ts';
@@ -21,6 +22,7 @@ import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
+import { serverBackupWithProgressSchema } from '@/lib/schemas/server/backups.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -29,7 +31,7 @@ import { useServerStore } from '@/stores/server.ts';
 import BackupEditModal from './modals/BackupEditModal.tsx';
 import BackupRestoreModal from './modals/BackupRestoreModal.tsx';
 
-export default function BackupRow({ backup }: { backup: ServerBackupWithProgress }) {
+export default function BackupRow({ backup }: { backup: z.infer<typeof serverBackupWithProgressSchema> }) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { server, removeBackup } = useServerStore();

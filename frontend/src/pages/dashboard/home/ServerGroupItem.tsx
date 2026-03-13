@@ -12,6 +12,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Badge, Collapse, Menu } from '@mantine/core';
 import { ComponentProps, memo, startTransition, useEffect, useState } from 'react';
+import { z } from 'zod';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import deleteServerGroup from '@/api/me/servers/groups/deleteServerGroup.ts';
 import getServerGroupServers from '@/api/me/servers/groups/getServerGroupServers.ts';
@@ -24,6 +25,7 @@ import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import { userServerGroupSchema } from '@/lib/schemas/user.ts';
 import ServerItem from '@/pages/dashboard/home/ServerItem.tsx';
 import { useBulkPowerActions } from '@/plugins/useBulkPowerActions.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -53,7 +55,7 @@ export default function ServerGroupItem({
   serverGroup,
   dragHandleProps,
 }: {
-  serverGroup: UserServerGroup;
+  serverGroup: z.infer<typeof userServerGroupSchema>;
   dragHandleProps: ComponentProps<'div'>;
 }) {
   const { t, tItem } = useTranslations();

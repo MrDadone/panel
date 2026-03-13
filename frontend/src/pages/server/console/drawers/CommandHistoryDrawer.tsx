@@ -2,6 +2,7 @@ import { faArrowLeft, faClipboard, faPaperPlane } from '@fortawesome/free-solid-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Divider, DrawerProps, Group, ScrollArea, Stack, Title } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import getServerActivity from '@/api/server/getServerActivity.ts';
 import Button from '@/elements/Button.tsx';
@@ -12,6 +13,7 @@ import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { handleCopyToClipboard } from '@/lib/copy.ts';
+import { serverActivitySchema } from '@/lib/schemas/server/activity.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -21,7 +23,7 @@ interface CommandDetail {
   command: string;
   user?: string;
   isSchedule?: boolean;
-  avatar?: string;
+  avatar?: string | null;
   created: Date;
 }
 
@@ -32,7 +34,9 @@ export default function CommandHistoryDrawer({ opened, onClose, ...props }: Draw
   const state = useServerStore((state) => state.state);
   const socketInstance = useServerStore((state) => state.socketInstance);
 
-  const [activities, setActivities] = useState<Pagination<ServerActivity>>(getEmptyPaginationSet());
+  const [activities, setActivities] = useState<Pagination<z.infer<typeof serverActivitySchema>>>(
+    getEmptyPaginationSet(),
+  );
   const [selectedCommand, setSelectedCommand] = useState<CommandDetail | null>(null);
 
   const { loading, setPage } = useSearchablePaginatedTable({
@@ -42,7 +46,7 @@ export default function CommandHistoryDrawer({ opened, onClose, ...props }: Draw
     deps: [server.uuid],
   });
 
-  const handleRowClick = (activity: ServerActivity) => {
+  const handleRowClick = (activity: z.infer<typeof serverActivitySchema>) => {
     const data = activity.data as { command?: string } | null;
     if (data?.command) {
       setSelectedCommand({

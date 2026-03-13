@@ -1,9 +1,15 @@
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminEggRepositorySchema } from '@/lib/schemas/admin/eggRepositories.ts';
 
-export default function EggRepositoryRow({ eggRepository }: { eggRepository: AdminEggRepository }) {
+export default function EggRepositoryRow({
+  eggRepository,
+}: {
+  eggRepository: z.infer<typeof adminEggRepositorySchema>;
+}) {
   return (
     <TableRow>
       <TableData>

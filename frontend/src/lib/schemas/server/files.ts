@@ -51,3 +51,56 @@ export const serverFilesSearchSchema = z.object({
     })
     .nullable(),
 });
+
+export const serverFileOperationBaseSchema = z.object({
+  startTime: z.date(),
+  progress: z.number(),
+  total: z.number(),
+});
+
+export const serverFileOperationCompressSchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('compress'),
+  path: z.string(),
+  files: z.array(z.string()),
+});
+
+export const serverFileOperationDecompressSchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('decompress'),
+  path: z.string(),
+  destinationPath: z.string(),
+});
+
+export const serverFileOperationPullSchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('pull'),
+  path: z.string(),
+});
+
+export const serverFileOperationCopySchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('copy'),
+  path: z.string(),
+  destinationPath: z.string(),
+});
+
+export const serverFileOperationCopyManySchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('copy_many'),
+  path: z.string(),
+  files: z.array(z.object({ from: z.string(), to: z.string() })),
+});
+
+export const serverFileOperationCopyRemoteSchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('copy_remote'),
+  server: z.string(),
+  path: z.string(),
+  files: z.array(z.string()),
+  destinationServer: z.string(),
+  destinationPath: z.string(),
+});
+
+export const serverFileOperationSchema = z.discriminatedUnion('type', [
+  serverFileOperationCompressSchema,
+  serverFileOperationDecompressSchema,
+  serverFileOperationPullSchema,
+  serverFileOperationCopySchema,
+  serverFileOperationCopyManySchema,
+  serverFileOperationCopyRemoteSchema,
+]);

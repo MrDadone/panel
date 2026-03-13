@@ -11,11 +11,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { z } from 'zod';
 import getNode from '@/api/admin/nodes/getNode.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import AdminNodeAllocations from './allocations/AdminNodeAllocations.tsx';
 import AdminNodeBackups from './backups/AdminNodeBackups.tsx';
@@ -30,7 +32,7 @@ import AdminNodeTransfers from './transfers/AdminNodeTransfers.tsx';
 export default function NodeView() {
   const params = useParams<'id'>();
   const { addToast } = useToast();
-  const [node, setNode] = useState<Node | null>(null);
+  const [node, setNode] = useState<z.infer<typeof adminNodeSchema> | null>(null);
 
   useEffect(() => {
     if (params.id) {

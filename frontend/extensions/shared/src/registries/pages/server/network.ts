@@ -1,5 +1,7 @@
 import { ContainerRegistry, Registry } from 'shared';
+import { z } from 'zod';
 import type { Props as ContainerProps } from '@/elements/containers/ServerContentContainer.tsx';
+import { serverAllocationSchema } from '@/lib/schemas/server/allocations.ts';
 import { ContextMenuRegistry } from '../../slices/contextMenu.ts';
 
 export class NetworkRegistry implements Registry {
@@ -11,7 +13,8 @@ export class NetworkRegistry implements Registry {
   }
 
   public container: ContainerRegistry<ContainerProps> = new ContainerRegistry();
-  public allocationContextMenu: ContextMenuRegistry<{ allocation: ServerAllocation }> = new ContextMenuRegistry();
+  public allocationContextMenu: ContextMenuRegistry<{ allocation: z.infer<typeof serverAllocationSchema> }> =
+    new ContextMenuRegistry();
 
   public enterContainer(callback: (registry: ContainerRegistry<ContainerProps>) => unknown): this {
     callback(this.container);
@@ -19,7 +22,7 @@ export class NetworkRegistry implements Registry {
   }
 
   public enterAllocationContextMenu(
-    callback: (registry: ContextMenuRegistry<{ allocation: ServerAllocation }>) => unknown,
+    callback: (registry: ContextMenuRegistry<{ allocation: z.infer<typeof serverAllocationSchema> }>) => unknown,
   ): this {
     callback(this.allocationContextMenu);
     return this;

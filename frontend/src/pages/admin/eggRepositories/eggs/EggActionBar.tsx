@@ -1,9 +1,11 @@
 import { faDownload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
+import { z } from 'zod';
 import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
 import { ObjectSet } from '@/lib/objectSet.ts';
+import { adminEggRepositoryEggSchema, adminEggRepositorySchema } from '@/lib/schemas/admin/eggRepositories.ts';
 import EggRepositoryEggsInstallModal from './modals/EggRepositoryEggsInstallModal.tsx';
 
 export default function EggActionBar({
@@ -11,9 +13,9 @@ export default function EggActionBar({
   selectedEggs,
   setSelectedEggs,
 }: {
-  eggRepository: AdminEggRepository;
-  selectedEggs: ObjectSet<AdminEggRepositoryEgg, 'uuid'>;
-  setSelectedEggs: (eggs: ObjectSet<AdminEggRepositoryEgg, 'uuid'>) => void;
+  eggRepository: z.infer<typeof adminEggRepositorySchema>;
+  selectedEggs: ObjectSet<z.infer<typeof adminEggRepositoryEggSchema>, 'uuid'>;
+  setSelectedEggs: (eggs: ObjectSet<z.infer<typeof adminEggRepositoryEggSchema>, 'uuid'>) => void;
 }) {
   const [openModal, setOpenModal] = useState<'install' | null>(null);
 
