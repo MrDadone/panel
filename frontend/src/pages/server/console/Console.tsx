@@ -30,10 +30,10 @@ import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import CommandHistoryDrawer from './drawers/CommandHistoryDrawer.tsx';
 import FeatureProvider from './features/FeatureProvider.tsx';
+import SshDetailsModal from './modals/SshDetailsModal.tsx';
 
 import '@xterm/xterm/css/xterm.css';
 import './xterm.css';
-import SshDetailsModal from './modals/SshDetailsModal.tsx';
 
 const RAW_PRELUDE = '\u001b[1m\u001b[33mcontainer@calagopus~ \u001b[0m';
 

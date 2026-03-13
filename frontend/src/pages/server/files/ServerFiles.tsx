@@ -52,6 +52,8 @@ function ServerFilesComponent() {
   const [_, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const canOpenFile = useServerCan('files.read-content');
+  const typeAheadBuffer = useRef('');
+  const typeAheadTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['server', server.uuid, 'files', { browsingDirectory, page }],
@@ -91,6 +93,9 @@ function ServerFilesComponent() {
         file.directory ||
         (isViewableArchive(file) && browsingFastDirectory)
       ) {
+        if (typeAheadTimeout.current) clearTimeout(typeAheadTimeout.current);
+        typeAheadBuffer.current = '';
+
         if (file.directory || (isViewableArchive(file) && browsingFastDirectory)) {
           setSearchParams({
             directory: join(browsingDirectory, file.name),
@@ -110,6 +115,36 @@ function ServerFilesComponent() {
     [server.uuidShort, settings, browsingDirectory, browsingFastDirectory, canOpenFile],
   );
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || openModal !== null) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key.length !== 1) return;
+
+      e.preventDefault();
+
+      if (typeAheadTimeout.current) clearTimeout(typeAheadTimeout.current);
+      typeAheadBuffer.current += e.key.toLowerCase();
+
+      const match = browsingEntries.data.find((entry) => entry.name.toLowerCase().startsWith(typeAheadBuffer.current));
+
+      if (match) {
+        doSelectFiles([match]);
+      }
+
+      typeAheadTimeout.current = setTimeout(() => {
+        typeAheadBuffer.current = '';
+      }, 1000);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (typeAheadTimeout.current) clearTimeout(typeAheadTimeout.current);
+    };
+  }, [browsingEntries.data, openModal, doSelectFiles]);
+
   useKeyboardShortcuts({
     shortcuts: [
       {
@@ -118,7 +153,7 @@ function ServerFilesComponent() {
         callback: () => doSelectFiles(browsingEntries.data),
       },
       {
-        key: 'f',
+        key: 'k',
         modifiers: ['ctrlOrMeta'],
         callback: () => doOpenModal('search'),
       },
