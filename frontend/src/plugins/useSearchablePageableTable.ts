@@ -45,8 +45,8 @@ export function useSearchablePaginatedTable<T>({
   }, [modifyParams, page, search]);
 
   const fetchData = useCallback(
-    (p: number, s: string) => {
-      setLoading(true);
+    (sL: boolean, p: number, s: string) => {
+      setLoading(sL);
       fetcher(p, s)
         .then((res) => {
           const paginationData = paginationKey
@@ -85,7 +85,7 @@ export function useSearchablePaginatedTable<T>({
   );
 
   const debouncedSearch = useCallback(
-    debounce((search: string) => fetchData(page, search), debounceMs),
+    debounce((search: string) => fetchData(true, page, search), debounceMs),
     [page, fetchData],
   );
 
@@ -94,7 +94,7 @@ export function useSearchablePaginatedTable<T>({
       debouncedSearch(search);
     } else {
       debouncedSearch.clear();
-      fetchData(page, '');
+      fetchData(true, page, '');
     }
   }, [page, search, debouncedSearch]);
 
@@ -104,6 +104,6 @@ export function useSearchablePaginatedTable<T>({
     setSearch,
     page,
     setPage,
-    refetch: () => fetchData(page, search),
+    refetch: (setLoading: boolean = true) => fetchData(setLoading, page, search),
   };
 }

@@ -19,7 +19,7 @@ export default function AdminNodeTransfers({ node }: { node: z.infer<typeof admi
     transfers: {},
   });
 
-  const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
+  const { loading, search, setSearch, setPage, refetch } = useSearchablePaginatedTable({
     fetcher: (page, search) => getNodeTransferringServers(node.uuid, page, search),
     setStoreData: setNodeTransferringServers,
     paginationKey: 'servers',
@@ -27,7 +27,7 @@ export default function AdminNodeTransfers({ node }: { node: z.infer<typeof admi
 
   useEffect(() => {
     const interval = setInterval(() => {
-      getNodeTransferringServers(node.uuid, 1, search).then(setNodeTransferringServers);
+      refetch(false);
     }, 1000);
 
     return () => clearInterval(interval);

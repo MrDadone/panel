@@ -31,7 +31,7 @@ export const adminServerSchema = z.object({
   uuidShort: z.string(),
   externalId: z.preprocess(nullableString, z.string().max(255).nullable()),
   allocation: serverAllocationSchema.nullable(),
-  node: adminNodeSchema,
+  node: z.lazy(() => adminNodeSchema),
   owner: adminFullUserSchema,
   egg: adminEggSchema,
   backupConfiguration: adminBackupConfigurationSchema.nullable(),
