@@ -1,6 +1,7 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import getNodes from '@/api/admin/nodes/getNodes.ts';
 import postTransfers from '@/api/admin/nodes/servers/postTransfers.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -13,6 +14,8 @@ import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { Modal } from '@/elements/modals/Modal.tsx';
 import { archiveFormatLabelMapping, compressionLevelLabelMapping } from '@/lib/enums.ts';
 import { ObjectSet } from '@/lib/objectSet.ts';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -23,8 +26,8 @@ export default function ServersTransferModal({
   opened,
   onClose,
 }: ModalProps & {
-  contextNode: Node;
-  servers: ObjectSet<AdminServer, 'uuid'>;
+  contextNode: z.infer<typeof adminNodeSchema>;
+  servers: ObjectSet<z.infer<typeof adminServerSchema>, 'uuid'>;
   clearSelected: () => void;
 }) {
   const { addToast } = useToast();
@@ -41,7 +44,7 @@ export default function ServersTransferModal({
   const [compressionLevel, setCompressionLevel] = useState<CompressionLevel>('good_compression');
   const [multiplexChannels, setMultiplexChannels] = useState(0);
 
-  const nodes = useSearchableResource<Node>({
+  const nodes = useSearchableResource<z.infer<typeof adminNodeSchema>>({
     fetcher: (search) => getNodes(1, search),
   });
 
