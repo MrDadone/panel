@@ -745,6 +745,21 @@
           "toast": {
             "installCancelled": "Server install cancelled."
           },
+          "modal": {
+            "sshDetails": {
+              "title": "SSH Details",
+              "form": {
+                "protocol": "Protocol",
+                "port": "Port",
+                "host": "Host",
+                "username": "Username",
+                "password": "Password",
+                "yourPassword": "Your Control Panel Password",
+                "command": "SSH Command"
+              },
+              "launch": "Launch"
+            }
+          },
           "notification": {
             "nodeMaintenance": "Your Server is on a node that is currently under maintenance.",
             "transferring": "Your Server is currently being transferred to another node.",
@@ -763,6 +778,7 @@
           },
           "tooltip": {
             "search": "Search",
+            "sshDetails": "SSH Details",
             "commandHistory": "Command History",
             "decreaseFontSize": "Decrease Font Size",
             "increaseFontSize": "Increase Font Size"
