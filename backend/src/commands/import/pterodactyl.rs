@@ -74,7 +74,7 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                 let source_app_key = match std::env::var("APP_KEY").map(|v| {
                     BASE64_ENGINE
                         .decode(v.trim_start_matches("base64:"))
-                        .unwrap_or_else(|_| v.as_bytes().to_vec())
+                        .unwrap_or_else(|_| v.into_bytes())
                 }) {
                     Ok(value) => Arc::new(value),
                     Err(err) => {
