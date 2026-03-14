@@ -98,6 +98,14 @@
           "command": "Command"
         }
       },
+      "badge": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "successful": "Successful",
+        "failed": "Failed"
+      },
       "server": {
         "noAllocation": "No Allocation",
         "state": {
@@ -143,9 +151,8 @@
       },
       "unlimited": "Unlimited",
       "readOnly": "Read-Only",
-      "active": "Active",
-      "inactive": "Inactive",
       "na": "N/A",
+      "never": "Never",
       "yes": "Yes",
       "no": "No",
       "web": "Web",

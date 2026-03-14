@@ -22,8 +22,9 @@ import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
-import { formatDateTime } from '@/lib/time.ts';
+import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import ScheduleCreateOrUpdateModal from './modals/ScheduleCreateOrUpdateModal.tsx';
 import ActionStep from './renderers/ActionStep.tsx';
@@ -34,6 +35,7 @@ import StepsEditor from './StepsEditor.tsx';
 
 export default function ScheduleView() {
   const params = useParams<'id'>();
+  const { t } = useTranslations();
   const { addToast } = useToast();
   const { server, schedule, setSchedule, runningScheduleSteps, scheduleSteps, setScheduleSteps } = useServerStore();
 
@@ -174,13 +176,15 @@ export default function ScheduleView() {
           <DetailCard
             icon={<FontAwesomeIcon icon={faClockRotateLeft} />}
             label='Last Run'
-            value={schedule.lastRun ? formatDateTime(schedule.lastRun) : 'Never'}
+            value={schedule.lastRun ? <FormattedTimestamp timestamp={schedule.lastRun} /> : t('common.never', {})}
             color='blue'
           />
           <DetailCard
             icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
             label='Last Failure'
-            value={schedule.lastFailure ? formatDateTime(schedule.lastFailure) : 'None'}
+            value={
+              schedule.lastFailure ? <FormattedTimestamp timestamp={schedule.lastFailure} /> : t('common.never', {})
+            }
             color={schedule.lastFailure ? 'red' : 'green'}
           />
         </div>

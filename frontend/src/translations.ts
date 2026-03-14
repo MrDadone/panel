@@ -134,6 +134,7 @@ const baseTranslations = defineTranslations({
       unlimited: 'Unlimited',
       readOnly: 'Read-Only',
       na: 'N/A',
+      never: 'Never',
       yes: 'Yes',
       no: 'No',
       web: 'Web',
