@@ -20,6 +20,7 @@ export class ServerRegistry implements Registry {
     this.backups.mergeFrom(other.backups);
     this.network.mergeFrom(other.network);
     this.startup.mergeFrom(other.startup);
+    this.mounts.mergeFrom(other.mounts);
     this.settings.mergeFrom(other.settings);
     this.activity.mergeFrom(other.activity);
 
