@@ -146,7 +146,12 @@ function FileActionBar() {
         key: 'v',
         modifiers: ['ctrlOrMeta'],
         callback: () => {
-          if (actingFiles.size > 0 && !loading) {
+          if (
+            actingFiles.size > 0 &&
+            !loading &&
+            browsingWritableDirectory &&
+            browsingDirectory !== actingFilesSource
+          ) {
             if (actingMode === 'copy') {
               doCopy();
             } else {
@@ -164,7 +169,15 @@ function FileActionBar() {
         },
       },
     ],
-    deps: [actingMode, actingFiles, selectedFiles, loading, browsingWritableDirectory],
+    deps: [
+      actingMode,
+      actingFiles,
+      actingFilesSource,
+      selectedFiles,
+      loading,
+      browsingWritableDirectory,
+      browsingDirectory,
+    ],
   });
 
   return (
@@ -180,13 +193,21 @@ function FileActionBar() {
           <>
             {actingMode === 'copy' ? (
               <Tooltip label={t('pages.server.files.actionBar.copyHere', { files: tItem('file', actingFiles.size) })}>
-                <Button onClick={doCopy} loading={loading}>
+                <Button
+                  onClick={doCopy}
+                  loading={loading}
+                  disabled={!browsingWritableDirectory || browsingDirectory === actingFilesSource}
+                >
                   <FontAwesomeIcon icon={faAnglesDown} />
                 </Button>
               </Tooltip>
             ) : (
               <Tooltip label={t('pages.server.files.actionBar.moveHere', { files: tItem('file', actingFiles.size) })}>
-                <Button onClick={doMove} loading={loading}>
+                <Button
+                  onClick={doMove}
+                  loading={loading}
+                  disabled={!browsingWritableDirectory || browsingDirectory === actingFilesSource}
+                >
                   <FontAwesomeIcon icon={faAnglesDown} />
                 </Button>
               </Tooltip>

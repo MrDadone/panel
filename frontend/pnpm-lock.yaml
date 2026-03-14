@@ -176,9 +176,6 @@ importers:
       shared:
         specifier: workspace:*
         version: link:extensions/shared
-      sockette:
-        specifier: ^2.0.6
-        version: 2.0.6
       strip-ansi:
         specifier: ^7.2.0
         version: 7.2.0
@@ -2209,9 +2206,6 @@ packages:
 
   set-cookie-parser@2.7.2:
     resolution: {integrity: sha512-oeM1lpU/UvhTxw+g3cIfxXHyJRc/uidd3yK1P242gzHds0udQBYzs3y8j4gCCW+ZJ7ad0yctld8RYO+bdurlvw==}
-
-  sockette@2.0.6:
-    resolution: {integrity: sha512-W6iG8RGV6Zife3Cj+FhuyHV447E6fqFM2hKmnaQrTvg3OydINV3Msj3WPFbX76blUlUxvQSMMMdrJxce8NqI5Q==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -4304,8 +4298,6 @@ snapshots:
   semver@7.7.4: {}
 
   set-cookie-parser@2.7.2: {}
-
-  sockette@2.0.6: {}
 
   source-map-js@1.2.1: {}
 

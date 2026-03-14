@@ -38,12 +38,14 @@ function ServerFilesComponent() {
   const { server } = useServerStore();
   const {
     actingFiles,
+    actingFilesSource,
     selectedFiles,
     browsingDirectory,
     browsingEntries,
     page,
     openModal,
     browsingFastDirectory,
+    browsingWritableDirectory,
     doSelectFiles,
     setBrowsingEntries,
     setBrowsingWritableDirectory,
@@ -210,7 +212,7 @@ function ServerFilesComponent() {
       {
         key: 'd',
         callback: () => {
-          if (selectedFiles.size === 1) {
+          if (selectedFiles.size === 1 && browsingWritableDirectory) {
             const file = selectedFiles.values()[0];
 
             copyFile(server.uuid, join(browsingDirectory, file.name), null)
@@ -226,7 +228,7 @@ function ServerFilesComponent() {
       {
         key: 'f2',
         callback: () => {
-          if (selectedFiles.size === 1) {
+          if (selectedFiles.size === 1 && browsingWritableDirectory) {
             doOpenModal('rename', [selectedFiles.values()[0]]);
           }
         },
@@ -240,7 +242,7 @@ function ServerFilesComponent() {
         },
       },
     ],
-    deps: [browsingEntries.data, selectedFiles, handleOpen],
+    deps: [browsingEntries.data, selectedFiles, handleOpen, browsingWritableDirectory],
   });
 
   return (
@@ -298,7 +300,7 @@ function ServerFilesComponent() {
                       file={entry}
                       handleOpen={() => handleOpen(entry)}
                       isSelected={selectedFiles.has(entry)}
-                      isActing={actingFiles.has(entry)}
+                      isActing={actingFiles.has(entry) && actingFilesSource === browsingDirectory}
                       multipleSelected={selectedFiles.size > 1}
                     />
                   )}

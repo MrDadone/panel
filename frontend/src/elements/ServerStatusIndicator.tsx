@@ -63,7 +63,13 @@ export default function ServerStatusIndicator() {
         <Group gap='xs'>
           <ServerCan action={['control.start', 'control.stop']} matchAny>
             <Tooltip label={t(buttonLabel, {})}>
-              <ActionIcon size='lg' radius='md' color={buttonColor} onClick={() => onPowerAction(buttonAction)}>
+              <ActionIcon
+                size='lg'
+                radius='md'
+                color={buttonColor}
+                disabled={!socketConnected}
+                onClick={() => onPowerAction(buttonAction)}
+              >
                 <FontAwesomeIcon icon={buttonIcon} size='sm' />
               </ActionIcon>
             </Tooltip>
@@ -74,7 +80,7 @@ export default function ServerStatusIndicator() {
                 size='lg'
                 radius='md'
                 color='gray'
-                disabled={state === 'offline'}
+                disabled={!socketConnected || state === 'offline'}
                 onClick={() => onPowerAction('restart')}
               >
                 <FontAwesomeIcon icon={faRefresh} size='sm' />

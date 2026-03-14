@@ -214,6 +214,19 @@ const baseTranslations = defineTranslations({
           },
         },
       },
+      serverWebsocket: {
+        error: {
+          connectionFailed: 'Unable to connect after multiple attempts. Please refresh the page.',
+          connectionClosed: 'Connection to server was closed. Attempting to reconnect...',
+          connectionRetry: 'Connection lost. Retrying (attempt {attempt})...',
+          authFailed: 'Authentication failed. Attempting to refresh credentials...',
+          authRefreshFailed: 'Failed to refresh credentials. Please refresh the page to try again.',
+          permissionRevoked: 'Connection closed: your access to this server has been revoked.',
+        },
+        banner: {
+          retrying: 'Retrying in {countdown}...',
+        },
+      },
     },
     pages: {
       oobe: {
@@ -529,6 +542,9 @@ const baseTranslations = defineTranslations({
             columns: {
               credentialId: 'Credential ID',
             },
+          },
+          tooltip: {
+            secureContextRequired: 'A secure context (HTTPS) is required to use security keys.',
           },
           modal: {
             createSecurityKey: {
@@ -1248,8 +1264,8 @@ const baseTranslations = defineTranslations({
           debugInformation: {
             title: 'Debug Information',
             form: {
-              nodeName: 'Node',
-              locationName: 'Location',
+              nodeName: 'Node (UUID)',
+              locationName: 'Location (UUID)',
               serverUuid: 'Server UUID',
             },
           },

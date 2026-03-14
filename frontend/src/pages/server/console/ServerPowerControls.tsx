@@ -12,6 +12,7 @@ export default function ServerPowerControls() {
   const [open, setOpen] = useState(false);
   const state = useServerStore((state) => state.state);
   const instance = useServerStore((state) => state.socketInstance);
+  const socketConnected = useServerStore((state) => state.socketConnected);
 
   const killable = state === 'stopping';
 
@@ -53,7 +54,7 @@ export default function ServerPowerControls() {
       <ServerCan action='control.start'>
         <Button
           color='green'
-          disabled={state !== 'offline'}
+          disabled={!socketConnected || state !== 'offline'}
           loading={state === 'starting'}
           onClick={() => onButtonClick('start')}
         >
@@ -61,12 +62,16 @@ export default function ServerPowerControls() {
         </Button>
       </ServerCan>
       <ServerCan action='control.restart'>
-        <Button color='gray' disabled={!state} onClick={() => onButtonClick('restart')}>
+        <Button color='gray' disabled={!socketConnected || !state} onClick={() => onButtonClick('restart')}>
           {t('pages.server.console.power.restart', {})}
         </Button>
       </ServerCan>
       <ServerCan action='control.stop'>
-        <Button color='red' disabled={state === 'offline'} onClick={() => onButtonClick(killable ? 'kill' : 'stop')}>
+        <Button
+          color='red'
+          disabled={!socketConnected || state === 'offline'}
+          onClick={() => onButtonClick(killable ? 'kill' : 'stop')}
+        >
           {killable ? t('pages.server.console.power.kill', {}) : t('pages.server.console.power.stop', {})}
         </Button>
       </ServerCan>

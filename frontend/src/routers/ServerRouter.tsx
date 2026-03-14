@@ -14,6 +14,7 @@ import { isAdmin } from '@/lib/permissions.ts';
 import { to } from '@/lib/routes.ts';
 import WebsocketHandler from '@/pages/server/WebsocketHandler.tsx';
 import WebsocketListener from '@/pages/server/WebsocketListener.tsx';
+import WebsocketStatusBanner from '@/pages/server/WebsocketStatusBanner.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import ServerPermissionGuard from '@/routers/guards/ServerPermissionGuard.tsx';
@@ -124,6 +125,8 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
               {window.extensionContext.extensionRegistry.pages.server.prependedComponents.map((Component, i) => (
                 <Component key={`server-prepended-component-${i}`} />
               ))}
+
+              <WebsocketStatusBanner />
 
               <Suspense fallback={<Spinner.Centered />}>
                 <Routes>
