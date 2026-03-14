@@ -910,6 +910,7 @@ const baseTranslations = defineTranslations({
             rename: 'Rename',
             copy: 'Copy',
             move: 'Move',
+            fingerprint: 'Fingerprint',
             permissions: 'Permissions',
             unarchive: 'Unarchive',
             archive: 'Archive',
@@ -1020,6 +1021,16 @@ const baseTranslations = defineTranslations({
                 destination: 'Destination',
               },
               createdAs: 'These files will be created on the remote server under ',
+            },
+            fileFingerprints: {
+              title: 'File Fingerprint',
+              form: {
+                algorithm: 'Algorithm',
+                fingerprint: 'Fingerprint',
+              },
+              button: {
+                calculate: 'Calculate Fingerprint',
+              },
             },
             deleteFile: {
               title: 'Delete File',

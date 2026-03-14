@@ -47,7 +47,7 @@ import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfig
 import { processConfigurationConfigParser } from '@/lib/schemas/admin/eggs.ts';
 import { adminSettingsEmailSchema, adminSettingsStorageSchema } from '@/lib/schemas/admin/settings.ts';
 import { databaseType, streamingArchiveFormat } from '@/lib/schemas/generic.ts';
-import { archiveFormat, compressionLevel } from '@/lib/schemas/server/files.ts';
+import { archiveFormat, compressionLevel, fingerprintAlgorithm } from '@/lib/schemas/server/files.ts';
 import {
   serverScheduleComparator,
   serverScheduleConditionSchema,
@@ -137,6 +137,17 @@ export const streamingArchiveFormatLabelMapping: Record<z.infer<typeof streaming
   tar_lz4: '.tar.lz4',
   tar_zstd: '.tar.zst',
   zip: '.zip',
+};
+
+export const fingerprintAlgorithmLabelMapping: Record<z.infer<typeof fingerprintAlgorithm>, string> = {
+  md5: 'MD5',
+  crc32: 'CRC32',
+  sha1: 'SHA-1',
+  sha224: 'SHA-224',
+  sha256: 'SHA-256',
+  sha384: 'SHA-384',
+  sha512: 'SHA-512',
+  curseforge: 'CurseForge',
 };
 
 export const schedulePreConditionLabelMapping: Record<

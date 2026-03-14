@@ -9,6 +9,7 @@ export type ModalType =
   | 'rename'
   | 'copy'
   | 'copy-remote'
+  | 'fingerprint'
   | 'permissions'
   | 'archive'
   | 'delete'

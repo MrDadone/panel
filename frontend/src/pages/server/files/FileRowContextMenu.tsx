@@ -7,6 +7,7 @@ import {
   faFilePen,
   faFileShield,
   faFileZipper,
+  faFingerprint,
   faFolder,
   faInfoCircle,
   faTrash,
@@ -111,6 +112,14 @@ export default function FileRowContextMenu({ file, children }: FileRowContextMen
           label: t('pages.server.files.button.details', {}),
           onClick: () => doOpenModal('details', [file]),
           color: 'gray',
+        },
+        {
+          icon: faFingerprint,
+          label: t('pages.server.files.button.fingerprint', {}),
+          hidden: !file.file,
+          onClick: () => doOpenModal('fingerprint', [file]),
+          color: 'gray',
+          canAccess: useServerCan('files.read-content'),
         },
         {
           icon: faFilePen,

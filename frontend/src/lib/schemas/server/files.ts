@@ -28,6 +28,10 @@ export const serverFilesPullSchema = z.object({
   name: z.string().nullable(),
 });
 
+export const serverFilesFingerprintSchema = z.object({
+  algorithm: z.lazy(() => fingerprintAlgorithm),
+});
+
 export const serverFilesSearchSchema = z.object({
   pathFilter: z
     .object({
@@ -139,6 +143,17 @@ export const archiveFormat = z.enum([
 ]);
 
 export const compressionLevel = z.enum(['best_speed', 'good_speed', 'good_compression', 'best_compression']);
+
+export const fingerprintAlgorithm = z.enum([
+  'md5',
+  'crc32',
+  'sha1',
+  'sha224',
+  'sha256',
+  'sha384',
+  'sha512',
+  'curseforge',
+]);
 
 export const downloadSchema = z.object({
   identifier: z.string(),
