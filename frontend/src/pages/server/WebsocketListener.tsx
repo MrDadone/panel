@@ -1,5 +1,8 @@
 import { QueryFilters, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { z } from 'zod';
+import { serverFileOperationSchema } from '@/lib/schemas/server/files.ts';
+import { serverImagePullProgressSchema, serverResourceUsageSchema } from '@/lib/schemas/server/server.ts';
 import { transformKeysToCamelCase } from '@/lib/transformers.ts';
 import useWebsocketEvent, { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -62,13 +65,13 @@ export default function WebsocketListener() {
       return;
     }
 
-    const resourceUsage = transformKeysToCamelCase(wsStats) as ResourceUsage;
+    const resourceUsage = transformKeysToCamelCase(wsStats) as z.infer<typeof serverResourceUsageSchema>;
     setStats(resourceUsage);
     addServerResourceUsage(server.uuid, resourceUsage);
   });
 
   useWebsocketEvent(SocketEvent.IMAGE_PULL_PROGRESS, (id, data) => {
-    let wsData: ImagePullProgress;
+    let wsData: z.infer<typeof serverImagePullProgressSchema>;
     try {
       wsData = JSON.parse(data);
     } catch {
@@ -95,7 +98,7 @@ export default function WebsocketListener() {
 
   useWebsocketEvent(SocketEvent.BACKUP_COMPLETED, (uuid, data) => {
     let wsData: {
-      isSuccessful: boolean;
+      successful: boolean;
       checksum_type: string;
       checksum: string;
       size: number;
@@ -110,7 +113,7 @@ export default function WebsocketListener() {
     }
 
     updateBackup(uuid, {
-      isSuccessful: wsData.isSuccessful,
+      isSuccessful: wsData.successful,
       checksum: `${wsData.checksum_type}:${wsData.checksum}`,
       bytes: wsData.size,
       files: wsData.files,
@@ -179,9 +182,9 @@ export default function WebsocketListener() {
   });
 
   useWebsocketEvent(SocketEvent.OPERATION_PROGRESS, (uuid, data) => {
-    let wsData: FileOperation;
+    let wsData: z.infer<typeof serverFileOperationSchema>;
     try {
-      wsData = transformKeysToCamelCase(JSON.parse(data)) as FileOperation;
+      wsData = transformKeysToCamelCase(JSON.parse(data)) as z.infer<typeof serverFileOperationSchema>;
     } catch {
       return;
     }

@@ -2,20 +2,22 @@ import { faGear, faPencil, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group, Stack, Text, ThemeIcon } from '@mantine/core';
 import { useState } from 'react';
+import z from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteScheduleStep from '@/api/server/schedules/steps/deleteScheduleStep.ts';
 import Card from '@/elements/Card.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { scheduleStepIconMapping, scheduleStepLabelMapping } from '@/lib/enums.ts';
+import { serverScheduleSchema, serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import StepCreateOrUpdateModal from './modals/StepCreateOrUpdateModal.tsx';
 import ActionRenderer from './renderers/ActionRenderer.tsx';
 
 interface Props {
-  schedule: ServerSchedule;
-  step: ScheduleStep;
-  onStepUpdate: (step: ScheduleStep) => void;
+  schedule: z.infer<typeof serverScheduleSchema>;
+  step: z.infer<typeof serverScheduleStepSchema>;
+  onStepUpdate: (step: z.infer<typeof serverScheduleStepSchema>) => void;
   onStepDelete: (stepUuid: string) => void;
 }
 

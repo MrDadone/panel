@@ -4,6 +4,7 @@ import { Group, Title } from '@mantine/core';
 import { useState } from 'react';
 import getSecurityKeys from '@/api/me/security-keys/getSecurityKeys.ts';
 import Button from '@/elements/Button.tsx';
+import ConditionalTooltip from '@/elements/ConditionalTooltip.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -43,9 +44,19 @@ export default function DashboardSecurityKeys() {
             onChange={(e) => setSearch(e.target.value)}
             w={250}
           />
-          <Button onClick={() => setOpenModal('create')} color='blue' leftSection={<FontAwesomeIcon icon={faPlus} />}>
-            {t('common.button.create', {})}
-          </Button>
+          <ConditionalTooltip
+            label={t('pages.account.securityKeys.tooltip.secureContextRequired', {})}
+            enabled={!window.isSecureContext}
+          >
+            <Button
+              onClick={() => setOpenModal('create')}
+              disabled={!window.isSecureContext}
+              color='blue'
+              leftSection={<FontAwesomeIcon icon={faPlus} />}
+            >
+              {t('common.button.create', {})}
+            </Button>
+          </ConditionalTooltip>
         </Group>
       </Group>
 

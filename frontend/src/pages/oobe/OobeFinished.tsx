@@ -9,12 +9,15 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Paper, Stack, Text, ThemeIcon, Title } from '@mantine/core';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import getLocations from '@/api/admin/locations/getLocations.ts';
 import getNodes from '@/api/admin/nodes/getNodes.ts';
 import updateOobeSettings from '@/api/admin/settings/updateOobeSettings.ts';
 import Badge from '@/elements/Badge.tsx';
 import Button from '@/elements/Button.tsx';
 import Divider from '@/elements/Divider.tsx';
+import { adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -26,10 +29,10 @@ export default function OobeFinished() {
   const { settings, setSettings } = useGlobalStore();
   const navigate = useNavigate();
 
-  const locations = useSearchableResource<Location>({
+  const locations = useSearchableResource<z.infer<typeof adminLocationSchema>>({
     fetcher: () => getLocations(1),
   });
-  const nodes = useSearchableResource<Node>({
+  const nodes = useSearchableResource<z.infer<typeof adminNodeSchema>>({
     fetcher: () => getNodes(1),
   });
 

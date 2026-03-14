@@ -1,6 +1,7 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import getNodes from '@/api/admin/nodes/getNodes.ts';
 import postTransfers from '@/api/admin/nodes/servers/postTransfers.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -13,6 +14,12 @@ import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { Modal } from '@/elements/modals/Modal.tsx';
 import { archiveFormatLabelMapping, compressionLevelLabelMapping } from '@/lib/enums.ts';
 import { ObjectSet } from '@/lib/objectSet.ts';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import {
+  archiveFormat as archiveFormatEnum,
+  compressionLevel as compressionLevelEnum,
+} from '@/lib/schemas/server/files.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -23,8 +30,8 @@ export default function ServersTransferModal({
   opened,
   onClose,
 }: ModalProps & {
-  contextNode: Node;
-  servers: ObjectSet<AdminServer, 'uuid'>;
+  contextNode: z.infer<typeof adminNodeSchema>;
+  servers: ObjectSet<z.infer<typeof adminServerSchema>, 'uuid'>;
   clearSelected: () => void;
 }) {
   const { addToast } = useToast();
@@ -37,11 +44,11 @@ export default function ServersTransferModal({
   const [allocationRespectEggPortRange, setAllocationRespectEggPortRange] = useState(true);
   const [transferBackups, setTransferBackups] = useState(false);
   const [deleteSourceBackups, setDeleteSourceBackups] = useState(false);
-  const [archiveFormat, setArchiveFormat] = useState<ArchiveFormat>('tar_lz4');
-  const [compressionLevel, setCompressionLevel] = useState<CompressionLevel>('good_compression');
+  const [archiveFormat, setArchiveFormat] = useState<z.infer<typeof archiveFormatEnum>>('tar_lz4');
+  const [compressionLevel, setCompressionLevel] = useState<z.infer<typeof compressionLevelEnum>>('good_compression');
   const [multiplexChannels, setMultiplexChannels] = useState(0);
 
-  const nodes = useSearchableResource<Node>({
+  const nodes = useSearchableResource<z.infer<typeof adminNodeSchema>>({
     fetcher: (search) => getNodes(1, search),
   });
 
@@ -145,7 +152,7 @@ export default function ServersTransferModal({
             withAsterisk
             label='Archive Format'
             value={archiveFormat}
-            onChange={(value) => setArchiveFormat(value as ArchiveFormat)}
+            onChange={(value) => setArchiveFormat(value as z.infer<typeof archiveFormatEnum>)}
             data={Object.entries(archiveFormatLabelMapping)
               .filter(([value]) => !['zip', 'seven_zip'].includes(value))
               .map(([value, label]) => ({
@@ -158,7 +165,7 @@ export default function ServersTransferModal({
             withAsterisk
             label='Compression Level'
             value={compressionLevel}
-            onChange={(value) => setCompressionLevel(value as CompressionLevel)}
+            onChange={(value) => setCompressionLevel(value as z.infer<typeof compressionLevelEnum>)}
             disabled={archiveFormat === 'tar'}
             data={Object.entries(compressionLevelLabelMapping).map(([value, label]) => ({
               value,

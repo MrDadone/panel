@@ -8,6 +8,7 @@ import updateSshKey from '@/api/me/ssh-keys/updateSshKey.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { userSshKeySchema } from '@/lib/schemas/user/sshKeys.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -17,7 +18,7 @@ const schema = z.object({
 });
 
 type Props = ModalProps & {
-  sshKey: UserSshKey;
+  sshKey: z.infer<typeof userSshKeySchema>;
 };
 
 export default function SshKeyEditModal({ sshKey, opened, onClose }: Props) {

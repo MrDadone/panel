@@ -1,5 +1,6 @@
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteOAuthLink from '@/api/me/oauth-links/deleteOAuthLink.ts';
 import Code from '@/elements/Code.tsx';
@@ -7,11 +8,12 @@ import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { userOAuthLinkSchema } from '@/lib/schemas/user/oAuth.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
 
-export default function OAuthLinkRow({ oauthLink }: { oauthLink: UserOAuthLink }) {
+export default function OAuthLinkRow({ oauthLink }: { oauthLink: z.infer<typeof userOAuthLinkSchema> }) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { removeOAuthLink } = useUserStore();

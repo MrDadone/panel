@@ -21,5 +21,5 @@ const CurrentWindowProvider: FC<{ children: ReactNode; id: number | null }> = ({
   return <CurrentWindowContext.Provider value={contextValue}>{children}</CurrentWindowContext.Provider>;
 };
 
-export { CurrentWindowProvider };
 export { useCurrentWindow } from './contexts/currentWindowContext.ts';
+export { CurrentWindowProvider };

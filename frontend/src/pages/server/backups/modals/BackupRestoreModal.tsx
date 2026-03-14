@@ -1,16 +1,18 @@
 import { ModalProps, Switch } from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import restoreBackup from '@/api/server/backups/restoreBackup.ts';
 import Button from '@/elements/Button.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { serverBackupSchema } from '@/lib/schemas/server/backups.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  backup: ServerBackup;
+  backup: z.infer<typeof serverBackupSchema>;
 };
 
 export default function BackupRestoreModal({ backup, opened, onClose }: Props) {

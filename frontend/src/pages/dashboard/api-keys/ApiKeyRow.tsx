@@ -1,5 +1,6 @@
 import { faPencil, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteApiKey from '@/api/me/api-keys/deleteApiKey.ts';
 import Code from '@/elements/Code.tsx';
@@ -8,12 +9,13 @@ import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { userApiKeySchema } from '@/lib/schemas/user/apiKeys.ts';
 import ApiKeyCreateOrUpdateModal from '@/pages/dashboard/api-keys/modals/ApiKeyCreateOrUpdateModal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
 
-export default function ApiKeyRow({ apiKey }: { apiKey: UserApiKey }) {
+export default function ApiKeyRow({ apiKey }: { apiKey: z.infer<typeof userApiKeySchema> }) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { removeApiKey } = useUserStore();

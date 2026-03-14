@@ -152,6 +152,13 @@ mod post {
             ),
         )?;
 
+        UserSecurityKey::delete_unconfigured_by_user_uuid_name(
+            &state.database,
+            user.uuid,
+            &data.name,
+        )
+        .await?;
+
         let options = shared::models::user_security_key::CreateUserSecurityKeyOptions {
             user_uuid: user.uuid,
             name: data.name,

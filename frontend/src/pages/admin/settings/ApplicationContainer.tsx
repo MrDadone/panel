@@ -15,6 +15,7 @@ import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import { storageAssetSchema } from '@/lib/schemas/admin/assets.ts';
 import { adminSettingsApplicationSchema } from '@/lib/schemas/admin/settings.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
@@ -47,7 +48,7 @@ export default function ApplicationContainer() {
     validate: zod4Resolver(adminSettingsApplicationSchema),
   });
 
-  const assets = useSearchableResource<StorageAsset>({
+  const assets = useSearchableResource<z.infer<typeof storageAssetSchema>>({
     fetcher: () => getAssets(1),
     canRequest: canReadAssets,
   });
@@ -60,7 +61,7 @@ export default function ApplicationContainer() {
 
   const doUpdate = () => {
     setLoading(true);
-    updateApplicationSettings(adminSettingsApplicationSchema.parse(form.values))
+    updateApplicationSettings(adminSettingsApplicationSchema.parse(form.getValues()))
       .then(() => {
         addToast('Application settings updated.', 'success');
       })
@@ -120,12 +121,19 @@ export default function ApplicationContainer() {
       <form onSubmit={form.onSubmit(() => doUpdate())}>
         <Stack>
           <Group grow>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
             <Autocomplete
               withAsterisk
               label='Icon'
               placeholder='Icon'
               data={assets.items.map((asset) => asset.url)}
+              key={form.key('icon')}
               {...form.getInputProps('icon')}
             />
           </Group>
@@ -140,6 +148,7 @@ export default function ApplicationContainer() {
                 value: language,
               }))}
               searchable
+              key={form.key('language')}
               {...form.getInputProps('language')}
             />
             <TextInput withAsterisk label='URL' placeholder='URL' {...form.getInputProps('url')} />
@@ -153,6 +162,7 @@ export default function ApplicationContainer() {
               { label: 'All Users', value: 'all_users' },
               { label: 'None', value: 'none' },
             ]}
+            key={form.key('twoFactorRequirement')}
             {...form.getInputProps('twoFactorRequirement')}
           />
 
@@ -160,6 +170,7 @@ export default function ApplicationContainer() {
             <Switch
               label='Enable Telemetry'
               description='Allow Calagopus to collect limited and anonymous usage data to help improve the application.'
+              key={form.key('telemetryEnabled')}
               {...form.getInputProps('telemetryEnabled', { type: 'checkbox' })}
               onChange={(e) => {
                 if (!e.target.checked) {
@@ -172,6 +183,7 @@ export default function ApplicationContainer() {
             <Switch
               label='Enable Registration'
               name='registrationEnabled'
+              key={form.key('registrationEnabled')}
               {...form.getInputProps('registrationEnabled', { type: 'checkbox' })}
               onChange={(e) => {
                 if (e.target.checked) {

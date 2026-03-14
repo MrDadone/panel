@@ -1,19 +1,21 @@
 import { faLock, faLockOpen, faPencil, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteSubuser from '@/api/server/subusers/deleteSubuser.ts';
 import updateSubuser from '@/api/server/subusers/updateSubuser.ts';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
+import { serverSubuserSchema } from '@/lib/schemas/server/subusers.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import SubuserCreateOrUpdateModal from './modals/SubuserCreateOrUpdateModal.tsx';
 
-export default function SubuserRow({ subuser }: { subuser: ServerSubuser }) {
+export default function SubuserRow({ subuser }: { subuser: z.infer<typeof serverSubuserSchema> }) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { server, removeSubuser } = useServerStore();

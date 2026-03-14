@@ -1,25 +1,27 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { serverScheduleSchema, serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface SchedulesSlice {
-  schedules: Pagination<ServerSchedule>;
+  schedules: Pagination<z.infer<typeof serverScheduleSchema>>;
   runningScheduleSteps: Map<string, string | null>;
 
-  setSchedules: (schedules: Pagination<ServerSchedule>) => void;
-  addSchedule: (schedule: ServerSchedule) => void;
-  removeSchedule: (schedule: ServerSchedule) => void;
+  setSchedules: (schedules: Pagination<z.infer<typeof serverScheduleSchema>>) => void;
+  addSchedule: (schedule: z.infer<typeof serverScheduleSchema>) => void;
+  removeSchedule: (schedule: z.infer<typeof serverScheduleSchema>) => void;
   setRunningScheduleStep: (schedule: string, step: string | null) => void;
 
-  schedule: ServerSchedule | null;
-  scheduleSteps: ScheduleStep[];
+  schedule: z.infer<typeof serverScheduleSchema> | null;
+  scheduleSteps: z.infer<typeof serverScheduleStepSchema>[];
 
-  setSchedule: (scheduleStep: ServerSchedule) => void;
-  setScheduleSteps: (scheduleSteps: ScheduleStep[]) => void;
+  setSchedule: (scheduleStep: z.infer<typeof serverScheduleSchema>) => void;
+  setScheduleSteps: (scheduleSteps: z.infer<typeof serverScheduleStepSchema>[]) => void;
 }
 
 export const createSchedulesSlice: StateCreator<ServerStore, [], [], SchedulesSlice> = (set, get): SchedulesSlice => ({
-  schedules: getEmptyPaginationSet<ServerSchedule>(),
+  schedules: getEmptyPaginationSet<z.infer<typeof serverScheduleSchema>>(),
   runningScheduleSteps: new Map(),
 
   setSchedules: (value) => set((state) => ({ ...state, schedules: value })),

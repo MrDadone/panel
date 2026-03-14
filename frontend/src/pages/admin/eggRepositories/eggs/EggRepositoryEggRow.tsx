@@ -2,15 +2,17 @@ import { faDownload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon } from '@mantine/core';
 import { forwardRef, memo, useState } from 'react';
+import { z } from 'zod';
 import { AdminCan } from '@/elements/Can.tsx';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
+import { adminEggRepositoryEggSchema, adminEggRepositorySchema } from '@/lib/schemas/admin/eggRepositories.ts';
 import EggRepositoryEggInstallModal from './modals/EggRepositoryEggInstallModal.tsx';
 
 interface EggRepositoryEggRowProps {
-  eggRepository: AdminEggRepository;
-  egg: AdminEggRepositoryEgg;
+  eggRepository: z.infer<typeof adminEggRepositorySchema>;
+  egg: z.infer<typeof adminEggRepositoryEggSchema>;
   isSelected: boolean;
   onSelectionChange: (selected: boolean) => void;
 }

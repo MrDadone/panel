@@ -28,7 +28,7 @@ export default function DashboardShortcuts() {
     { keys: [modKey, 'C'], description: t('pages.account.shortcuts.fileManager.copyFiles', {}) },
     { keys: [modKey, 'D'], description: t('pages.account.shortcuts.fileManager.duplicateFile', {}) },
     { keys: [modKey, 'V'], description: t('pages.account.shortcuts.fileManager.pasteFiles', {}) },
-    { keys: [modKey, 'F'], description: t('pages.account.shortcuts.fileManager.searchFiles', {}) },
+    { keys: [modKey, 'K'], description: t('pages.account.shortcuts.fileManager.searchFiles', {}) },
     { keys: ['Alt', { icon: faArrowUp }], description: t('pages.account.shortcuts.fileManager.moveUpDirectory', {}) },
     { keys: [{ icon: faArrowUp }], description: t('pages.account.shortcuts.fileManager.moveUpSelection', {}) },
     { keys: [{ icon: faArrowDown }], description: t('pages.account.shortcuts.fileManager.moveDownSelection', {}) },

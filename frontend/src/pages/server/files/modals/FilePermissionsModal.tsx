@@ -1,5 +1,6 @@
 import { Group, ModalProps, Stack, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import chmodFiles from '@/api/server/files/chmodFiles.ts';
 import Badge from '@/elements/Badge.tsx';
@@ -9,13 +10,14 @@ import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { permissionStringToNumber } from '@/lib/files.ts';
+import { serverDirectoryEntrySchema } from '@/lib/schemas/server/files.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  file: DirectoryEntry | null;
+  file: z.infer<typeof serverDirectoryEntrySchema> | null;
 };
 
 type PermissionKey = 'owner' | 'group' | 'other';

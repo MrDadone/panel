@@ -1,17 +1,19 @@
 import { ModalProps, Title } from '@mantine/core';
 import { join } from 'pathe';
+import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import Divider from '@/elements/Divider.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { serverDirectoryEntrySchema } from '@/lib/schemas/server/files.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import FileRowIcon from '../FileRowIcon.tsx';
 
 type Props = ModalProps & {
-  file: DirectoryEntry | null;
+  file: z.infer<typeof serverDirectoryEntrySchema> | null;
 };
 
 export default function FileDetailsModal({ file, opened, onClose }: Props) {

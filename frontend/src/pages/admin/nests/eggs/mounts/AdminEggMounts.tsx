@@ -1,11 +1,14 @@
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
+import { z } from 'zod';
 import getEggMounts from '@/api/admin/nests/eggs/mounts/getEggMounts.ts';
 import Button from '@/elements/Button.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
+import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useAdminStore } from '@/stores/admin.tsx';
 import EggMountRow from './EggMountRow.tsx';
@@ -15,8 +18,8 @@ export default function AdminEggMounts({
   contextNest,
   contextEgg,
 }: {
-  contextNest: AdminNest;
-  contextEgg: AdminNestEgg;
+  contextNest: z.infer<typeof adminNestSchema>;
+  contextEgg: z.infer<typeof adminEggSchema>;
 }) {
   const { eggMounts, setEggMounts } = useAdminStore();
 

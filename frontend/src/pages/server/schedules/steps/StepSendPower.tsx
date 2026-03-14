@@ -1,14 +1,15 @@
 import { Stack } from '@mantine/core';
+import { UseFormReturnType } from '@mantine/form';
+import { z } from 'zod';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import { serverPowerActionLabelMapping } from '@/lib/enums.ts';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 
 export default function StepSendPower({
-  action,
-  setAction,
+  form,
 }: {
-  action: ScheduleActionSendPower;
-  setAction: (action: ScheduleActionSendPower) => void;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <Stack>
@@ -19,16 +20,9 @@ export default function StepSendPower({
           value,
           label,
         }))}
-        value={action.action}
-        onChange={(value) => {
-          setAction({ ...action, action: value as ServerPowerAction });
-        }}
+        {...form.getInputProps('action.action')}
       />
-      <Switch
-        label='Ignore Failure'
-        checked={action.ignoreFailure}
-        onChange={(e) => setAction({ ...action, ignoreFailure: e.target.checked })}
-      />
+      <Switch label='Ignore Failure' {...form.getInputProps('action.ignoreFailure', { type: 'checkbox' })} />
     </Stack>
   );
 }

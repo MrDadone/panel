@@ -526,6 +526,25 @@ async fn main() {
         })
         .await;
     background_task_builder
+        .add_task("delete_unconfigured_security_keys", async |state| {
+            let deleted_security_keys =
+                shared::models::user_security_key::UserSecurityKey::delete_unconfigured(
+                    &state.database,
+                )
+                .await?;
+            if deleted_security_keys > 0 {
+                tracing::info!(
+                    "deleted {} unconfigured user security keys",
+                    deleted_security_keys
+                );
+            }
+
+            tokio::time::sleep(std::time::Duration::from_mins(30)).await;
+
+            Ok(())
+        })
+        .await;
+    background_task_builder
         .add_task("delete_old_activity", async |state| {
             let settings = state.settings.get().await?;
             let admin_retention_days = settings.activity.admin_log_retention_days;

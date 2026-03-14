@@ -1,13 +1,14 @@
 import { Stack } from '@mantine/core';
+import { UseFormReturnType } from '@mantine/form';
+import { z } from 'zod';
 import TagsInput from '@/elements/input/TagsInput.tsx';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 export default function StepDeleteFiles({
-  action,
-  setAction,
+  form,
 }: {
-  action: ScheduleActionDeleteFiles;
-  setAction: (action: ScheduleActionDeleteFiles) => void;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <Stack>
@@ -15,15 +16,14 @@ export default function StepDeleteFiles({
         withAsterisk
         label='Root Path'
         placeholder='/'
-        value={action.root}
-        onChange={(v) => setAction({ ...action, root: v })}
+        value={form.getInputProps('action.root').value}
+        onChange={(v) => form.setFieldValue('action.root', v)}
       />
       <TagsInput
         withAsterisk
         label='Files to Delete'
         placeholder='Add files to delete'
-        value={action.files || []}
-        onChange={(value) => setAction({ ...action, files: value })}
+        {...form.getInputProps('action.files', { type: 'checkbox' })}
       />
     </Stack>
   );

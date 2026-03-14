@@ -2,18 +2,20 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { BackgroundImage, Box, Center, Container, Stepper } from '@mantine/core';
 import { useEffect } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router';
+import { z } from 'zod';
 import updateOobeSettings from '@/api/admin/settings/updateOobeSettings.ts';
 import minecraftBackground from '@/assets/minecraft_background.webp';
 import Card from '@/elements/Card.tsx';
 import ContentContainer from '@/elements/containers/ContentContainer.tsx';
 import { to } from '@/lib/routes.ts';
+import { oobeStepKey } from '@/lib/schemas/oobe.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { steps } from '@/routers/oobeSteps.ts';
 import { useGlobalStore } from '@/stores/global.ts';
 
 export interface OobeComponentProps {
   onNext: () => void;
-  skipFrom: (step: OobeStepKey) => void;
+  skipFrom: (step: z.infer<typeof oobeStepKey>) => void;
 }
 
 export default function OobeRouter() {
@@ -61,7 +63,7 @@ export default function OobeRouter() {
     navigate(to(nextStep.path, '/oobe'));
   };
 
-  const skipFrom = (stepKey: OobeStepKey) => {
+  const skipFrom = (stepKey: z.infer<typeof oobeStepKey>) => {
     const step = steps.find((s) => s.stepKey === stepKey);
     if (!step || !step.skipTo) return;
 

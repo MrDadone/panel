@@ -1,15 +1,18 @@
 import { forwardRef, memo, useRef } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import Progress from '@/elements/Progress.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminNodeTransferProgressSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { bytesToString } from '@/lib/size.ts';
 
 interface ServerRowProps {
-  server: AdminServer;
-  transferProgress?: TransferProgress;
+  server: z.infer<typeof adminServerSchema>;
+  transferProgress?: z.infer<typeof adminNodeTransferProgressSchema>;
 }
 
 const ServerRow = memo(

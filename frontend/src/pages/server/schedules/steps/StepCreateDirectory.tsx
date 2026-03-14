@@ -1,13 +1,14 @@
 import { Stack } from '@mantine/core';
+import { UseFormReturnType } from '@mantine/form';
+import { z } from 'zod';
 import Switch from '@/elements/input/Switch.tsx';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 export default function StepCreateDirectory({
-  action,
-  setAction,
+  form,
 }: {
-  action: ScheduleActionCreateDirectory;
-  setAction: (action: ScheduleActionCreateDirectory) => void;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <Stack>
@@ -15,21 +16,17 @@ export default function StepCreateDirectory({
         withAsterisk
         label='Root Path'
         placeholder='/'
-        value={action.root}
-        onChange={(v) => setAction({ ...action, root: v })}
+        value={form.getInputProps('action.root').value}
+        onChange={(v) => form.setFieldValue('action.root', v)}
       />
       <ScheduleDynamicParameterInput
         withAsterisk
         label='Directory Name'
         placeholder='new_folder'
-        value={action.name}
-        onChange={(v) => setAction({ ...action, name: v })}
+        value={form.getInputProps('action.nane').value}
+        onChange={(v) => form.setFieldValue('action.name', v)}
       />
-      <Switch
-        label='Ignore Failure'
-        checked={action.ignoreFailure}
-        onChange={(e) => setAction({ ...action, ignoreFailure: e.target.checked })}
-      />
+      <Switch label='Ignore Failure' {...form.getInputProps('action.ignoreFailure', { type: 'checkbox' })} />
     </Stack>
   );
 }

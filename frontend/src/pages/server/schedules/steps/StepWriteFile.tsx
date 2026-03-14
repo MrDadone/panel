@@ -1,13 +1,14 @@
 import { Group, Stack } from '@mantine/core';
+import { UseFormReturnType } from '@mantine/form';
+import { z } from 'zod';
 import Switch from '@/elements/input/Switch.tsx';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 export default function StepWriteFile({
-  action,
-  setAction,
+  form,
 }: {
-  action: ScheduleActionWriteFile;
-  setAction: (action: ScheduleActionWriteFile) => void;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <Stack>
@@ -15,28 +16,20 @@ export default function StepWriteFile({
         withAsterisk
         label='File Path'
         placeholder='/file.txt'
-        value={action.file}
-        onChange={(v) => setAction({ ...action, file: v })}
+        value={form.getInputProps('action.file').value}
+        onChange={(v) => form.setFieldValue('action.file', v)}
       />
       <ScheduleDynamicParameterInput
         withAsterisk
         label='Content'
         placeholder='File content here...'
         textArea
-        value={action.content}
-        onChange={(v) => setAction({ ...action, content: v })}
+        value={form.getInputProps('action.content').value}
+        onChange={(v) => form.setFieldValue('action.content', v)}
       />
       <Group>
-        <Switch
-          label='Append to File'
-          checked={action.append}
-          onChange={(e) => setAction({ ...action, append: e.target.checked })}
-        />
-        <Switch
-          label='Ignore Failure'
-          checked={action.ignoreFailure}
-          onChange={(e) => setAction({ ...action, ignoreFailure: e.target.checked })}
-        />
+        <Switch label='Append to File' {...form.getInputProps('action.append', { type: 'checkbox' })} />
+        <Switch label='Ignore Failure' {...form.getInputProps('action.ignoreFailure', { type: 'checkbox' })} />
       </Group>
     </Stack>
   );

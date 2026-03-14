@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import stripAnsi from 'strip-ansi';
+import { z } from 'zod';
 import getInstallLogs from '@/api/admin/servers/logs/getInstallLogs.ts';
 import getLogs from '@/api/admin/servers/logs/getLogs.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -8,9 +9,10 @@ import AdminSubContentContainer from '@/elements/containers/AdminSubContentConta
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import Select from '@/elements/input/Select.tsx';
 import MonacoEditor from '@/elements/MonacoEditor.tsx';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
-export default function AdminServerLogs({ server }: { server: AdminServer }) {
+export default function AdminServerLogs({ server }: { server: z.infer<typeof adminServerSchema> }) {
   const { addToast } = useToast();
 
   const [logType, setLogType] = useState<'console' | 'install'>('install');

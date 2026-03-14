@@ -2,6 +2,7 @@ import { faPencil, faStar, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Stack } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import deleteServerAllocation from '@/api/admin/servers/allocations/deleteServerAllocation.ts';
 import updateServerAllocation from '@/api/admin/servers/allocations/updateServerAllocation.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -14,6 +15,8 @@ import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import { serverAllocationSchema } from '@/lib/schemas/server/allocations.ts';
 import { formatAllocation } from '@/lib/server.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
@@ -22,8 +25,8 @@ export default function ServerAllocationRow({
   server,
   allocation,
 }: {
-  server: AdminServer;
-  allocation: ServerAllocation;
+  server: z.infer<typeof adminServerSchema>;
+  allocation: z.infer<typeof serverAllocationSchema>;
 }) {
   const { addToast } = useToast();
   const { serverAllocations, setServerAllocations, removeServerAllocation } = useAdminStore();

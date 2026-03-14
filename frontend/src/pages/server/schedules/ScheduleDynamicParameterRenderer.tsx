@@ -1,8 +1,10 @@
+import { z } from 'zod';
 import Badge from '@/elements/Badge.tsx';
 import Code from '@/elements/Code.tsx';
+import { serverScheduleStepDynamicSchema } from '@/lib/schemas/server/schedules.ts';
 
 interface ScheduleDynamicParameterRendererProps {
-  value: ScheduleDynamicParameter | null;
+  value: z.infer<typeof serverScheduleStepDynamicSchema> | null;
 }
 
 export default function ScheduleDynamicParameterRenderer({ value }: ScheduleDynamicParameterRendererProps) {

@@ -26,12 +26,15 @@
   .bg-server-status-running {
     background-color: var(--color-server-status-running);
   }
+
   .bg-server-status-offline {
     background-color: var(--color-server-status-offline);
   }
+
   .bg-server-status-starting {
     background-color: var(--color-server-status-starting);
   }
+
   .bg-server-status-stopping {
     background-color: var(--color-server-status-stopping);
   }

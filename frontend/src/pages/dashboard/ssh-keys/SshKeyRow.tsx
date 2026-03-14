@@ -1,5 +1,6 @@
 import { faPencil, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteSshKey from '@/api/me/ssh-keys/deleteSshKey.ts';
 import Code from '@/elements/Code.tsx';
@@ -8,12 +9,13 @@ import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { userSshKeySchema } from '@/lib/schemas/user/sshKeys.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
 import SshKeyEditModal from './modals/SshKeyEditModal.tsx';
 
-export default function SshKeyRow({ sshKey }: { sshKey: UserSshKey }) {
+export default function SshKeyRow({ sshKey }: { sshKey: z.infer<typeof userSshKeySchema> }) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { removeSshKey } = useUserStore();
@@ -50,6 +52,8 @@ export default function SshKeyRow({ sshKey }: { sshKey: UserSshKey }) {
           { icon: faPencil, label: t('common.button.edit', {}), onClick: () => setOpenModal('edit'), color: 'gray' },
           { icon: faTrash, label: t('common.button.delete', {}), onClick: () => setOpenModal('delete'), color: 'red' },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.dashboard.sshKeys.sshKeyContextMenu}
+        registryProps={{ sshKey }}
       >
         {({ items, openMenu }) => (
           <TableRow

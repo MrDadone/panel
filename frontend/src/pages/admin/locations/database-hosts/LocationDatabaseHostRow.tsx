@@ -1,6 +1,7 @@
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import deleteLocationDatabaseHost from '@/api/admin/locations/database-hosts/deleteLocationDatabaseHost.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Code from '@/elements/Code.tsx';
@@ -9,6 +10,7 @@ import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
+import { adminLocationDatabaseHostSchema, adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
@@ -16,8 +18,8 @@ export default function LocationDatabaseHostRow({
   location,
   databaseHost,
 }: {
-  location: Location;
-  databaseHost: LocationDatabaseHost;
+  location: z.infer<typeof adminLocationSchema>;
+  databaseHost: z.infer<typeof adminLocationDatabaseHostSchema>;
 }) {
   const { addToast } = useToast();
   const { removeLocationDatabaseHost } = useAdminStore();

@@ -12,7 +12,7 @@ import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
-import { serverFilesPullSchema } from '@/lib/schemas/server/files.ts';
+import { serverFilesPullQueryResultSchema, serverFilesPullSchema } from '@/lib/schemas/server/files.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -26,7 +26,7 @@ export default function PullFileModal({ opened, onClose }: ModalProps) {
   const { browsingDirectory } = useFileManager();
 
   const [loading, setLoading] = useState(false);
-  const [queryResult, setQueryResult] = useState<null | ServerPullQueryResult>(null);
+  const [queryResult, setQueryResult] = useState<null | z.infer<typeof serverFilesPullQueryResultSchema>>(null);
 
   const form = useForm<z.infer<typeof serverFilesPullSchema>>({
     initialValues: {

@@ -355,14 +355,13 @@ impl Node {
                 &format!("node::{}::server_resources", self.uuid),
                 15,
                 || async {
-                    let servers = self.api_client(database).await?.get_servers().await?;
+                    let resources = self
+                        .api_client(database)
+                        .await?
+                        .get_servers_utilization()
+                        .await?;
 
-                    Ok::<_, anyhow::Error>(
-                        servers
-                            .into_iter()
-                            .map(|server| (server.configuration.uuid, server.utilization))
-                            .collect(),
-                    )
+                    Ok::<_, anyhow::Error>(resources.into_iter().collect())
                 },
             )
             .await

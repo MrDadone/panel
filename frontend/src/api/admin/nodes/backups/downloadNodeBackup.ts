@@ -1,9 +1,11 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { streamingArchiveFormat } from '@/lib/schemas/generic.ts';
 
 export default async (
   nodeUuid: string,
   backupUuid: string,
-  archiveFormat: StreamingArchiveFormat,
+  archiveFormat: z.infer<typeof streamingArchiveFormat>,
 ): Promise<{ url: string }> => {
   return new Promise((resolve, reject) => {
     axiosInstance

@@ -1,10 +1,12 @@
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { ContainerRegistry, Registry } from 'shared';
+import { z } from 'zod';
 import type { Props as ContainerProps } from '@/elements/containers/ServerContentContainer.tsx';
+import { serverDirectoryEntrySchema } from '@/lib/schemas/server/files.ts';
 import { ComponentListRegistry } from '../../slices/componentList.ts';
 import { ContextMenuRegistry } from '../../slices/contextMenu.ts';
 
-type FileIconHandler = (file: DirectoryEntry) => IconDefinition | undefined;
+type FileIconHandler = (file: z.infer<typeof serverDirectoryEntrySchema>) => IconDefinition | undefined;
 
 export class FilesRegistry implements Registry {
   public mergeFrom(other: this): this {
@@ -33,7 +35,8 @@ export class FilesRegistry implements Registry {
   public fileEditorSettings: ComponentListRegistry = new ComponentListRegistry();
   public fileImageViewerSettings: ComponentListRegistry = new ComponentListRegistry();
   public newFileContextMenu: ContextMenuRegistry = new ContextMenuRegistry();
-  public fileContextMenu: ContextMenuRegistry<{ file: DirectoryEntry }> = new ContextMenuRegistry();
+  public fileContextMenu: ContextMenuRegistry<{ file: z.infer<typeof serverDirectoryEntrySchema> }> =
+    new ContextMenuRegistry();
 
   public fileIconHandlers: FileIconHandler[] = [];
 
@@ -87,7 +90,9 @@ export class FilesRegistry implements Registry {
     return this;
   }
 
-  public enterFileContextMenu(callback: (registry: ContextMenuRegistry<{ file: DirectoryEntry }>) => unknown): this {
+  public enterFileContextMenu(
+    callback: (registry: ContextMenuRegistry<{ file: z.infer<typeof serverDirectoryEntrySchema> }>) => unknown,
+  ): this {
     callback(this.fileContextMenu);
     return this;
   }

@@ -1,19 +1,21 @@
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
+import { z } from 'zod';
 import getLocationDatabaseHosts from '@/api/admin/locations/database-hosts/getLocationDatabaseHosts.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
+import { adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
 import { locationDatabaseHostTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useAdminStore } from '@/stores/admin.tsx';
 import LocationDatabaseHostRow from './LocationDatabaseHostRow.tsx';
 import LocationDatabaseHostCreateModal from './modals/LocationDatabaseHostCreateModal.tsx';
 
-export default function AdminLocationDatabaseHosts({ location }: { location: Location }) {
+export default function AdminLocationDatabaseHosts({ location }: { location: z.infer<typeof adminLocationSchema> }) {
   const { locationDatabaseHosts, setLocationDatabaseHosts } = useAdminStore();
 
   const [openModal, setOpenModal] = useState<'create' | null>(null);

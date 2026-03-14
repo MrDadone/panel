@@ -1,11 +1,12 @@
+import { UseFormReturnType } from '@mantine/form';
+import { z } from 'zod';
 import NumberInput from '@/elements/input/NumberInput.tsx';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 
 export default function StepSleep({
-  action,
-  setAction,
+  form,
 }: {
-  action: ScheduleActionSleep;
-  setAction: (action: ScheduleActionSleep) => void;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <NumberInput
@@ -13,8 +14,7 @@ export default function StepSleep({
       label='Duration (milliseconds)'
       placeholder='1000'
       min={1}
-      value={action.duration}
-      onChange={(value) => setAction({ ...action, duration: Number(value) })}
+      {...form.getInputProps('action.duration')}
     />
   );
 }

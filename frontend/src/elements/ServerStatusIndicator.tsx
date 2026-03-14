@@ -4,12 +4,15 @@ import { ActionIcon, Group } from '@mantine/core';
 import classNames from 'classnames';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { z } from 'zod';
 import { ServerCan } from '@/elements/Can.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import { serverPowerAction } from '@/lib/schemas/server/server.ts';
 import { statusToColor } from '@/lib/server.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
+import Divider from './Divider.tsx';
 
 export default function ServerStatusIndicator() {
   const { t } = useTranslations();
@@ -21,7 +24,7 @@ export default function ServerStatusIndicator() {
 
   const killable = state === 'stopping';
 
-  const onPowerAction = (action: ServerPowerAction | 'kill-confirmed') => {
+  const onPowerAction = (action: z.infer<typeof serverPowerAction> | 'kill-confirmed') => {
     if (action === 'kill') {
       return setOpen(true);
     }
@@ -55,11 +58,18 @@ export default function ServerStatusIndicator() {
 
   return (
     <div className='flex flex-col gap-2'>
-      <div className='flex justify-start items-center gap-3'>
+      <Divider my={2} />
+      <div className='flex justify-start items-center gap-3 pl-2.5'>
         <Group gap='xs'>
           <ServerCan action={['control.start', 'control.stop']} matchAny>
             <Tooltip label={t(buttonLabel, {})}>
-              <ActionIcon size='lg' radius='md' color={buttonColor} onClick={() => onPowerAction(buttonAction)}>
+              <ActionIcon
+                size='lg'
+                radius='md'
+                color={buttonColor}
+                disabled={!socketConnected}
+                onClick={() => onPowerAction(buttonAction)}
+              >
                 <FontAwesomeIcon icon={buttonIcon} size='sm' />
               </ActionIcon>
             </Tooltip>
@@ -70,7 +80,7 @@ export default function ServerStatusIndicator() {
                 size='lg'
                 radius='md'
                 color='gray'
-                disabled={state === 'offline'}
+                disabled={!socketConnected || state === 'offline'}
                 onClick={() => onPowerAction('restart')}
               >
                 <FontAwesomeIcon icon={faRefresh} size='sm' />
@@ -79,24 +89,28 @@ export default function ServerStatusIndicator() {
           </ServerCan>
         </Group>
 
-        <div className='flex flex-col gap-1.5 justify-center'>
-          <div className='flex items-center gap-1.5 text-xs'>
-            <span className={classNames('rounded-full size-4 animate-pulse', statusToColor(state))} />
-            <span className='font-medium text-white leading-none'>{t(`common.enum.serverState.${state}`, {})}</span>
-          </div>
-
-          <div className='flex items-center gap-1.5 text-xs'>
-            <FontAwesomeIcon
-              icon={faTowerBroadcast}
-              className={`${socketConnected ? 'animate-pulse text-green-500' : 'text-white'} w-4`}
-            />
-            <span className='font-medium text-white leading-none'>
-              {socketConnected
-                ? t('common.enum.connectionStatus.connected', {})
-                : t('common.enum.connectionStatus.offline', {})}
-            </span>
-          </div>
+        <div className='flex items-center gap-1.5 text-xs'>
+          {socketConnected ? (
+            <>
+              <span className={classNames('rounded-full size-4 animate-pulse', statusToColor(state))} />
+              <span className='font-medium text-white leading-none'>{t(`common.enum.serverState.${state}`, {})}</span>
+            </>
+          ) : (
+            <>
+              <FontAwesomeIcon
+                icon={faTowerBroadcast}
+                className={`${socketConnected ? 'animate-pulse text-green-500' : 'text-white'} w-4`}
+              />
+              <span className='font-medium text-white leading-none'>
+                {socketConnected
+                  ? t('common.enum.connectionStatus.connected', {})
+                  : t('common.enum.connectionStatus.offline', {})}
+              </span>
+            </>
+          )}
         </div>
+
+        <div className='flex items-center gap-1.5 text-xs'></div>
       </div>
 
       <ConfirmationModal

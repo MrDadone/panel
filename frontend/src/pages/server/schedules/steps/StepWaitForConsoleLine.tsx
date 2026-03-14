@@ -1,44 +1,40 @@
 import { Stack } from '@mantine/core';
+import { UseFormReturnType } from '@mantine/form';
+import { z } from 'zod';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import Switch from '@/elements/input/Switch.tsx';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 export default function StepWaitForConsoleLine({
-  action,
-  setAction,
+  form,
 }: {
-  action: ScheduleActionWaitForConsoleLine;
-  setAction: (action: ScheduleActionWaitForConsoleLine) => void;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   return (
     <Stack>
       <ScheduleDynamicParameterInput
         label='Line contains'
         placeholder='Text to make sure is in the console line'
-        value={action.contains}
-        onChange={(v) => setAction({ ...action, contains: v })}
+        value={form.getInputProps('contains.root').value}
+        onChange={(v) => form.setFieldValue('action.contains', v)}
       />
       <NumberInput
         withAsterisk
         label='Timeout (milliseconds)'
         placeholder='1000'
         min={1}
-        value={action.timeout}
-        onChange={(value) => setAction({ ...action, timeout: Number(value) })}
+        {...form.getInputProps('action.timeout')}
       />
       <ScheduleDynamicParameterInput
         label='Output into'
         placeholder='Output the captured line into a variable'
         allowNull
         allowString={false}
-        value={action.outputInto}
-        onChange={(v) => setAction({ ...action, outputInto: v })}
+        value={form.getInputProps('action.outputInto').value}
+        onChange={(v) => form.setFieldValue('action.outputInto', v)}
       />
-      <Switch
-        label='Ignore Failure'
-        checked={action.ignoreFailure}
-        onChange={(e) => setAction({ ...action, ignoreFailure: e.target.checked })}
-      />
+      <Switch label='Ignore Failure' {...form.getInputProps('action.ignoreFailure', { type: 'checkbox' })} />
     </Stack>
   );
 }

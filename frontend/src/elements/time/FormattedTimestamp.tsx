@@ -1,3 +1,5 @@
+'use no memo';
+
 import classNames from 'classnames';
 import { memo, useEffect, useState } from 'react';
 import { formatDateTime, formatTimestamp } from '@/lib/time.ts';
