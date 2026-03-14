@@ -71,19 +71,12 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
                         return Ok(1);
                     }
                 };
-                let source_app_key = match std::env::var("APP_KEY")
-                    .map(|v| BASE64_ENGINE.decode(v.trim_start_matches("base64:")))
-                {
-                    Ok(Ok(value)) => Arc::new(value),
-                    Ok(Err(err)) => {
-                        eprintln!(
-                            "{}: {:#?}",
-                            "failed to read pterodactyl environment APP_KEY".red(),
-                            err
-                        );
-
-                        return Ok(1);
-                    }
+                let source_app_key = match std::env::var("APP_KEY").map(|v| {
+                    BASE64_ENGINE
+                        .decode(v.trim_start_matches("base64:"))
+                        .unwrap_or_else(|_| v.as_bytes().to_vec())
+                }) {
+                    Ok(value) => Arc::new(value),
                     Err(err) => {
                         eprintln!(
                             "{}: {:#?}",
@@ -877,14 +870,13 @@ impl shared::extensions::commands::CliCommand<PterodactylArgs> for PterodactylCo
 
                             let row = sqlx::query(
                                 r#"
-                                INSERT INTO database_hosts (name, public, type, host, port, username, password, created)
-                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                                INSERT INTO database_hosts (name, type, host, port, username, password, created)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7)
                                 ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
                                 RETURNING uuid
                                 "#,
                             )
                             .bind(name)
-                            .bind(true)
                             .bind(shared::models::database_host::DatabaseType::Mysql)
                             .bind(host)
                             .bind(port as i32)

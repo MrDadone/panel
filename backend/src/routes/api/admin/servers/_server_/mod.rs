@@ -219,7 +219,7 @@ mod patch {
         permissions.has_admin_permission("servers.update")?;
 
         let limits = data.limits;
-        let feature_limits = data.feature_limits;
+        let feature_limits = data.feature_limits.clone();
         match server.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {

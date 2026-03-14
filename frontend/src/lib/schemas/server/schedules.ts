@@ -385,3 +385,8 @@ export const serverScheduleStepUpdateSchema = serverScheduleStepSchema.omit({
   error: true,
   created: true,
 });
+
+export const serverScheduleStatusSchema = z.object({
+  running: z.boolean(),
+  step: z.string().nullable(),
+});

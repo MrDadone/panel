@@ -12,6 +12,7 @@ import {
   serverPowerStateLabelMapping,
 } from '@/lib/enums.ts';
 import { serverScheduleComparator, serverSchedulePreConditionSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverPowerState } from '@/lib/schemas/server/server.ts';
 
 const maxConditionDepth = 3;
 
@@ -102,7 +103,7 @@ export default function SchedulePreConditionBuilder({ condition, onChange, depth
           <Select
             label='Server State'
             value={condition.state}
-            onChange={(value) => value && onChange({ ...condition, state: value as ServerPowerState })}
+            onChange={(value) => value && onChange({ ...condition, state: value as z.infer<typeof serverPowerState> })}
             data={Object.entries(serverPowerStateLabelMapping).map(([value, label]) => ({
               value,
               label,

@@ -9,7 +9,7 @@ export const serverDatabaseSchema = z.object({
   password: z.string().nullable(),
   host: z.string(),
   port: z.number(),
-  type: databaseType,
+  type: z.lazy(() => databaseType),
   created: z.date(),
 });
 

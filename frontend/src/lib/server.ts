@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { adminNodeAllocationSchema } from '@/lib/schemas/admin/nodes.ts';
 import { serverAllocationSchema } from '@/lib/schemas/server/allocations.ts';
+import { serverPowerState } from '@/lib/schemas/server/server.ts';
 import { getTranslations } from '@/providers/TranslationProvider.tsx';
 
 export function formatAllocation(
@@ -14,7 +15,7 @@ export function formatAllocation(
     : getTranslations().t('common.server.noAllocation', {});
 }
 
-export function statusToColor(status: ServerPowerState | undefined) {
+export function statusToColor(status: z.infer<typeof serverPowerState> | undefined) {
   switch (status) {
     case 'running':
       return 'bg-green-500';

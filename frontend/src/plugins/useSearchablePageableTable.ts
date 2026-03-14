@@ -5,8 +5,9 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 interface UseSearchablePaginatedTableOptions<T> {
-  fetcher: (page: number, search: string) => Promise<Pagination<T>>;
-  setStoreData: (data: Pagination<T>) => void;
+  fetcher: (page: number, search: string) => Promise<T>;
+  setStoreData: (data: T) => void;
+  paginationKey?: string;
   deps?: unknown[];
   debounceMs?: number;
   initialPage?: number;
@@ -24,6 +25,7 @@ function parseNumber(num: string | null): number | null {
 export function useSearchablePaginatedTable<T>({
   fetcher,
   setStoreData,
+  paginationKey,
   deps = [],
   debounceMs = 150,
   initialPage = 1,
@@ -43,18 +45,35 @@ export function useSearchablePaginatedTable<T>({
   }, [modifyParams, page, search]);
 
   const fetchData = useCallback(
-    (p: number, s: string) => {
-      setLoading(true);
+    (sL: boolean, p: number, s: string) => {
+      setLoading(sL);
       fetcher(p, s)
         .then((res) => {
-          const totalPages = Math.ceil(res.total / res.perPage);
+          const paginationData = paginationKey
+            ? res && typeof res === 'object' && paginationKey in res
+              ? res[paginationKey as never]
+              : res
+            : res;
 
-          if (res.total === 0 && res.page !== 1) {
-            setPage(1);
-          } else if (p > totalPages && totalPages !== 0) {
-            setPage(totalPages);
-          } else {
-            setStoreData(res);
+          if (
+            paginationData &&
+            typeof paginationData === 'object' &&
+            'total' in paginationData &&
+            typeof paginationData.total === 'number' &&
+            'perPage' in paginationData &&
+            typeof paginationData.perPage === 'number' &&
+            'page' in paginationData &&
+            typeof paginationData.page === 'number'
+          ) {
+            const totalPages = Math.ceil(paginationData.total / paginationData.perPage);
+
+            if (paginationData.total === 0 && paginationData.page !== 1) {
+              setPage(1);
+            } else if (p > totalPages && totalPages !== 0) {
+              setPage(totalPages);
+            } else {
+              setStoreData(res);
+            }
           }
         })
         .catch((err) => {
@@ -66,7 +85,7 @@ export function useSearchablePaginatedTable<T>({
   );
 
   const debouncedSearch = useCallback(
-    debounce((search: string) => fetchData(page, search), debounceMs),
+    debounce((search: string) => fetchData(true, page, search), debounceMs),
     [page, fetchData],
   );
 
@@ -75,7 +94,7 @@ export function useSearchablePaginatedTable<T>({
       debouncedSearch(search);
     } else {
       debouncedSearch.clear();
-      fetchData(page, '');
+      fetchData(true, page, '');
     }
   }, [page, search, debouncedSearch]);
 
@@ -85,6 +104,6 @@ export function useSearchablePaginatedTable<T>({
     setSearch,
     page,
     setPage,
-    refetch: () => fetchData(page, search),
+    refetch: (setLoading: boolean = true) => fetchData(setLoading, page, search),
   };
 }

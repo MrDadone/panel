@@ -32,7 +32,7 @@ export const adminOAuthProviderUpdateSchema = adminOAuthProviderSchema.omit({
 
 export const adminOAuthUserLinkSchema = z.object({
   uuid: z.string(),
-  user: adminFullUserSchema,
+  user: z.lazy(() => adminFullUserSchema),
   identifier: z.string(),
   lastUsed: z.date().nullable(),
   created: z.date(),

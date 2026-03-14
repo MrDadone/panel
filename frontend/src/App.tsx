@@ -17,6 +17,7 @@ import { useGlobalStore } from './stores/global.ts';
 
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
+import TranslationProvider from './providers/TranslationProvider.tsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,19 +44,21 @@ export default function App({ theme }: { theme: MantineThemeOverride }) {
     <ErrorBoundary>
       <MantineProvider theme={theme} forceColorScheme='dark'>
         <QueryClientProvider client={queryClient}>
-          <ToastProvider>
-            <WindowProvider>
-              <CurrentWindowProvider id={null}>
-                <HistoryContext.Provider value={browserHistory}>
-                  <HistoryRouter history={browserHistory as never}>
-                    <RouterRoutes isNormal />
-                  </HistoryRouter>
-                </HistoryContext.Provider>
+          <TranslationProvider>
+            <ToastProvider>
+              <WindowProvider>
+                <CurrentWindowProvider id={null}>
+                  <HistoryContext.Provider value={browserHistory}>
+                    <HistoryRouter history={browserHistory as never}>
+                      <RouterRoutes isNormal />
+                    </HistoryRouter>
+                  </HistoryContext.Provider>
 
-                <ReactQueryDevtools initialIsOpen={false} />
-              </CurrentWindowProvider>
-            </WindowProvider>
-          </ToastProvider>
+                  <ReactQueryDevtools initialIsOpen={false} />
+                </CurrentWindowProvider>
+              </WindowProvider>
+            </ToastProvider>
+          </TranslationProvider>
         </QueryClientProvider>
       </MantineProvider>
     </ErrorBoundary>

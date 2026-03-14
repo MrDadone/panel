@@ -84,7 +84,11 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: z.in
   });
 
   const doDisableTwoFactor = async () => {
-    await disableUserTwoFactor(contextUser!.uuid)
+    if (!contextUser) {
+      return;
+    }
+
+    await disableUserTwoFactor(contextUser.uuid)
       .then(() => {
         addToast('User two factor disabled.', 'success');
         contextUser!.totpEnabled = false;

@@ -5,6 +5,7 @@ pub use crate::models::{
     EventEmittingModel, Fetchable, ListenerPriority, ModelHandlerList, UpdatableModel,
     UpdateListenerList,
 };
+pub use schema_extension_core::finish_extendible;
 
 pub trait IteratorExt<R, E>: Iterator<Item = Result<R, E>> {
     fn try_collect_vec(self) -> Result<Vec<R>, E>

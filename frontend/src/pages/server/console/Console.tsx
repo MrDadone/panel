@@ -5,6 +5,7 @@ import {
   faMagnifyingGlass,
   faMinus,
   faPlus,
+  faServer,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon } from '@mantine/core';
@@ -29,6 +30,7 @@ import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import CommandHistoryDrawer from './drawers/CommandHistoryDrawer.tsx';
 import FeatureProvider from './features/FeatureProvider.tsx';
+import SshDetailsModal from './modals/SshDetailsModal.tsx';
 
 import '@xterm/xterm/css/xterm.css';
 import './xterm.css';
@@ -45,7 +47,7 @@ export default function Terminal() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [websocketPing, setWebsocketPing] = useState(0);
   const [consoleFontSize, setConsoleFontSize] = useState(14);
-  const [openModal, setOpenModal] = useState<'search' | 'commandHistory' | null>(null);
+  const [openModal, setOpenModal] = useState<'search' | 'commandHistory' | 'sshDetails' | null>(null);
 
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermInstance = useRef<XTerm | null>(null);
@@ -194,14 +196,14 @@ export default function Terminal() {
   }, []);
 
   useEffect(() => {
-    let pingInterval: NodeJS.Timeout;
+    let pingInterval: ReturnType<typeof setInterval>;
 
     if (socketConnected && socketInstance) {
       const pingFn = () => {
         const start = Date.now();
         socketInstance.send(SocketRequest.PING);
 
-        let timeout: NodeJS.Timeout | null = null;
+        let timeout: ReturnType<typeof setTimeout> | null = null;
         const handlePong = () => {
           const latency = Date.now() - start;
           setWebsocketPing(latency);
@@ -355,6 +357,8 @@ export default function Terminal() {
   return (
     <>
       <FeatureProvider />
+      <CommandHistoryDrawer opened={openModal === 'commandHistory'} onClose={() => setOpenModal(null)} />
+      <SshDetailsModal opened={openModal === 'sshDetails'} onClose={() => setOpenModal(null)} />
 
       <Card className='h-full flex flex-col font-mono text-sm relative p-2!'>
         <div className='flex flex-row justify-between items-center mb-2 text-xs'>
@@ -437,12 +441,23 @@ export default function Terminal() {
                 </ActionIcon>
               </Popover.Dropdown>
             </Popover>
+            <Tooltip label={t('pages.server.console.tooltip.sshDetails', {})}>
+              <ActionIcon
+                size='xs'
+                variant='subtle'
+                color='gray'
+                disabled={server.status !== null || server.isSuspended || server.isTransferring}
+                onClick={() => setOpenModal('sshDetails')}
+              >
+                <FontAwesomeIcon icon={faServer} />
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label={t('pages.server.console.tooltip.commandHistory', {})}>
               <ActionIcon
                 size='xs'
                 variant='subtle'
                 color='gray'
-                disabled={server.status !== null || server.suspended}
+                disabled={server.status !== null || server.isSuspended || server.isTransferring}
                 onClick={() => setOpenModal('commandHistory')}
               >
                 <FontAwesomeIcon icon={faClockRotateLeft} />
@@ -532,8 +547,6 @@ export default function Terminal() {
           )}
         </div>
       </Card>
-
-      <CommandHistoryDrawer opened={openModal === 'commandHistory'} onClose={() => setOpenModal(null)} />
     </>
   );
 }

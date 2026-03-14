@@ -221,6 +221,19 @@ impl WingsClient {
         request_impl(self, Method::POST, "/api/servers/power", Some(data), None).await
     }
 
+    pub async fn get_servers_utilization(
+        &self,
+    ) -> Result<super::servers_utilization::get::Response, ApiHttpError> {
+        request_impl(
+            self,
+            Method::GET,
+            "/api/servers/utilization",
+            None::<&()>,
+            None,
+        )
+        .await
+    }
+
     pub async fn get_servers_server(
         &self,
         server: uuid::Uuid,
@@ -797,6 +810,20 @@ impl WingsClient {
         .await
     }
 
+    pub async fn get_servers_server_utilization(
+        &self,
+        server: uuid::Uuid,
+    ) -> Result<super::servers_server_utilization::get::Response, ApiHttpError> {
+        request_impl(
+            self,
+            Method::GET,
+            format!("/api/servers/{server}/utilization"),
+            None::<&()>,
+            None,
+        )
+        .await
+    }
+
     pub async fn get_servers_server_version(
         &self,
         server: uuid::Uuid,
@@ -903,6 +930,10 @@ impl WingsClient {
         data: &super::system_upgrade::post::RequestBody,
     ) -> Result<super::system_upgrade::post::Response, ApiHttpError> {
         request_impl(self, Method::POST, "/api/system/upgrade", Some(data), None).await
+    }
+
+    pub async fn get_transfers(&self) -> Result<super::transfers::get::Response, ApiHttpError> {
+        request_impl(self, Method::GET, "/api/transfers", None::<&()>, None).await
     }
 
     pub async fn post_transfers(&self) -> Result<super::transfers::post::Response, ApiHttpError> {

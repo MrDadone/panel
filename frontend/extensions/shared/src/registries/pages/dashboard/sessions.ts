@@ -1,4 +1,6 @@
 import { ContainerRegistry, Registry } from 'shared';
+import { z } from 'zod';
+import { userSessionSchema } from '@/lib/schemas/user/sessions.ts';
 import { ContextMenuRegistry } from '../../slices/contextMenu.ts';
 
 export class SessionsRegistry implements Registry {
@@ -10,14 +12,17 @@ export class SessionsRegistry implements Registry {
   }
 
   public container: ContainerRegistry = new ContainerRegistry();
-  public sessionContextMenu: ContextMenuRegistry<{ session: UserSession }> = new ContextMenuRegistry();
+  public sessionContextMenu: ContextMenuRegistry<{ session: z.infer<typeof userSessionSchema> }> =
+    new ContextMenuRegistry();
 
   public enterContainer(callback: (registry: ContainerRegistry) => unknown): this {
     callback(this.container);
     return this;
   }
 
-  public enterSessionContextMenu(callback: (registry: ContextMenuRegistry<{ session: UserSession }>) => unknown): this {
+  public enterSessionContextMenu(
+    callback: (registry: ContextMenuRegistry<{ session: z.infer<typeof userSessionSchema> }>) => unknown,
+  ): this {
     callback(this.sessionContextMenu);
     return this;
   }

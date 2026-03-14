@@ -13,14 +13,18 @@ import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { archiveFormatLabelMapping } from '@/lib/enums.ts';
 import { generateArchiveName } from '@/lib/files.ts';
-import { serverFilesArchiveCreateSchema } from '@/lib/schemas/server/files.ts';
+import {
+  archiveFormat,
+  serverDirectoryEntrySchema,
+  serverFilesArchiveCreateSchema,
+} from '@/lib/schemas/server/files.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  files: DirectoryEntry[];
+  files: z.infer<typeof serverDirectoryEntrySchema>[];
 };
 
 export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
@@ -45,8 +49,8 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
 
     compressFiles(server.uuid, {
       name: form.values.name
-        ? form.values.name.concat(archiveFormatLabelMapping[form.values.format as ArchiveFormat])
-        : generateArchiveName(archiveFormatLabelMapping[form.values.format as ArchiveFormat]),
+        ? form.values.name.concat(archiveFormatLabelMapping[form.values.format as z.infer<typeof archiveFormat>])
+        : generateArchiveName(archiveFormatLabelMapping[form.values.format as z.infer<typeof archiveFormat>]),
       format: form.values.format,
       root: browsingDirectory,
       files: files.map((f) => f.name),
@@ -90,8 +94,10 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
                 {join(
                   browsingDirectory,
                   form.values.name
-                    ? `${form.values.name}${archiveFormatLabelMapping[form.values.format as ArchiveFormat]}`
-                    : generateArchiveName(archiveFormatLabelMapping[form.values.format as ArchiveFormat]),
+                    ? `${form.values.name}${archiveFormatLabelMapping[form.values.format as z.infer<typeof archiveFormat>]}`
+                    : generateArchiveName(
+                        archiveFormatLabelMapping[form.values.format as z.infer<typeof archiveFormat>],
+                      ),
                 ).replace(/^(\.\.\/|\/)+/, '')}
               </span>
             </Code>

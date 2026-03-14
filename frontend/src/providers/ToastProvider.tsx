@@ -113,5 +113,5 @@ const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
 };
 
-export { ToastProvider };
 export { useToast } from './contexts/toastContext.ts';
+export { ToastProvider };

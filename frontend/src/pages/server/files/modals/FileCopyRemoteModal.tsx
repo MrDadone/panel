@@ -11,7 +11,8 @@ import Code from '@/elements/Code.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
-import { serverFilesCopyRemoteSchema } from '@/lib/schemas/server/files.ts';
+import { serverDirectoryEntrySchema, serverFilesCopyRemoteSchema } from '@/lib/schemas/server/files.ts';
+import { serverSchema } from '@/lib/schemas/server/server.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -19,7 +20,7 @@ import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  files: DirectoryEntry[];
+  files: z.infer<typeof serverDirectoryEntrySchema>[];
 };
 
 export default function FileCopyRemoteModal({ files, opened, onClose }: Props) {
@@ -39,7 +40,7 @@ export default function FileCopyRemoteModal({ files, opened, onClose }: Props) {
     validate: zod4Resolver(serverFilesCopyRemoteSchema),
   });
 
-  const servers = useSearchableResource<Server>({
+  const servers = useSearchableResource<z.infer<typeof serverSchema>>({
     fetcher: (search) => getServers(1, search),
   });
 

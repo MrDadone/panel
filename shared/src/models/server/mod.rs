@@ -106,6 +106,19 @@ impl From<ServerAutoStartBehavior> for wings_api::ServerAutoStartBehavior {
     }
 }
 
+pub struct ServerTransferOptions {
+    pub destination_node: super::node::Node,
+
+    pub allocation_uuid: Option<uuid::Uuid>,
+    pub allocation_uuids: Vec<uuid::Uuid>,
+
+    pub backups: Vec<uuid::Uuid>,
+    pub delete_source_backups: bool,
+    pub archive_format: wings_api::TransferArchiveFormat,
+    pub compression_level: Option<wings_api::CompressionLevel>,
+    pub multiplex_channels: u64,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Server {
     pub uuid: uuid::Uuid,
@@ -771,6 +784,52 @@ impl Server {
         })
     }
 
+    pub async fn by_node_uuid_transferring_with_pagination(
+        database: &crate::database::Database,
+        node_uuid: uuid::Uuid,
+        page: i64,
+        per_page: i64,
+        search: Option<&str>,
+    ) -> Result<super::Pagination<Self>, crate::database::DatabaseError> {
+        let offset = (page - 1) * per_page;
+
+        let rows = sqlx::query(&format!(
+            r#"
+            SELECT {}, COUNT(*) OVER() AS total_count
+            FROM servers
+            LEFT JOIN server_allocations ON server_allocations.uuid = servers.allocation_uuid
+            LEFT JOIN node_allocations ON node_allocations.uuid = server_allocations.allocation_uuid
+            JOIN users ON users.uuid = servers.owner_uuid
+            LEFT JOIN roles ON roles.uuid = users.role_uuid
+            JOIN nest_eggs ON nest_eggs.uuid = servers.egg_uuid
+            JOIN nests ON nests.uuid = nest_eggs.nest_uuid
+            WHERE servers.node_uuid = $1 AND servers.destination_node_uuid IS NOT NULL
+                AND ($2 IS NULL OR servers.name ILIKE '%' || $2 || '%')
+            ORDER BY servers.created
+            LIMIT $3 OFFSET $4
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(node_uuid)
+        .bind(search)
+        .bind(per_page)
+        .bind(offset)
+        .fetch_all(database.read())
+        .await?;
+
+        Ok(super::Pagination {
+            total: rows
+                .first()
+                .map_or(Ok(0), |row| row.try_get("total_count"))?,
+            per_page,
+            page,
+            data: rows
+                .into_iter()
+                .map(|row| Self::map(None, &row))
+                .try_collect_vec()?,
+        })
+    }
+
     pub async fn by_egg_uuid_with_pagination(
         database: &crate::database::Database,
         egg_uuid: uuid::Uuid,
@@ -1054,6 +1113,122 @@ impl Server {
                         }
                     },
                 ),
+            },
+        );
+
+        Ok(())
+    }
+
+    /// Triggers a transfer of the server to another node.
+    /// This will only work if the server is in a state that allows transferring. (None status)
+    /// If this is not the case, a `DisplayError` will be returned.
+    pub async fn transfer(
+        self,
+        state: &crate::State,
+        options: ServerTransferOptions,
+    ) -> Result<(), anyhow::Error> {
+        if self.destination_node.is_some() {
+            return Err(DisplayError::new("server is already being transferred")
+                .with_status(axum::http::StatusCode::CONFLICT)
+                .into());
+        }
+
+        if self.node.uuid == options.destination_node.uuid {
+            return Err(DisplayError::new(
+                "destination node must be different from the current node",
+            )
+            .with_status(axum::http::StatusCode::CONFLICT)
+            .into());
+        }
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let destination_allocation_uuid = if let Some(allocation_uuid) = options.allocation_uuid {
+            Some(
+                sqlx::query!(
+                    "INSERT INTO server_allocations (server_uuid, allocation_uuid)
+                    VALUES ($1, $2)
+                    ON CONFLICT DO NOTHING
+                    RETURNING uuid",
+                    self.uuid,
+                    allocation_uuid
+                )
+                .fetch_one(&mut *transaction)
+                .await?
+                .uuid,
+            )
+        } else {
+            None
+        };
+
+        sqlx::query!(
+            "UPDATE servers
+            SET destination_node_uuid = $2, destination_allocation_uuid = $3
+            WHERE servers.uuid = $1",
+            self.uuid,
+            options.destination_node.uuid,
+            destination_allocation_uuid
+        )
+        .execute(&mut *transaction)
+        .await?;
+
+        if !options.allocation_uuids.is_empty() {
+            sqlx::query!(
+                "INSERT INTO server_allocations (server_uuid, allocation_uuid)
+                SELECT $1, UNNEST($2::uuid[])
+                ON CONFLICT DO NOTHING",
+                self.uuid,
+                &options.allocation_uuids
+            )
+            .execute(&mut *transaction)
+            .await?;
+        }
+
+        let token = options.destination_node.create_jwt(
+            &state.database,
+            &state.jwt,
+            &crate::jwt::BasePayload {
+                issuer: "panel".into(),
+                subject: Some(self.uuid.to_string()),
+                audience: Vec::new(),
+                expiration_time: Some(chrono::Utc::now().timestamp() + 600),
+                not_before: None,
+                issued_at: Some(chrono::Utc::now().timestamp()),
+                jwt_id: self.node.uuid.to_string(),
+            },
+        )?;
+
+        transaction.commit().await?;
+
+        let mut url = options.destination_node.url.clone();
+        url.set_path("/api/transfers");
+
+        self.node
+            .fetch_cached(&state.database)
+            .await?
+            .api_client(&state.database)
+            .await?
+            .post_servers_server_transfer(
+                self.uuid,
+                &wings_api::servers_server_transfer::post::RequestBody {
+                    url: url.to_compact_string(),
+                    token: format!("Bearer {token}").into(),
+                    backups: options.backups,
+                    delete_backups: options.delete_source_backups,
+                    archive_format: options.archive_format,
+                    compression_level: options.compression_level,
+                    multiplex_streams: options.multiplex_channels,
+                },
+            )
+            .await?;
+
+        Server::get_event_emitter().emit(
+            state.clone(),
+            ServerEvent::TransferStarted {
+                server: Box::new(self),
+                destination_node: Box::new(options.destination_node),
+                destination_allocation: destination_allocation_uuid,
+                destination_allocations: options.allocation_uuids,
             },
         );
 
@@ -1397,6 +1572,18 @@ impl Server {
     ) -> Result<AdminApiServer, anyhow::Error> {
         let allocation_uuid = self.allocation.as_ref().map(|a| a.uuid);
 
+        let feature_limits = ApiServerFeatureLimits::init_hooks(&self, database).await?;
+        let feature_limits = finish_extendible!(
+            ApiServerFeatureLimits {
+                allocations: self.allocation_limit,
+                databases: self.database_limit,
+                backups: self.backup_limit,
+                schedules: self.schedule_limit,
+            },
+            feature_limits,
+            database
+        )?;
+
         let (node, backup_configuration, egg) = tokio::join!(
             async {
                 match self.node.fetch_cached(database).await {
@@ -1434,7 +1621,8 @@ impl Server {
             nest: self.nest.into_admin_api_object(),
             backup_configuration,
             status: self.status,
-            suspended: self.suspended,
+            is_suspended: self.suspended,
+            is_transferring: self.destination_node.is_some(),
             name: self.name,
             description: self.description,
             limits: AdminApiServerLimits {
@@ -1446,12 +1634,7 @@ impl Server {
                 io_weight: self.io_weight,
             },
             pinned_cpus: self.pinned_cpus,
-            feature_limits: ApiServerFeatureLimits {
-                allocations: self.allocation_limit,
-                databases: self.database_limit,
-                backups: self.backup_limit,
-                schedules: self.schedule_limit,
-            },
+            feature_limits,
             startup: self.startup,
             image: self.image,
             auto_kill: self.auto_kill,
@@ -1472,12 +1655,23 @@ impl Server {
         let allocation_uuid = self.allocation.as_ref().map(|a| a.uuid);
         let node = self.node.fetch_cached(database).await?;
 
+        let feature_limits = ApiServerFeatureLimits::init_hooks(&self, database).await?;
+        let feature_limits = finish_extendible!(
+            ApiServerFeatureLimits {
+                allocations: self.allocation_limit,
+                databases: self.database_limit,
+                backups: self.backup_limit,
+                schedules: self.schedule_limit,
+            },
+            feature_limits,
+            database
+        )?;
+
         Ok(ApiServer {
             uuid: self.uuid,
             uuid_short: compact_str::format_compact!("{:08x}", self.uuid_short),
             allocation: self.allocation.map(|a| a.into_api_object(allocation_uuid)),
             egg: self.egg.into_api_object(),
-            is_owner: self.owner.uuid == user.uuid,
             permissions: if user.admin {
                 vec!["*".into()]
             } else {
@@ -1498,7 +1692,9 @@ impl Server {
             }),
             sftp_port: node.sftp_port,
             status: self.status,
-            suspended: self.suspended,
+            is_suspended: self.suspended,
+            is_owner: self.owner.uuid == user.uuid,
+            is_transferring: self.destination_node.is_some(),
             name: self.name,
             description: self.description,
             limits: ApiServerLimits {
@@ -1507,12 +1703,7 @@ impl Server {
                 swap: self.swap,
                 disk: self.disk,
             },
-            feature_limits: ApiServerFeatureLimits {
-                allocations: self.allocation_limit,
-                databases: self.database_limit,
-                backups: self.backup_limit,
-                schedules: self.schedule_limit,
-            },
+            feature_limits,
             startup: self.startup,
             image: self.image,
             auto_kill: self.auto_kill,
@@ -2182,7 +2373,10 @@ pub struct ApiServerLimits {
     pub disk: i64,
 }
 
-#[derive(ToSchema, Validate, Serialize, Deserialize, Clone, Copy)]
+#[schema_extension_derive::extendible]
+#[init_args(Server, crate::database::Database)]
+#[hook_args(crate::database::Database)]
+#[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 pub struct ApiServerFeatureLimits {
     #[garde(range(min = 0))]
     #[schema(minimum = 0)]
@@ -2212,7 +2406,9 @@ pub struct AdminApiServer {
     pub backup_configuration: Option<super::backup_configuration::AdminApiBackupConfiguration>,
 
     pub status: Option<ServerStatus>,
-    pub suspended: bool,
+
+    pub is_suspended: bool,
+    pub is_transferring: bool,
 
     pub name: compact_str::CompactString,
     pub description: Option<compact_str::CompactString>,
@@ -2245,9 +2441,10 @@ pub struct ApiServer {
     pub egg: super::nest_egg::ApiNestEgg,
 
     pub status: Option<ServerStatus>,
-    pub suspended: bool,
 
     pub is_owner: bool,
+    pub is_suspended: bool,
+    pub is_transferring: bool,
     pub permissions: Vec<compact_str::CompactString>,
 
     pub location_uuid: uuid::Uuid,

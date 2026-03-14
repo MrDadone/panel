@@ -81,7 +81,16 @@ const TranslationProvider = ({ children }: { children: ReactNode }) => {
 
       loadZod(language);
     });
+
+    localStorage.setItem('lastLanguage', language);
   }, [language]);
+
+  useEffect(() => {
+    const lastLanguage = localStorage.getItem('lastLanguage');
+    if (lastLanguage) {
+      setLanguage(lastLanguage);
+    }
+  }, []);
 
   const t = (key: string, values: Record<string, string | number>): string => {
     if (!languageData?.translations[key] && !baseTranslations.mapping[key as never]) {

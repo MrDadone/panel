@@ -43,7 +43,11 @@ import {
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import { z } from 'zod';
-import { databaseType } from '@/lib/schemas/generic.ts';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
+import { processConfigurationConfigParser } from '@/lib/schemas/admin/eggs.ts';
+import { adminSettingsEmailSchema, adminSettingsStorageSchema } from '@/lib/schemas/admin/settings.ts';
+import { databaseType, streamingArchiveFormat } from '@/lib/schemas/generic.ts';
+import { archiveFormat, compressionLevel } from '@/lib/schemas/server/files.ts';
 import {
   serverScheduleComparator,
   serverScheduleConditionSchema,
@@ -51,8 +55,14 @@ import {
   serverScheduleStepActionSchema,
   serverScheduleTriggerSchema,
 } from '@/lib/schemas/server/schedules.ts';
+import { serverBackupStatus, serverPowerAction, serverPowerState } from '@/lib/schemas/server/server.ts';
+import { publicSettingsCaptchaProviderSchema } from '@/lib/schemas/settings.ts';
+import { userSshKeyProvider } from '@/lib/schemas/user/sshKeys.ts';
 
-export const captchaProviderTypeLabelMapping: Record<CaptchaProvider['type'], string> = {
+export const captchaProviderTypeLabelMapping: Record<
+  z.infer<typeof publicSettingsCaptchaProviderSchema>['type'],
+  string
+> = {
   none: 'None',
   turnstile: 'Turnstile',
   recaptcha: 'reCAPTCHA',
@@ -60,14 +70,17 @@ export const captchaProviderTypeLabelMapping: Record<CaptchaProvider['type'], st
   friendly_captcha: 'Friendly Captcha',
 };
 
-export const compressionLevelLabelMapping: Record<CompressionLevel, string> = {
+export const compressionLevelLabelMapping: Record<z.infer<typeof compressionLevel>, string> = {
   best_speed: 'Best Speed',
   good_speed: 'Good Speed',
   good_compression: 'Good Compression',
   best_compression: 'Best Compression',
 };
 
-export const processConfigurationParserLabelMapping: Record<ProcessConfigurationConfigParser, string> = {
+export const processConfigurationParserLabelMapping: Record<
+  z.infer<typeof processConfigurationConfigParser>,
+  string
+> = {
   file: 'File',
   yaml: 'YAML',
   properties: 'Properties',
@@ -82,7 +95,7 @@ export const databaseTypeLabelMapping: Record<z.infer<typeof databaseType>, stri
   postgres: 'PostgreSQL',
 };
 
-export const backupDiskLabelMapping: Record<BackupDisk, string> = {
+export const backupDiskLabelMapping: Record<z.infer<typeof adminBackupConfigurationSchema>['backupDisk'], string> = {
   local: 'Local',
   s3: 'S3',
   'ddup-bak': 'Ddup-Bak',
@@ -91,19 +104,19 @@ export const backupDiskLabelMapping: Record<BackupDisk, string> = {
   restic: 'Restic',
 };
 
-export const storageDriverTypeLabelMapping: Record<StorageDriverType, string> = {
+export const storageDriverTypeLabelMapping: Record<z.infer<typeof adminSettingsStorageSchema>['type'], string> = {
   filesystem: 'Filesystem',
   s3: 'S3',
 };
 
-export const mailModeTypeLabelMapping: Record<MailModeType, string> = {
+export const mailModeTypeLabelMapping: Record<z.infer<typeof adminSettingsEmailSchema>['type'], string> = {
   none: 'None',
   smtp: 'SMTP',
   sendmail: 'Sendmail Command',
   filesystem: 'Filesystem',
 };
 
-export const archiveFormatLabelMapping: Record<ArchiveFormat, string> = {
+export const archiveFormatLabelMapping: Record<z.infer<typeof archiveFormat>, string> = {
   tar: '.tar',
   tar_gz: '.tar.gz',
   tar_xz: '.tar.xz',
@@ -115,7 +128,7 @@ export const archiveFormatLabelMapping: Record<ArchiveFormat, string> = {
   seven_zip: '.7z',
 };
 
-export const streamingArchiveFormatLabelMapping: Record<StreamingArchiveFormat, string> = {
+export const streamingArchiveFormatLabelMapping: Record<z.infer<typeof streamingArchiveFormat>, string> = {
   tar: '.tar',
   tar_gz: '.tar.gz',
   tar_xz: '.tar.xz',
@@ -170,21 +183,21 @@ export const scheduleComparatorOperatorMapping: Record<z.infer<typeof serverSche
   greater_than_or_equals: '>=',
 };
 
-export const serverPowerStateLabelMapping: Record<ServerPowerState, string> = {
+export const serverPowerStateLabelMapping: Record<z.infer<typeof serverPowerState>, string> = {
   running: 'Running',
   offline: 'Offline',
   starting: 'Starting',
   stopping: 'Stopping',
 };
 
-export const serverPowerActionLabelMapping: Record<ServerPowerAction, string> = {
+export const serverPowerActionLabelMapping: Record<z.infer<typeof serverPowerAction>, string> = {
   start: 'Start',
   stop: 'Stop',
   restart: 'Restart',
   kill: 'Kill',
 };
 
-export const serverBackupStatusLabelMapping: Record<ServerBackupStatus, string> = {
+export const serverBackupStatusLabelMapping: Record<z.infer<typeof serverBackupStatus>, string> = {
   starting: 'Starting',
   finished: 'Finished',
   failed: 'Failed',
@@ -343,7 +356,7 @@ export const scheduleStepIconMapping: Record<z.infer<typeof serverScheduleStepAc
   update_startup_docker_image: faDocker,
 };
 
-export const sshKeyProviderLabelMapping: Record<SshKeyProvider, string> = {
+export const sshKeyProviderLabelMapping: Record<z.infer<typeof userSshKeyProvider>, string> = {
   github: 'GitHub',
   gitlab: 'GitLab',
   launchpad: 'Launchpad',

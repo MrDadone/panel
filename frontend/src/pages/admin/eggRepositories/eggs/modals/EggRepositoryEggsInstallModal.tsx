@@ -43,9 +43,13 @@ export default function EggRepositoryEggsInstallModal({
   }, [opened]);
 
   const doInstall = () => {
+    if (!selectedNest) {
+      return;
+    }
+
     setLoading(true);
 
-    installEggs(eggRepository.uuid, selectedEggs.keys(), selectedNest!.uuid)
+    installEggs(eggRepository.uuid, selectedEggs.keys(), selectedNest.uuid)
       .then((installed) => {
         addToast(`${installed} Egg${installed !== 1 ? 's' : ''} installed.`, 'success');
         setSelectedEggs(new ObjectSet('uuid'));

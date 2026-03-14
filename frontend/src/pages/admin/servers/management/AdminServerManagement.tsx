@@ -45,7 +45,7 @@ export default function AdminServerManagement({ server }: { server: z.infer<type
         </Card>
         <Card className='h-fit!'>
           <Stack gap='xs'>
-            {server.suspended ? (
+            {server.isSuspended ? (
               <>
                 <Title order={2}>Unsuspend</Title>
                 <Text size='sm'>

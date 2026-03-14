@@ -1,23 +1,25 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
+import { serverImagePullProgressSchema, serverSchema } from '@/lib/schemas/server/server.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface ServerSlice {
-  server: Server;
+  server: z.infer<typeof serverSchema>;
 
-  imagePulls: Map<string, ImagePullProgress>;
+  imagePulls: Map<string, z.infer<typeof serverImagePullProgressSchema>>;
 
-  setServer: (server: Server) => void;
-  updateServer: (updatedProps: Partial<Server>) => void;
+  setServer: (server: z.infer<typeof serverSchema>) => void;
+  updateServer: (updatedProps: Partial<z.infer<typeof serverSchema>>) => void;
 
-  setImagePull: (id: string, pull: ImagePullProgress) => void;
+  setImagePull: (id: string, pull: z.infer<typeof serverImagePullProgressSchema>) => void;
   removeImagePull: (id: string) => void;
   clearImagePulls: () => void;
 }
 
 export const createServerSlice: StateCreator<ServerStore, [], [], ServerSlice> = (set): ServerSlice => ({
-  server: {} as Server,
+  server: {} as z.infer<typeof serverSchema>,
 
-  imagePulls: new Map<string, ImagePullProgress>(),
+  imagePulls: new Map<string, z.infer<typeof serverImagePullProgressSchema>>(),
 
   setServer: (value) => set((state) => ({ ...state, server: value })),
   updateServer: (updatedProps) =>
@@ -39,6 +41,6 @@ export const createServerSlice: StateCreator<ServerStore, [], [], ServerSlice> =
     }),
   clearImagePulls: () =>
     set(() => {
-      return { imagePulls: new Map<string, ImagePullProgress>() };
+      return { imagePulls: new Map<string, z.infer<typeof serverImagePullProgressSchema>>() };
     }),
 });

@@ -68,6 +68,7 @@ function CronTriggerForm({ form, index }: TriggerFormProps) {
     <Popover>
       <Popover.Target>
         <TextInput
+          withAsterisk
           label='Cron Schedule'
           placeholder='Cron Schedule'
           className='flex-1'
@@ -89,6 +90,7 @@ function PowerActionTriggerForm({ form, index }: TriggerFormProps) {
 
   return (
     <Select
+      withAsterisk
       label='Power Action'
       placeholder='Power Action'
       className='flex-1'
@@ -108,6 +110,7 @@ function ServerStateTriggerForm({ form, index }: TriggerFormProps) {
 
   return (
     <Select
+      withAsterisk
       label='Server State'
       placeholder='Server State'
       className='flex-1'
@@ -125,6 +128,7 @@ function BackupStatusTriggerForm({ form, index }: TriggerFormProps) {
 
   return (
     <Select
+      withAsterisk
       label='Backup Status'
       placeholder='Backup Status'
       className='flex-1'
@@ -142,6 +146,7 @@ function ConsoleLineTriggerForm({ form, index }: TriggerFormProps) {
 
   return (
     <TextInput
+      withAsterisk
       label='Line Contains'
       placeholder='Line Contains'
       className='flex-1'

@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import { z } from 'zod';
 import sendPowerAction from '@/api/server/sendPowerAction.ts';
+import { serverPowerAction } from '@/lib/schemas/server/server.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 export function useBulkPowerActions() {
   const { t, tItem } = useTranslations();
   const { addToast } = useToast();
-  const [bulkActionLoading, setBulkActionLoading] = useState<ServerPowerAction | null>(null);
+  const [bulkActionLoading, setBulkActionLoading] = useState<z.infer<typeof serverPowerAction> | null>(null);
 
-  const handleBulkPowerAction = async (serverUuids: string[], action: ServerPowerAction) => {
+  const handleBulkPowerAction = async (serverUuids: string[], action: z.infer<typeof serverPowerAction>) => {
     setBulkActionLoading(action);
 
     const results = await Promise.allSettled(serverUuids.map((uuid) => sendPowerAction(uuid, action)));
@@ -16,7 +18,10 @@ export function useBulkPowerActions() {
     const successful = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.filter((r) => r.status === 'rejected').length;
 
-    const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
+    const actionPastTenseMap: Record<
+      z.infer<typeof serverPowerAction>,
+      'started' | 'stopped' | 'restarted' | 'killed'
+    > = {
       start: 'started',
       stop: 'stopped',
       restart: 'restarted',

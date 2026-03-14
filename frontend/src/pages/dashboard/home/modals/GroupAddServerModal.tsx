@@ -7,6 +7,7 @@ import getServers from '@/api/server/getServers.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { serverSchema } from '@/lib/schemas/server/server.ts';
 import { userServerGroupSchema } from '@/lib/schemas/user.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -23,10 +24,10 @@ export default function GroupAddServerModal({ serverGroup, opened, onClose, onSe
   const { addToast } = useToast();
   const { updateServerGroup: updateStateServerGroup } = useUserStore();
 
-  const [selectedServer, setSelectedServer] = useState<Server | null>(null);
+  const [selectedServer, setSelectedServer] = useState<z.infer<typeof serverSchema> | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const servers = useSearchableResource<Server>({
+  const servers = useSearchableResource<z.infer<typeof serverSchema>>({
     fetcher: (search) => getServers(1, search),
   });
 

@@ -17,10 +17,18 @@ export default function generateSchemaObject(output: fs.WriteStream, _spaces: nu
         output.write(`}\n\n`)
     } else {
         if (object.additionalProperties) {
-            if (!parent) {
-                output.write(`${spaces}type ${pascalCase(name)} = IndexMap<compact_str::CompactString, ${convertType(object.additionalProperties as any)}>;\n`)
+            if (object.propertyNames && !object.propertyNames.$ref && (object.propertyNames as oas31.SchemaObject).format === 'uuid') {
+                if (!parent) {
+                output.write(`${spaces}type ${pascalCase(name)} = IndexMap<uuid::Uuid, ${convertType(object.additionalProperties as any)}>;\n`)
+                } else {
+                    output.write(`IndexMap<uuid::Uuid, ${convertType(object.additionalProperties as any)}>,\n`)
+                }
             } else {
-                output.write(`IndexMap<compact_str::CompactString, ${convertType(object.additionalProperties as any)}>,\n`)
+                if (!parent) {
+                    output.write(`${spaces}type ${pascalCase(name)} = IndexMap<compact_str::CompactString, ${convertType(object.additionalProperties as any)}>;\n`)
+                } else {
+                    output.write(`IndexMap<compact_str::CompactString, ${convertType(object.additionalProperties as any)}>,\n`)
+                }
             }
 
             return

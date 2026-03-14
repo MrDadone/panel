@@ -19,6 +19,10 @@ import { archiveFormatLabelMapping, compressionLevelLabelMapping } from '@/lib/e
 import { adminNodeAllocationSchema, adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { serverBackupSchema } from '@/lib/schemas/server/backups.ts';
+import {
+  archiveFormat as archiveFormatEnum,
+  compressionLevel as compressionLevelEnum,
+} from '@/lib/schemas/server/files.ts';
 import { formatAllocation } from '@/lib/server.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -37,8 +41,8 @@ export default function ServerTransferModal({
   const [selectedAllocationUuids, setSelectedAllocationUuids] = useState<string[]>([]);
   const [selectedBackupUuids, setSelectedBackupsUuids] = useState<string[]>([]);
   const [deleteSourceBackups, setDeleteSourceBackups] = useState(false);
-  const [archiveFormat, setArchiveFormat] = useState<ArchiveFormat>('tar_lz4');
-  const [compressionLevel, setCompressionLevel] = useState<CompressionLevel>('good_compression');
+  const [archiveFormat, setArchiveFormat] = useState<z.infer<typeof archiveFormatEnum>>('tar_lz4');
+  const [compressionLevel, setCompressionLevel] = useState<z.infer<typeof compressionLevelEnum>>('good_compression');
   const [multiplexChannels, setMultiplexChannels] = useState(0);
 
   const nodes = useSearchableResource<z.infer<typeof adminNodeSchema>>({ fetcher: (search) => getNodes(1, search) });
@@ -178,7 +182,7 @@ export default function ServerTransferModal({
             withAsterisk
             label='Archive Format'
             value={archiveFormat}
-            onChange={(value) => setArchiveFormat(value as ArchiveFormat)}
+            onChange={(value) => setArchiveFormat(value as z.infer<typeof archiveFormatEnum>)}
             data={Object.entries(archiveFormatLabelMapping)
               .filter(([value]) => !['zip', 'seven_zip'].includes(value))
               .map(([value, label]) => ({
@@ -191,7 +195,7 @@ export default function ServerTransferModal({
             withAsterisk
             label='Compression Level'
             value={compressionLevel}
-            onChange={(value) => setCompressionLevel(value as CompressionLevel)}
+            onChange={(value) => setCompressionLevel(value as z.infer<typeof compressionLevelEnum>)}
             disabled={archiveFormat === 'tar'}
             data={Object.entries(compressionLevelLabelMapping).map(([value, label]) => ({
               value,

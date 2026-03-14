@@ -2,6 +2,7 @@ import { QueryFilters, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { z } from 'zod';
 import { serverFileOperationSchema } from '@/lib/schemas/server/files.ts';
+import { serverImagePullProgressSchema, serverResourceUsageSchema } from '@/lib/schemas/server/server.ts';
 import { transformKeysToCamelCase } from '@/lib/transformers.ts';
 import useWebsocketEvent, { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -25,6 +26,7 @@ export default function WebsocketListener() {
     setStats,
     setBackupProgress,
     setBackupRestoreProgress,
+    setTransferProgress,
     updateBackup,
     setRunningScheduleStep,
     setScheduleSteps,
@@ -63,13 +65,13 @@ export default function WebsocketListener() {
       return;
     }
 
-    const resourceUsage = transformKeysToCamelCase(wsStats) as ResourceUsage;
+    const resourceUsage = transformKeysToCamelCase(wsStats) as z.infer<typeof serverResourceUsageSchema>;
     setStats(resourceUsage);
     addServerResourceUsage(server.uuid, resourceUsage);
   });
 
   useWebsocketEvent(SocketEvent.IMAGE_PULL_PROGRESS, (id, data) => {
-    let wsData: ImagePullProgress;
+    let wsData: z.infer<typeof serverImagePullProgressSchema>;
     try {
       wsData = JSON.parse(data);
     } catch {
@@ -134,6 +136,17 @@ export default function WebsocketListener() {
     }
 
     setBackupRestoreProgress(wsData.progress, wsData.total);
+  });
+
+  useWebsocketEvent(SocketEvent.TRANSFER_PROGRESS, (data) => {
+    let wsData: { archive_progress: number; network_progress: number; total: number };
+    try {
+      wsData = JSON.parse(data);
+    } catch {
+      return;
+    }
+
+    setTransferProgress(wsData.archive_progress, wsData.network_progress, wsData.total);
   });
 
   useWebsocketEvent(SocketEvent.BACKUP_RESTORE_COMPLETED, () => {

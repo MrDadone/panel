@@ -7,8 +7,8 @@ import { nullableString } from '@/lib/transformers.ts';
 
 export const adminNodeSchema = z.object({
   uuid: z.string(),
-  location: adminLocationSchema,
-  backupConfiguration: adminBackupConfigurationSchema.nullable(),
+  location: z.lazy(() => adminLocationSchema),
+  backupConfiguration: z.lazy(() => adminBackupConfigurationSchema).nullable(),
   name: z.string().min(3).max(255),
   deploymentEnabled: z.boolean(),
   maintenanceEnabled: z.boolean(),
@@ -58,6 +58,12 @@ export const adminNodeAllocationsSchema = z.object({
 });
 
 export const adminNodeMountSchema = z.object({
-  mount: adminMountSchema,
+  mount: z.lazy(() => adminMountSchema),
   created: z.date(),
+});
+
+export const adminNodeTransferProgressSchema = z.object({
+  archiveProgress: z.number(),
+  networkProgress: z.number(),
+  total: z.number(),
 });

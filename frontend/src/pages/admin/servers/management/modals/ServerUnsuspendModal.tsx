@@ -23,8 +23,8 @@ export default function ServerUnsuspendModal({
       .then(() => {
         addToast('Server unsuspended.', 'success');
         onClose();
-        updateStoreServer({ ...server, suspended: false });
-        server.suspended = false;
+        updateStoreServer({ ...server, isSuspended: false });
+        server.isSuspended = false;
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');

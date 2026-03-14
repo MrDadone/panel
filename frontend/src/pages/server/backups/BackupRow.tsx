@@ -22,6 +22,7 @@ import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
+import { streamingArchiveFormat } from '@/lib/schemas/generic.ts';
 import { serverBackupWithProgressSchema } from '@/lib/schemas/server/backups.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
@@ -39,7 +40,7 @@ export default function BackupRow({ backup }: { backup: z.infer<typeof serverBac
 
   const [openModal, setOpenModal] = useState<'edit' | 'restore' | 'delete' | null>(null);
 
-  const doDownload = (archiveFormat: StreamingArchiveFormat) => {
+  const doDownload = (archiveFormat: z.infer<typeof streamingArchiveFormat>) => {
     downloadBackup(server.uuid, backup.uuid, archiveFormat)
       .then(({ url }) => {
         addToast(t('pages.server.backups.toast.downloadStarted', {}), 'success');
@@ -108,7 +109,7 @@ export default function BackupRow({ backup }: { backup: z.infer<typeof serverBac
               ? Object.entries(streamingArchiveFormatLabelMapping).map(([mime, label]) => ({
                   icon: faFileArrowDown,
                   label: t('common.button.downloadAs', { format: label }),
-                  onClick: () => doDownload(mime as StreamingArchiveFormat),
+                  onClick: () => doDownload(mime as z.infer<typeof streamingArchiveFormat>),
                   color: 'gray',
                 }))
               : [],

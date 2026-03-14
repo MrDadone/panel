@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { join } from 'pathe';
 import { type Ref, useCallback, useEffect, useRef } from 'react';
 import { createSearchParams, useNavigate, useSearchParams } from 'react-router';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import copyFile from '@/api/server/files/copyFile.ts';
 import loadDirectory from '@/api/server/files/loadDirectory.ts';
@@ -12,6 +13,7 @@ import SelectionArea from '@/elements/SelectionArea.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Table from '@/elements/Table.tsx';
 import { isEditableFile, isViewableArchive, isViewableImage } from '@/lib/files.ts';
+import { serverDirectoryEntrySchema } from '@/lib/schemas/server/files.ts';
 import FileActionBar from '@/pages/server/files/FileActionBar.tsx';
 import FileBreadcrumbs from '@/pages/server/files/FileBreadcrumbs.tsx';
 import FileModals from '@/pages/server/files/FileModals.tsx';
@@ -52,6 +54,8 @@ function ServerFilesComponent() {
   const [_, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const canOpenFile = useServerCan('files.read-content');
+  const typeAheadBuffer = useRef('');
+  const typeAheadTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['server', server.uuid, 'files', { browsingDirectory, page }],
@@ -72,25 +76,28 @@ function ServerFilesComponent() {
     setBrowsingEntries(data.entries);
   };
 
-  const previousSelected = useRef<DirectoryEntry[]>([]);
+  const previousSelected = useRef<z.infer<typeof serverDirectoryEntrySchema>[]>([]);
 
   const onSelectedStart = (event: React.MouseEvent | MouseEvent) => {
     previousSelected.current = event.shiftKey ? selectedFiles.values() : [];
   };
 
-  const onSelected = (selected: DirectoryEntry[]) => {
+  const onSelected = (selected: z.infer<typeof serverDirectoryEntrySchema>[]) => {
     doSelectFiles([...previousSelected.current, ...selected.values()]);
   };
 
   const onPageSelect = (page: number) => setSearchParams({ directory: browsingDirectory, page: page.toString() });
 
   const handleOpen = useCallback(
-    (file: DirectoryEntry) => {
+    (file: z.infer<typeof serverDirectoryEntrySchema>) => {
       if (
         ((isEditableFile(file) || isViewableImage(file)) && file.size <= settings.server.maxFileManagerViewSize) ||
         file.directory ||
         (isViewableArchive(file) && browsingFastDirectory)
       ) {
+        if (typeAheadTimeout.current) clearTimeout(typeAheadTimeout.current);
+        typeAheadBuffer.current = '';
+
         if (file.directory || (isViewableArchive(file) && browsingFastDirectory)) {
           setSearchParams({
             directory: join(browsingDirectory, file.name),
@@ -110,6 +117,36 @@ function ServerFilesComponent() {
     [server.uuidShort, settings, browsingDirectory, browsingFastDirectory, canOpenFile],
   );
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || openModal !== null) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key.length !== 1) return;
+
+      e.preventDefault();
+
+      if (typeAheadTimeout.current) clearTimeout(typeAheadTimeout.current);
+      typeAheadBuffer.current += e.key.toLowerCase();
+
+      const match = browsingEntries.data.find((entry) => entry.name.toLowerCase().startsWith(typeAheadBuffer.current));
+
+      if (match) {
+        doSelectFiles([match]);
+      }
+
+      typeAheadTimeout.current = setTimeout(() => {
+        typeAheadBuffer.current = '';
+      }, 1000);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (typeAheadTimeout.current) clearTimeout(typeAheadTimeout.current);
+    };
+  }, [browsingEntries.data, openModal, doSelectFiles]);
+
   useKeyboardShortcuts({
     shortcuts: [
       {
@@ -118,7 +155,7 @@ function ServerFilesComponent() {
         callback: () => doSelectFiles(browsingEntries.data),
       },
       {
-        key: 'f',
+        key: 'k',
         modifiers: ['ctrlOrMeta'],
         callback: () => doOpenModal('search'),
       },

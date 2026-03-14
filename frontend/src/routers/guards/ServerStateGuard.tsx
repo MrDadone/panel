@@ -39,7 +39,7 @@ export default function ServerStateGuard() {
   };
 
   if (
-    (((server.suspended && !isAdmin(user)) || server.status !== null) &&
+    (((server.isSuspended && !isAdmin(user)) || server.status !== null) &&
       location.pathname !== `/server/${server.uuid}` &&
       location.pathname !== `/server/${server.uuid}/` &&
       location.pathname !== `/server/${server.uuidShort}` &&
@@ -61,7 +61,7 @@ export default function ServerStateGuard() {
         <ScreenBlock
           title={t('elements.screenBlock.serverConflict.title', {})}
           content={
-            server.suspended
+            server.isSuspended
               ? t('elements.screenBlock.serverConflict.contentSuspended', {})
               : server.nodeMaintenanceEnabled
                 ? t('elements.screenBlock.serverConflict.contentNodeMaintenance', {})

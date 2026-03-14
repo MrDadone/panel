@@ -10,14 +10,14 @@ import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
-import { serverFilesCopySchema } from '@/lib/schemas/server/files.ts';
+import { serverDirectoryEntrySchema, serverFilesCopySchema } from '@/lib/schemas/server/files.ts';
 import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  file: DirectoryEntry | null;
+  file: z.infer<typeof serverDirectoryEntrySchema> | null;
 };
 
 export default function FileCopyModal({ file, opened, onClose }: Props) {

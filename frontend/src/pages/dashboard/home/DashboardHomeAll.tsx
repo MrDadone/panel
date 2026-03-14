@@ -1,5 +1,6 @@
 import { Group } from '@mantine/core';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getServerGroups from '@/api/me/servers/groups/getServerGroups.ts';
 import getServers from '@/api/server/getServers.ts';
@@ -11,6 +12,7 @@ import TextInput from '@/elements/input/TextInput.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
 import { ObjectSet } from '@/lib/objectSet.ts';
+import { serverPowerAction, serverSchema } from '@/lib/schemas/server/server.ts';
 import { useBulkPowerActions } from '@/plugins/useBulkPowerActions.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -27,7 +29,7 @@ export default function DashboardHomeAll() {
   const { serverListShowOthers, setServerListShowOthers } = useGlobalStore();
   const { addToast } = useToast();
 
-  const [selectedServers, setSelectedServers] = useState(new ObjectSet<Server, 'uuid'>('uuid'));
+  const [selectedServers, setSelectedServers] = useState(new ObjectSet<z.infer<typeof serverSchema>, 'uuid'>('uuid'));
   const [sKeyPressed, setSKeyPressed] = useState(false);
 
   const { handleBulkPowerAction, bulkActionLoading } = useBulkPowerActions();
@@ -74,7 +76,7 @@ export default function DashboardHomeAll() {
     deps: [serverListShowOthers],
   });
 
-  const handleServerSelectionChange = (server: Server, selected: boolean) => {
+  const handleServerSelectionChange = (server: z.infer<typeof serverSchema>, selected: boolean) => {
     setSelectedServers((prev) => {
       const newSet = new ObjectSet('uuid', prev.values());
       if (selected) {
@@ -86,7 +88,7 @@ export default function DashboardHomeAll() {
     });
   };
 
-  const handleServerClick = (server: Server, event: React.MouseEvent) => {
+  const handleServerClick = (server: z.infer<typeof serverSchema>, event: React.MouseEvent) => {
     if (sKeyPressed) {
       event.preventDefault();
       event.stopPropagation();
@@ -94,7 +96,7 @@ export default function DashboardHomeAll() {
     }
   };
 
-  const onBulkAction = async (action: ServerPowerAction) => {
+  const onBulkAction = async (action: z.infer<typeof serverPowerAction>) => {
     await handleBulkPowerAction(selectedServers.keys(), action);
     setSelectedServers(new ObjectSet('uuid'));
   };
