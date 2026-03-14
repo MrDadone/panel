@@ -3,8 +3,8 @@ import {
   faArrowUpLong,
   faCog,
   faComputer,
-  faExternalLink,
   faFileLines,
+  faFolderTree,
   faInfoCircle,
   faNetworkWired,
   faPenRuler,
@@ -86,7 +86,7 @@ export default function NodeView() {
           },
           {
             name: 'Mounts',
-            icon: faExternalLink,
+            icon: faFolderTree,
             path: `/mounts`,
             element: <AdminNodeMounts node={node} />,
             permission: 'nodes.mounts',

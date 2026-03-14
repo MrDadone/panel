@@ -1,4 +1,4 @@
-import { faCodeCommit, faCog, faComputer, faEgg, faTerminal } from '@fortawesome/free-solid-svg-icons';
+import { faCodeCommit, faCog, faComputer, faFolderTree, faTerminal } from '@fortawesome/free-solid-svg-icons';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
@@ -62,7 +62,7 @@ export default function EggView({ contextNest }: { contextNest: z.infer<typeof a
           },
           {
             name: 'Mounts',
-            icon: faEgg,
+            icon: faFolderTree,
             path: `/mounts`,
             element: <AdminEggMounts contextNest={contextNest} contextEgg={egg} />,
             permission: 'eggs.mounts',

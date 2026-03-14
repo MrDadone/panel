@@ -5,6 +5,7 @@ import { BackupsRegistry } from './backups.ts';
 import { ConsoleRegistry } from './console.ts';
 import { DatabasesRegistry } from './databases.ts';
 import { FilesRegistry } from './files.ts';
+import { MountsRegistry } from './mounts.ts';
 import { NetworkRegistry } from './network.ts';
 import { SettingsRegistry } from './settings.ts';
 import { StartupRegistry } from './startup.ts';
@@ -35,6 +36,7 @@ export class ServerRegistry implements Registry {
   public backups: BackupsRegistry = new BackupsRegistry();
   public network: NetworkRegistry = new NetworkRegistry();
   public startup: StartupRegistry = new StartupRegistry();
+  public mounts: MountsRegistry = new MountsRegistry();
   public settings: SettingsRegistry = new SettingsRegistry();
   public activity: ActivityRegistry = new ActivityRegistry();
 
@@ -73,6 +75,11 @@ export class ServerRegistry implements Registry {
 
   public enterStartup(callback: (registry: StartupRegistry) => unknown): this {
     callback(this.startup);
+    return this;
+  }
+
+  public enterMounts(callback: (registry: MountsRegistry) => unknown): this {
+    callback(this.mounts);
     return this;
   }
 
