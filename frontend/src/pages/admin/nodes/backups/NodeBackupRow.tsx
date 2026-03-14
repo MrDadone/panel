@@ -4,6 +4,7 @@ import { NavLink } from 'react-router';
 import { z } from 'zod';
 import downloadNodeBackup from '@/api/admin/nodes/backups/downloadNodeBackup.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import Badge from '@/elements/Badge.tsx';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import Spinner from '@/elements/Spinner.tsx';
@@ -115,17 +116,25 @@ export default function NodeBackupRow({
               </Code>
             </TableData>
 
-            <TableData>{backup.checksum && <Code>{backup.checksum}</Code>}</TableData>
+            {backup.isSuccessful || !backup.completed ? (
+              <>
+                <TableData>{backup.checksum && <Code>{backup.checksum}</Code>}</TableData>
 
-            {backup.completed ? (
-              <TableData>{bytesToString(backup.bytes)}</TableData>
+                {backup.completed ? (
+                  <TableData>{bytesToString(backup.bytes)}</TableData>
+                ) : (
+                  <TableData colSpan={2}>
+                    <Spinner />
+                  </TableData>
+                )}
+
+                <TableData>{backup.completed ? backup.files : null}</TableData>
+              </>
             ) : (
-              <TableData colSpan={2}>
-                <Spinner />
+              <TableData colSpan={3}>
+                <Badge color='red'>{t('common.badge.failed', {})}</Badge>
               </TableData>
             )}
-
-            <TableData>{backup.completed ? backup.files : null}</TableData>
 
             <TableData>
               <FormattedTimestamp timestamp={backup.created} />

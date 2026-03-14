@@ -98,7 +98,7 @@ export default function WebsocketListener() {
 
   useWebsocketEvent(SocketEvent.BACKUP_COMPLETED, (uuid, data) => {
     let wsData: {
-      isSuccessful: boolean;
+      successful: boolean;
       checksum_type: string;
       checksum: string;
       size: number;
@@ -113,7 +113,7 @@ export default function WebsocketListener() {
     }
 
     updateBackup(uuid, {
-      isSuccessful: wsData.isSuccessful,
+      isSuccessful: wsData.successful,
       checksum: `${wsData.checksum_type}:${wsData.checksum}`,
       bytes: wsData.size,
       files: wsData.files,

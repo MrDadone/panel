@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteBackup from '@/api/server/backups/deleteBackup.ts';
 import downloadBackup from '@/api/server/backups/downloadBackup.ts';
+import Badge from '@/elements/Badge.tsx';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
@@ -143,22 +144,30 @@ export default function BackupRow({ backup }: { backup: z.infer<typeof serverBac
           >
             <TableData>{backup.name}</TableData>
 
-            <TableData>{backup.checksum && <Code>{backup.checksum}</Code>}</TableData>
+            {backup.isSuccessful || !backup.completed ? (
+              <>
+                <TableData>{backup.checksum && <Code>{backup.checksum}</Code>}</TableData>
 
-            {backup.completed ? (
-              <TableData>{bytesToString(backup.bytes)}</TableData>
+                {backup.completed ? (
+                  <TableData>{bytesToString(backup.bytes)}</TableData>
+                ) : (
+                  <TableData colSpan={2}>
+                    <Tooltip
+                      label={`${bytesToString(backup.progress?.progress || 0)} / ${bytesToString(backup.progress?.total || 0)}`}
+                      innerClassName='w-full'
+                    >
+                      <Progress value={((backup.progress?.progress || 0) / (backup.progress?.total || 1)) * 100} />
+                    </Tooltip>
+                  </TableData>
+                )}
+
+                <TableData hidden={!backup.completed}>{backup.completed ? backup.files : null}</TableData>
+              </>
             ) : (
-              <TableData colSpan={2}>
-                <Tooltip
-                  label={`${bytesToString(backup.progress?.progress || 0)} / ${bytesToString(backup.progress?.total || 0)}`}
-                  innerClassName='w-full'
-                >
-                  <Progress value={((backup.progress?.progress || 0) / (backup.progress?.total || 1)) * 100} />
-                </Tooltip>
+              <TableData colSpan={3}>
+                <Badge color='red'>{t('common.badge.failed', {})}</Badge>
               </TableData>
             )}
-
-            <TableData hidden={!backup.completed}>{backup.completed ? backup.files : null}</TableData>
 
             <TableData>
               <FormattedTimestamp timestamp={backup.created} />

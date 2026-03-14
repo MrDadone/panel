@@ -164,7 +164,7 @@ export default function ScheduleRow({ schedule }: { schedule: z.infer<typeof ser
 
             <TableData>
               <Badge color={schedule.enabled ? 'green' : 'red'}>
-                {schedule.enabled ? t('common.active', {}) : t('common.inactive', {})}
+                {schedule.enabled ? t('common.badge.active', {}) : t('common.badge.inactive', {})}
               </Badge>
             </TableData>
 

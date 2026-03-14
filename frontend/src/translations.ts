@@ -80,6 +80,14 @@ const baseTranslations = defineTranslations({
           command: 'Command',
         },
       },
+      badge: {
+        active: 'Active',
+        inactive: 'Inactive',
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        successful: 'Successful',
+        failed: 'Failed',
+      },
       server: {
         noAllocation: 'No Allocation',
         state: {
@@ -125,8 +133,6 @@ const baseTranslations = defineTranslations({
       },
       unlimited: 'Unlimited',
       readOnly: 'Read-Only',
-      active: 'Active',
-      inactive: 'Inactive',
       na: 'N/A',
       yes: 'Yes',
       no: 'No',

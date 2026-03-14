@@ -34,7 +34,7 @@ export default function ServerPowerControls() {
   }, [state]);
 
   return (
-    <div className='flex gap-2'>
+    <div className='flex w-full md:w-fit gap-2'>
       <ConfirmationModal
         opened={open}
         onClose={() => setOpen(false)}
@@ -57,12 +57,18 @@ export default function ServerPowerControls() {
           disabled={!socketConnected || state !== 'offline'}
           loading={state === 'starting'}
           onClick={() => onButtonClick('start')}
+          className='flex-1'
         >
           {t('pages.server.console.power.start', {})}
         </Button>
       </ServerCan>
       <ServerCan action='control.restart'>
-        <Button color='gray' disabled={!socketConnected || !state} onClick={() => onButtonClick('restart')}>
+        <Button
+          color='gray'
+          disabled={!socketConnected || !state}
+          onClick={() => onButtonClick('restart')}
+          className='flex-1'
+        >
           {t('pages.server.console.power.restart', {})}
         </Button>
       </ServerCan>
@@ -71,6 +77,7 @@ export default function ServerPowerControls() {
           color='red'
           disabled={!socketConnected || state === 'offline'}
           onClick={() => onButtonClick(killable ? 'kill' : 'stop')}
+          className='flex-1'
         >
           {killable ? t('pages.server.console.power.kill', {}) : t('pages.server.console.power.stop', {})}
         </Button>
