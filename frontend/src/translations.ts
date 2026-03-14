@@ -1322,13 +1322,17 @@ const baseTranslations = defineTranslations({
               title: 'Attach Mount',
               content: 'Do you want to attach **{name}** to `{target}`?',
               confirm: 'Attach',
-              attached: '{name} has been mounted to your server.',
+              toast: {
+                attached: '{name} has been mounted to your server.',
+              },
             },
             detachMount: {
               title: 'Detach Mount',
               content: 'Do you want to detach **{name}** from `{target}`?',
               confirm: 'Detach',
-              detached: '{name} has been removed from your server.',
+              toast: {
+                detached: '{name} has been removed from your server.',
+              },
             },
           },
         },

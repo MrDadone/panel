@@ -25,7 +25,7 @@ export const MountRow = ({ contextMount }: { contextMount: z.infer<typeof server
     attachMount(server.uuid, contextMount.uuid)
       .then(() => {
         addToast(
-          t('pages.server.mounts.modal.attachMount.attached', {
+          t('pages.server.mounts.modal.attachMount.toast.attached', {
             name: contextMount.name,
           }),
           'success',
@@ -42,7 +42,7 @@ export const MountRow = ({ contextMount }: { contextMount: z.infer<typeof server
     detachMount(server.uuid, contextMount.uuid)
       .then(() => {
         addToast(
-          t('pages.server.mounts.modal.detachMount.detached', {
+          t('pages.server.mounts.modal.detachMount.toast.detached', {
             name: contextMount.name,
           }),
           'success',
