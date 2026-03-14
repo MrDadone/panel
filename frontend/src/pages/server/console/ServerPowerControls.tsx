@@ -57,7 +57,7 @@ export default function ServerPowerControls() {
           disabled={!socketConnected || state !== 'offline'}
           loading={state === 'starting'}
           onClick={() => onButtonClick('start')}
-          className='flex-1'
+          className='flex-1 min-w-fit'
         >
           {t('pages.server.console.power.start', {})}
         </Button>
@@ -67,7 +67,7 @@ export default function ServerPowerControls() {
           color='gray'
           disabled={!socketConnected || !state}
           onClick={() => onButtonClick('restart')}
-          className='flex-1'
+          className='flex-1 min-w-fit'
         >
           {t('pages.server.console.power.restart', {})}
         </Button>
@@ -77,7 +77,7 @@ export default function ServerPowerControls() {
           color='red'
           disabled={!socketConnected || state === 'offline'}
           onClick={() => onButtonClick(killable ? 'kill' : 'stop')}
-          className='flex-1'
+          className='flex-1 min-w-fit'
         >
           {killable ? t('pages.server.console.power.kill', {}) : t('pages.server.console.power.stop', {})}
         </Button>
