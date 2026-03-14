@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { nullableString } from '../transformers.ts';
 
 export const oobeStepKey = z.enum(['register', 'configuration', 'location', 'node', 'node_verify', 'finished', '']);
 
@@ -23,9 +24,9 @@ export const oobeLoginSchema = z.object({
 
 export const oobeNodeSchema = z.object({
   name: z.string().min(3).max(255),
-  publicUrl: z.url().nullable(),
+  publicUrl: z.preprocess(nullableString, z.url().min(3).max(255).nullable()),
   url: z.url().min(3).max(255),
-  sftpHost: z.string().nullable(),
+  sftpHost: z.preprocess(nullableString, z.string().min(3).max(255).nullable()),
   sftpPort: z.number().min(1).max(65535),
   memory: z.number(),
   disk: z.number(),
