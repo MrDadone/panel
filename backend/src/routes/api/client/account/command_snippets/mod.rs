@@ -136,7 +136,15 @@ mod post {
             command: data.command,
             eggs: data.eggs,
         };
-        let command_snippet = UserCommandSnippet::create(&state, options).await?;
+        let command_snippet = match UserCommandSnippet::create(&state, options).await {
+            Ok(command_snippet) => command_snippet,
+            Err(err) if err.is_unique_violation() => {
+                return ApiResponse::error("command snippet with name already exists")
+                    .with_status(StatusCode::CONFLICT)
+                    .ok();
+            }
+            Err(err) => return ApiResponse::from(err).ok(),
+        };
 
         activity_logger
             .log(

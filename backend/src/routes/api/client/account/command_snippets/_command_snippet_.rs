@@ -53,7 +53,15 @@ mod patch {
             }
         };
 
-        command_snippet.update(&state, data).await?;
+        match command_snippet.update(&state, data).await {
+            Ok(_) => {}
+            Err(err) if err.is_unique_violation() => {
+                return ApiResponse::error("command snippet with name already exists")
+                    .with_status(StatusCode::CONFLICT)
+                    .ok();
+            }
+            Err(err) => return ApiResponse::from(err).ok(),
+        }
 
         activity_logger
             .log(

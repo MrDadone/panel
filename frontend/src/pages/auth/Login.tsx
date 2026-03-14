@@ -259,7 +259,11 @@ export default function Login() {
                 >
                   Continue
                 </Button>
-                <Divider label='OR' labelPosition='center' />
+                <Divider
+                  label='OR'
+                  labelPosition='center'
+                  hidden={oAuthProviders.length === 0 && !settings.app.registrationEnabled}
+                />
                 {oAuthProviders.length > 3 ? (
                   <Button
                     variant='light'
