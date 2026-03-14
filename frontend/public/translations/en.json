@@ -917,6 +917,10 @@
             "receivingRemote": "Receiving {files} from remote server",
             "sendingRemote": "Sending {files} to remote server"
           },
+          "dropzone": {
+            "title": "Drop files here to upload",
+            "subtitle": "Release to start uploading"
+          },
           "settings": {
             "clickOnce": "Click once to open file or folder",
             "preferPhysicalSize": "Show physical size instead of logical size",

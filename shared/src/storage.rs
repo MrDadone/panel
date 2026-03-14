@@ -315,7 +315,18 @@ impl Storage {
                 )?;
                 drop(settings);
 
-                let entries = s3_client.list(path.into(), None).await?;
+                println!("Listing S3 objects with prefix '{}'", path);
+
+                let buckets = s3_client.list(path.into(), None).await?;
+                let Some(entries) = buckets.into_iter().next().map(|b| b.contents) else {
+                    return Ok(crate::models::Pagination {
+                        total: 0,
+                        per_page: per_page as i64,
+                        page: page as i64,
+                        data: Vec::new(),
+                    });
+                };
+
                 let start = (page - 1) * per_page;
 
                 let storage_url_retriever = self.retrieve_urls().await?;
@@ -328,13 +339,11 @@ impl Storage {
                         .into_iter()
                         .skip(start)
                         .take(per_page)
-                        .filter_map(|e| {
-                            Some(StorageAsset {
-                                url: storage_url_retriever.get_url(format!("assets/{}", e.name)),
-                                name: e.name.into(),
-                                size: e.contents.iter().fold(0, |p, n| p + n.size),
-                                created: e.contents.last()?.last_modified.parse().ok()?,
-                            })
+                        .map(|e| StorageAsset {
+                            url: storage_url_retriever.get_url(&e.key),
+                            name: e.key.trim_start_matches("assets/").to_compact_string(),
+                            size: e.size,
+                            created: e.last_modified.parse().unwrap_or_default(),
                         })
                         .collect(),
                 })

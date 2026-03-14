@@ -35,7 +35,6 @@ export default function ApplicationContainer() {
   const canReadAssets = useAdminCan('assets.read');
 
   const form = useForm<z.infer<typeof adminSettingsApplicationSchema>>({
-    mode: 'uncontrolled',
     initialValues: {
       name: '',
       icon: '',
