@@ -34,7 +34,7 @@ const FileRow = forwardRef<HTMLTableRowElement, FileRowProps>(function FileRow(
   const toggleSelected = () => (isSelected ? removeSelectedFile(file) : addSelectedFile(file));
 
   const clickCount = useRef(0);
-  const clickTimer = useRef<number | null>(null);
+  const clickTimer = useRef<NodeJS.Timeout | null>(null);
 
   const handleClick = (e: React.MouseEvent<HTMLTableRowElement>) => {
     clickCount.current += 1;

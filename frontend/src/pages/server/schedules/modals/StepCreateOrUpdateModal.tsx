@@ -14,6 +14,7 @@ import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { scheduleStepDefaultMapping, scheduleStepLabelMapping } from '@/lib/enums.ts';
 import {
   serverScheduleSchema,
+  serverScheduleStepActionSchema,
   serverScheduleStepSchema,
   serverScheduleStepUpdateSchema,
 } from '@/lib/schemas/server/schedules.ts';
@@ -116,7 +117,13 @@ export default function StepCreateOrUpdateModal({
             label,
           }))}
           searchable
-          {...form.getInputProps('action.type')}
+          value={form.getValues().action.type}
+          onChange={(type) => {
+            form.setFieldValue(
+              'action',
+              scheduleStepDefaultMapping[type as z.infer<typeof serverScheduleStepActionSchema>['type']],
+            );
+          }}
         />
 
         <Divider />
