@@ -64,6 +64,8 @@ export default function BackupRow({ backup }: { backup: z.infer<typeof serverBac
       });
   };
 
+  const isFailed = !backup.isSuccessful && !!backup.completed;
+
   return (
     <>
       <BackupEditModal backup={backup} opened={openModal === 'edit'} onClose={() => setOpenModal(null)} />
@@ -84,6 +86,7 @@ export default function BackupRow({ backup }: { backup: z.infer<typeof serverBac
           {
             icon: faPencil,
             label: t('common.button.edit', {}),
+            hidden: isFailed,
             onClick: () => setOpenModal('edit'),
             color: 'gray',
             canAccess: useServerCan('backups.update'),
@@ -91,7 +94,7 @@ export default function BackupRow({ backup }: { backup: z.infer<typeof serverBac
           {
             icon: faShare,
             label: t('pages.server.backups.button.browse', {}),
-            hidden: !backup.isBrowsable,
+            hidden: !backup.isBrowsable || isFailed,
             onClick: () =>
               navigate(
                 `/server/${server?.uuidShort}/files?${createSearchParams({
@@ -104,6 +107,7 @@ export default function BackupRow({ backup }: { backup: z.infer<typeof serverBac
           {
             icon: faFileArrowDown,
             label: t('common.button.download', {}),
+            hidden: isFailed,
             onClick: !backup.isStreaming ? () => doDownload('tar_gz') : () => null,
             color: 'gray',
             items: backup.isStreaming
@@ -119,6 +123,7 @@ export default function BackupRow({ backup }: { backup: z.infer<typeof serverBac
           {
             icon: faRotateLeft,
             label: t('common.button.restore', {}),
+            hidden: isFailed,
             onClick: () => setOpenModal('restore'),
             color: 'gray',
             canAccess: useServerCan('backups.restore'),
@@ -144,7 +149,7 @@ export default function BackupRow({ backup }: { backup: z.infer<typeof serverBac
           >
             <TableData>{backup.name}</TableData>
 
-            {backup.isSuccessful || !backup.completed ? (
+            {!isFailed ? (
               <>
                 <TableData>{backup.checksum && <Code>{backup.checksum}</Code>}</TableData>
 
