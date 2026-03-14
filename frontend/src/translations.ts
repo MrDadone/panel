@@ -681,6 +681,39 @@ const baseTranslations = defineTranslations({
             },
           },
         },
+        commandSnippets: {
+          title: 'Command Snippets',
+          table: {
+            columns: {
+              eggs: 'Eggs',
+            },
+          },
+          form: {
+            eggs: 'Eggs',
+            command: 'Command',
+          },
+          modal: {
+            createCommandSnippet: {
+              title: 'Create Command Snippet',
+              toast: {
+                created: 'Command snippet created.',
+              },
+            },
+            editCommandSnippet: {
+              title: 'Edit Command Snippet',
+              toast: {
+                updated: 'Command snippet updated.',
+              },
+            },
+            deleteCommandSnippet: {
+              title: 'Confirm Command Snippet Deletion',
+              content: 'Are you sure you want to delete **{name}** from your account?',
+              toast: {
+                removed: 'Command snippet removed.',
+              },
+            },
+          },
+        },
         oauthLinks: {
           title: 'OAuth Links',
           button: {

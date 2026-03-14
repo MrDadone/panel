@@ -8,7 +8,7 @@ import {
   faServer,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon } from '@mantine/core';
+import { ActionIcon, ComboboxItem, OptionsFilter } from '@mantine/core';
 import { FitAddon } from '@xterm/addon-fit';
 import { SearchAddon } from '@xterm/addon-search';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
@@ -34,26 +34,42 @@ import SshDetailsModal from './modals/SshDetailsModal.tsx';
 
 import '@xterm/xterm/css/xterm.css';
 import './xterm.css';
+import Autocomplete from '@/elements/input/Autocomplete.tsx';
 
 const RAW_PRELUDE = '\u001b[1m\u001b[33mcontainer@calagopus~ \u001b[0m';
 
+const commandSnippetFilter: OptionsFilter = ({ options, search }) => {
+  if (!search.startsWith('!')) {
+    return [];
+  }
+
+  const splittedSearch = search.toLowerCase().trim().split(' ');
+  return (options as ComboboxItem[]).filter((option) => {
+    const words = option.label.toLowerCase().trim().split(' ');
+    return splittedSearch.every((searchWord) => words.some((word) => word.includes(searchWord)));
+  });
+};
+
 export default function Terminal() {
   const { t } = useTranslations();
-  const { server, imagePulls, socketConnected, socketInstance, state } = useServerStore();
+  const { server, commandSnippets, imagePulls, socketConnected, socketInstance, state } = useServerStore();
 
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [inputValue, setInputValue] = useState('');
   const [searchText, setSearchText] = useState('');
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [websocketPing, setWebsocketPing] = useState(0);
   const [consoleFontSize, setConsoleFontSize] = useState(14);
   const [openModal, setOpenModal] = useState<'search' | 'commandHistory' | 'sshDetails' | null>(null);
 
+  const inputValueRef = useRef(inputValue);
+  const inputValueUpdatedRef = useRef(false);
+  const inputValueCompletedRef = useRef(false);
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermInstance = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const searchAddonRef = useRef<SearchAddon | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const isFirstLine = useRef(true);
 
   const HISTORY_STORAGE_KEY = `terminal_command_history_${server.uuid}`;
@@ -309,33 +325,38 @@ export default function Terminal() {
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (!inputRef.current) return;
-
-      if (e.key === 'ArrowUp') {
+      if (e.key === 'ArrowUp' && !inputValueRef.current.startsWith('!')) {
         const newIndex = Math.min(historyIndex + 1, history.length - 1);
         setHistoryIndex(newIndex);
-        inputRef.current.value = history[newIndex] || '';
+        setInputValue(history[newIndex] || '');
         e.preventDefault();
       }
 
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' && !inputValueRef.current.startsWith('!')) {
         const newIndex = Math.max(historyIndex - 1, -1);
         setHistoryIndex(newIndex);
-        inputRef.current.value = history[newIndex] || '';
+        setInputValue(history[newIndex] || '');
         e.preventDefault();
       }
 
-      if (e.key === 'Enter') {
-        const command = inputRef.current.value.trim();
-        if (!command) return;
-
-        if (history[0] !== command) {
-          setHistory((prev) => [command, ...prev].slice(0, 32));
+      setTimeout(() => {
+        if (inputValueCompletedRef.current) {
+          inputValueCompletedRef.current = false;
+          return;
         }
-        setHistoryIndex(-1);
-        socketInstance?.send(SocketRequest.SEND_COMMAND, command);
-        inputRef.current.value = '';
-      }
+
+        if (e.key === 'Enter') {
+          const command = inputValueRef.current.trim();
+          if (!command) return;
+
+          if (history[0] !== command) {
+            setHistory((prev) => [command, ...prev].slice(0, 32));
+          }
+          setHistoryIndex(-1);
+          socketInstance?.send(SocketRequest.SEND_COMMAND, command);
+          setInputValue('');
+        }
+      });
     },
     [history, historyIndex, socketInstance],
   );
@@ -530,8 +551,17 @@ export default function Terminal() {
         )}
 
         <div className='w-full mt-4 flex flex-row'>
-          <TextInput
-            ref={inputRef}
+          <Autocomplete
+            value={inputValue}
+            onChange={(value) => {
+              if (inputValueUpdatedRef.current) {
+                inputValueUpdatedRef.current = false;
+                return;
+              }
+
+              inputValueRef.current = value;
+              setInputValue(value);
+            }}
             placeholder={t('pages.server.console.input.placeholder', {})}
             aria-label={t('pages.server.console.input.ariaLabel', {})}
             disabled={!socketConnected || state === 'offline'}
@@ -539,6 +569,17 @@ export default function Terminal() {
             autoCorrect='off'
             autoCapitalize='none'
             className='w-full'
+            data={commandSnippets.map((s) => `!${s.name}`)}
+            filter={commandSnippetFilter}
+            onOptionSubmit={(option) => {
+              const snippet = commandSnippets.find((s) => `!${s.name}` === option);
+              if (snippet) {
+                inputValueUpdatedRef.current = true;
+                inputValueCompletedRef.current = true;
+                inputValueRef.current = snippet.command;
+                setInputValue(snippet.command);
+              }
+            }}
           />
           {window.extensionContext.extensionRegistry.pages.server.console.terminalInputRowComponents.map(
             (Component, i) => (

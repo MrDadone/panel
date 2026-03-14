@@ -25,7 +25,7 @@ export default function ServerAddGroupModal({ server, opened, onClose }: Props) 
   const [loading, setLoading] = useState(false);
 
   const doAdd = () => {
-    if (!selectedServerGroup) {
+    if (!selectedServerGroup || selectedServerGroup.serverOrder.includes(server.uuid)) {
       return;
     }
 
@@ -66,7 +66,11 @@ export default function ServerAddGroupModal({ server, opened, onClose }: Props) 
       />
 
       <ModalFooter>
-        <Button onClick={doAdd} loading={loading} disabled={!selectedServerGroup}>
+        <Button
+          onClick={doAdd}
+          loading={loading}
+          disabled={!selectedServerGroup || selectedServerGroup.serverOrder.includes(server.uuid)}
+        >
           {t('common.button.add', {})}
         </Button>
         <Button variant='default' onClick={onClose}>

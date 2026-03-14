@@ -144,6 +144,18 @@ pub(crate) static BASE_USER_PERMISSIONS: LazyLock<IndexMap<&'static str, Permiss
                 },
             ),
             (
+                "command-snippets",
+                PermissionGroup {
+                    description: "Permissions that control the ability to manage command snippets on an account.",
+                    permissions: IndexMap::from([
+                        ("create", "Allows creating new command snippets."),
+                        ("read", "Allows viewing command snippets."),
+                        ("update", "Allows modifying command snippets."),
+                        ("delete", "Allows deleting command snippets."),
+                    ]),
+                },
+            ),
+            (
                 "sessions",
                 PermissionGroup {
                     description: "Permissions that control the ability to manage sessions on an account.",

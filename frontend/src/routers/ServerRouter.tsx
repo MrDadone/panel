@@ -1,6 +1,8 @@
 import { faArrowUpRightFromSquare, faGraduationCap, faServer } from '@fortawesome/free-solid-svg-icons';
 import { Suspense, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useParams } from 'react-router';
+import { httpErrorToHuman } from '@/api/axios.ts';
+import getEggCommandSnippets from '@/api/me/servers/eggs/getEggCommandSnippets.ts';
 import getServer from '@/api/server/getServer.ts';
 import { ServerCan } from '@/elements/Can.tsx';
 import Container from '@/elements/Container.tsx';
@@ -16,6 +18,7 @@ import WebsocketHandler from '@/pages/server/WebsocketHandler.tsx';
 import WebsocketListener from '@/pages/server/WebsocketListener.tsx';
 import WebsocketStatusBanner from '@/pages/server/WebsocketStatusBanner.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
+import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import ServerPermissionGuard from '@/routers/guards/ServerPermissionGuard.tsx';
 import serverRoutes from '@/routers/routes/serverRoutes.ts';
@@ -27,6 +30,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
   const { t } = useTranslations();
   const { settings } = useGlobalStore();
   const { user } = useAuth();
+  const { addToast } = useToast();
 
   const params = useParams<'id'>();
   const [loading, setLoading] = useState(true);
@@ -34,6 +38,7 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
   const { server, setSocketInstance } = useServerStore();
   const resetState = useServerStore((state) => state.reset);
   const setServer = useServerStore((state) => state.setServer);
+  const setCommandSnippets = useServerStore((state) => state.setCommandSnippets);
 
   useEffect(() => {
     return () => {
@@ -48,6 +53,17 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
         .then((data) => {
           setSocketInstance(null);
           setServer(data);
+
+          getEggCommandSnippets(data.egg.uuid)
+            .then((snippets) => {
+              setCommandSnippets(snippets);
+            })
+            .catch((error) => {
+              addToast(httpErrorToHuman(error), 'error');
+            });
+        })
+        .catch((error) => {
+          addToast(httpErrorToHuman(error), 'error');
         })
         .finally(() => setLoading(false));
     }

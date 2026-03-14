@@ -1,5 +1,6 @@
 import {
   faBriefcase,
+  faClipboard,
   faCloud,
   faFingerprint,
   faKey,
@@ -12,6 +13,7 @@ import type { RouteDefinition } from 'shared';
 import DashboardAccount from '@/pages/dashboard/account/DashboardAccount.tsx';
 import DashboardActivity from '@/pages/dashboard/activity/DashboardActivity.tsx';
 import DashboardApiKeys from '@/pages/dashboard/api-keys/DashboardApiKeys.tsx';
+import DashboardCommandSnippets from '@/pages/dashboard/command-snippets/DashboardCommandSnippets.tsx';
 import DashboardOAuthLinks from '@/pages/dashboard/oauth-links/DashboardOAuthLinks.tsx';
 import DashboardSecurityKeys from '@/pages/dashboard/security-keys/DashboardSecurityKeys.tsx';
 import DashboardSessions from '@/pages/dashboard/sessions/DashboardSessions.tsx';
@@ -44,6 +46,12 @@ const routes: RouteDefinition[] = [
     icon: faKey,
     path: '/ssh-keys',
     element: DashboardSshKeys,
+  },
+  {
+    name: () => getTranslations().t('pages.account.commandSnippets.title', {}),
+    icon: faClipboard,
+    path: '/command-snippets',
+    element: DashboardCommandSnippets,
   },
   {
     name: () => getTranslations().t('pages.account.oauthLinks.title', {}),

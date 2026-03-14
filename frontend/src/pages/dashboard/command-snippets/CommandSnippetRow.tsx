@@ -2,31 +2,33 @@ import { faPencil, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
 import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
-import deleteSshKey from '@/api/me/ssh-keys/deleteSshKey.ts';
-import Code from '@/elements/Code.tsx';
+import deleteCommandSnippet from '@/api/me/command-snippets/deleteCommandSnippet.ts';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
-import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
-import { userSshKeySchema } from '@/lib/schemas/user/sshKeys.ts';
+import { userCommandSnippetSchema } from '@/lib/schemas/user/commandSnippets.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
-import SshKeyEditModal from './modals/SshKeyEditModal.tsx';
+import CommandSnippetEditModal from './modals/CommandSnippetEditModal.tsx';
 
-export default function SshKeyRow({ sshKey }: { sshKey: z.infer<typeof userSshKeySchema> }) {
+export default function CommandSnippetRow({
+  commandSnippet,
+}: {
+  commandSnippet: z.infer<typeof userCommandSnippetSchema>;
+}) {
   const { t } = useTranslations();
   const { addToast } = useToast();
-  const { removeSshKey } = useUserStore();
+  const { removeCommandSnippet } = useUserStore();
 
   const [openModal, setOpenModal] = useState<'edit' | 'delete' | null>(null);
 
   const doDelete = async () => {
-    await deleteSshKey(sshKey.uuid)
+    await deleteCommandSnippet(commandSnippet.uuid)
       .then(() => {
-        removeSshKey(sshKey);
-        addToast(t('pages.account.sshKeys.modal.deleteSshKey.toast.removed', {}), 'success');
+        removeCommandSnippet(commandSnippet);
+        addToast(t('pages.account.commandSnippets.modal.deleteCommandSnippet.toast.removed', {}), 'success');
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
@@ -35,16 +37,20 @@ export default function SshKeyRow({ sshKey }: { sshKey: z.infer<typeof userSshKe
 
   return (
     <>
-      <SshKeyEditModal sshKey={sshKey} opened={openModal === 'edit'} onClose={() => setOpenModal(null)} />
+      <CommandSnippetEditModal
+        commandSnippet={commandSnippet}
+        opened={openModal === 'edit'}
+        onClose={() => setOpenModal(null)}
+      />
 
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
-        title={t('pages.account.sshKeys.modal.deleteSshKey.title', {})}
+        title={t('pages.account.commandSnippets.modal.deleteCommandSnippet.title', {})}
         confirm={t('common.button.delete', {})}
         onConfirmed={doDelete}
       >
-        {t('pages.account.sshKeys.modal.deleteSshKey.content', { name: sshKey.name }).md()}
+        {t('pages.account.commandSnippets.modal.deleteCommandSnippet.content', { name: commandSnippet.name }).md()}
       </ConfirmationModal>
 
       <ContextMenu
@@ -52,8 +58,8 @@ export default function SshKeyRow({ sshKey }: { sshKey: z.infer<typeof userSshKe
           { icon: faPencil, label: t('common.button.edit', {}), onClick: () => setOpenModal('edit'), color: 'gray' },
           { icon: faTrash, label: t('common.button.delete', {}), onClick: () => setOpenModal('delete'), color: 'red' },
         ]}
-        registry={window.extensionContext.extensionRegistry.pages.dashboard.sshKeys.sshKeyContextMenu}
-        registryProps={{ sshKey }}
+        registry={window.extensionContext.extensionRegistry.pages.dashboard.commandSnippets.commandSnippetContextMenu}
+        registryProps={{ commandSnippet }}
       >
         {({ items, openMenu }) => (
           <TableRow
@@ -62,16 +68,12 @@ export default function SshKeyRow({ sshKey }: { sshKey: z.infer<typeof userSshKe
               openMenu(e.pageX, e.pageY);
             }}
           >
-            <TableData>{sshKey.name}</TableData>
+            <TableData>{commandSnippet.name}</TableData>
+
+            <TableData>{commandSnippet.eggs.length}</TableData>
 
             <TableData>
-              <CopyOnClick content={sshKey.fingerprint}>
-                <Code>{sshKey.fingerprint}</Code>
-              </CopyOnClick>
-            </TableData>
-
-            <TableData>
-              <FormattedTimestamp timestamp={sshKey.created} />
+              <FormattedTimestamp timestamp={commandSnippet.created} />
             </TableData>
 
             <ContextMenuToggle items={items} openMenu={openMenu} />

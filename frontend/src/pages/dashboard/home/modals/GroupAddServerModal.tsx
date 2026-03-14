@@ -34,7 +34,7 @@ export default function GroupAddServerModal({ serverGroup, opened, onClose, onSe
   const otherServers = servers.items.filter((s) => !serverGroup.serverOrder.includes(s.uuid));
 
   const doAdd = () => {
-    if (!selectedServer) {
+    if (!selectedServer || serverGroup.serverOrder.includes(selectedServer.uuid)) {
       return;
     }
 
@@ -78,7 +78,11 @@ export default function GroupAddServerModal({ serverGroup, opened, onClose, onSe
       />
 
       <ModalFooter>
-        <Button onClick={doAdd} loading={loading} disabled={!selectedServer}>
+        <Button
+          onClick={doAdd}
+          loading={loading}
+          disabled={!selectedServer || serverGroup.serverOrder.includes(selectedServer.uuid)}
+        >
           {t('common.button.add', {})}
         </Button>
         <Button variant='default' onClick={onClose}>

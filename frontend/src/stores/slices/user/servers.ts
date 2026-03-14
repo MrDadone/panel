@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
-import getNodeResources from '@/api/me/servers/resources/getNodeResources.ts';
+import getNodeResources from '@/api/me/servers/nodes/getNodeResources.ts';
 import { serverResourceUsageSchema, serverSchema } from '@/lib/schemas/server/server.ts';
 import { userServerGroupSchema } from '@/lib/schemas/user.ts';
 import { UserStore } from '@/stores/user.ts';
