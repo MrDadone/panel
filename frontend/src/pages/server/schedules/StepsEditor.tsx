@@ -146,6 +146,7 @@ export default function StepsEditor({ schedule }: { schedule: z.infer<typeof ser
                   <SortableItem
                     key={step.id}
                     id={step.id}
+                    disabled={openModal !== null}
                     renderItem={({ dragHandleProps }) => (
                       <div {...dragHandleProps}>
                         <MemoizedStepCard
@@ -163,11 +164,13 @@ export default function StepsEditor({ schedule }: { schedule: z.infer<typeof ser
           </DndContainer>
         )}
 
-        <Group justify='center'>
-          <Button onClick={() => setOpenModal('create')} leftSection={<FontAwesomeIcon icon={faPlus} />}>
-            Add Step
-          </Button>
-        </Group>
+        {sortedSteps.length > 0 && (
+          <Group justify='center'>
+            <Button onClick={() => setOpenModal('create')} leftSection={<FontAwesomeIcon icon={faPlus} />}>
+              Add Step
+            </Button>
+          </Group>
+        )}
       </Stack>
     </>
   );

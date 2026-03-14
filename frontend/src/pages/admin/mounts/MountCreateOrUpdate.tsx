@@ -45,8 +45,8 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: z
       : undefined,
     deleteFn: contextMount ? () => deleteMount(contextMount.uuid) : undefined,
     doUpdate: !!contextMount,
-    basePath: '/admin/locations',
-    resourceName: 'Location',
+    basePath: '/admin/mounts',
+    resourceName: 'Mount',
   });
 
   useEffect(() => {

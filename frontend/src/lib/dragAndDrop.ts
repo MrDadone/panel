@@ -2,7 +2,7 @@ import {
   DragEndEvent,
   DropAnimation,
   defaultDropAnimationSideEffects,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
@@ -12,10 +12,10 @@ import { useEffect, useState } from 'react';
 import { DndCallbacks, DndConfig, DndItem } from '@/elements/DragAndDrop.tsx';
 
 export function useDndSensors(config: DndConfig = {}) {
-  const { pointerActivationDistance = 8, touchActivationDelay = 200, touchActivationTolerance = 8 } = config;
+  const { pointerActivationDistance = 8, touchActivationDelay = 250, touchActivationTolerance = 8 } = config;
 
   return useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: pointerActivationDistance,
       },
