@@ -229,6 +229,7 @@ const baseTranslations = defineTranslations({
           authFailed: 'Authentication failed. Attempting to refresh credentials...',
           authRefreshFailed: 'Failed to refresh credentials. Please refresh the page to try again.',
           permissionRevoked: 'Connection closed: your access to this server has been revoked.',
+          tokenRefreshLoop: 'Authentication loop detected. Please refresh the page to try again.',
         },
         banner: {
           retrying: 'Retrying in {countdown}...',
