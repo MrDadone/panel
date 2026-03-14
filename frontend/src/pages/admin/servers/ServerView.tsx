@@ -3,7 +3,7 @@ import {
   faCog,
   faExternalLink,
   faFileText,
-  faFolder,
+  faFolderTree,
   faNetworkWired,
   faWrench,
 } from '@fortawesome/free-solid-svg-icons';
@@ -70,7 +70,7 @@ export default function ServerView() {
           },
           {
             name: 'Mounts',
-            icon: faFolder,
+            icon: faFolderTree,
             path: `/mounts`,
             element: <AdminServerMounts server={server} />,
             permission: 'servers.mounts',

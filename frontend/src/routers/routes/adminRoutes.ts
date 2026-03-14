@@ -7,8 +7,8 @@ import {
   faEarthAmerica,
   faFileZipper,
   faFingerprint,
-  faFolder,
   faFolderOpen,
+  faFolderTree,
   faPuzzlePiece,
   faScroll,
   faServer,
@@ -135,7 +135,7 @@ const routes: AdminRouteDefinition[] = [
   },
   {
     name: 'Mounts',
-    icon: faFolder,
+    icon: faFolderTree,
     path: '/mounts/*',
     element: AdminMounts,
     permission: ['mounts.*'],

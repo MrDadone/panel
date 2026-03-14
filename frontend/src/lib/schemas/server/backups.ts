@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const serverBackupSchema = z.object({
-  uuid: z.string(),
+  uuid: z.uuid(),
   name: z.string(),
   ignoredFiles: z.array(z.string()),
   isSuccessful: z.boolean(),
