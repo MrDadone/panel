@@ -1126,6 +1126,10 @@ const baseTranslations = defineTranslations({
         },
         schedules: {
           title: 'Schedules',
+          dropzone: {
+            title: 'Drop some files here to import them as Schedules',
+            subtitle: 'Release to start importing',
+          },
         },
         subusers: {
           title: 'Subusers',

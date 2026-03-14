@@ -17,6 +17,7 @@ import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
 import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { eggTableColumns } from '@/lib/tableColumns.ts';
 import EggView from '@/pages/admin/nests/eggs/EggView.tsx';
+import { useImportDragAndDrop } from '@/plugins/useImportDragAndDrop.ts';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -24,6 +25,7 @@ import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import EggActionBar from './EggActionBar.tsx';
 import EggCreateOrUpdate from './EggCreateOrUpdate.tsx';
+import EggImportOverlay from './EggImportOverlay.tsx';
 import EggRow from './EggRow.tsx';
 
 function EggsContainer({ contextNest }: { contextNest: z.infer<typeof adminNestSchema> }) {
@@ -41,12 +43,7 @@ function EggsContainer({ contextNest }: { contextNest: z.infer<typeof adminNestS
     setStoreData: setEggs,
   });
 
-  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    event.target.value = '';
-
+  const handleImport = async (file: File) => {
     const text = await file.text().then((t) => t.trim());
     let data: object;
     try {
@@ -68,6 +65,19 @@ function EggsContainer({ contextNest }: { contextNest: z.infer<typeof adminNestS
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
       });
+  };
+
+  const { isDragging } = useImportDragAndDrop({
+    onDrop: (files) => Promise.all(files.map(handleImport)),
+  });
+
+  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    event.target.value = '';
+
+    handleImport(file);
   };
 
   const onSelectedStart = useCallback(
@@ -114,6 +124,8 @@ function EggsContainer({ contextNest }: { contextNest: z.infer<typeof adminNestS
     deps: [eggs],
   });
 
+  const columns = ['', ...eggTableColumns];
+
   return (
     <AdminSubContentContainer
       title='Eggs'
@@ -152,9 +164,10 @@ function EggsContainer({ contextNest }: { contextNest: z.infer<typeof adminNestS
           refetch();
         }}
       />
+      <EggImportOverlay visible={isDragging} />
 
       <SelectionArea onSelectedStart={onSelectedStart} onSelected={onSelected}>
-        <Table columns={eggTableColumns} loading={loading} pagination={eggs} onPageSelect={setPage} allowSelect={false}>
+        <Table columns={columns} loading={loading} pagination={eggs} onPageSelect={setPage} allowSelect={false}>
           {eggs.data.map((egg) => (
             <SelectionArea.Selectable key={egg.uuid} item={egg}>
               {(innerRef: Ref<HTMLElement>) => (

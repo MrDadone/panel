@@ -11,10 +11,12 @@ import ConditionalTooltip from '@/elements/ConditionalTooltip.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
+import { useImportDragAndDrop } from '@/plugins/useImportDragAndDrop.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import ScheduleCreateOrUpdateModal from './modals/ScheduleCreateOrUpdateModal.tsx';
+import ScheduleImportOverlay from './ScheduleImportOverlay.tsx';
 import ScheduleRow from './ScheduleRow.tsx';
 
 export default function ServerSchedules() {
@@ -30,12 +32,7 @@ export default function ServerSchedules() {
     setStoreData: setSchedules,
   });
 
-  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    event.target.value = '';
-
+  const handleImport = async (file: File) => {
     const text = await file.text().then((t) => t.trim());
     let data: object;
     try {
@@ -57,6 +54,19 @@ export default function ServerSchedules() {
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
       });
+  };
+
+  const { isDragging } = useImportDragAndDrop({
+    onDrop: (files) => Promise.all(files.map(handleImport)),
+  });
+
+  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    event.target.value = '';
+
+    handleImport(file);
   };
 
   return (
@@ -98,6 +108,7 @@ export default function ServerSchedules() {
       }
     >
       <ScheduleCreateOrUpdateModal opened={openModal === 'create'} onClose={() => setOpenModal(null)} />
+      <ScheduleImportOverlay visible={isDragging} />
 
       <ContextMenuProvider>
         <Table

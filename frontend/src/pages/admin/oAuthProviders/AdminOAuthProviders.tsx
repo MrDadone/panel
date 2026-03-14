@@ -14,11 +14,13 @@ import Table from '@/elements/Table.tsx';
 import { adminOAuthProviderSchema } from '@/lib/schemas/admin/oauthProviders.ts';
 import { oauthProviderTableColumns } from '@/lib/tableColumns.ts';
 import { transformKeysToCamelCase } from '@/lib/transformers.ts';
+import { useImportDragAndDrop } from '@/plugins/useImportDragAndDrop.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import DatabaseHostCreateOrUpdate from './OAuthProviderCreateOrUpdate.tsx';
+import OAuthProviderImportOverlay from './OAuthProviderImportOverlay.tsx';
 import DatabaseHostRow from './OAuthProviderRow.tsx';
 import DatabaseHostView from './OAuthProviderView.tsx';
 
@@ -34,12 +36,7 @@ function OAuthProvidersContainer() {
     setStoreData: setOAuthProviders,
   });
 
-  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    event.target.value = '';
-
+  const handleImport = async (file: File) => {
     const text = await file.text().then((t) => t.trim());
     let data: object;
     try {
@@ -65,6 +62,19 @@ function OAuthProvidersContainer() {
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
       });
+  };
+
+  const { isDragging } = useImportDragAndDrop({
+    onDrop: (files) => Promise.all(files.map(handleImport)),
+  });
+
+  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    event.target.value = '';
+
+    handleImport(file);
   };
 
   return (
@@ -96,6 +106,8 @@ function OAuthProvidersContainer() {
         </AdminCan>
       }
     >
+      <OAuthProviderImportOverlay visible={isDragging} />
+
       <Table columns={oauthProviderTableColumns} loading={loading} pagination={oauthProviders} onPageSelect={setPage}>
         {oauthProviders.data.map((oauthProvider) => (
           <DatabaseHostRow key={oauthProvider.uuid} oauthProvider={oauthProvider} />

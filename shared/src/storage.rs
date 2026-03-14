@@ -315,8 +315,6 @@ impl Storage {
                 )?;
                 drop(settings);
 
-                println!("Listing S3 objects with prefix '{}'", path);
-
                 let buckets = s3_client.list(path.into(), None).await?;
                 let Some(entries) = buckets.into_iter().next().map(|b| b.contents) else {
                     return Ok(crate::models::Pagination {
