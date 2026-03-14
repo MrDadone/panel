@@ -1,4 +1,6 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { fullUserSchema, userSchema } from '@/lib/schemas/user.ts';
 
 interface Data {
   user: string;
@@ -9,11 +11,11 @@ interface Data {
 type Response =
   | {
       type: 'completed';
-      user: FullUser;
+      user: z.infer<typeof fullUserSchema>;
     }
   | {
       type: 'two_factor_required';
-      user: User;
+      user: z.infer<typeof userSchema>;
       token: string;
     };
 

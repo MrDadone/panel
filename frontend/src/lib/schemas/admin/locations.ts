@@ -1,8 +1,27 @@
 import { z } from 'zod';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
+import { databaseHostSchema } from '@/lib/schemas/generic.ts';
 import { nullableString } from '@/lib/transformers.ts';
 
 export const adminLocationSchema = z.object({
+  uuid: z.string(),
   name: z.string().min(3).max(255),
   description: z.preprocess(nullableString, z.string().max(1024).nullable()),
-  backupConfigurationUuid: z.uuid().nullable(),
+  backupConfiguration: z.lazy(() => adminBackupConfigurationSchema),
+  created: z.string(),
+});
+
+export const adminLocationUpdateSchema = adminLocationSchema
+  .omit({
+    uuid: true,
+    backupConfiguration: true,
+    created: true,
+  })
+  .extend({
+    backupConfigurationUuid: z.uuid().nullable(),
+  });
+
+export const adminLocationDatabaseHostSchema = z.object({
+  databaseHost: databaseHostSchema,
+  created: z.date(),
 });

@@ -1,4 +1,7 @@
-export function isArchiveType(file: DirectoryEntry) {
+import { z } from 'zod';
+import { serverDirectoryEntrySchema } from '@/lib/schemas/server/files.ts';
+
+export function isArchiveType(file: z.infer<typeof serverDirectoryEntrySchema>) {
   return (
     [
       'application/vnd.rar', // .rar
@@ -18,7 +21,7 @@ export function isArchiveType(file: DirectoryEntry) {
   );
 }
 
-export function isViewableArchive(file: DirectoryEntry) {
+export function isViewableArchive(file: z.infer<typeof serverDirectoryEntrySchema>) {
   const validExtensions = ['.zip', '.7z', '.ddup'];
 
   return (
@@ -27,11 +30,11 @@ export function isViewableArchive(file: DirectoryEntry) {
   );
 }
 
-export function isViewableImage(file: DirectoryEntry) {
+export function isViewableImage(file: z.infer<typeof serverDirectoryEntrySchema>) {
   return file.mime.startsWith('image/') && file.mime !== 'image/svg+xml';
 }
 
-export function isEditableFile(file: DirectoryEntry) {
+export function isEditableFile(file: z.infer<typeof serverDirectoryEntrySchema>) {
   const matches = [
     'application/jar',
     'application/octet-stream',

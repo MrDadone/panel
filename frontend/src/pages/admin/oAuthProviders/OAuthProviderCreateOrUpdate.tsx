@@ -20,7 +20,7 @@ import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminOAuthProviderSchema } from '@/lib/schemas/admin/oauthProviders.ts';
+import { adminOAuthProviderSchema, adminOAuthProviderUpdateSchema } from '@/lib/schemas/admin/oauthProviders.ts';
 import { transformKeysToSnakeCase } from '@/lib/transformers.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -29,14 +29,15 @@ import { useGlobalStore } from '@/stores/global.ts';
 export default function OAuthProviderCreateOrUpdate({
   contextOAuthProvider,
 }: {
-  contextOAuthProvider?: AdminOAuthProvider;
+  contextOAuthProvider?: z.infer<typeof adminOAuthProviderSchema>;
 }) {
   const { addToast } = useToast();
   const { settings } = useGlobalStore();
 
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminOAuthProviderSchema>>({
+  const form = useForm<z.infer<typeof adminOAuthProviderUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       description: null,
@@ -58,17 +59,17 @@ export default function OAuthProviderCreateOrUpdate({
       basicAuth: false,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminOAuthProviderSchema),
+    validate: zod4Resolver(adminOAuthProviderUpdateSchema),
   });
 
   const { loading, doCreateOrUpdate, doDelete } = useResourceForm<
-    z.infer<typeof adminOAuthProviderSchema>,
-    AdminOAuthProvider
+    z.infer<typeof adminOAuthProviderUpdateSchema>,
+    z.infer<typeof adminOAuthProviderSchema>
   >({
     form,
-    createFn: () => createOAuthProvider(adminOAuthProviderSchema.parse(form.values)),
+    createFn: () => createOAuthProvider(adminOAuthProviderUpdateSchema.parse(form.getValues())),
     updateFn: contextOAuthProvider
-      ? () => updateOAuthProvider(contextOAuthProvider.uuid, adminOAuthProviderSchema.parse(form.values))
+      ? () => updateOAuthProvider(contextOAuthProvider.uuid, adminOAuthProviderUpdateSchema.parse(form.getValues()))
       : undefined,
     deleteFn: contextOAuthProvider ? () => deleteOAuthProvider(contextOAuthProvider.uuid) : undefined,
     doUpdate: !!contextOAuthProvider,
@@ -106,7 +107,7 @@ export default function OAuthProviderCreateOrUpdate({
 
     addToast('OAuth Provider exported.', 'success');
 
-    let data: Partial<AdminOAuthProvider> & {
+    let data: Partial<z.infer<typeof adminOAuthProviderSchema>> & {
       uuid?: string;
       created?: Date;
       clientId?: string;
@@ -162,14 +163,26 @@ export default function OAuthProviderCreateOrUpdate({
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow align='start'>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
-            <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
+            <TextArea
+              label='Description'
+              placeholder='Description'
+              rows={3}
+              key={form.key('description')}
+              {...form.getInputProps('description')}
+            />
           </Group>
 
           <Card className='flex flex-row! items-center justify-between'>
@@ -182,26 +195,52 @@ export default function OAuthProviderCreateOrUpdate({
           </Card>
 
           <Group grow>
-            <TextInput withAsterisk label='Client Id' placeholder='Client Id' {...form.getInputProps('clientId')} />
+            <TextInput
+              withAsterisk
+              label='Client Id'
+              placeholder='Client Id'
+              key={form.key('clientId')}
+              {...form.getInputProps('clientId')}
+            />
             <TextInput
               withAsterisk={!contextOAuthProvider}
               label='Client Secret'
               placeholder='Client Secret'
               type='password'
+              key={form.key('clientSecret')}
               {...form.getInputProps('clientSecret')}
             />
           </Group>
 
           <Group grow>
-            <TextInput withAsterisk label='Auth URL' placeholder='Auth URL' {...form.getInputProps('authUrl')} />
-            <TextInput withAsterisk label='Token URL' placeholder='Token URL' {...form.getInputProps('tokenUrl')} />
+            <TextInput
+              withAsterisk
+              label='Auth URL'
+              placeholder='Auth URL'
+              key={form.key('authUrl')}
+              {...form.getInputProps('authUrl')}
+            />
+            <TextInput
+              withAsterisk
+              label='Token URL'
+              placeholder='Token URL'
+              key={form.key('tokenUrl')}
+              {...form.getInputProps('tokenUrl')}
+            />
           </Group>
 
           <Group grow>
-            <TextInput withAsterisk label='Info URL' placeholder='Info URL' {...form.getInputProps('infoUrl')} />
+            <TextInput
+              withAsterisk
+              label='Info URL'
+              placeholder='Info URL'
+              key={form.key('infoUrl')}
+              {...form.getInputProps('infoUrl')}
+            />
             <Switch
               label='Basic Auth'
               description='Uses HTTP Basic Authentication to transmit client id and secret, not common anymore'
+              key={form.key('basicAuth')}
               {...form.getInputProps('basicAuth', { type: 'checkbox' })}
             />
           </Group>
@@ -211,6 +250,7 @@ export default function OAuthProviderCreateOrUpdate({
               label='Scopes'
               placeholder='Scopes'
               description='The OAuth2 Scopes to request, make sure to include scopes for email/profile info when needed'
+              key={form.key('scopes')}
               {...form.getInputProps('scopes')}
             />
             <TextInput
@@ -218,6 +258,7 @@ export default function OAuthProviderCreateOrUpdate({
               label='Identifier Path'
               placeholder='Identifier Path'
               description='The Path to use to extract the unique user identifier from the Info URL response (https://serdejsonpath.live)'
+              key={form.key('identifierPath')}
               {...form.getInputProps('identifierPath')}
             />
           </Group>
@@ -227,12 +268,14 @@ export default function OAuthProviderCreateOrUpdate({
               label='Email Path'
               placeholder='Email Path'
               description='The Path to use to extract the email from the Info URL response (https://serdejsonpath.live)'
+              key={form.key('emailPath')}
               {...form.getInputProps('emailPath')}
             />
             <TextInput
               label='Username Path'
               placeholder='Username Path'
               description='The Path to use to extract the username from the Info URL response (https://serdejsonpath.live)'
+              key={form.key('usernamePath')}
               {...form.getInputProps('usernamePath')}
             />
           </Group>
@@ -242,30 +285,42 @@ export default function OAuthProviderCreateOrUpdate({
               label='First Name Path'
               placeholder='First Name URL'
               description='The Path to use to extract the first name from the Info URL response (https://serdejsonpath.live)'
+              key={form.key('nameFirstPath')}
               {...form.getInputProps('nameFirstPath')}
             />
             <TextInput
               label='Last Name Path'
               placeholder='Last Name Path'
               description='The Path to use to extract the last name from the Info URL response (https://serdejsonpath.live)'
+              key={form.key('nameLastPath')}
               {...form.getInputProps('nameLastPath')}
             />
           </Group>
 
           <Group grow>
-            <Switch label='Enabled' {...form.getInputProps('enabled', { type: 'checkbox' })} />
-            <Switch label='Only allow Login' {...form.getInputProps('loginOnly', { type: 'checkbox' })} />
+            <Switch
+              label='Enabled'
+              key={form.key('enabled')}
+              {...form.getInputProps('enabled', { type: 'checkbox' })}
+            />
+            <Switch
+              label='Only allow Login'
+              key={form.key('loginOnly')}
+              {...form.getInputProps('loginOnly', { type: 'checkbox' })}
+            />
           </Group>
 
           <Group grow>
             <Switch
               label='Link Viewable to User'
               description='Allows the User to see the Connection and its identifier in the Client UI'
+              key={form.key('linkViewable')}
               {...form.getInputProps('linkViewable', { type: 'checkbox' })}
             />
             <Switch
               label='Link Manageable by User'
               description='Allows the User to connect and disconnect with this provider'
+              key={form.key('userManageable')}
               {...form.getInputProps('userManageable', { type: 'checkbox' })}
             />
           </Group>

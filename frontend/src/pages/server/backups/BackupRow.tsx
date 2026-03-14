@@ -10,9 +10,11 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import { createSearchParams, useNavigate } from 'react-router';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteBackup from '@/api/server/backups/deleteBackup.ts';
 import downloadBackup from '@/api/server/backups/downloadBackup.ts';
+import Badge from '@/elements/Badge.tsx';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
@@ -21,6 +23,8 @@ import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
+import { streamingArchiveFormat } from '@/lib/schemas/generic.ts';
+import { serverBackupWithProgressSchema } from '@/lib/schemas/server/backups.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -29,7 +33,7 @@ import { useServerStore } from '@/stores/server.ts';
 import BackupEditModal from './modals/BackupEditModal.tsx';
 import BackupRestoreModal from './modals/BackupRestoreModal.tsx';
 
-export default function BackupRow({ backup }: { backup: ServerBackupWithProgress }) {
+export default function BackupRow({ backup }: { backup: z.infer<typeof serverBackupWithProgressSchema> }) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { server, removeBackup } = useServerStore();
@@ -37,7 +41,7 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
 
   const [openModal, setOpenModal] = useState<'edit' | 'restore' | 'delete' | null>(null);
 
-  const doDownload = (archiveFormat: StreamingArchiveFormat) => {
+  const doDownload = (archiveFormat: z.infer<typeof streamingArchiveFormat>) => {
     downloadBackup(server.uuid, backup.uuid, archiveFormat)
       .then(({ url }) => {
         addToast(t('pages.server.backups.toast.downloadStarted', {}), 'success');
@@ -60,6 +64,8 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
       });
   };
 
+  const isFailed = !backup.isSuccessful && !!backup.completed;
+
   return (
     <>
       <BackupEditModal backup={backup} opened={openModal === 'edit'} onClose={() => setOpenModal(null)} />
@@ -80,6 +86,7 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
           {
             icon: faPencil,
             label: t('common.button.edit', {}),
+            hidden: isFailed,
             onClick: () => setOpenModal('edit'),
             color: 'gray',
             canAccess: useServerCan('backups.update'),
@@ -87,7 +94,7 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
           {
             icon: faShare,
             label: t('pages.server.backups.button.browse', {}),
-            hidden: !backup.isBrowsable,
+            hidden: !backup.isBrowsable || isFailed,
             onClick: () =>
               navigate(
                 `/server/${server?.uuidShort}/files?${createSearchParams({
@@ -100,13 +107,14 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
           {
             icon: faFileArrowDown,
             label: t('common.button.download', {}),
+            hidden: isFailed,
             onClick: !backup.isStreaming ? () => doDownload('tar_gz') : () => null,
             color: 'gray',
             items: backup.isStreaming
               ? Object.entries(streamingArchiveFormatLabelMapping).map(([mime, label]) => ({
                   icon: faFileArrowDown,
                   label: t('common.button.downloadAs', { format: label }),
-                  onClick: () => doDownload(mime as StreamingArchiveFormat),
+                  onClick: () => doDownload(mime as z.infer<typeof streamingArchiveFormat>),
                   color: 'gray',
                 }))
               : [],
@@ -115,6 +123,7 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
           {
             icon: faRotateLeft,
             label: t('common.button.restore', {}),
+            hidden: isFailed,
             onClick: () => setOpenModal('restore'),
             color: 'gray',
             canAccess: useServerCan('backups.restore'),
@@ -140,22 +149,30 @@ export default function BackupRow({ backup }: { backup: ServerBackupWithProgress
           >
             <TableData>{backup.name}</TableData>
 
-            <TableData>{backup.checksum && <Code>{backup.checksum}</Code>}</TableData>
+            {!isFailed ? (
+              <>
+                <TableData>{backup.checksum && <Code>{backup.checksum}</Code>}</TableData>
 
-            {backup.completed ? (
-              <TableData>{bytesToString(backup.bytes)}</TableData>
+                {backup.completed ? (
+                  <TableData>{bytesToString(backup.bytes)}</TableData>
+                ) : (
+                  <TableData colSpan={2}>
+                    <Tooltip
+                      label={`${bytesToString(backup.progress?.progress || 0)} / ${bytesToString(backup.progress?.total || 0)}`}
+                      innerClassName='w-full'
+                    >
+                      <Progress value={((backup.progress?.progress || 0) / (backup.progress?.total || 1)) * 100} />
+                    </Tooltip>
+                  </TableData>
+                )}
+
+                <TableData hidden={!backup.completed}>{backup.completed ? backup.files : null}</TableData>
+              </>
             ) : (
-              <TableData colSpan={2}>
-                <Tooltip
-                  label={`${bytesToString(backup.progress?.progress || 0)} / ${bytesToString(backup.progress?.total || 0)}`}
-                  innerClassName='w-full'
-                >
-                  <Progress value={((backup.progress?.progress || 0) / (backup.progress?.total || 1)) * 100} />
-                </Tooltip>
+              <TableData colSpan={3}>
+                <Badge color='red'>{t('common.badge.failed', {})}</Badge>
               </TableData>
             )}
-
-            <TableData hidden={!backup.completed}>{backup.completed ? backup.files : null}</TableData>
 
             <TableData>
               <FormattedTimestamp timestamp={backup.created} />

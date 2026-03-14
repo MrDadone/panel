@@ -1,18 +1,21 @@
 import { ModalProps } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import updateServerGroup from '@/api/me/servers/groups/updateServerGroup.ts';
 import getServers from '@/api/server/getServers.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { serverSchema } from '@/lib/schemas/server/server.ts';
+import { userServerGroupSchema } from '@/lib/schemas/user.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
 
 type Props = ModalProps & {
-  serverGroup: UserServerGroup;
+  serverGroup: z.infer<typeof userServerGroupSchema>;
   onServerAdded?: () => void;
 };
 
@@ -21,17 +24,17 @@ export default function GroupAddServerModal({ serverGroup, opened, onClose, onSe
   const { addToast } = useToast();
   const { updateServerGroup: updateStateServerGroup } = useUserStore();
 
-  const [selectedServer, setSelectedServer] = useState<Server | null>(null);
+  const [selectedServer, setSelectedServer] = useState<z.infer<typeof serverSchema> | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const servers = useSearchableResource<Server>({
+  const servers = useSearchableResource<z.infer<typeof serverSchema>>({
     fetcher: (search) => getServers(1, search),
   });
 
   const otherServers = servers.items.filter((s) => !serverGroup.serverOrder.includes(s.uuid));
 
   const doAdd = () => {
-    if (!selectedServer) {
+    if (!selectedServer || serverGroup.serverOrder.includes(selectedServer.uuid)) {
       return;
     }
 
@@ -75,7 +78,11 @@ export default function GroupAddServerModal({ serverGroup, opened, onClose, onSe
       />
 
       <ModalFooter>
-        <Button onClick={doAdd} loading={loading} disabled={!selectedServer}>
+        <Button
+          onClick={doAdd}
+          loading={loading}
+          disabled={!selectedServer || serverGroup.serverOrder.includes(selectedServer.uuid)}
+        >
           {t('common.button.add', {})}
         </Button>
         <Button variant='default' onClick={onClose}>

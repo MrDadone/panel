@@ -1,13 +1,15 @@
 import { faCrown, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { isAdmin } from '@/lib/permissions.ts';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 
-export default function UserRow({ user }: { user: FullUser }) {
+export default function UserRow({ user }: { user: z.infer<typeof fullUserSchema> }) {
   return (
     <TableRow>
       <TableData>

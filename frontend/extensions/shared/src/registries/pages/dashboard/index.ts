@@ -3,6 +3,7 @@ import { Registry } from 'shared';
 import { AccountRegistry } from './account.ts';
 import { ActivityRegistry } from './activity.ts';
 import { ApiKeysRegistry } from './apiKeys.ts';
+import { CommandSnippetsRegistry } from './commandSnippets.ts';
 import { HomeRegistry } from './home.ts';
 import { KeyboardShortcutsRegistry } from './keyboardShortcuts.ts';
 import { OAuthLinksRegistry } from './oauthLinks.ts';
@@ -17,6 +18,7 @@ export class DashboardRegistry implements Registry {
     this.securityKeys.mergeFrom(other.securityKeys);
     this.apiKeys.mergeFrom(other.apiKeys);
     this.sshKeys.mergeFrom(other.sshKeys);
+    this.commandSnippets.mergeFrom(other.commandSnippets);
     this.oauthLinks.mergeFrom(other.oauthLinks);
     this.sessions.mergeFrom(other.sessions);
     this.keyboardShortcuts.mergeFrom(other.keyboardShortcuts);
@@ -33,6 +35,7 @@ export class DashboardRegistry implements Registry {
   public securityKeys: SecurityKeysRegistry = new SecurityKeysRegistry();
   public apiKeys: ApiKeysRegistry = new ApiKeysRegistry();
   public sshKeys: SshKeysRegistry = new SshKeysRegistry();
+  public commandSnippets: CommandSnippetsRegistry = new CommandSnippetsRegistry();
   public oauthLinks: OAuthLinksRegistry = new OAuthLinksRegistry();
   public sessions: SessionsRegistry = new SessionsRegistry();
   public keyboardShortcuts: KeyboardShortcutsRegistry = new KeyboardShortcutsRegistry();
@@ -63,6 +66,11 @@ export class DashboardRegistry implements Registry {
 
   public enterSshKeys(callback: (registry: SshKeysRegistry) => unknown): this {
     callback(this.sshKeys);
+    return this;
+  }
+
+  public enterCommandSnippets(callback: (registry: CommandSnippetsRegistry) => unknown): this {
+    callback(this.commandSnippets);
     return this;
   }
 

@@ -1,12 +1,14 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import { transformKeysToSnakeCase } from '@/lib/transformers.ts';
 
-interface Data {
-  action: ScheduleAction;
-  order: number;
-}
-
-export default async (serverUuid: string, scheduleUuid: string, stepUuid: string, data: Data): Promise<void> => {
+export default async (
+  serverUuid: string,
+  scheduleUuid: string,
+  stepUuid: string,
+  data: z.infer<typeof serverScheduleStepUpdateSchema>,
+): Promise<void> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .patch(

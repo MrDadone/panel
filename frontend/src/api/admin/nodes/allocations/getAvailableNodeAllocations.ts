@@ -1,6 +1,12 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { adminNodeAllocationSchema } from '@/lib/schemas/admin/nodes.ts';
 
-export default async (nodeUuid: string, page: number, search?: string): Promise<Pagination<NodeAllocation>> => {
+export default async (
+  nodeUuid: string,
+  page: number,
+  search?: string,
+): Promise<Pagination<z.infer<typeof adminNodeAllocationSchema>>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/nodes/${nodeUuid}/allocations/available`, {

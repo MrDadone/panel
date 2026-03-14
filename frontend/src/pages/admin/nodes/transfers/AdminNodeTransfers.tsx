@@ -1,22 +1,25 @@
 import { Ref, useEffect, useState } from 'react';
+import { z } from 'zod';
 import getNodeTransferringServers from '@/api/admin/nodes/servers/getNodeTransferringServers.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
+import { adminNodeSchema, adminNodeTransferProgressSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import ServerRow from './ServerRow.tsx';
 
-export default function AdminNodeTransfers({ node }: { node: Node }) {
+export default function AdminNodeTransfers({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const [nodeTransferringServers, setNodeTransferringServers] = useState<{
-    servers: Pagination<AdminServer>;
-    transfers: Record<string, TransferProgress>;
+    servers: Pagination<z.infer<typeof adminServerSchema>>;
+    transfers: Record<string, z.infer<typeof adminNodeTransferProgressSchema>>;
   }>({
     servers: getEmptyPaginationSet(),
     transfers: {},
   });
 
-  const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
+  const { loading, search, setSearch, setPage, refetch } = useSearchablePaginatedTable({
     fetcher: (page, search) => getNodeTransferringServers(node.uuid, page, search),
     setStoreData: setNodeTransferringServers,
     paginationKey: 'servers',
@@ -24,7 +27,7 @@ export default function AdminNodeTransfers({ node }: { node: Node }) {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      getNodeTransferringServers(node.uuid, 1, search).then(setNodeTransferringServers);
+      refetch(false);
     }, 1000);
 
     return () => clearInterval(interval);

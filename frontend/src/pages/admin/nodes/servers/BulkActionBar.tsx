@@ -1,13 +1,15 @@
+import { z } from 'zod';
 import ActionBar from '@/elements/ActionBar.tsx';
 import Button from '@/elements/Button.tsx';
+import { serverPowerAction } from '@/lib/schemas/server/server.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 interface BulkActionBarProps {
   selectedCount: number;
   onClear: () => void;
-  onPowerAction: (action: ServerPowerAction) => void;
+  onPowerAction: (action: z.infer<typeof serverPowerAction>) => void;
   onTransfer: () => void;
-  loading: ServerPowerAction | null;
+  loading: z.infer<typeof serverPowerAction> | null;
 }
 
 export default function BulkActionBar({

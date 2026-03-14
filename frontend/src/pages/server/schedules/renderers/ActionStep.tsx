@@ -1,15 +1,17 @@
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Text, ThemeIcon, Timeline } from '@mantine/core';
+import { z } from 'zod';
 import AnimatedHourglass from '@/elements/AnimatedHourglass.tsx';
 import Badge from '@/elements/Badge.tsx';
 import Card from '@/elements/Card.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import { scheduleStepIconMapping } from '@/lib/enums.ts';
+import { serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
 import ActionRenderer from './ActionRenderer.tsx';
 
 interface ActionStepProps {
-  step: ScheduleStep;
+  step: z.infer<typeof serverScheduleStepSchema>;
   isActive: boolean;
 }
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { oobeStepKey } from '@/lib/schemas/oobe.ts';
 import { nullableString } from '@/lib/transformers.ts';
 
 export const adminSettingsApplicationSchema = z.object({
@@ -132,4 +133,45 @@ export const adminSettingsStorageSchema = z.discriminatedUnion('type', [
 export const adminSettingsWebauthnSchema = z.object({
   rpId: z.string().min(1).max(255),
   rpOrigin: z.url().max(255),
+});
+
+export const twoFactorRequirement = z.enum(['admins', 'all_users', 'none']);
+
+export const adminSettingsSchema = z.object({
+  oobeStep: oobeStepKey.nullable(),
+  storageDriver: adminSettingsStorageSchema,
+  mailMode: adminSettingsEmailSchema,
+  captchaProvider: adminSettingsCaptchaProviderSchema,
+  app: z.object({
+    name: z.string(),
+    icon: z.string(),
+    url: z.string(),
+    language: z.string(),
+    twoFactorRequirement: twoFactorRequirement,
+    telemetryEnabled: z.boolean(),
+    registrationEnabled: z.boolean(),
+  }),
+  webauthn: z.object({
+    rpId: z.string(),
+    rpOrigin: z.string(),
+  }),
+  server: z.object({
+    maxFileManagerViewSize: z.number(),
+    maxFileManagerContentSearchSize: z.number(),
+    maxFileManagerSearchResults: z.number(),
+    maxSchedulesStepCount: z.number(),
+    allowOverwritingCustomDockerImage: z.boolean(),
+    allowEditingStartupCommand: z.boolean(),
+    allowViewingInstallationLogs: z.boolean(),
+    allowAcknowledgingInstallationFailure: z.boolean(),
+    allowViewingTransferProgress: z.boolean(),
+  }),
+  activity: z.object({
+    adminLogRetentionDays: z.number(),
+    userLogRetentionDays: z.number(),
+    serverLogRetentionDays: z.number(),
+
+    serverLogAdminActivity: z.boolean(),
+    serverLogScheduleActivity: z.boolean(),
+  }),
 });

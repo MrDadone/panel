@@ -659,6 +659,54 @@ impl NestEgg {
         })
     }
 
+    pub async fn by_user_with_pagination(
+        database: &crate::database::Database,
+        user: &super::user::User,
+        page: i64,
+        per_page: i64,
+        search: Option<&str>,
+    ) -> Result<super::Pagination<Self>, crate::database::DatabaseError> {
+        let offset = (page - 1) * per_page;
+
+        let rows = sqlx::query(&format!(
+            r#"
+            SELECT *, COUNT(*) OVER() AS total_count
+            FROM (
+                SELECT DISTINCT ON (nest_eggs.uuid) {}
+                FROM servers
+                JOIN nest_eggs ON nest_eggs.uuid = servers.egg_uuid
+                LEFT JOIN server_subusers ON server_subusers.server_uuid = servers.uuid AND server_subusers.user_uuid = $1
+                JOIN nests ON nests.uuid = nest_eggs.nest_uuid
+                WHERE (servers.owner_uuid = $1 OR server_subusers.user_uuid = $1 OR $2)
+                    AND ($3 IS NULL OR nest_eggs.name ILIKE '%' || $3 || '%')
+                ORDER BY nest_eggs.uuid
+            ) AS eggs
+            ORDER BY eggs.created
+            LIMIT $4 OFFSET $5
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(user.uuid)
+        .bind(user.admin || user.role.as_ref().is_some_and(|r| r.admin_permissions.iter().any(|p| p == "servers.read")))
+        .bind(search)
+        .bind(per_page)
+        .bind(offset)
+        .fetch_all(database.read())
+        .await?;
+
+        Ok(super::Pagination {
+            total: rows
+                .first()
+                .map_or(Ok(0), |row| row.try_get("total_count"))?,
+            per_page,
+            page,
+            data: rows
+                .into_iter()
+                .map(|row| Self::map(None, &row))
+                .try_collect_vec()?,
+        })
+    }
+
     pub async fn by_nest_uuid_uuid(
         database: &crate::database::Database,
         nest_uuid: uuid::Uuid,

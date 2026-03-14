@@ -4,6 +4,7 @@ import {
   faCog,
   faDatabase,
   faFolderOpen,
+  faFolderTree,
   faNetworkWired,
   faPlay,
   faStopwatch,
@@ -17,6 +18,7 @@ import ServerBackups from '@/pages/server/backups/ServerBackups.tsx';
 import ServerDatabases from '@/pages/server/databases/ServerDatabases.tsx';
 import ServerFilesEditor from '@/pages/server/files/FileEditor.tsx';
 import ServerFiles from '@/pages/server/files/ServerFiles.tsx';
+import ServerMounts from '@/pages/server/mounts/ServerMounts.tsx';
 import ServerNetwork from '@/pages/server/network/ServerNetwork.tsx';
 import ScheduleView from '@/pages/server/schedules/ScheduleView.tsx';
 import ServerSchedules from '@/pages/server/schedules/ServerSchedules.tsx';
@@ -96,6 +98,13 @@ const routes: ServerRouteDefinition[] = [
     path: '/startup',
     element: ServerStartup,
     permission: 'startup.read',
+  },
+  {
+    name: () => getTranslations().t('pages.server.mounts.title', {}),
+    icon: faFolderTree,
+    path: '/mounts',
+    element: ServerMounts,
+    permission: 'mounts.read',
   },
   {
     name: () => getTranslations().t('pages.server.settings.title', {}),

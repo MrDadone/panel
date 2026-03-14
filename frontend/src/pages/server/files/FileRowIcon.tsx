@@ -1,9 +1,11 @@
 import { faFile, faFilePen, faFolder, faFolderTree, faImage, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { memo } from 'react';
+import { z } from 'zod';
 import { isEditableFile, isViewableArchive, isViewableImage } from '@/lib/files.ts';
+import { serverDirectoryEntrySchema } from '@/lib/schemas/server/files.ts';
 
-function getFileIcon(file: DirectoryEntry): IconDefinition {
+function getFileIcon(file: z.infer<typeof serverDirectoryEntrySchema>): IconDefinition {
   for (const handler of window.extensionContext.extensionRegistry.pages.server.files.fileIconHandlers) {
     const icon = handler(file);
     if (icon) {
@@ -26,7 +28,13 @@ function getFileIcon(file: DirectoryEntry): IconDefinition {
   return faFile;
 }
 
-function FileRowIcon({ file, className }: { file?: DirectoryEntry | null; className?: string }) {
+function FileRowIcon({
+  file,
+  className,
+}: {
+  file?: z.infer<typeof serverDirectoryEntrySchema> | null;
+  className?: string;
+}) {
   return <FontAwesomeIcon className={className} icon={file ? getFileIcon(file) : faFile} />;
 }
 

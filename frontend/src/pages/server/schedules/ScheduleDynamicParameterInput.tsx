@@ -1,15 +1,19 @@
 import classNames from 'classnames';
 import { useMemo } from 'react';
+import { z } from 'zod';
 import Autocomplete from '@/elements/input/Autocomplete.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import { serverScheduleStepDynamicSchema, serverScheduleStepVariableSchema } from '@/lib/schemas/server/schedules.ts';
 import { useServerStore } from '@/stores/server.ts';
 
 interface ScheduleDynamicParameterInputProps<
   N extends boolean,
   S extends boolean,
-  Param = S extends true ? ScheduleDynamicParameter : ScheduleVariable,
+  Param = S extends true
+    ? z.infer<typeof serverScheduleStepDynamicSchema>
+    : z.infer<typeof serverScheduleStepVariableSchema>,
 > {
   textArea?: boolean;
   withAsterisk?: boolean;
@@ -90,8 +94,9 @@ export default function ScheduleDynamicParameterInput<N extends boolean = false,
       <Select
         label='Input Type'
         description='Data type to send'
+        placeholder='Select Type'
         className='col-span-2'
-        value={value === null ? 'null' : typeof value === 'string' ? 'raw' : 'variable'}
+        value={value === undefined ? null : value === null ? 'null' : typeof value === 'string' ? 'raw' : 'variable'}
         data={[
           ...(allowNull
             ? [

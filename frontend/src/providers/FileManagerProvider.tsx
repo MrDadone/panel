@@ -2,9 +2,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AxiosRequestConfig } from 'axios';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
+import { z } from 'zod';
 import { axiosInstance, getEmptyPaginationSet } from '@/api/axios.ts';
 import getFileUploadUrl from '@/api/server/files/getFileUploadUrl.ts';
 import { ObjectSet } from '@/lib/objectSet.ts';
+import { serverBackupSchema } from '@/lib/schemas/server/backups.ts';
+import { serverDirectoryEntrySchema } from '@/lib/schemas/server/files.ts';
 import { useFileUpload } from '@/plugins/useFileUpload.ts';
 import { ActingFileMode, FileManagerContext, ModalType, SearchInfo } from '@/providers/contexts/fileManagerContext.ts';
 import { useServerStore } from '@/stores/server.ts';
@@ -18,17 +21,23 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const [actingMode, setActingMode] = useState<ActingFileMode | null>(null);
-  const [actingFiles, setActingFiles] = useState(new ObjectSet<DirectoryEntry, 'name'>('name'));
+  const [actingFiles, setActingFiles] = useState(
+    new ObjectSet<z.infer<typeof serverDirectoryEntrySchema>, 'name'>('name'),
+  );
   const [actingFilesSource, setActingFilesSource] = useState<string | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState(new ObjectSet<DirectoryEntry, 'name'>('name'));
-  const [browsingBackup, setBrowsingBackup] = useState<ServerBackup | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState(
+    new ObjectSet<z.infer<typeof serverDirectoryEntrySchema>, 'name'>('name'),
+  );
+  const [browsingBackup, setBrowsingBackup] = useState<z.infer<typeof serverBackupSchema> | null>(null);
   const [browsingDirectory, setBrowsingDirectory] = useState('');
-  const [browsingEntries, setBrowsingEntries] = useState<Pagination<DirectoryEntry>>(getEmptyPaginationSet());
+  const [browsingEntries, setBrowsingEntries] = useState<Pagination<z.infer<typeof serverDirectoryEntrySchema>>>(
+    getEmptyPaginationSet(),
+  );
   const [page, setPage] = useState(1);
   const [browsingWritableDirectory, setBrowsingWritableDirectory] = useState(true);
   const [browsingFastDirectory, setBrowsingFastDirectory] = useState(true);
   const [openModal, setOpenModal] = useState<ModalType>(null);
-  const [modalDirectoryEntries, setModalDirectoryEntries] = useState<DirectoryEntry[]>([]);
+  const [modalDirectoryEntries, setModalDirectoryEntries] = useState<z.infer<typeof serverDirectoryEntrySchema>[]>([]);
   const [searchInfo, setSearchInfo] = useState<SearchInfo | null>(null);
   const [clickOnce, setClickOnce] = useState(localStorage.getItem('file_click_once') !== 'false');
   const [preferPhysicalSize, setPreferPhysicalSize] = useState(
@@ -57,7 +66,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
 
   const fileUploader = useFileUpload(doUpload, invalidateFilemanager);
 
-  const doActFiles = (mode: ActingFileMode | null, files: DirectoryEntry[]) => {
+  const doActFiles = (mode: ActingFileMode | null, files: z.infer<typeof serverDirectoryEntrySchema>[]) => {
     setActingMode(mode);
     setActingFiles(new ObjectSet('name', files));
     setActingFilesSource(browsingDirectory);
@@ -69,9 +78,10 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
     setActingFilesSource(null);
   };
 
-  const doSelectFiles = (files: DirectoryEntry[]) => setSelectedFiles(new ObjectSet('name', files));
+  const doSelectFiles = (files: z.infer<typeof serverDirectoryEntrySchema>[]) =>
+    setSelectedFiles(new ObjectSet('name', files));
 
-  const addSelectedFile = (file: DirectoryEntry) => {
+  const addSelectedFile = (file: z.infer<typeof serverDirectoryEntrySchema>) => {
     setSelectedFiles((prev) => {
       const next = new ObjectSet('name', prev.values());
       next.add(file);
@@ -79,7 +89,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const removeSelectedFile = (file: DirectoryEntry) => {
+  const removeSelectedFile = (file: z.infer<typeof serverDirectoryEntrySchema>) => {
     setSelectedFiles((prev) => {
       const next = new ObjectSet('name', prev.values());
       next.delete(file);
@@ -87,7 +97,7 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const doOpenModal = (modal: ModalType, entries?: DirectoryEntry[]) => {
+  const doOpenModal = (modal: ModalType, entries?: z.infer<typeof serverDirectoryEntrySchema>[]) => {
     setOpenModal(modal);
     if (entries) {
       setModalDirectoryEntries(entries);
@@ -164,5 +174,5 @@ const FileManagerProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export { FileManagerProvider };
 export { useFileManager } from './contexts/fileManagerContext.ts';
+export { FileManagerProvider };

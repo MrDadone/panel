@@ -1,9 +1,11 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { serverDirectoryEntrySchema } from '@/lib/schemas/server/files.ts';
 
 export interface DirectoryResponse {
   isFilesystemWritable: boolean;
   isFilesystemFast: boolean;
-  entries: Pagination<DirectoryEntry>;
+  entries: Pagination<z.infer<typeof serverDirectoryEntrySchema>>;
 }
 
 export default async (uuid: string, directory: string, page: number): Promise<DirectoryResponse> => {

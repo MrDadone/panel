@@ -1,10 +1,12 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
+import { adminSettingsSchema } from '@/lib/schemas/admin/settings.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
-export interface SettingsSlice extends AdminSettings {
+export interface SettingsSlice extends z.infer<typeof adminSettingsSchema> {
   latestVersions: Record<'panel' | 'wings' | 'fusequota', string> | null;
 
-  setSettings: (settings: AdminSettings) => void;
+  setSettings: (settings: z.infer<typeof adminSettingsSchema>) => void;
   setLatestVersions: (versions: Record<'panel' | 'wings' | 'fusequota', string>) => void;
 }
 

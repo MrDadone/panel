@@ -14,6 +14,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
+import { z } from 'zod';
 import { axiosInstance, httpErrorToHuman } from '@/api/axios.ts';
 import Card from '@/elements/Card.tsx';
 import ChartBlock from '@/elements/ChartBlock.tsx';
@@ -24,6 +25,7 @@ import TitleCard from '@/elements/TitleCard.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import { useChart, useChartTickLabel } from '@/lib/chart.ts';
 import { hexToRgba } from '@/lib/color.ts';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -54,7 +56,7 @@ interface NodeStatistics {
   };
 }
 
-export default function AdminNodeStatistics({ node }: { node: Node }) {
+export default function AdminNodeStatistics({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const { addToast } = useToast();
 
   const [stats, setStats] = useState<NodeStatistics | null>(null);

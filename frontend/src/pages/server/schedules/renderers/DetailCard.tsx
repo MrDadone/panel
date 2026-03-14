@@ -1,10 +1,11 @@
 import { ThemeIcon } from '@mantine/core';
+import type { ReactNode } from 'react';
 import Card from '@/elements/Card.tsx';
 
 interface DetailCardProps {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: ReactNode;
   color?: string;
 }
 

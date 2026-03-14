@@ -57,7 +57,10 @@
         "deselectAll": "Alle abwählen",
         "restore": "Wiederherstellen",
         "download": "Herunterladen",
-        "downloadAs": "Als {format} herunterladen"
+        "downloadAs": "Als {format} herunterladen",
+        "okay": "Okay",
+        "export": "Exportieren",
+        "exportAs": "Als {format} exportieren"
       },
       "input": {
         "search": "Suchen..."
@@ -96,7 +99,9 @@
           "suspended": "Suspendiert",
           "restoringBackup": "Backup wird wiederhergestellt",
           "installing": "Wird installiert",
-          "InstallFailed": "Installation fehlgeschlagen"
+          "transferring": "Server wird übertragen",
+          "nodeMaintenance": "Node in Wartung",
+          "installFailed": "Installation fehlgeschlagen"
         }
       },
       "enum": {
@@ -140,7 +145,21 @@
       "api": "API",
       "system": "System",
       "schedule": "Zeitplan",
-      "impersonatedBy": "Impersoniert von {username}"
+      "impersonatedBy": "Impersoniert von {username}",
+      "tooltip": {
+        "resetToDefault": "Auf Standard zurücksetzen",
+        "edit": "Bearbeiten",
+        "delete": "Löschen"
+      },
+      "badge": {
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "enabled": "Aktiviert",
+        "disabled": "Deaktiviert",
+        "successful": "Erfolgreich",
+        "failed": "Fehlgeschlagen"
+      },
+      "never": "Nie"
     },
     "elements": {
       "errorBoundary": {
@@ -184,6 +203,49 @@
           "info": {
             "title": "Aktivitätsdetails"
           }
+        }
+      },
+      "screenBlock": {
+        "permissionDenied": {
+          "title": "Zugriff verweigert",
+          "content": "Du hast keine Berechtigung, auf diese Seite zuzugreifen."
+        },
+        "notFound": {
+          "title": "Nicht gefunden",
+          "content": "Die gesuchte Seite konnte nicht gefunden werden."
+        },
+        "serverConflict": {
+          "title": "Konflikt mit dem Server-Status",
+          "contentSuspended": "Dieser Server ist suspendiert und kann nicht aufgerufen werden.",
+          "contentNodeMaintenance": "Dieser Server befindet sich auf einer Node, die derzeit gewartet wird, und ist nicht zugänglich.",
+          "contentTransferring": "Dieser Server wird derzeit übertragen und kann erst nach Abschluss der Übertragung aufgerufen werden.",
+          "contentInstallFailed": "Die Installation dieses Servers ist fehlgeschlagen und er kann erst nach Bestätigung aufgerufen werden.",
+          "contentInstalling": "Dieser Server wird derzeit installiert und kann erst nach Abschluss aufgerufen werden.",
+          "contentRestoringBackup": "Dieser Server stellt derzeit ein Backup wieder her und kann erst nach Abschluss aufgerufen werden.",
+          "button": {
+            "viewInstallLogs": "Installationsprotokolle ansehen",
+            "acknowledgeFailure": "Fehlschlag bestätigen"
+          },
+          "modal": {
+            "acknowledgeFailure": {
+              "title": "Installationsfehlschlag bestätigen",
+              "content": "Durch die Bestätigung dieses Installationsfehlschlags bestätigst du, dass du über die fehlgeschlagene Installation informiert bist und alle notwendigen Schritte zur Behebung unternommen hast. Dadurch erhältst du wieder die Kontrolle über den Server."
+            }
+          }
+        }
+      },
+      "serverWebsocket": {
+        "error": {
+          "connectionFailed": "Verbindung nach mehreren Versuchen nicht möglich. Bitte lade die Seite neu.",
+          "connectionClosed": "Verbindung zum Server wurde geschlossen. Verbindung wird wiederhergestellt...",
+          "connectionRetry": "Verbindung verloren. Erneuter Versuch (Versuch {attempt})...",
+          "authFailed": "Authentifizierung fehlgeschlagen. Anmeldedaten werden aktualisiert...",
+          "authRefreshFailed": "Aktualisierung der Anmeldedaten fehlgeschlagen. Bitte lade die Seite neu, um es erneut zu versuchen.",
+          "permissionRevoked": "Verbindung geschlossen: Dein Zugriff auf diesen Server wurde widerrufen.",
+          "tokenRefreshLoop": "Authentifizierungsschleife erkannt. Bitte lade die Seite neu, um es erneut zu versuchen."
+        },
+        "banner": {
+          "retrying": "Erneuter Versuch in {countdown}..."
         }
       }
     },
@@ -325,7 +387,9 @@
             "removeFromGroup": "Aus der Gruppe entfernen",
             "addToGroup": "Zur Gruppe hinzufügen",
             "noGroups": "Keine Gruppen zum Hinzufügen verfügbar",
-            "noGroup": "Dieser Server ist noch in keiner Gruppe"
+            "noGroup": "Dieser Server ist noch in keiner Gruppe",
+            "addServerToGroup": "Server zur Gruppe hinzufügen",
+            "groupActions": "Gruppen-Aktionen"
           },
           "tabs": {
             "groupedServers": {
@@ -509,6 +573,14 @@
                 "deleted": "Sicherheitsschlüssel erfolgreich gelöscht."
               }
             }
+          },
+          "table": {
+            "columns": {
+              "credentialId": "Credential-ID"
+            }
+          },
+          "tooltip": {
+            "secureContextRequired": "Ein sicherer Kontext (HTTPS) ist erforderlich, um Sicherheitsschlüssel zu verwenden."
           }
         },
         "sessions": {
@@ -681,6 +753,39 @@
         },
         "activity": {
           "title": "Aktivität"
+        },
+        "commandSnippets": {
+          "title": "Befehlskürzel",
+          "table": {
+            "columns": {
+              "eggs": "Eggs"
+            }
+          },
+          "form": {
+            "eggs": "Eggs",
+            "command": "Befehl"
+          },
+          "modal": {
+            "createCommandSnippet": {
+              "title": "Befehlskürzel erstellen",
+              "toast": {
+                "created": "Befehlskürzel erstellt."
+              }
+            },
+            "editCommandSnippet": {
+              "title": "Befehlskürzel bearbeiten",
+              "toast": {
+                "updated": "Befehlskürzel aktualisiert."
+              }
+            },
+            "deleteCommandSnippet": {
+              "title": "Löschen des Befehlskürzels bestätigen",
+              "content": "Bist du sicher, dass du **{name}** von deinem Account löschen möchtest?",
+              "toast": {
+                "removed": "Befehlskürzel entfernt."
+              }
+            }
+          }
         }
       },
       "admin": {},
@@ -699,7 +804,9 @@
           },
           "notification": {
             "restoringBackup": "Dein Server stellt gerade ein Backup wieder her. Bitte warten...",
-            "installing": "Dein Server wird gerade installiert. Bitte warten..."
+            "installing": "Dein Server wird gerade installiert. Bitte warten...",
+            "nodeMaintenance": "Dein Server befindet sich auf einer Node, die derzeit gewartet wird.",
+            "transferring": "Dein Server wird derzeit auf eine andere Node übertragen."
           },
           "message": {
             "serverMarkedAs": "Server markiert als {state}...",
@@ -707,13 +814,16 @@
             "pullingImage": "Dein Server lädt gerade sein Docker-Image herunter. Bitte warten...",
             "pulling": "Wird heruntergeladen",
             "extracting": "Wird entpackt",
-            "layer": "Layer"
+            "layer": "Layer",
+            "installFailed": "Installation ist fehlgeschlagen.",
+            "installCompleted": "Installation wurde erfolgreich abgeschlossen."
           },
           "tooltip": {
             "search": "Suchen",
             "commandHistory": "Befehlsverlauf",
             "decreaseFontSize": "Schriftgröße verringern",
-            "increaseFontSize": "Schriftgröße erhöhen"
+            "increaseFontSize": "Schriftgröße erhöhen",
+            "sshDetails": "SSH-Details"
           },
           "drawer": {
             "commandHistory": {
@@ -769,7 +879,22 @@
             "outbound": "Ausgehend"
           },
           "socketConnected": "Verbunden ({ping}ms ping)",
-          "socketDisconnected": "Getrennt"
+          "socketDisconnected": "Getrennt",
+          "modal": {
+            "sshDetails": {
+              "title": "SSH-Details",
+              "form": {
+                "protocol": "Protokoll",
+                "port": "Port",
+                "host": "Host",
+                "username": "Benutzername",
+                "password": "Passwort",
+                "yourPassword": "Dein Control Panel Passwort",
+                "command": "SSH-Befehl"
+              },
+              "launch": "Starten"
+            }
+          }
         },
         "files": {
           "title": "Dateien",
@@ -798,7 +923,8 @@
             "directory": "Verzeichnis",
             "fileFromPull": "Datei aus Pull",
             "fileFromUpload": "Datei aus Upload",
-            "directoryFromUpload": "Verzeichnis aus Upload"
+            "directoryFromUpload": "Verzeichnis aus Upload",
+            "details": "Details"
           },
           "actionBar": {
             "copyHere": "Kopiere {files} hierhin",
@@ -829,7 +955,8 @@
             "clickOnce": "Klicke einmal auf eine Datei oder ein Verzeichnis, um es zu öffnen",
             "editorMinimap": "Datei Minimap",
             "editorLineOverflow": "Zeilenumbruch für lange Zeilen im Editor",
-            "imageViewerSmoothing": "Bildglättung (Anti-Aliasing)"
+            "imageViewerSmoothing": "Bildglättung (Anti-Aliasing)",
+            "preferPhysicalSize": "Physische Größe statt logischer Größe anzeigen"
           },
           "toast": {
             "operationCancelled": "Vorgang abgebrochen",
@@ -959,7 +1086,21 @@
                 "yourPassword": "Dein Control Panel Passwort"
               },
               "launch": "Starten"
+            },
+            "details": {
+              "title": "Dateidetails",
+              "path": "Pfad",
+              "mode": "Modus",
+              "logicalSize": "Logische Größe",
+              "physicalSize": "Physische Größe",
+              "mimeType": "MIME-Typ",
+              "lastModifiedAt": "Zuletzt geändert am",
+              "createdAt": "Erstellt am"
             }
+          },
+          "dropzone": {
+            "title": "Dateien hier ablegen, um sie hochzuladen",
+            "subtitle": "Loslassen, um den Upload zu starten"
           }
         },
         "databases": {
@@ -1019,7 +1160,11 @@
           }
         },
         "schedules": {
-          "title": "Zeitpläne"
+          "title": "Zeitpläne",
+          "dropzone": {
+            "title": "Dateien hier ablegen, um sie als Zeitpläne zu importieren",
+            "subtitle": "Loslassen, um den Import zu starten"
+          }
         },
         "subusers": {
           "title": "Subuser",
@@ -1213,10 +1358,46 @@
                 "reinstalling": "Server wird neu installiert..."
               }
             }
+          },
+          "debugInformation": {
+            "title": "Debug-Informationen",
+            "form": {
+              "nodeName": "Node (UUID)",
+              "locationName": "Standort (UUID)",
+              "serverUuid": "Server UUID"
+            }
           }
         },
         "activity": {
           "title": "Aktivität"
+        },
+        "mounts": {
+          "title": "Mounts",
+          "table": {
+            "columns": {
+              "target": "Ziel",
+              "mounted": "Eingebunden",
+              "readOnly": "Schreibgeschützt"
+            }
+          },
+          "modal": {
+            "attachMount": {
+              "title": "Mount einbinden",
+              "content": "Möchtest du **{name}** in `{target}` einbinden?",
+              "confirm": "Einbinden",
+              "toast": {
+                "attached": "{name} wurde in deinen Server eingebunden."
+              }
+            },
+            "detachMount": {
+              "title": "Mount trennen",
+              "content": "Möchtest du **{name}** von `{target}` trennen?",
+              "confirm": "Trennen",
+              "toast": {
+                "detached": "{name} wurde von deinem Server getrennt."
+              }
+            }
+          }
         }
       }
     }

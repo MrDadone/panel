@@ -3,6 +3,7 @@ import DirectoryNameModal from '@/pages/server/files/modals/DirectoryNameModal.t
 import FileCopyModal from '@/pages/server/files/modals/FileCopyModal.tsx';
 import FileCopyRemoteModal from '@/pages/server/files/modals/FileCopyRemoteModal.tsx';
 import FileDeleteModal from '@/pages/server/files/modals/FileDeleteModal.tsx';
+import FileFingerprintModal from '@/pages/server/files/modals/FileFingerprintModal.tsx';
 import FilePermissionsModal from '@/pages/server/files/modals/FilePermissionsModal.tsx';
 import FileRenameModal from '@/pages/server/files/modals/FileRenameModal.tsx';
 import FileSearchModal from '@/pages/server/files/modals/FileSearchModal.tsx';
@@ -20,6 +21,11 @@ export default function FileModals() {
       <FileCopyRemoteModal files={modalDirectoryEntries} opened={openModal === 'copy-remote'} onClose={doCloseModal} />
       <FileRenameModal file={modalDirectoryEntries[0]} opened={openModal === 'rename'} onClose={doCloseModal} />
       <FileDetailsModal file={modalDirectoryEntries[0]} opened={openModal === 'details'} onClose={doCloseModal} />
+      <FileFingerprintModal
+        file={modalDirectoryEntries[0]}
+        opened={openModal === 'fingerprint'}
+        onClose={doCloseModal}
+      />
       <FilePermissionsModal
         file={modalDirectoryEntries[0]}
         opened={openModal === 'permissions'}

@@ -1,11 +1,13 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { adminNodeServerBackupSchema } from '@/lib/schemas/admin/nodes.ts';
 
 export default async (
   backupConfigUuid: string,
   page: number,
   search?: string,
   detached?: boolean,
-): Promise<Pagination<AdminNodeServerBackup>> => {
+): Promise<Pagination<z.infer<typeof adminNodeServerBackupSchema>>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/backup-configurations/${backupConfigUuid}/backups`, {

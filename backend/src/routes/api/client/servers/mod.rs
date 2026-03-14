@@ -2,6 +2,7 @@ use super::State;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub mod _server_;
+mod eggs;
 mod groups;
 mod nodes;
 
@@ -119,6 +120,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
         .routes(routes!(get::route))
         .nest("/groups", groups::router(state))
         .nest("/nodes", nodes::router(state))
+        .nest("/eggs", eggs::router(state))
         .nest("/{server}", _server_::router(state))
         .with_state(state.clone())
 }

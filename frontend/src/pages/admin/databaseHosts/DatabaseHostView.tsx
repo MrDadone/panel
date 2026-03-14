@@ -1,11 +1,13 @@
 import { faCog, faDatabase } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { z } from 'zod';
 import getDatabaseHost from '@/api/admin/database-hosts/getDatabaseHost.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
+import { adminDatabaseHostSchema } from '@/lib/schemas/admin/databaseHosts.ts';
 import AdminDatabaseHostDatabases from '@/pages/admin/databaseHosts/databases/AdminDatabaseHostDatabases.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import DatabaseHostCreateOrUpdate from './DatabaseHostCreateOrUpdate.tsx';
@@ -13,7 +15,7 @@ import DatabaseHostCreateOrUpdate from './DatabaseHostCreateOrUpdate.tsx';
 export default function DatabaseHostView() {
   const params = useParams<'id'>();
   const { addToast } = useToast();
-  const [databaseHost, setDatabaseHost] = useState<AdminDatabaseHost | null>(null);
+  const [databaseHost, setDatabaseHost] = useState<z.infer<typeof adminDatabaseHostSchema> | null>(null);
 
   useEffect(() => {
     if (params.id) {

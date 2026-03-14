@@ -20,7 +20,7 @@ export default function EmailFile({
 
   return (
     <Stack mt='md'>
-      <TextInput withAsterisk label='Path' placeholder='Path' {...form.getInputProps('path')} />
+      <TextInput withAsterisk label='Path' placeholder='Path' key={form.key('path')} {...form.getInputProps('path')} />
 
       <Group grow>
         <TextInput
@@ -29,7 +29,12 @@ export default function EmailFile({
           placeholder='From Address'
           {...form.getInputProps('fromAddress')}
         />
-        <TextInput label='From Name' placeholder='From Name' {...form.getInputProps('fromName')} />
+        <TextInput
+          label='From Name'
+          placeholder='From Name'
+          key={form.key('fromName')}
+          {...form.getInputProps('fromName')}
+        />
       </Group>
     </Stack>
   );

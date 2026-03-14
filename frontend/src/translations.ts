@@ -80,6 +80,14 @@ const baseTranslations = defineTranslations({
           command: 'Command',
         },
       },
+      badge: {
+        active: 'Active',
+        inactive: 'Inactive',
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        successful: 'Successful',
+        failed: 'Failed',
+      },
       server: {
         noAllocation: 'No Allocation',
         state: {
@@ -125,9 +133,8 @@ const baseTranslations = defineTranslations({
       },
       unlimited: 'Unlimited',
       readOnly: 'Read-Only',
-      active: 'Active',
-      inactive: 'Inactive',
       na: 'N/A',
+      never: 'Never',
       yes: 'Yes',
       no: 'No',
       web: 'Web',
@@ -212,6 +219,20 @@ const baseTranslations = defineTranslations({
                 'By acknowledging this installation failure, you are confirming that you are aware of the failed installation and have taken any necessary steps to resolve the issue. This will allow you to regain control over the server.',
             },
           },
+        },
+      },
+      serverWebsocket: {
+        error: {
+          connectionFailed: 'Unable to connect after multiple attempts. Please refresh the page.',
+          connectionClosed: 'Connection to server was closed. Attempting to reconnect...',
+          connectionRetry: 'Connection lost. Retrying (attempt {attempt})...',
+          authFailed: 'Authentication failed. Attempting to refresh credentials...',
+          authRefreshFailed: 'Failed to refresh credentials. Please refresh the page to try again.',
+          permissionRevoked: 'Connection closed: your access to this server has been revoked.',
+          tokenRefreshLoop: 'Authentication loop detected. Please refresh the page to try again.',
+        },
+        banner: {
+          retrying: 'Retrying in {countdown}...',
         },
       },
     },
@@ -530,6 +551,9 @@ const baseTranslations = defineTranslations({
               credentialId: 'Credential ID',
             },
           },
+          tooltip: {
+            secureContextRequired: 'A secure context (HTTPS) is required to use security keys.',
+          },
           modal: {
             createSecurityKey: {
               title: 'Create Security Key',
@@ -658,6 +682,39 @@ const baseTranslations = defineTranslations({
             },
           },
         },
+        commandSnippets: {
+          title: 'Command Snippets',
+          table: {
+            columns: {
+              eggs: 'Eggs',
+            },
+          },
+          form: {
+            eggs: 'Eggs',
+            command: 'Command',
+          },
+          modal: {
+            createCommandSnippet: {
+              title: 'Create Command Snippet',
+              toast: {
+                created: 'Command snippet created.',
+              },
+            },
+            editCommandSnippet: {
+              title: 'Edit Command Snippet',
+              toast: {
+                updated: 'Command snippet updated.',
+              },
+            },
+            deleteCommandSnippet: {
+              title: 'Confirm Command Snippet Deletion',
+              content: 'Are you sure you want to delete **{name}** from your account?',
+              toast: {
+                removed: 'Command snippet removed.',
+              },
+            },
+          },
+        },
         oauthLinks: {
           title: 'OAuth Links',
           button: {
@@ -739,6 +796,21 @@ const baseTranslations = defineTranslations({
           toast: {
             installCancelled: 'Server install cancelled.',
           },
+          modal: {
+            sshDetails: {
+              title: 'SSH Details',
+              form: {
+                protocol: 'Protocol',
+                port: 'Port',
+                host: 'Host',
+                username: 'Username',
+                password: 'Password',
+                yourPassword: 'Your Control Panel Password',
+                command: 'SSH Command',
+              },
+              launch: 'Launch',
+            },
+          },
           notification: {
             nodeMaintenance: 'Your Server is on a node that is currently under maintenance.',
             transferring: 'Your Server is currently being transferred to another node.',
@@ -757,6 +829,7 @@ const baseTranslations = defineTranslations({
           },
           tooltip: {
             search: 'Search',
+            sshDetails: 'SSH Details',
             commandHistory: 'Command History',
             decreaseFontSize: 'Decrease Font Size',
             increaseFontSize: 'Increase Font Size',
@@ -837,6 +910,7 @@ const baseTranslations = defineTranslations({
             rename: 'Rename',
             copy: 'Copy',
             move: 'Move',
+            fingerprint: 'Fingerprint',
             permissions: 'Permissions',
             unarchive: 'Unarchive',
             archive: 'Archive',
@@ -873,6 +947,10 @@ const baseTranslations = defineTranslations({
             copyingMany: 'Copying {files}',
             receivingRemote: 'Receiving {files} from remote server',
             sendingRemote: 'Sending {files} to remote server',
+          },
+          dropzone: {
+            title: 'Drop files here to upload',
+            subtitle: 'Release to start uploading',
           },
           settings: {
             clickOnce: 'Click once to open file or folder',
@@ -943,6 +1021,16 @@ const baseTranslations = defineTranslations({
                 destination: 'Destination',
               },
               createdAs: 'These files will be created on the remote server under ',
+            },
+            fileFingerprints: {
+              title: 'File Fingerprint',
+              form: {
+                algorithm: 'Algorithm',
+                fingerprint: 'Fingerprint',
+              },
+              button: {
+                calculate: 'Calculate Fingerprint',
+              },
             },
             deleteFile: {
               title: 'Delete File',
@@ -1083,6 +1171,10 @@ const baseTranslations = defineTranslations({
         },
         schedules: {
           title: 'Schedules',
+          dropzone: {
+            title: 'Drop some files here to import them as Schedules',
+            subtitle: 'Release to start importing',
+          },
         },
         subusers: {
           title: 'Subusers',
@@ -1227,13 +1319,41 @@ const baseTranslations = defineTranslations({
             variablesUpdated: 'Variables updated.',
           },
         },
+        mounts: {
+          title: 'Mounts',
+          table: {
+            columns: {
+              target: 'Target',
+              mounted: 'Mounted',
+              readOnly: 'Read Only',
+            },
+          },
+          modal: {
+            attachMount: {
+              title: 'Attach Mount',
+              content: 'Do you want to attach **{name}** to `{target}`?',
+              confirm: 'Attach',
+              toast: {
+                attached: '{name} has been mounted to your server.',
+              },
+            },
+            detachMount: {
+              title: 'Detach Mount',
+              content: 'Do you want to detach **{name}** from `{target}`?',
+              confirm: 'Detach',
+              toast: {
+                detached: '{name} has been removed from your server.',
+              },
+            },
+          },
+        },
         settings: {
           title: 'Settings',
           debugInformation: {
             title: 'Debug Information',
             form: {
-              nodeName: 'Node',
-              locationName: 'Location',
+              nodeName: 'Node (UUID)',
+              locationName: 'Location (UUID)',
               serverUuid: 'Server UUID',
             },
           },

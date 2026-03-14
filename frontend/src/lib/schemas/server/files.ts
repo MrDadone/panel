@@ -28,6 +28,10 @@ export const serverFilesPullSchema = z.object({
   name: z.string().nullable(),
 });
 
+export const serverFilesFingerprintSchema = z.object({
+  algorithm: z.lazy(() => fingerprintAlgorithm),
+});
+
 export const serverFilesSearchSchema = z.object({
   pathFilter: z
     .object({
@@ -50,4 +54,110 @@ export const serverFilesSearchSchema = z.object({
       caseInsensitive: z.boolean(),
     })
     .nullable(),
+});
+
+export const serverFileOperationBaseSchema = z.object({
+  startTime: z.date(),
+  progress: z.number(),
+  total: z.number(),
+});
+
+export const serverFileOperationCompressSchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('compress'),
+  path: z.string(),
+  files: z.array(z.string()),
+});
+
+export const serverFileOperationDecompressSchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('decompress'),
+  path: z.string(),
+  destinationPath: z.string(),
+});
+
+export const serverFileOperationPullSchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('pull'),
+  path: z.string(),
+});
+
+export const serverFileOperationCopySchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('copy'),
+  path: z.string(),
+  destinationPath: z.string(),
+});
+
+export const serverFileOperationCopyManySchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('copy_many'),
+  path: z.string(),
+  files: z.array(z.object({ from: z.string(), to: z.string() })),
+});
+
+export const serverFileOperationCopyRemoteSchema = serverFileOperationBaseSchema.extend({
+  type: z.literal('copy_remote'),
+  server: z.string(),
+  path: z.string(),
+  files: z.array(z.string()),
+  destinationServer: z.string(),
+  destinationPath: z.string(),
+});
+
+export const serverFileOperationSchema = z.discriminatedUnion('type', [
+  serverFileOperationCompressSchema,
+  serverFileOperationDecompressSchema,
+  serverFileOperationPullSchema,
+  serverFileOperationCopySchema,
+  serverFileOperationCopyManySchema,
+  serverFileOperationCopyRemoteSchema,
+]);
+
+export const serverDirectoryEntrySchema = z.object({
+  name: z.string(),
+  created: z.date(),
+  modified: z.date(),
+  mode: z.string(),
+  modeBits: z.string(),
+  size: z.number(),
+  sizePhysical: z.number(),
+  directory: z.boolean(),
+  file: z.boolean(),
+  symlink: z.boolean(),
+  mime: z.string(),
+});
+
+export const serverFilesPullQueryResultSchema = z.object({
+  fileName: z.string().nullable(),
+  fileSize: z.number().nullable(),
+  finalUrl: z.string(),
+  headers: z.record(z.string(), z.string()),
+});
+
+export const archiveFormat = z.enum([
+  'tar',
+  'tar_gz',
+  'tar_xz',
+  'tar_lzip',
+  'tar_bz2',
+  'tar_lz4',
+  'tar_zstd',
+  'zip',
+  'seven_zip',
+]);
+
+export const compressionLevel = z.enum(['best_speed', 'good_speed', 'good_compression', 'best_compression']);
+
+export const fingerprintAlgorithm = z.enum([
+  'md5',
+  'crc32',
+  'sha1',
+  'sha224',
+  'sha256',
+  'sha384',
+  'sha512',
+  'curseforge',
+]);
+
+export const downloadSchema = z.object({
+  identifier: z.string(),
+  destination: z.string(),
+  progress: z.number(),
+  total: z.number(),
 });

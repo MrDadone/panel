@@ -8,12 +8,12 @@ import Captcha, { CaptchaRef } from '@/elements/Captcha.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import PermissionSelector from '@/elements/PermissionSelector.tsx';
-import { serverSubuserCreateSchema } from '@/lib/schemas/server/subusers.ts';
+import { serverSubuserCreateSchema, serverSubuserSchema } from '@/lib/schemas/server/subusers.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 
 type Props = ModalProps & {
-  subuser?: ServerSubuser;
+  subuser?: z.infer<typeof serverSubuserSchema>;
   onCreate?: (email: string, permissions: string[], ignoredFiles: string[], captcha: string | null) => void;
   onUpdate?: (permissions: string[], ignoredFiles: string[]) => void;
 };

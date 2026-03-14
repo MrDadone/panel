@@ -250,6 +250,23 @@ export const userOauthLinksTable = new DatabaseTable('user_oauth_links')
     uniqueIndex('user_oauth_links_oauth_provider_uuid_identifier_idx').on(cols.oauth_provider_uuid, cols.identifier),
   ]);
 
+export const userCommandSnippetsTable = new DatabaseTable('user_command_snippets')
+  .addColumn('uuid', uuid().default(sql`gen_random_uuid()`).primaryKey().notNull())
+  .addColumn(
+    'user_uuid',
+    uuid()
+      .references(() => usersTable.join().uuid, { onDelete: 'cascade' })
+      .notNull(),
+  )
+  .addColumn('name', varchar({ length: 31 * UTF8_MAX_SCALAR_SIZE }).notNull())
+  .addColumn('eggs', uuid().array().default([]).notNull())
+  .addColumn('command', text().notNull())
+  .addColumn('created', timestamp().defaultNow().notNull())
+  .addConfigBuilder((cols) => [
+    index('command_snippets_user_uuid_idx').on(cols.user_uuid),
+    uniqueIndex('command_snippets_user_uuid_name_idx').on(cols.user_uuid, cols.name)
+  ]);
+
 export const userServerGroupsTable = new DatabaseTable('user_server_groups')
   .addColumn('uuid', uuid().default(sql`gen_random_uuid()`).primaryKey().notNull())
   .addColumn(

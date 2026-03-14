@@ -2,13 +2,15 @@ import { faChevronDown, faChevronUp, faX } from '@fortawesome/free-solid-svg-ico
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Checkbox, Group, Input, Stack, Title } from '@mantine/core';
 import { useCallback, useMemo, useState } from 'react';
+import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import { permissionCategoryIconMapping } from '@/lib/enums.ts';
+import { apiPermissionsSchema, permissionMapSchema } from '@/lib/schemas/generic.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 const permissionIconMap: Record<
-  keyof ApiPermissions,
+  keyof z.infer<typeof apiPermissionsSchema>,
   'userPermissionIcons' | 'adminPermissionIcons' | 'serverPermissionIcons'
 > = {
   userPermissions: 'userPermissionIcons',
@@ -26,8 +28,8 @@ export default function PermissionSelector({
 }: {
   label?: string;
   withAsterisk?: boolean;
-  permissionsMapType: keyof ApiPermissions;
-  permissions: PermissionMap;
+  permissionsMapType: keyof z.infer<typeof apiPermissionsSchema>;
+  permissions: z.infer<typeof permissionMapSchema>;
   selectedPermissions: string[];
   setSelectedPermissions: (selected: string[]) => void;
 }) {

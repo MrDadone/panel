@@ -1,6 +1,7 @@
 import { faCog, faReply } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon } from '@mantine/core';
+import { z } from 'zod';
 import Badge from '@/elements/Badge.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
@@ -8,11 +9,12 @@ import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
+import { serverVariableSchema } from '@/lib/schemas/server/startup.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import Tooltip from './Tooltip.tsx';
 
 interface Props {
-  variable: ServerVariable;
+  variable: z.infer<typeof serverVariableSchema>;
   overrideReadonly?: boolean;
   loading?: boolean;
   disabled?: boolean;

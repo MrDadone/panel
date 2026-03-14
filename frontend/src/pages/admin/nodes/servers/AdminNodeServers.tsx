@@ -1,5 +1,6 @@
 import { Group } from '@mantine/core';
 import { Ref, useCallback, useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
 import getNodeServers from '@/api/admin/nodes/servers/getNodeServers.ts';
 import sendNodeServersPowerAction from '@/api/admin/nodes/servers/sendNodeServersPowerAction.ts';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
@@ -8,6 +9,9 @@ import AdminSubContentContainer from '@/elements/containers/AdminSubContentConta
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
 import { ObjectSet } from '@/lib/objectSet.ts';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import { serverPowerAction } from '@/lib/schemas/server/server.ts';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
 import ServerRow from '@/pages/admin/servers/ServerRow.tsx';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
@@ -17,15 +21,19 @@ import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import BulkActionBar from './BulkActionBar.tsx';
 import ServersTransferModal from './modals/ServersTransferModal.tsx';
 
-export default function AdminNodeServers({ node }: { node: Node }) {
+export default function AdminNodeServers({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const { t, tItem } = useTranslations();
   const { addToast } = useToast();
-  const [nodeServers, setNodeServers] = useState<Pagination<AdminServer>>(getEmptyPaginationSet());
-  const [selectedServers, setSelectedServers] = useState(new ObjectSet<AdminServer, 'uuid'>('uuid'));
-  const selectedServersPreviousRef = useRef<AdminServer[]>([]);
+  const [nodeServers, setNodeServers] = useState<Pagination<z.infer<typeof adminServerSchema>>>(
+    getEmptyPaginationSet(),
+  );
+  const [selectedServers, setSelectedServers] = useState(
+    new ObjectSet<z.infer<typeof adminServerSchema>, 'uuid'>('uuid'),
+  );
+  const selectedServersPreviousRef = useRef<z.infer<typeof adminServerSchema>[]>([]);
   const [sKeyPressed, setSKeyPressed] = useState(false);
-  const [bulkActionLoading, setBulkActionLoading] = useState<ServerPowerAction | null>(null);
-  const [allActionLoading, setAllActionLoading] = useState<ServerPowerAction | null>(null);
+  const [bulkActionLoading, setBulkActionLoading] = useState<z.infer<typeof serverPowerAction> | null>(null);
+  const [allActionLoading, setAllActionLoading] = useState<z.infer<typeof serverPowerAction> | null>(null);
   const [openModal, setOpenModal] = useState<'transfer' | null>(null);
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
@@ -40,7 +48,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
     [selectedServers],
   );
 
-  const onSelected = useCallback((selected: AdminServer[]) => {
+  const onSelected = useCallback((selected: z.infer<typeof adminServerSchema>[]) => {
     setSelectedServers(new ObjectSet('uuid', [...selectedServersPreviousRef.current, ...selected]));
   }, []);
 
@@ -69,7 +77,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
     };
   }, []);
 
-  const handleServerSelectionChange = (server: AdminServer, selected: boolean) => {
+  const handleServerSelectionChange = (server: z.infer<typeof adminServerSchema>, selected: boolean) => {
     setSelectedServers((prev) => {
       const newSet = new ObjectSet('uuid', prev.values());
       if (selected) {
@@ -81,7 +89,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
     });
   };
 
-  const handleServerClick = (server: AdminServer, event: React.MouseEvent) => {
+  const handleServerClick = (server: z.infer<typeof adminServerSchema>, event: React.MouseEvent) => {
     if (sKeyPressed || event.ctrlKey || event.metaKey) {
       event.preventDefault();
       event.stopPropagation();
@@ -89,14 +97,17 @@ export default function AdminNodeServers({ node }: { node: Node }) {
     }
   };
 
-  const handleBulkPowerAction = async (action: ServerPowerAction) => {
+  const handleBulkPowerAction = async (action: z.infer<typeof serverPowerAction>) => {
     setBulkActionLoading(action);
 
     sendNodeServersPowerAction(node.uuid, selectedServers.keys(), action)
       .then((successful) => {
         const failed = selectedServers.size - successful;
 
-        const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
+        const actionPastTenseMap: Record<
+          z.infer<typeof serverPowerAction>,
+          'started' | 'stopped' | 'restarted' | 'killed'
+        > = {
           start: 'started',
           stop: 'stopped',
           restart: 'restarted',
@@ -132,14 +143,17 @@ export default function AdminNodeServers({ node }: { node: Node }) {
       });
   };
 
-  const handleAllPowerAction = async (action: ServerPowerAction) => {
+  const handleAllPowerAction = async (action: z.infer<typeof serverPowerAction>) => {
     setAllActionLoading(action);
 
     sendNodeServersPowerAction(node.uuid, [], action)
       .then((successful) => {
         const failed = nodeServers.total - successful;
 
-        const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
+        const actionPastTenseMap: Record<
+          z.infer<typeof serverPowerAction>,
+          'started' | 'stopped' | 'restarted' | 'killed'
+        > = {
           start: 'started',
           stop: 'stopped',
           restart: 'restarted',

@@ -160,6 +160,39 @@ impl UserSecurityKey {
         })
     }
 
+    pub async fn delete_unconfigured_by_user_uuid_name(
+        database: &crate::database::Database,
+        user_uuid: uuid::Uuid,
+        name: &str,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            DELETE FROM user_security_keys
+            WHERE user_security_keys.user_uuid = $1 AND user_security_keys.name = $2 AND user_security_keys.passkey IS NULL
+            "#,
+        )
+        .bind(user_uuid)
+        .bind(name)
+        .execute(database.write())
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_unconfigured(
+        database: &crate::database::Database,
+    ) -> Result<u64, sqlx::Error> {
+        Ok(sqlx::query(
+            r#"
+            DELETE FROM user_security_keys
+            WHERE user_security_keys.created < NOW() - INTERVAL '1 day' AND user_security_keys.passkey IS NULL
+            "#,
+        )
+        .execute(database.write())
+        .await?
+        .rows_affected())
+    }
+
     #[inline]
     pub fn into_api_object(self) -> ApiUserSecurityKey {
         ApiUserSecurityKey {

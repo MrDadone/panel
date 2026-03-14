@@ -1,5 +1,6 @@
 import { Group, Title } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import getUserActivity from '@/api/me/getUserActivity.ts';
 import ActivityInfoButton from '@/elements/activity/ActivityInfoButton.tsx';
@@ -8,6 +9,7 @@ import AccountContentContainer from '@/elements/containers/AccountContentContain
 import TextInput from '@/elements/input/TextInput.tsx';
 import Table, { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { userActivitySchema } from '@/lib/schemas/user/activity.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -16,7 +18,7 @@ export default function DashboardActivity() {
   const { user } = useAuth();
   const { t } = useTranslations();
 
-  const [activities, setActivities] = useState<Pagination<UserActivity>>(getEmptyPaginationSet());
+  const [activities, setActivities] = useState<Pagination<z.infer<typeof userActivitySchema>>>(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: getUserActivity,

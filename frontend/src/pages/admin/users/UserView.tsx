@@ -1,11 +1,13 @@
 import { faBriefcase, faCog, faComputer, faFingerprint } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { z } from 'zod';
 import getUser from '@/api/admin/users/getUser.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 import AdminUserServers from '@/pages/admin/users/servers/AdminUserServers.tsx';
 import UserCreateOrUpdate from '@/pages/admin/users/UserCreateOrUpdate.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -15,7 +17,7 @@ import AdminUserOAuthLinks from './oauthLinks/AdminUserOAuthLinks.tsx';
 export default function UserView() {
   const params = useParams<'id'>();
   const { addToast } = useToast();
-  const [user, setUser] = useState<FullUser | null>(null);
+  const [user, setUser] = useState<z.infer<typeof fullUserSchema> | null>(null);
 
   useEffect(() => {
     if (params.id) {

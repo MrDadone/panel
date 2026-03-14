@@ -2,6 +2,7 @@ import { faCheckDouble, faPlus, faX } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group } from '@mantine/core';
 import { MouseEvent as ReactMouseEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { z } from 'zod';
 import getNodeAllocations from '@/api/admin/nodes/allocations/getNodeAllocations.ts';
 import Button from '@/elements/Button.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
@@ -9,6 +10,7 @@ import Select from '@/elements/input/Select.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import { adminNodeAllocationSchema, adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { nodeAllocationTableColumns } from '@/lib/tableColumns.ts';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -17,7 +19,7 @@ import AllocationActionBar from './AllocationActionBar.tsx';
 import NodeAllocationsCreateModal from './modals/NodeAllocationsCreateModal.tsx';
 import NodeAllocationRow from './NodeAllocationRow.tsx';
 
-export default function AdminNodeAllocations({ node }: { node: Node }) {
+export default function AdminNodeAllocations({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const { nodeAllocations, setNodeAllocations, selectedNodeAllocations, setSelectedNodeAllocations } = useAdminStore();
 
   const [openModal, setOpenModal] = useState<'create' | null>(null);
@@ -69,7 +71,7 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
     [selectedNodeAllocations],
   );
 
-  const onSelected = useCallback((selected: NodeAllocation[]) => {
+  const onSelected = useCallback((selected: z.infer<typeof adminNodeAllocationSchema>[]) => {
     setSelectedNodeAllocations([...selectedNodeAllocationsPreviousRef.current, ...selected]);
   }, []);
 

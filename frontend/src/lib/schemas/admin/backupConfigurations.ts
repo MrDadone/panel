@@ -18,8 +18,19 @@ export const adminBackupConfigurationS3Schema = z.object({
 });
 
 export const adminBackupConfigurationSchema = z.object({
+  uuid: z.string(),
   name: z.string().min(3).max(255),
   description: z.preprocess(nullableString, z.string().max(1024).nullable()),
   maintenanceEnabled: z.boolean(),
   backupDisk: z.enum(['local', 's3', 'ddup-bak', 'btrfs', 'zfs', 'restic']),
+  backupConfigs: z.object({
+    s3: adminBackupConfigurationS3Schema.nullable(),
+    restic: adminBackupConfigurationResticSchema.nullable(),
+  }),
+  created: z.date(),
+});
+
+export const adminBackupConfigurationUpdateSchema = adminBackupConfigurationSchema.omit({
+  uuid: true,
+  created: true,
 });

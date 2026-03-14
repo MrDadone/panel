@@ -23,9 +23,9 @@ export default function ServerStats() {
 
   const networkPrevious = useRef<Record<'tx' | 'rx', number>>({ tx: -1, rx: -1 });
 
-  const cpu = useChartTickLabel('CPU', server.limits.cpu, '%', 2);
-  const memory = useChartTickLabel('Memory', server.limits.memory, 'MiB');
-  const network = useChart('Network', {
+  const cpu = useChartTickLabel(t('pages.server.console.stats.cpuLoad', {}), server.limits.cpu, '%', 2);
+  const memory = useChartTickLabel(t('pages.server.console.stats.memoryLoad', {}), server.limits.memory, 'MiB');
+  const network = useChart(t('pages.server.console.stats.network', {}), {
     sets: 2,
     options: {
       scales: {
@@ -41,7 +41,7 @@ export default function ServerStats() {
     callback(opts, index) {
       return {
         ...opts,
-        label: !index ? 'Network In' : 'Network Out',
+        label: !index ? t('pages.server.console.stats.inbound', {}) : t('pages.server.console.stats.outbound', {}),
         borderColor: !index ? '#22d3ee' : '#facc15', // cyan-400 & yellow-400
         backgroundColor: hexToRgba(!index ? '#0e7490' : '#a16207', 0.5), // cyan-700 & yellow-700
       };

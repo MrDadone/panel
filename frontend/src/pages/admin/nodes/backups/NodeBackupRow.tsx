@@ -1,14 +1,19 @@
 import { faFileArrowDown, faRotateLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import downloadNodeBackup from '@/api/admin/nodes/backups/downloadNodeBackup.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import Badge from '@/elements/Badge.tsx';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { streamingArchiveFormatLabelMapping } from '@/lib/enums.ts';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerBackupSchema } from '@/lib/schemas/admin/servers.ts';
+import { streamingArchiveFormat } from '@/lib/schemas/generic.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -16,13 +21,19 @@ import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import NodeBackupsDeleteModal from './modals/NodeBackupsDeleteModal.tsx';
 import NodeBackupsRestoreModal from './modals/NodeBackupsRestoreModal.tsx';
 
-export default function NodeBackupRow({ node, backup }: { node: Node; backup: AdminServerBackup }) {
+export default function NodeBackupRow({
+  node,
+  backup,
+}: {
+  node: z.infer<typeof adminNodeSchema>;
+  backup: z.infer<typeof adminServerBackupSchema>;
+}) {
   const { t } = useTranslations();
   const { addToast } = useToast();
 
   const [openModal, setOpenModal] = useState<'restore' | 'delete' | null>(null);
 
-  const doDownload = (archiveFormat: StreamingArchiveFormat) => {
+  const doDownload = (archiveFormat: z.infer<typeof streamingArchiveFormat>) => {
     downloadNodeBackup(node.uuid, backup.uuid, archiveFormat)
       .then(({ url }) => {
         addToast('Download started.', 'success');
@@ -59,7 +70,7 @@ export default function NodeBackupRow({ node, backup }: { node: Node; backup: Ad
               ? Object.entries(streamingArchiveFormatLabelMapping).map(([mime, label]) => ({
                   icon: faFileArrowDown,
                   label: t('common.button.downloadAs', { format: label }),
-                  onClick: () => doDownload(mime as StreamingArchiveFormat),
+                  onClick: () => doDownload(mime as z.infer<typeof streamingArchiveFormat>),
                   color: 'gray',
                 }))
               : [],
@@ -105,17 +116,25 @@ export default function NodeBackupRow({ node, backup }: { node: Node; backup: Ad
               </Code>
             </TableData>
 
-            <TableData>{backup.checksum && <Code>{backup.checksum}</Code>}</TableData>
+            {backup.isSuccessful || !backup.completed ? (
+              <>
+                <TableData>{backup.checksum && <Code>{backup.checksum}</Code>}</TableData>
 
-            {backup.completed ? (
-              <TableData>{bytesToString(backup.bytes)}</TableData>
+                {backup.completed ? (
+                  <TableData>{bytesToString(backup.bytes)}</TableData>
+                ) : (
+                  <TableData colSpan={2}>
+                    <Spinner />
+                  </TableData>
+                )}
+
+                <TableData>{backup.completed ? backup.files : null}</TableData>
+              </>
             ) : (
-              <TableData colSpan={2}>
-                <Spinner />
+              <TableData colSpan={3}>
+                <Badge color='red'>{t('common.badge.failed', {})}</Badge>
               </TableData>
             )}
-
-            <TableData>{backup.completed ? backup.files : null}</TableData>
 
             <TableData>
               <FormattedTimestamp timestamp={backup.created} />

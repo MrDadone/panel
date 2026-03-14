@@ -1,10 +1,9 @@
-name: Release
+name: Release Nightly
 
 on:
   push:
     branches:
       - main
-      - nightly
 
 env:
   BIN_NAME: panel-rs
@@ -64,7 +63,7 @@ jobs:
     needs: [build-frontend]
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         build:
           - x86_64-linux
@@ -123,7 +122,7 @@ jobs:
 
       - name: Run tests (Linux)
         if: contains(matrix.target, 'linux')
-        run: cross test --target ${{ matrix.target }}
+        run: cross test --release --target ${{ matrix.target }}
 
       - name: Run tests (Non-Linux)
         if: ${{ !contains(matrix.target, 'linux') }}
@@ -158,37 +157,6 @@ jobs:
           name: ${{ env.PROJECT_NAME }}-${{ matrix.build }}
           path: dist/${{ env.BIN_NAME }}-${{ matrix.build }}${{ matrix.binary_suffix }}
 
-  publish:
-    name: Publish
-    needs: [dist]
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          pattern: ${{ env.PROJECT_NAME }}*
-
-      - name: Fetch version from Cargo.toml
-        id: version
-        run: echo "val=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version')" >> $GITHUB_OUTPUT
-
-      - name: Upload binaries to GitHub Release (main)
-        if: github.ref == 'refs/heads/main'
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: artifacts/${{ env.PROJECT_NAME }}-*/*
-          file_glob: true
-          tag: ${{ steps.version.outputs.val }}
-          overwrite: true
-
   create-multiarch-image:
     name: Create multi-arch Docker image
     needs: [dist]
@@ -221,7 +189,7 @@ jobs:
 
       - name: Prepare binaries
         run: |
-          mkdir -p .docker/amd64 .docker/arm64 .docker/riscv64 .docker/ppc64le .docker/s390x
+          mkdir -p .docker/amd64 .docker/arm64 .docker/riscv64 .docker/ppc64le
           cp dist/${{ env.PROJECT_NAME }}-x86_64-linux/${{ env.BIN_NAME }}-x86_64-linux .docker/amd64/panel-rs
           cp dist/${{ env.PROJECT_NAME }}-aarch64-linux/${{ env.BIN_NAME }}-aarch64-linux .docker/arm64/panel-rs
           cp dist/${{ env.PROJECT_NAME }}-riscv64-linux/${{ env.BIN_NAME }}-riscv64-linux .docker/riscv64/panel-rs
@@ -229,23 +197,7 @@ jobs:
 
           chmod +x .docker/*/panel-rs
 
-      - name: Extract version
-        id: version
-        run: echo "val=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version')" >> $GITHUB_OUTPUT
-
-      - name: Build & push multi-arch image (main)
-        if: github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64,linux/riscv64,linux/ppc64le
-          push: true
-          tags: ghcr.io/${{ env.REPO_NAME }}:latest,ghcr.io/${{ env.REPO_NAME }}:nightly,ghcr.io/${{ env.REPO_NAME }}:${{ steps.version.outputs.val }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build & push multi-arch image (nightly)
-        if: github.ref == 'refs/heads/nightly'
+      - name: Build & push multi-arch image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -255,27 +207,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build & push multi-arch heavy image (main)
-        if: github.ref == 'refs/heads/main'
+      - name: Build & push multi-arch heavy image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile.heavy
           platforms: linux/amd64,linux/arm64
-          #,linux/riscv64,linux/ppc64le
-          push: true
-          tags: ghcr.io/${{ env.REPO_NAME }}:heavy,ghcr.io/${{ env.REPO_NAME }}:nightly-heavy,ghcr.io/${{ env.REPO_NAME }}:${{ steps.version.outputs.val }}-heavy
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build & push multi-arch heavy image (nightly)
-        if: github.ref == 'refs/heads/nightly'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile.heavy
-          platforms: linux/amd64,linux/arm64
-          #,linux/riscv64,linux/ppc64le
           push: true
           tags: ghcr.io/${{ env.REPO_NAME }}:nightly-heavy
           cache-from: type=gha
