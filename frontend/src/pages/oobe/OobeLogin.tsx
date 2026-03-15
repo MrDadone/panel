@@ -1,6 +1,6 @@
 import { faInfoCircle, faLock, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Alert, Group, Stack, Title } from '@mantine/core';
+import { Alert, Stack, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';

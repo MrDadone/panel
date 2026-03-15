@@ -94,17 +94,15 @@ export default function OobeLocation({ onNext, skipFrom }: OobeComponentProps) {
   };
 
   return (
-    <Stack gap='lg' >
-      <Title order={2} >
-        {t('pages.oobe.location.title', {})}
-      </Title>
+    <Stack gap='lg'>
+      <Title order={2}>{t('pages.oobe.location.title', {})}</Title>
 
       {error && <AlertError error={error} setError={setError} />}
 
       <form onSubmit={form.onSubmit(() => onSubmit())}>
         <Stack gap='xl'>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col md:flex-row gap-4">
+          <div className='flex flex-col gap-4'>
+            <div className='flex flex-col md:flex-row gap-4'>
               <TextInput
                 label={t('pages.oobe.location.form.locationName', {})}
                 placeholder={t('pages.oobe.location.form.locationNamePlaceholder', {})}
@@ -118,8 +116,8 @@ export default function OobeLocation({ onNext, skipFrom }: OobeComponentProps) {
                 placeholder={t('pages.oobe.location.form.backupNamePlaceholder', {})}
                 leftSection={<FontAwesomeIcon icon={faRainbow} size='sm' />}
                 required
-                     className='flex-1'
-                     {...form.getInputProps('backupName')}
+                className='flex-1'
+                {...form.getInputProps('backupName')}
               />
             </div>
             <Select

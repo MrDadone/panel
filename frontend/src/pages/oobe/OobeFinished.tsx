@@ -44,7 +44,7 @@ export default function OobeFinished() {
   };
 
   return (
-    <Stack gap='xl' >
+    <Stack gap='xl'>
       <div>
         <Title order={2} ta='center' mb='xs'>
           {t('pages.oobe.finished.title', {})}

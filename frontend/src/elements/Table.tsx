@@ -12,7 +12,6 @@ import {
   TableTrProps,
   Text,
 } from '@mantine/core';
-import classNames from 'classnames';
 import { forwardRef, ReactNode, startTransition, useEffect } from 'react';
 import Spinner from '@/elements/Spinner.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';

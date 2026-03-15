@@ -1,6 +1,6 @@
 import { faAddressCard, faGlobe } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Group, Stack, Title } from '@mantine/core';
+import { Stack, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -84,13 +84,13 @@ export default function OobeConfiguration({ onNext }: OobeComponentProps) {
 
       <form onSubmit={form.onSubmit(() => onSubmit())}>
         <Stack gap='xl¢'>
-          <div className="flex flex-col gap-4">
+          <div className='flex flex-col gap-4'>
             <div className='flex flex-col md:flex-row gap-2 '>
               <TextInput
                 label={t('pages.oobe.configuration.form.applicationName', {})}
                 placeholder={t('pages.oobe.configuration.form.applicationNamePlaceholder', {})}
                 leftSection={<FontAwesomeIcon icon={faAddressCard} size='sm' />}
-                className={'flex-1'}
+                className='flex-1'
                 required
                 {...form.getInputProps('applicationName')}
               />
@@ -102,7 +102,7 @@ export default function OobeConfiguration({ onNext }: OobeComponentProps) {
                   label: new Intl.DisplayNames([language], { type: 'language' }).of(language) ?? language,
                   value: language,
                 }))}
-                className={'flex-1'}
+                className='flex-1'
                 {...form.getInputProps('applicationLanguage')}
               />
             </div>
@@ -127,9 +127,9 @@ export default function OobeConfiguration({ onNext }: OobeComponentProps) {
             </Card>
           </div>
 
-            <Button type='submit'  className='md:max-w-fit md:ml-auto'  disabled={!form.isValid()} loading={loading}>
-              {t('pages.oobe.configuration.button.submit', {})}
-            </Button>
+          <Button type='submit' className='md:max-w-fit md:ml-auto' disabled={!form.isValid()} loading={loading}>
+            {t('pages.oobe.configuration.button.submit', {})}
+          </Button>
         </Stack>
       </form>
     </Stack>

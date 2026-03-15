@@ -1,6 +1,6 @@
 import { faEnvelope, faLock, faShieldHalved, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Alert, Group, Stack, Title } from '@mantine/core';
+import { Alert, Stack, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -81,7 +81,7 @@ export default function OobeRegister({ onNext }: OobeComponentProps) {
                 placeholder={t('pages.oobe.register.form.firstNamePlaceholder', {})}
                 leftSection={<FontAwesomeIcon icon={faUser} size='sm' />}
                 required
-                className={'flex-1'}
+                className='flex-1'
                 {...form.getInputProps('nameFirst')}
               />
               <TextInput
@@ -89,7 +89,7 @@ export default function OobeRegister({ onNext }: OobeComponentProps) {
                 placeholder={t('pages.oobe.register.form.lastNamePlaceholder', {})}
                 leftSection={<FontAwesomeIcon icon={faUser} size='sm' />}
                 required
-                className={'flex-1'}
+                className='flex-1'
                 {...form.getInputProps('nameLast')}
               />
             </div>
@@ -100,8 +100,8 @@ export default function OobeRegister({ onNext }: OobeComponentProps) {
                 placeholder={t('pages.oobe.register.form.usernamePlaceholder', {})}
                 leftSection={<FontAwesomeIcon icon={faUser} size='sm' />}
                 required
-                           className={'flex-1'}
-     {...form.getInputProps('username')}
+                className='flex-1'
+                {...form.getInputProps('username')}
               />
               <TextInput
                 label={t('pages.oobe.register.form.email', {})}
@@ -109,8 +109,8 @@ export default function OobeRegister({ onNext }: OobeComponentProps) {
                 leftSection={<FontAwesomeIcon icon={faEnvelope} size='sm' />}
                 type='email'
                 required
-                          className={'flex-1'}
-      {...form.getInputProps('email')}
+                className='flex-1'
+                {...form.getInputProps('email')}
               />
             </div>
 
@@ -120,7 +120,7 @@ export default function OobeRegister({ onNext }: OobeComponentProps) {
                 placeholder={t('pages.oobe.register.form.passwordPlaceholder', {})}
                 leftSection={<FontAwesomeIcon icon={faLock} size='sm' />}
                 required
-                className={'flex-1'}
+                className='flex-1'
                 {...form.getInputProps('password')}
               />
               <PasswordInput
@@ -128,7 +128,7 @@ export default function OobeRegister({ onNext }: OobeComponentProps) {
                 placeholder={t('pages.oobe.register.form.confirmPasswordPlaceholder', {})}
                 leftSection={<FontAwesomeIcon icon={faLock} size='sm' />}
                 required
-                className={'flex-1'}
+                className='flex-1'
                 {...form.getInputProps('confirmPassword')}
               />
             </div>

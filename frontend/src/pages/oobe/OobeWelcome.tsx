@@ -1,6 +1,6 @@
 import { faCheckCircle, faRocket } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Group, List, Stack, Text, ThemeIcon, Title } from '@mantine/core';
+import { List, Text, ThemeIcon } from '@mantine/core';
 import Button from '@/elements/Button.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { OobeComponentProps } from '@/routers/OobeRouter.tsx';

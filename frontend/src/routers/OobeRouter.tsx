@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Box, Center, Container, Group, Stepper, Text, Title } from '@mantine/core';
+import { Box, Stepper, Text, Title } from '@mantine/core';
 import { useEffect } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router';
 import { z } from 'zod';
@@ -77,7 +77,6 @@ export default function OobeRouter() {
     navigate(to(skipToStep.path, '/oobe'));
   };
 
-  
   return (
     <ContentContainer title={`Setting up ${settings.app.name}`}>
       <div className='flex flex-col gap-4 items-center justify-center min-h-screen p-4'>

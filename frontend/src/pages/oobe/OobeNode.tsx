@@ -82,16 +82,14 @@ export default function OobeNode({ onNext, skipFrom }: OobeComponentProps) {
   };
 
   return (
-    <Stack gap='lg' >
-      <Title order={2} >
-        {t('pages.oobe.node.title', {})}
-      </Title>
+    <Stack gap='lg'>
+      <Title order={2}>{t('pages.oobe.node.title', {})}</Title>
 
       {error && <AlertError error={error} setError={setError} />}
 
       <form onSubmit={form.onSubmit(() => onSubmit())}>
-          <Stack gap='xl'>
-        <div className="flex flex-col gap-4">
+        <Stack gap='xl'>
+          <div className='flex flex-col gap-4'>
             <Group grow>
               <TextInput
                 withAsterisk
@@ -153,9 +151,9 @@ export default function OobeNode({ onNext, skipFrom }: OobeComponentProps) {
                 onChange={(value) => form.setFieldValue('disk', value)}
               />
             </Group>
-        </div>
+          </div>
 
-          <Group justify='flex-end' >
+          <Group justify='flex-end'>
             {!!skipFrom && (
               <Button variant='outline' onClick={() => skipFrom('node')}>
                 {t('common.button.skip', {})}
