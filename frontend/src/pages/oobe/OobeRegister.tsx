@@ -58,10 +58,8 @@ export default function OobeRegister({ onNext }: OobeComponentProps) {
   };
 
   return (
-    <Stack gap='lg' py='md'>
-      <Title order={2} mb='xs'>
-        {t('pages.oobe.register.title', {})}
-      </Title>
+    <Stack gap='lg'>
+      <Title order={2}>{t('pages.oobe.register.title', {})}</Title>
 
       {error && <AlertError error={error} setError={setError} />}
 
@@ -75,61 +73,70 @@ export default function OobeRegister({ onNext }: OobeComponentProps) {
       </Alert>
 
       <form onSubmit={form.onSubmit(() => onSubmit())}>
-        <Stack gap='md'>
-          <TextInput
-            label={t('pages.oobe.register.form.username', {})}
-            placeholder={t('pages.oobe.register.form.usernamePlaceholder', {})}
-            leftSection={<FontAwesomeIcon icon={faUser} size='sm' />}
-            required
-            {...form.getInputProps('username')}
-          />
+        <Stack gap='xl'>
+          <div className='flex flex-col gap-4'>
+            <div className='flex flex-col md:flex-row gap-2 '>
+              <TextInput
+                label={t('pages.oobe.register.form.firstName', {})}
+                placeholder={t('pages.oobe.register.form.firstNamePlaceholder', {})}
+                leftSection={<FontAwesomeIcon icon={faUser} size='sm' />}
+                required
+                className={'flex-1'}
+                {...form.getInputProps('nameFirst')}
+              />
+              <TextInput
+                label={t('pages.oobe.register.form.lastName', {})}
+                placeholder={t('pages.oobe.register.form.lastNamePlaceholder', {})}
+                leftSection={<FontAwesomeIcon icon={faUser} size='sm' />}
+                required
+                className={'flex-1'}
+                {...form.getInputProps('nameLast')}
+              />
+            </div>
 
-          <TextInput
-            label={t('pages.oobe.register.form.email', {})}
-            placeholder={t('pages.oobe.register.form.emailPlaceholder', {})}
-            leftSection={<FontAwesomeIcon icon={faEnvelope} size='sm' />}
-            type='email'
-            required
-            {...form.getInputProps('email')}
-          />
+            <div className='flex flex-col md:flex-row gap-2 '>
+              <TextInput
+                label={t('pages.oobe.register.form.username', {})}
+                placeholder={t('pages.oobe.register.form.usernamePlaceholder', {})}
+                leftSection={<FontAwesomeIcon icon={faUser} size='sm' />}
+                required
+                           className={'flex-1'}
+     {...form.getInputProps('username')}
+              />
+              <TextInput
+                label={t('pages.oobe.register.form.email', {})}
+                placeholder={t('pages.oobe.register.form.emailPlaceholder', {})}
+                leftSection={<FontAwesomeIcon icon={faEnvelope} size='sm' />}
+                type='email'
+                required
+                          className={'flex-1'}
+      {...form.getInputProps('email')}
+              />
+            </div>
 
-          <TextInput
-            label={t('pages.oobe.register.form.firstName', {})}
-            placeholder={t('pages.oobe.register.form.firstNamePlaceholder', {})}
-            leftSection={<FontAwesomeIcon icon={faUser} size='sm' />}
-            required
-            {...form.getInputProps('nameFirst')}
-          />
+            <div className='flex flex-col md:flex-row gap-2'>
+              <PasswordInput
+                label={t('pages.oobe.register.form.password', {})}
+                placeholder={t('pages.oobe.register.form.passwordPlaceholder', {})}
+                leftSection={<FontAwesomeIcon icon={faLock} size='sm' />}
+                required
+                className={'flex-1'}
+                {...form.getInputProps('password')}
+              />
+              <PasswordInput
+                label={t('pages.oobe.register.form.confirmPassword', {})}
+                placeholder={t('pages.oobe.register.form.confirmPasswordPlaceholder', {})}
+                leftSection={<FontAwesomeIcon icon={faLock} size='sm' />}
+                required
+                className={'flex-1'}
+                {...form.getInputProps('confirmPassword')}
+              />
+            </div>
+          </div>
 
-          <TextInput
-            label={t('pages.oobe.register.form.lastName', {})}
-            placeholder={t('pages.oobe.register.form.lastNamePlaceholder', {})}
-            leftSection={<FontAwesomeIcon icon={faUser} size='sm' />}
-            required
-            {...form.getInputProps('nameLast')}
-          />
-
-          <PasswordInput
-            label={t('pages.oobe.register.form.password', {})}
-            placeholder={t('pages.oobe.register.form.passwordPlaceholder', {})}
-            leftSection={<FontAwesomeIcon icon={faLock} size='sm' />}
-            required
-            {...form.getInputProps('password')}
-          />
-
-          <PasswordInput
-            label={t('pages.oobe.register.form.confirmPassword', {})}
-            placeholder={t('pages.oobe.register.form.confirmPasswordPlaceholder', {})}
-            leftSection={<FontAwesomeIcon icon={faLock} size='sm' />}
-            required
-            {...form.getInputProps('confirmPassword')}
-          />
-
-          <Group justify='flex-end' mt='xl'>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              {t('pages.oobe.register.button.create', {})}
-            </Button>
-          </Group>
+          <Button type='submit' className='md:max-w-fit md:ml-auto' disabled={!form.isValid()} loading={loading}>
+            {t('pages.oobe.register.button.create', {})}
+          </Button>
         </Stack>
       </form>
     </Stack>

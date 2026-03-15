@@ -82,81 +82,80 @@ export default function OobeNode({ onNext, skipFrom }: OobeComponentProps) {
   };
 
   return (
-    <Stack gap='lg' py='md'>
-      <Title order={2} mb='xs'>
+    <Stack gap='lg' >
+      <Title order={2} >
         {t('pages.oobe.node.title', {})}
       </Title>
 
       {error && <AlertError error={error} setError={setError} />}
 
       <form onSubmit={form.onSubmit(() => onSubmit())}>
-        <Stack gap='md'>
-          <Group grow>
-            <TextInput
-              withAsterisk
-              label={t('pages.oobe.node.form.name', {})}
-              placeholder={t('pages.oobe.node.form.namePlaceholder', {})}
-              leftSection={<FontAwesomeIcon icon={faAddressCard} size='sm' />}
-              {...form.getInputProps('name')}
-            />
-          </Group>
+          <Stack gap='xl'>
+        <div className="flex flex-col gap-4">
+            <Group grow>
+              <TextInput
+                withAsterisk
+                label={t('pages.oobe.node.form.name', {})}
+                placeholder={t('pages.oobe.node.form.namePlaceholder', {})}
+                leftSection={<FontAwesomeIcon icon={faAddressCard} size='sm' />}
+                {...form.getInputProps('name')}
+              />
+            </Group>
+            <Group grow>
+              <TextInput
+                withAsterisk
+                label={t('pages.oobe.node.form.url', {})}
+                description={t('pages.oobe.node.form.urlDescription', {})}
+                leftSection={<FontAwesomeIcon icon={faGlobe} size='sm' />}
+                placeholder={t('pages.oobe.node.form.urlPlaceholder', {})}
+                {...form.getInputProps('url')}
+              />
+              <TextInput
+                label={t('pages.oobe.node.form.publicUrl', {})}
+                description={t('pages.oobe.node.form.publicUrlDescription', {})}
+                leftSection={<FontAwesomeIcon icon={faGlobeAmericas} size='sm' />}
+                placeholder={t('pages.oobe.node.form.publicUrlPlaceholder', {})}
+                {...form.getInputProps('publicUrl')}
+              />
+            </Group>
+            <Group grow>
+              <TextInput
+                label={t('pages.oobe.node.form.sftpHost', {})}
+                placeholder={t('pages.oobe.node.form.sftpHostPlaceholder', {})}
+                leftSection={<FontAwesomeIcon icon={faNetworkWired} size='sm' />}
+                {...form.getInputProps('sftpHost')}
+              />
+              <NumberInput
+                withAsterisk
+                label={t('pages.oobe.node.form.sftpPort', {})}
+                placeholder={t('pages.oobe.node.form.sftpPortPlaceholder', {})}
+                leftSection={<FontAwesomeIcon icon={faNetworkWired} size='sm' />}
+                min={1}
+                max={65535}
+                {...form.getInputProps('sftpPort')}
+              />
+            </Group>
+            <Group grow>
+              <SizeInput
+                withAsterisk
+                label={t('pages.oobe.node.form.memory', {})}
+                mode='mb'
+                min={0}
+                value={form.values.memory}
+                onChange={(value) => form.setFieldValue('memory', value)}
+              />
+              <SizeInput
+                withAsterisk
+                label={t('pages.oobe.node.form.disk', {})}
+                mode='mb'
+                min={0}
+                value={form.values.disk}
+                onChange={(value) => form.setFieldValue('disk', value)}
+              />
+            </Group>
+        </div>
 
-          <Group grow>
-            <TextInput
-              withAsterisk
-              label={t('pages.oobe.node.form.url', {})}
-              description={t('pages.oobe.node.form.urlDescription', {})}
-              leftSection={<FontAwesomeIcon icon={faGlobe} size='sm' />}
-              placeholder={t('pages.oobe.node.form.urlPlaceholder', {})}
-              {...form.getInputProps('url')}
-            />
-            <TextInput
-              label={t('pages.oobe.node.form.publicUrl', {})}
-              description={t('pages.oobe.node.form.publicUrlDescription', {})}
-              leftSection={<FontAwesomeIcon icon={faGlobeAmericas} size='sm' />}
-              placeholder={t('pages.oobe.node.form.publicUrlPlaceholder', {})}
-              {...form.getInputProps('publicUrl')}
-            />
-          </Group>
-
-          <Group grow>
-            <TextInput
-              label={t('pages.oobe.node.form.sftpHost', {})}
-              placeholder={t('pages.oobe.node.form.sftpHostPlaceholder', {})}
-              leftSection={<FontAwesomeIcon icon={faNetworkWired} size='sm' />}
-              {...form.getInputProps('sftpHost')}
-            />
-            <NumberInput
-              withAsterisk
-              label={t('pages.oobe.node.form.sftpPort', {})}
-              placeholder={t('pages.oobe.node.form.sftpPortPlaceholder', {})}
-              leftSection={<FontAwesomeIcon icon={faNetworkWired} size='sm' />}
-              min={1}
-              max={65535}
-              {...form.getInputProps('sftpPort')}
-            />
-          </Group>
-
-          <Group grow>
-            <SizeInput
-              withAsterisk
-              label={t('pages.oobe.node.form.memory', {})}
-              mode='mb'
-              min={0}
-              value={form.values.memory}
-              onChange={(value) => form.setFieldValue('memory', value)}
-            />
-            <SizeInput
-              withAsterisk
-              label={t('pages.oobe.node.form.disk', {})}
-              mode='mb'
-              min={0}
-              value={form.values.disk}
-              onChange={(value) => form.setFieldValue('disk', value)}
-            />
-          </Group>
-
-          <Group justify='flex-end' mt='xl'>
+          <Group justify='flex-end' >
             {!!skipFrom && (
               <Button variant='outline' onClick={() => skipFrom('node')}>
                 {t('common.button.skip', {})}

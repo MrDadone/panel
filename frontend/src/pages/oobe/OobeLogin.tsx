@@ -68,41 +68,37 @@ export default function OobeLogin({ onNext }: OobeComponentProps) {
   };
 
   return (
-    <Stack gap='lg' py='md'>
-      <Title order={2} mb='xs'>
-        {t('pages.oobe.login.title', {})}
-      </Title>
-
-      {error && <AlertError error={error} setError={setError} />}
+    <Stack gap='md'>
+      <Title order={2}>{t('pages.oobe.login.title', {})}</Title>
 
       <Alert icon={<FontAwesomeIcon icon={faInfoCircle} />} color='blue' variant='light'>
         {t('pages.oobe.login.alert', {})}
       </Alert>
 
+      {error && <AlertError error={error} setError={setError} />}
+
       <form onSubmit={form.onSubmit(() => onSubmit())}>
-        <Stack gap='md'>
-          <TextInput
-            label={t('pages.oobe.login.form.username', {})}
-            placeholder={t('pages.oobe.login.form.usernamePlaceholder', {})}
-            leftSection={<FontAwesomeIcon icon={faUser} size='sm' />}
-            required
-            {...form.getInputProps('username')}
-          />
-
-          <PasswordInput
-            label={t('pages.oobe.login.form.password', {})}
-            placeholder={t('pages.oobe.login.form.passwordPlaceholder', {})}
-            leftSection={<FontAwesomeIcon icon={faLock} size='sm' />}
-            required
-            {...form.getInputProps('password')}
-          />
-
-          <Group justify='flex-end' mt='xl'>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              {t('pages.oobe.login.button.login', {})}
-            </Button>
-          </Group>
-        </Stack>
+        <div className='flex flex-col gap-6'>
+          <Stack gap='sm'>
+            <TextInput
+              label={t('pages.oobe.login.form.username', {})}
+              placeholder={t('pages.oobe.login.form.usernamePlaceholder', {})}
+              leftSection={<FontAwesomeIcon icon={faUser} size='sm' />}
+              required
+              {...form.getInputProps('username')}
+            />
+            <PasswordInput
+              label={t('pages.oobe.login.form.password', {})}
+              placeholder={t('pages.oobe.login.form.passwordPlaceholder', {})}
+              leftSection={<FontAwesomeIcon icon={faLock} size='sm' />}
+              required
+              {...form.getInputProps('password')}
+            />
+          </Stack>
+          <Button type='submit' className='min-w-fit md:w-fit md:ml-auto' disabled={!form.isValid()} loading={loading}>
+            {t('pages.oobe.login.button.login', {})}
+          </Button>
+        </div>
       </form>
     </Stack>
   );

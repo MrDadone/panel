@@ -8,22 +8,9 @@ import { OobeComponentProps } from '@/routers/OobeRouter.tsx';
 export default function OobeWelcome({ onNext }: OobeComponentProps) {
   const { t } = useTranslations();
   return (
-    <Stack gap='xl' py='md'>
-      <Group justify='center' mb='md'>
-        <img src='/icon.svg' className='h-64 py-4' alt='Calagopus Icon' />
-      </Group>
-
-      <div>
-        <Title order={2} ta='center' mb='md'>
-          {t('pages.oobe.welcome.title', {})}
-        </Title>
-        <Text size='lg' ta='center' c='dimmed'>
-          {t('pages.oobe.welcome.subtitle', {})}
-        </Text>
-      </div>
-
-      <Stack gap='md' mt='lg'>
-        <Text size='sm' fw={500}>
+    <div className='flex flex-col gap-4'>
+      <div className='flex flex-col gap-2'>
+        <Text size='md' fw={500}>
           {t('pages.oobe.welcome.wizardIntro', {})}
         </Text>
 
@@ -43,13 +30,11 @@ export default function OobeWelcome({ onNext }: OobeComponentProps) {
           <List.Item>{t('pages.oobe.welcome.steps.node', {})}</List.Item>
           <List.Item>{t('pages.oobe.welcome.steps.server', {})}</List.Item>
         </List>
-      </Stack>
+      </div>
 
-      <Group justify='flex-end' mt='xl'>
-        <Button leftSection={<FontAwesomeIcon icon={faRocket} />} onClick={onNext}>
-          {t('pages.oobe.welcome.button.start', {})}
-        </Button>
-      </Group>
-    </Stack>
+      <Button className='md:max-w-fit md:ml-auto' leftSection={<FontAwesomeIcon icon={faRocket} />} onClick={onNext}>
+        {t('pages.oobe.welcome.button.start', {})}
+      </Button>
+    </div>
   );
 }

@@ -44,7 +44,7 @@ export default function OobeFinished() {
   };
 
   return (
-    <Stack gap='xl' py='md'>
+    <Stack gap='xl' >
       <div>
         <Title order={2} ta='center' mb='xs'>
           {t('pages.oobe.finished.title', {})}
@@ -54,7 +54,7 @@ export default function OobeFinished() {
         </Text>
       </div>
 
-      <Paper p='lg' withBorder radius='md' mt='md'>
+      <Paper p='lg' withBorder radius='md'>
         <Group mb='md'>
           <FontAwesomeIcon icon={faCheckCircle} style={{ color: 'var(--mantine-color-teal-6)' }} />
           <Text fw={600} size='sm'>

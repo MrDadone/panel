@@ -10,6 +10,7 @@ import updateApplicationSettings from '@/api/admin/settings/updateApplicationSet
 import { httpErrorToHuman } from '@/api/axios.ts';
 import AlertError from '@/elements/alerts/AlertError.tsx';
 import Button from '@/elements/Button.tsx';
+import Card from '@/elements/Card.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
@@ -76,59 +77,59 @@ export default function OobeConfiguration({ onNext }: OobeComponentProps) {
   };
 
   return (
-    <Stack gap='lg' py='md'>
-      <Title order={2} mb='xs'>
-        {t('pages.oobe.configuration.title', {})}
-      </Title>
+    <Stack gap='lg'>
+      <Title order={2}>{t('pages.oobe.configuration.title', {})}</Title>
 
       {error && <AlertError error={error} setError={setError} />}
 
       <form onSubmit={form.onSubmit(() => onSubmit())}>
-        <Stack gap='md'>
-          <TextInput
-            label={t('pages.oobe.configuration.form.applicationName', {})}
-            placeholder={t('pages.oobe.configuration.form.applicationNamePlaceholder', {})}
-            leftSection={<FontAwesomeIcon icon={faAddressCard} size='sm' />}
-            required
-            {...form.getInputProps('applicationName')}
-          />
+        <Stack gap='xl¢'>
+          <div className="flex flex-col gap-4">
+            <div className='flex flex-col md:flex-row gap-2 '>
+              <TextInput
+                label={t('pages.oobe.configuration.form.applicationName', {})}
+                placeholder={t('pages.oobe.configuration.form.applicationNamePlaceholder', {})}
+                leftSection={<FontAwesomeIcon icon={faAddressCard} size='sm' />}
+                className={'flex-1'}
+                required
+                {...form.getInputProps('applicationName')}
+              />
+              <Select
+                withAsterisk
+                label={t('pages.oobe.configuration.form.language', {})}
+                placeholder={t('pages.oobe.configuration.form.languagePlaceholder', {})}
+                data={languages.map((language) => ({
+                  label: new Intl.DisplayNames([language], { type: 'language' }).of(language) ?? language,
+                  value: language,
+                }))}
+                className={'flex-1'}
+                {...form.getInputProps('applicationLanguage')}
+              />
+            </div>
+            <TextInput
+              label={t('pages.oobe.configuration.form.applicationUrl', {})}
+              placeholder={t('pages.oobe.configuration.form.applicationUrlPlaceholder', {})}
+              leftSection={<FontAwesomeIcon icon={faGlobe} size='sm' />}
+              required
+              {...form.getInputProps('applicationUrl')}
+            />
+            <Card>
+              <Switch
+                label={t('pages.oobe.configuration.form.telemetry', {})}
+                description={t('pages.oobe.configuration.form.telemetryDescription', {})}
+                {...form.getInputProps('applicationTelemetry', { type: 'checkbox' })}
+              />
+              <Switch
+                label={t('pages.oobe.configuration.form.registration', {})}
+                description={t('pages.oobe.configuration.form.registrationDescription', {})}
+                {...form.getInputProps('applicationRegistration', { type: 'checkbox' })}
+              />
+            </Card>
+          </div>
 
-          <Select
-            withAsterisk
-            label={t('pages.oobe.configuration.form.language', {})}
-            placeholder={t('pages.oobe.configuration.form.languagePlaceholder', {})}
-            data={languages.map((language) => ({
-              label: new Intl.DisplayNames([language], { type: 'language' }).of(language) ?? language,
-              value: language,
-            }))}
-            {...form.getInputProps('applicationLanguage')}
-          />
-
-          <TextInput
-            label={t('pages.oobe.configuration.form.applicationUrl', {})}
-            placeholder={t('pages.oobe.configuration.form.applicationUrlPlaceholder', {})}
-            leftSection={<FontAwesomeIcon icon={faGlobe} size='sm' />}
-            required
-            {...form.getInputProps('applicationUrl')}
-          />
-
-          <Switch
-            label={t('pages.oobe.configuration.form.telemetry', {})}
-            description={t('pages.oobe.configuration.form.telemetryDescription', {})}
-            {...form.getInputProps('applicationTelemetry', { type: 'checkbox' })}
-          />
-
-          <Switch
-            label={t('pages.oobe.configuration.form.registration', {})}
-            description={t('pages.oobe.configuration.form.registrationDescription', {})}
-            {...form.getInputProps('applicationRegistration', { type: 'checkbox' })}
-          />
-
-          <Group justify='flex-end' mt='xl'>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
+            <Button type='submit'  className='md:max-w-fit md:ml-auto'  disabled={!form.isValid()} loading={loading}>
               {t('pages.oobe.configuration.button.submit', {})}
             </Button>
-          </Group>
         </Stack>
       </form>
     </Stack>

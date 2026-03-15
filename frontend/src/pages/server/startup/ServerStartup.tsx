@@ -123,7 +123,7 @@ export default function ServerStartup() {
             placeholder={t('pages.server.startup.form.startupCommand', {})}
             value={command}
             onChange={(e) => setCommand(e.target.value)}
-            disabled={!useServerCan('startup.command') || !settings.server.allowEditingStartupCommand}
+            readOnly={!useServerCan('startup.command') || !settings.server.allowEditingStartupCommand}
             autosize
             rightSection={
               <Tooltip label={t('common.tooltip.resetToDefault', {})}>

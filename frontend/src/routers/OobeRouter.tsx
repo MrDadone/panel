@@ -1,15 +1,15 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { BackgroundImage, Box, Center, Container, Stepper } from '@mantine/core';
+import { Box, Center, Container, Group, Stepper, Text, Title } from '@mantine/core';
 import { useEffect } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router';
 import { z } from 'zod';
 import updateOobeSettings from '@/api/admin/settings/updateOobeSettings.ts';
-import minecraftBackground from '@/assets/minecraft_background.webp';
 import Card from '@/elements/Card.tsx';
 import ContentContainer from '@/elements/containers/ContentContainer.tsx';
 import { to } from '@/lib/routes.ts';
 import { oobeStepKey } from '@/lib/schemas/oobe.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { steps } from '@/routers/oobeSteps.ts';
 import { useGlobalStore } from '@/stores/global.ts';
 
@@ -19,6 +19,7 @@ export interface OobeComponentProps {
 }
 
 export default function OobeRouter() {
+  const { t } = useTranslations();
   const location = useLocation();
   const navigate = useNavigate();
   const { settings, setSettings } = useGlobalStore();
@@ -76,12 +77,24 @@ export default function OobeRouter() {
     navigate(to(skipToStep.path, '/oobe'));
   };
 
+  
   return (
     <ContentContainer title={`Setting up ${settings.app.name}`}>
-      <BackgroundImage src={minecraftBackground} h='100vh'>
-        <Center h='100%'>
-          <Container w='100%'>
-            <Card>
+      <div className='flex flex-col gap-4 items-center justify-center min-h-screen p-4'>
+        <div className='flex flex-col items-center gap-2'>
+          <img src='/icon.svg' className='h-48' alt='Calagopus Icon' />
+          <div>
+            <Title order={2} ta='center'>
+              {t('pages.oobe.welcome.title', {})}
+            </Title>
+            <Text size='lg' ta='center' c='dimmed'>
+              {t('pages.oobe.welcome.subtitle', {})}
+            </Text>
+          </div>
+        </div>
+        <Card>
+          <div className='flex flex-col gap-6'>
+            {user && (
               <Stepper active={filteredSteps().findIndex((s) => s.path === activeStep?.path)}>
                 {filteredSteps().map((step, index) => (
                   <Stepper.Step
@@ -91,18 +104,17 @@ export default function OobeRouter() {
                   />
                 ))}
               </Stepper>
-
-              <Box>
-                <Routes>
-                  {steps.map(({ component: Component, ...step }, index) => (
-                    <Route key={index} path={step.path} element={<Component onNext={onNext} skipFrom={skipFrom} />} />
-                  ))}
-                </Routes>
-              </Box>
-            </Card>
-          </Container>
-        </Center>
-      </BackgroundImage>
+            )}
+            <Box>
+              <Routes>
+                {steps.map(({ component: Component, ...step }, index) => (
+                  <Route key={index} path={step.path} element={<Component onNext={onNext} skipFrom={skipFrom} />} />
+                ))}
+              </Routes>
+            </Box>
+          </div>
+        </Card>
+      </div>
     </ContentContainer>
   );
 }
