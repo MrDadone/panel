@@ -1,7 +1,6 @@
 import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useEffect, useState } from 'react';
-import { NIL as uuidNil } from 'uuid';
 import { z } from 'zod';
 import getRoles from '@/api/admin/roles/getRoles.ts';
 import createUser from '@/api/admin/users/createUser.ts';
@@ -17,37 +16,46 @@ import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminUserSchema } from '@/lib/schemas/admin/users.ts';
+import { adminFullUserSchema, adminUserUpdateSchema } from '@/lib/schemas/admin/users.ts';
+import { fullUserSchema, roleSchema } from '@/lib/schemas/user.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
+import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 
-export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User }) {
+export default function UserCreateOrUpdate({ contextUser }: { contextUser?: z.infer<typeof fullUserSchema> }) {
+  const { doImpersonate } = useAuth();
   const { settings, languages } = useGlobalStore();
   const { addToast } = useToast();
   const canReadRoles = useAdminCan('roles.read');
 
   const [openModal, setOpenModal] = useState<'delete' | 'disable_two_factor' | null>(null);
 
-  const form = useForm<z.infer<typeof adminUserSchema>>({
+  const form = useForm<z.infer<typeof adminUserUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       username: '',
       email: '',
       nameFirst: '',
       nameLast: '',
-      password: '',
+      password: null,
       admin: false,
       language: settings.app.language,
-      roleUuid: uuidNil,
+      roleUuid: null,
     },
   });
 
-  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminUserSchema>, User>({
+  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<
+    z.infer<typeof adminUserUpdateSchema>,
+    z.infer<typeof adminFullUserSchema>
+  >({
     form,
-    createFn: () => createUser(form.values),
-    updateFn: contextUser ? () => updateUser(contextUser.uuid, form.values) : undefined,
+    createFn: () => createUser(adminUserUpdateSchema.parse(form.getValues())),
+    updateFn: contextUser
+      ? () => updateUser(contextUser.uuid, adminUserUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextUser ? () => deleteUser(contextUser.uuid) : undefined,
     doUpdate: !!contextUser,
     basePath: '/admin/users',
@@ -64,19 +72,23 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
         password: null,
         admin: contextUser.admin,
         language: contextUser.language,
-        roleUuid: contextUser.role?.uuid ?? uuidNil,
+        roleUuid: contextUser.role?.uuid ?? null,
       });
     }
   }, [contextUser]);
 
-  const roles = useSearchableResource<Role>({
+  const roles = useSearchableResource<z.infer<typeof roleSchema>>({
     fetcher: (search) => getRoles(1, search),
     defaultSearchValue: contextUser?.role?.name,
     canRequest: canReadRoles,
   });
 
   const doDisableTwoFactor = async () => {
-    await disableUserTwoFactor(contextUser!.uuid)
+    if (!contextUser) {
+      return;
+    }
+
+    await disableUserTwoFactor(contextUser.uuid)
       .then(() => {
         addToast('User two factor disabled.', 'success');
         contextUser!.totpEnabled = false;
@@ -89,7 +101,11 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
   };
 
   return (
-    <AdminContentContainer title={`${contextUser ? 'Update' : 'Create'} User`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextUser ? 'Update' : 'Create'} User`}
+      fullscreen={!!contextUser}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -97,7 +113,7 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.username}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().username}</Code>?
       </ConfirmationModal>
       <ConfirmationModal
         opened={openModal === 'disable_two_factor'}
@@ -106,19 +122,44 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
         confirm='Disable'
         onConfirmed={doDisableTwoFactor}
       >
-        Are you sure you want to remove the two factor of <Code>{form.values.username}</Code>?
+        Are you sure you want to remove the two factor of <Code>{form.getValues().username}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Username' placeholder='Username' {...form.getInputProps('username')} />
-            <TextInput withAsterisk label='Email' placeholder='Email' type='email' {...form.getInputProps('email')} />
+            <TextInput
+              withAsterisk
+              label='Username'
+              placeholder='Username'
+              key={form.key('username')}
+              {...form.getInputProps('username')}
+            />
+            <TextInput
+              withAsterisk
+              label='Email'
+              placeholder='Email'
+              type='email'
+              key={form.key('email')}
+              {...form.getInputProps('email')}
+            />
           </Group>
 
           <Group grow>
-            <TextInput withAsterisk label='First Name' placeholder='First Name' {...form.getInputProps('nameFirst')} />
-            <TextInput withAsterisk label='Last Name' placeholder='Last Name' {...form.getInputProps('nameLast')} />
+            <TextInput
+              withAsterisk
+              label='First Name'
+              placeholder='First Name'
+              key={form.key('nameFirst')}
+              {...form.getInputProps('nameFirst')}
+            />
+            <TextInput
+              withAsterisk
+              label='Last Name'
+              placeholder='Last Name'
+              key={form.key('nameLast')}
+              {...form.getInputProps('nameLast')}
+            />
           </Group>
 
           <Group grow>
@@ -131,12 +172,13 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
                 value: language,
               }))}
               searchable
+              key={form.key('language')}
               {...form.getInputProps('language')}
             />
 
             <Select
               label='Role'
-              placeholder='Role'
+              placeholder='None'
               data={roles.items.map((role) => ({
                 label: role.name,
                 value: role.uuid,
@@ -145,9 +187,10 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
               searchValue={roles.search}
               onSearchChange={roles.setSearch}
               allowDeselect
+              clearable
               disabled={!canReadRoles}
+              key={form.key('roleUuid')}
               {...form.getInputProps('roleUuid')}
-              onChange={(value) => form.setFieldValue('roleUuid', value || uuidNil)}
             />
           </Group>
 
@@ -156,11 +199,11 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
             label='Password'
             placeholder='Password'
             type='password'
+            key={form.key('password')}
             {...form.getInputProps('password')}
-            onChange={(e) => form.setFieldValue('password', e.target.value || null)}
           />
 
-          <Switch label='Admin' {...form.getInputProps('admin', { type: 'checkbox' })} />
+          <Switch label='Admin' key={form.key('admin')} {...form.getInputProps('admin', { type: 'checkbox' })} />
         </Stack>
 
         <Group mt='md'>
@@ -185,6 +228,11 @@ export default function UserCreateOrUpdate({ contextUser }: { contextUser?: User
                   disabled={!contextUser.totpEnabled}
                 >
                   Disable Two Factor
+                </Button>
+              </AdminCan>
+              <AdminCan action='users.impersonate'>
+                <Button variant='outline' onClick={() => doImpersonate(contextUser)}>
+                  Impersonate
                 </Button>
               </AdminCan>
               <AdminCan action='users.delete' cantDelete>

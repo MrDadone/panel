@@ -15,36 +15,39 @@ import AdminContentContainer from '@/elements/containers/AdminContentContainer.t
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminEggRepositorySchema } from '@/lib/schemas/admin/eggRepositories.ts';
+import { adminEggRepositorySchema, adminEggRepositoryUpdateSchema } from '@/lib/schemas/admin/eggRepositories.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function EggRepositoryCreateOrUpdate({
   contextEggRepository,
 }: {
-  contextEggRepository?: AdminEggRepository;
+  contextEggRepository?: z.infer<typeof adminEggRepositorySchema>;
 }) {
   const { addToast } = useToast();
 
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminEggRepositorySchema>>({
+  const form = useForm<z.infer<typeof adminEggRepositoryUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       description: null,
       gitRepository: '',
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminEggRepositorySchema),
+    validate: zod4Resolver(adminEggRepositoryUpdateSchema),
   });
 
   const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<
-    AdminUpdateEggRepository,
-    AdminEggRepository
+    z.infer<typeof adminEggRepositoryUpdateSchema>,
+    z.infer<typeof adminEggRepositorySchema>
   >({
     form,
-    createFn: () => createEggRepository(form.values),
-    updateFn: contextEggRepository ? () => updateEggRepository(contextEggRepository.uuid, form.values) : undefined,
+    createFn: () => createEggRepository(adminEggRepositoryUpdateSchema.parse(form.getValues())),
+    updateFn: contextEggRepository
+      ? () => updateEggRepository(contextEggRepository.uuid, adminEggRepositoryUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextEggRepository ? () => deleteEggRepository(contextEggRepository.uuid) : undefined,
     doUpdate: !!contextEggRepository,
     basePath: '/admin/egg-repositories',
@@ -62,8 +65,13 @@ export default function EggRepositoryCreateOrUpdate({
   }, [contextEggRepository]);
 
   const doSync = () => {
+    if (!contextEggRepository) {
+      return;
+    }
+
     setLoading(true);
-    syncEggRepository(contextEggRepository!.uuid)
+
+    syncEggRepository(contextEggRepository.uuid)
       .then((found) => {
         addToast(`Egg Repository synchronised, found ${found} Egg${found === 1 ? '' : 's'}.`, 'success');
       })
@@ -74,7 +82,10 @@ export default function EggRepositoryCreateOrUpdate({
   };
 
   return (
-    <AdminContentContainer title={`${contextEggRepository ? 'Update' : 'Create'} Egg Repository`}>
+    <AdminContentContainer
+      title={`${contextEggRepository ? 'Update' : 'Create'} Egg Repository`}
+      fullscreen={!!contextEggRepository}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -82,22 +93,35 @@ export default function EggRepositoryCreateOrUpdate({
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
             <TextInput
               withAsterisk
               label='Git Repository'
               placeholder='Git Repository'
+              key={form.key('gitRepository')}
               {...form.getInputProps('gitRepository')}
             />
           </Group>
 
-          <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
+          <TextArea
+            label='Description'
+            placeholder='Description'
+            rows={3}
+            key={form.key('description')}
+            {...form.getInputProps('description')}
+          />
         </Stack>
 
         <Group mt='md'>

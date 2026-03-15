@@ -1,3 +1,5 @@
+![Calagopus Logo](https://calagopus.com/fulllogo.svg)
+
 # Calagopus Panel
 
 a rewrite of [pterodactyl panel](https://github.com/pterodactyl/panel) in the rust programming language. This rewrite aims to be a better alternative to the original panel, implementing new features, better performance and a new UI.
@@ -31,3 +33,7 @@ cd calagopus
 docker compose pull
 docker compose up -d
 ```
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=calagopus/panel&type=date&legend=top-left)](https://www.star-history.com/#calagopus/panel&type=date&legend=top-left)

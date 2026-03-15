@@ -1,14 +1,15 @@
 import { Stack } from '@mantine/core';
+import { UseFormReturnType } from '@mantine/form';
+import { z } from 'zod';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
+import { serverScheduleStepUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import { useServerStore } from '@/stores/server.ts';
 
 export default function StepUpdateStartupDockerImage({
-  action,
-  setAction,
+  form,
 }: {
-  action: ScheduleActionUpdateStartupDockerImage;
-  setAction: (action: ScheduleActionUpdateStartupDockerImage) => void;
+  form: UseFormReturnType<z.infer<typeof serverScheduleStepUpdateSchema>>;
 }) {
   const server = useServerStore((state) => state.server);
 
@@ -17,23 +18,13 @@ export default function StepUpdateStartupDockerImage({
       <Select
         withAsterisk
         label='Docker Image'
-        value={action.image}
-        onChange={(value) => setAction({ ...action, image: value || '' })}
         data={Object.entries(server.egg.dockerImages).map(([key, value]) => ({
           value,
           label: key,
         }))}
+        {...form.getInputProps('action.image')}
       />
-      <Switch
-        label='Ignore Failure'
-        checked={action.ignoreFailure}
-        onChange={(e) =>
-          setAction({
-            ...action,
-            ignoreFailure: e.target.checked,
-          })
-        }
-      />
+      <Switch label='Ignore Failure' {...form.getInputProps('action.ignoreFailure', { type: 'checkbox' })} />
     </Stack>
   );
 }

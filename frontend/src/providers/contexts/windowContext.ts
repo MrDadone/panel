@@ -2,9 +2,10 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { createContext, ReactNode, useContext } from 'react';
 
 interface WindowContextType {
-  addWindow: (icon: IconDefinition | undefined, title: string | undefined, component: ReactNode) => number;
-  updateWindow: (id: number, title: string | undefined) => void;
+  addWindow: (icon: IconDefinition, title: string, component: ReactNode) => number;
+  updateWindow: (id: number, title: string) => void;
   closeWindow: (id: number) => void;
+  closeAllWindows: () => void;
 }
 
 export const WindowContext = createContext<WindowContextType | undefined>(undefined);

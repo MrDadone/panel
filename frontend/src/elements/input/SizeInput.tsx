@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { ChangeEvent, startTransition, useEffect, useRef, useState } from 'react';
 import { closestUnit, formatUnitBytes, mbToBytes, UNITS, unitToBytes } from '@/lib/size.ts';
-import NumberInput from './NumberInput.tsx';
 import Select from './Select.tsx';
+import TextInput from './TextInput.tsx';
 
 interface SizeInputProps {
   label?: string;
+  description?: string;
   withAsterisk?: boolean;
   mode: 'b' | 'mb';
   min: number;
@@ -35,13 +36,15 @@ export default function SizeInput({ mode, min, value, onChange, ...rest }: SizeI
     } else {
       const bytes = mode === 'b' ? value : mbToBytes(value);
 
-      if (!isInternalChange.current) {
-        const newUnit = getAppropriateUnit(bytes);
-        setUnit(newUnit);
-        setDisplayValue(formatUnitBytes(newUnit, bytes));
-      } else {
-        setDisplayValue(formatUnitBytes(unit, bytes));
-      }
+      startTransition(() => {
+        if (!isInternalChange.current) {
+          const newUnit = getAppropriateUnit(bytes);
+          setUnit(newUnit);
+          setDisplayValue(formatUnitBytes(newUnit, bytes));
+        } else {
+          setDisplayValue(formatUnitBytes(unit, bytes));
+        }
+      });
     }
     isInternalChange.current = false;
   }, [value, mode]);
@@ -52,36 +55,56 @@ export default function SizeInput({ mode, min, value, onChange, ...rest }: SizeI
     const newBytes = unitToBytes(newUnit as never, displayValue);
 
     isInternalChange.current = true;
-    setUnit(newUnit as never);
+
+    startTransition(() => {
+      setUnit(newUnit as never);
+      onChange(mode === 'b' ? newBytes : newBytes / (1024 * 1024));
+    });
+  };
+
+  const handleValueChange = (v: ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseInt(v.target.value, 10);
+    if (isNaN(newValue)) return;
+
+    setDisplayValue(newValue);
+
+    if (newValue === -1) {
+      onChange(-1);
+      return;
+    }
+
+    isInternalChange.current = true;
+    const newBytes = unitToBytes(unit, newValue);
     onChange(mode === 'b' ? newBytes : newBytes / (1024 * 1024));
   };
 
-  const handleValueChange = (v: number | string) => {
-    if (typeof v === 'number') {
-      setDisplayValue(v);
-
-      if (v === -1) {
-        onChange(-1);
-        return;
-      }
-
-      isInternalChange.current = true;
-      const newBytes = unitToBytes(unit, v);
-      onChange(mode === 'b' ? newBytes : newBytes / (1024 * 1024));
-    }
-  };
-
   return (
-    <div className='relative'>
-      <NumberInput {...rest} min={min} value={displayValue} onChange={handleValueChange} hideControls />
-      <Select
-        className='absolute bottom-0 right-0'
-        data={availableUnits}
-        value={unit}
-        onChange={handleUnitChange}
-        maw={72}
-        disabled={displayValue === -1}
-      />
-    </div>
+    <TextInput
+      {...rest}
+      type='number'
+      min={min}
+      value={displayValue}
+      onChange={handleValueChange}
+      rightSectionWidth={92}
+      rightSection={
+        <Select
+          data={availableUnits}
+          value={unit}
+          onChange={handleUnitChange}
+          styles={{
+            input: {
+              fontWeight: 500,
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
+              width: 92,
+              marginRight: -2,
+              marginTop: -5,
+            },
+          }}
+          rightSectionWidth={28}
+          disabled={displayValue === -1}
+        />
+      }
+    />
   );
 }

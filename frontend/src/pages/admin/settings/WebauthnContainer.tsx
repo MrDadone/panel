@@ -21,6 +21,7 @@ export default function WebauthnContainer() {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof adminSettingsWebauthnSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       rpId: '',
       rpOrigin: '',
@@ -37,7 +38,7 @@ export default function WebauthnContainer() {
 
   const doUpdate = () => {
     setLoading(true);
-    updateWebauthnSettings(form.values)
+    updateWebauthnSettings(adminSettingsWebauthnSchema.parse(form.getValues()))
       .then(() => {
         addToast('Webauthn settings updated.', 'success');
       })
@@ -64,8 +65,20 @@ export default function WebauthnContainer() {
       <form onSubmit={form.onSubmit(() => doUpdate())}>
         <Stack>
           <Group grow>
-            <TextInput withAsterisk label='RP Id' placeholder='RP Id' {...form.getInputProps('rpId')} />
-            <TextInput withAsterisk label='RP Origin' placeholder='RP Origin' {...form.getInputProps('rpOrigin')} />
+            <TextInput
+              withAsterisk
+              label='RP Id'
+              placeholder='RP Id'
+              key={form.key('rpId')}
+              {...form.getInputProps('rpId')}
+            />
+            <TextInput
+              withAsterisk
+              label='RP Origin'
+              placeholder='RP Origin'
+              key={form.key('rpOrigin')}
+              {...form.getInputProps('rpOrigin')}
+            />
           </Group>
         </Stack>
 

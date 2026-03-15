@@ -1,27 +1,32 @@
 import { ModalProps, Stack, Switch } from '@mantine/core';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import restoreNodeBackup from '@/api/admin/nodes/backups/restoreNodeBackup.ts';
 import getServers from '@/api/admin/servers/getServers.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerBackupSchema, adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 type Props = ModalProps & {
-  node: Node;
-  backup: AdminServerBackup;
+  node: z.infer<typeof adminNodeSchema>;
+  backup: z.infer<typeof adminServerBackupSchema>;
 };
 
 export default function NodeBackupsRestoreModal({ node, backup, opened, onClose }: Props) {
   const { addToast } = useToast();
 
   const [truncate, setTruncate] = useState(false);
-  const [selectedServer, setSelectedServer] = useState<AdminServer | null>(null);
+  const [selectedServer, setSelectedServer] = useState<z.infer<typeof adminServerSchema> | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const servers = useSearchableResource<AdminServer>({ fetcher: (search) => getServers(1, search) });
+  const servers = useSearchableResource<z.infer<typeof adminServerSchema>>({
+    fetcher: (search) => getServers(1, search),
+  });
 
   useEffect(() => {
     if (!opened) {
@@ -74,14 +79,14 @@ export default function NodeBackupsRestoreModal({ node, backup, opened, onClose 
         />
       </Stack>
 
-      <Modal.Footer>
+      <ModalFooter>
         <Button color={truncate ? 'red' : undefined} onClick={doRestore} loading={loading}>
           Restore
         </Button>
         <Button variant='default' onClick={onClose}>
           Close
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

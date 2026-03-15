@@ -1,10 +1,12 @@
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
+import { adminDatabaseHostSchema } from '@/lib/schemas/admin/databaseHosts.ts';
 
-export default function DatabaseHostRow({ databaseHost }: { databaseHost: AdminDatabaseHost }) {
+export default function DatabaseHostRow({ databaseHost }: { databaseHost: z.infer<typeof adminDatabaseHostSchema> }) {
   return (
     <TableRow>
       <TableData>

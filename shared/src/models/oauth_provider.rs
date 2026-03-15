@@ -1,4 +1,8 @@
-use crate::prelude::*;
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+};
+use garde::Validate;
 use rand::distr::SampleString;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -166,70 +170,6 @@ impl BaseModel for OAuthProvider {
 }
 
 impl OAuthProvider {
-    #[allow(clippy::too_many_arguments)]
-    pub async fn create(
-        database: &crate::database::Database,
-        name: &str,
-        description: Option<&str>,
-        client_id: &str,
-        client_secret: &str,
-        auth_url: &str,
-        token_url: &str,
-        info_url: &str,
-        scopes: &[compact_str::CompactString],
-        identifier_path: &str,
-        email_path: Option<&str>,
-        username_path: Option<&str>,
-        name_first_path: Option<&str>,
-        name_last_path: Option<&str>,
-        enabled: bool,
-        login_only: bool,
-        link_viewable: bool,
-        user_manageable: bool,
-        basic_auth: bool,
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO oauth_providers (
-                name, description, client_id, client_secret, auth_url,
-                token_url, info_url, scopes, identifier_path, email_path,
-                username_path, name_first_path, name_last_path, enabled,
-                login_only, link_viewable, user_manageable, basic_auth
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(name)
-        .bind(description)
-        .bind(client_id)
-        .bind(
-            database
-                .encrypt(client_secret.to_string())
-                .await
-                .map_err(|err| sqlx::Error::Encode(err.into()))?,
-        )
-        .bind(auth_url)
-        .bind(token_url)
-        .bind(info_url)
-        .bind(scopes)
-        .bind(identifier_path)
-        .bind(email_path)
-        .bind(username_path)
-        .bind(name_first_path)
-        .bind(name_last_path)
-        .bind(enabled)
-        .bind(login_only)
-        .bind(link_viewable)
-        .bind(user_manageable)
-        .bind(basic_auth)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn all_with_pagination(
         database: &crate::database::Database,
         page: i64,
@@ -309,10 +249,10 @@ impl OAuthProvider {
             match serde_json_path::JsonPath::parse(match &self.email_path {
                 Some(path) => path,
                 None => {
-                    return Err(crate::response::DisplayError::new(
-                        "no email path defined, unable to register",
-                    )
-                    .into());
+                    return Ok(format!(
+                        "{}@oauth.c7s.rs",
+                        rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 10)
+                    ));
                 }
             })?
             .query(value)
@@ -448,6 +388,352 @@ impl ByUuid for OAuthProvider {
         .await?;
 
         Self::map(None, &row)
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateOAuthProviderOptions {
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: compact_str::CompactString,
+    #[garde(length(chars, min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<compact_str::CompactString>,
+    #[garde(skip)]
+    pub enabled: bool,
+    #[garde(skip)]
+    pub login_only: bool,
+    #[garde(skip)]
+    pub link_viewable: bool,
+    #[garde(skip)]
+    pub user_manageable: bool,
+    #[garde(skip)]
+    pub basic_auth: bool,
+
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub client_id: compact_str::CompactString,
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub client_secret: compact_str::CompactString,
+
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub auth_url: String,
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub token_url: String,
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub info_url: String,
+    #[garde(length(max = 255))]
+    #[schema(max_length = 255)]
+    pub scopes: Vec<compact_str::CompactString>,
+
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub identifier_path: String,
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub email_path: Option<String>,
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub username_path: Option<String>,
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub name_first_path: Option<String>,
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub name_last_path: Option<String>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for OAuthProvider {
+    type CreateOptions<'a> = CreateOAuthProviderOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<OAuthProvider>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("oauth_providers");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        let encrypted_client_secret = state
+            .database
+            .encrypt(options.client_secret.to_string())
+            .await
+            .map_err(|err| sqlx::Error::Encode(err.into()))?;
+
+        query_builder
+            .set("name", &options.name)
+            .set("description", &options.description)
+            .set("client_id", &options.client_id)
+            .set("client_secret", encrypted_client_secret)
+            .set("auth_url", &options.auth_url)
+            .set("token_url", &options.token_url)
+            .set("info_url", &options.info_url)
+            .set("scopes", &options.scopes)
+            .set("identifier_path", &options.identifier_path)
+            .set("email_path", &options.email_path)
+            .set("username_path", &options.username_path)
+            .set("name_first_path", &options.name_first_path)
+            .set("name_last_path", &options.name_last_path)
+            .set("enabled", options.enabled)
+            .set("login_only", options.login_only)
+            .set("link_viewable", options.link_viewable)
+            .set("user_manageable", options.user_manageable)
+            .set("basic_auth", options.basic_auth);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let oauth_provider = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(oauth_provider)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
+pub struct UpdateOAuthProviderOptions {
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: Option<compact_str::CompactString>,
+    #[garde(length(chars, min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub description: Option<Option<compact_str::CompactString>>,
+    #[garde(skip)]
+    pub enabled: Option<bool>,
+    #[garde(skip)]
+    pub login_only: Option<bool>,
+    #[garde(skip)]
+    pub link_viewable: Option<bool>,
+    #[garde(skip)]
+    pub user_manageable: Option<bool>,
+    #[garde(skip)]
+    pub basic_auth: Option<bool>,
+
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub client_id: Option<compact_str::CompactString>,
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub client_secret: Option<compact_str::CompactString>,
+
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub auth_url: Option<String>,
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub token_url: Option<String>,
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub info_url: Option<String>,
+    #[garde(length(max = 255))]
+    #[schema(max_length = 255)]
+    pub scopes: Option<Vec<compact_str::CompactString>>,
+
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub identifier_path: Option<String>,
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub email_path: Option<Option<String>>,
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub username_path: Option<Option<String>>,
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub name_first_path: Option<Option<String>>,
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub name_last_path: Option<Option<String>>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for OAuthProvider {
+    type UpdateOptions = UpdateOAuthProviderOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<OAuthProvider>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("oauth_providers");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        let encrypted_client_secret = if let Some(ref client_secret) = options.client_secret {
+            Some(
+                state
+                    .database
+                    .encrypt(client_secret.to_string())
+                    .await
+                    .map_err(|err| sqlx::Error::Encode(err.into()))?,
+            )
+        } else {
+            None
+        };
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .set(
+                "description",
+                options.description.as_ref().map(|d| d.as_ref()),
+            )
+            .set("client_id", options.client_id.as_ref())
+            .set("client_secret", encrypted_client_secret)
+            .set("auth_url", options.auth_url.as_ref())
+            .set("token_url", options.token_url.as_ref())
+            .set("info_url", options.info_url.as_ref())
+            .set("scopes", options.scopes.as_ref())
+            .set("identifier_path", options.identifier_path.as_ref())
+            .set(
+                "email_path",
+                options.email_path.as_ref().map(|e| e.as_ref()),
+            )
+            .set(
+                "username_path",
+                options.username_path.as_ref().map(|u| u.as_ref()),
+            )
+            .set(
+                "name_first_path",
+                options.name_first_path.as_ref().map(|n| n.as_ref()),
+            )
+            .set(
+                "name_last_path",
+                options.name_last_path.as_ref().map(|n| n.as_ref()),
+            )
+            .set("enabled", options.enabled)
+            .set("login_only", options.login_only)
+            .set("link_viewable", options.link_viewable)
+            .set("user_manageable", options.user_manageable)
+            .set("basic_auth", options.basic_auth)
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(description) = options.description {
+            self.description = description;
+        }
+        if let Some(enabled) = options.enabled {
+            self.enabled = enabled;
+        }
+        if let Some(login_only) = options.login_only {
+            self.login_only = login_only;
+        }
+        if let Some(link_viewable) = options.link_viewable {
+            self.link_viewable = link_viewable;
+        }
+        if let Some(user_manageable) = options.user_manageable {
+            self.user_manageable = user_manageable;
+        }
+        if let Some(basic_auth) = options.basic_auth {
+            self.basic_auth = basic_auth;
+        }
+        if let Some(client_id) = options.client_id {
+            self.client_id = client_id;
+        }
+        if let Some(client_secret) = options.client_secret {
+            self.client_secret = state
+                .database
+                .encrypt(client_secret)
+                .await
+                .map_err(|err| sqlx::Error::Encode(err.into()))?;
+        }
+        if let Some(auth_url) = options.auth_url {
+            self.auth_url = auth_url;
+        }
+        if let Some(token_url) = options.token_url {
+            self.token_url = token_url;
+        }
+        if let Some(info_url) = options.info_url {
+            self.info_url = info_url;
+        }
+        if let Some(scopes) = options.scopes {
+            self.scopes = scopes;
+        }
+        if let Some(identifier_path) = options.identifier_path {
+            self.identifier_path = identifier_path;
+        }
+        if let Some(email_path) = options.email_path {
+            self.email_path = email_path;
+        }
+        if let Some(username_path) = options.username_path {
+            self.username_path = username_path;
+        }
+        if let Some(name_first_path) = options.name_first_path {
+            self.name_first_path = name_first_path;
+        }
+        if let Some(name_last_path) = options.name_last_path {
+            self.name_last_path = name_last_path;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

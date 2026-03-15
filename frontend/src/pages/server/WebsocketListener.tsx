@@ -1,5 +1,8 @@
+import { QueryFilters, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { useSearchParams } from 'react-router';
+import { z } from 'zod';
+import { serverFileOperationSchema } from '@/lib/schemas/server/files.ts';
+import { serverImagePullProgressSchema, serverResourceUsageSchema } from '@/lib/schemas/server/server.ts';
 import { transformKeysToCamelCase } from '@/lib/transformers.ts';
 import useWebsocketEvent, { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -7,7 +10,7 @@ import { useServerStore } from '@/stores/server.ts';
 import { useUserStore } from '@/stores/user.ts';
 
 export default function WebsocketListener() {
-  const [searchParams, _] = useSearchParams();
+  const queryClient = useQueryClient();
   const { addToast } = useToast();
   const { addServerResourceUsage } = useUserStore();
   const {
@@ -19,17 +22,32 @@ export default function WebsocketListener() {
     updateServer,
     setImagePull,
     removeImagePull,
+    clearImagePulls,
     setStats,
     setBackupProgress,
     setBackupRestoreProgress,
+    setTransferProgress,
     updateBackup,
     setRunningScheduleStep,
     setScheduleSteps,
     fileOperations,
     setFileOperation,
     removeFileOperation,
-    refreshFiles,
   } = useServerStore();
+
+  const invalidateCacheKey = (queryKey: QueryFilters['queryKey']) => {
+    queryClient
+      .invalidateQueries({
+        queryKey,
+      })
+      .catch((e) => console.error(e));
+  };
+
+  useEffect(() => {
+    return () => {
+      clearImagePulls();
+    };
+  }, [clearImagePulls]);
 
   useEffect(() => {
     if (!socketConnected || !socketInstance) {
@@ -47,13 +65,13 @@ export default function WebsocketListener() {
       return;
     }
 
-    const resourceUsage = transformKeysToCamelCase(wsStats) as ResourceUsage;
+    const resourceUsage = transformKeysToCamelCase(wsStats) as z.infer<typeof serverResourceUsageSchema>;
     setStats(resourceUsage);
     addServerResourceUsage(server.uuid, resourceUsage);
   });
 
   useWebsocketEvent(SocketEvent.IMAGE_PULL_PROGRESS, (id, data) => {
-    let wsData: ImagePullProgress;
+    let wsData: z.infer<typeof serverImagePullProgressSchema>;
     try {
       wsData = JSON.parse(data);
     } catch {
@@ -80,7 +98,7 @@ export default function WebsocketListener() {
 
   useWebsocketEvent(SocketEvent.BACKUP_COMPLETED, (uuid, data) => {
     let wsData: {
-      isSuccessful: boolean;
+      successful: boolean;
       checksum_type: string;
       checksum: string;
       size: number;
@@ -95,7 +113,7 @@ export default function WebsocketListener() {
     }
 
     updateBackup(uuid, {
-      isSuccessful: wsData.isSuccessful,
+      isSuccessful: wsData.successful,
       checksum: `${wsData.checksum_type}:${wsData.checksum}`,
       bytes: wsData.size,
       files: wsData.files,
@@ -117,7 +135,18 @@ export default function WebsocketListener() {
       return;
     }
 
-    setBackupRestoreProgress((wsData.progress / wsData.total) * 100);
+    setBackupRestoreProgress(wsData.progress, wsData.total);
+  });
+
+  useWebsocketEvent(SocketEvent.TRANSFER_PROGRESS, (data) => {
+    let wsData: { archive_progress: number; network_progress: number; total: number };
+    try {
+      wsData = JSON.parse(data);
+    } catch {
+      return;
+    }
+
+    setTransferProgress(wsData.archive_progress, wsData.network_progress, wsData.total);
   });
 
   useWebsocketEvent(SocketEvent.BACKUP_RESTORE_COMPLETED, () => {
@@ -153,9 +182,9 @@ export default function WebsocketListener() {
   });
 
   useWebsocketEvent(SocketEvent.OPERATION_PROGRESS, (uuid, data) => {
-    let wsData: FileOperation;
+    let wsData: z.infer<typeof serverFileOperationSchema>;
     try {
-      wsData = transformKeysToCamelCase(JSON.parse(data)) as FileOperation;
+      wsData = transformKeysToCamelCase(JSON.parse(data)) as z.infer<typeof serverFileOperationSchema>;
     } catch {
       return;
     }
@@ -197,7 +226,7 @@ export default function WebsocketListener() {
         break;
     }
 
-    refreshFiles(Number(searchParams.get('page')) || 1);
+    invalidateCacheKey(['server', server.uuid, 'files']);
     removeFileOperation(uuid);
   });
 

@@ -1,12 +1,18 @@
 import { ModalProps } from '@mantine/core';
+import { z } from 'zod';
 import updateServer from '@/api/admin/servers/updateServer.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Code from '@/elements/Code.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
-export default function ServerSuspendModal({ server, opened, onClose }: ModalProps & { server: AdminServer }) {
+export default function ServerSuspendModal({
+  server,
+  opened,
+  onClose,
+}: ModalProps & { server: z.infer<typeof adminServerSchema> }) {
   const { addToast } = useToast();
   const { updateServer: updateStoreServer } = useAdminStore();
 
@@ -17,8 +23,8 @@ export default function ServerSuspendModal({ server, opened, onClose }: ModalPro
       .then(() => {
         addToast('Server suspended.', 'success');
         onClose();
-        updateStoreServer({ ...server, suspended: true });
-        server.suspended = true;
+        updateStoreServer({ ...server, isSuspended: true });
+        server.isSuspended = true;
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');

@@ -3,8 +3,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Alert, Center, Divider, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { startTransition, useEffect, useRef, useState } from 'react';
+import { NavLink, useNavigate } from 'react-router';
+import { z } from 'zod';
 import checkpointLogin from '@/api/auth/checkpointLogin.ts';
 import getOAuthProviders from '@/api/auth/getOAuthProviders.ts';
 import getSecurityKeys from '@/api/auth/getSecurityKeys.ts';
@@ -18,9 +19,16 @@ import PasswordInput from '@/elements/input/PasswordInput.tsx';
 import PinInput from '@/elements/input/PinInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { authPasswordSchema, authTotpSchema, authUsernameSchema } from '@/lib/schemas/auth.ts';
+import { oAuthProviderSchema } from '@/lib/schemas/generic.ts';
+import { userSchema } from '@/lib/schemas/user.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import AuthWrapper from './AuthWrapper.tsx';
+
+interface TwoFactorInformation {
+  user: z.infer<typeof userSchema>;
+  token: string;
+}
 
 export default function Login() {
   const { doLogin } = useAuth();
@@ -30,10 +38,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'username' | 'passkey' | 'password' | 'totp' | 'totp-recovery'>('username');
-  const [oAuthProviders, setOAuthProviders] = useState<OAuthProvider[]>([]);
+  const [oAuthProviders, setOAuthProviders] = useState<z.infer<typeof oAuthProviderSchema>[]>([]);
   const [passkeyUuid, setPasskeyUuid] = useState('');
   const [passkeyOptions, setPasskeyOptions] = useState<CredentialRequestOptions>();
-  const [twoFactorToken, setTwoFactorToken] = useState('');
+  const [twoFactorInformation, setTwoFactorInformation] = useState<TwoFactorInformation | null>(null);
+  const [timeOffset, setTimeOffset] = useState(0);
   const captchaRef = useRef<CaptchaRef>(null);
 
   const usernameForm = useForm({
@@ -77,12 +86,16 @@ export default function Login() {
 
     getSecurityKeys(usernameForm.values.username)
       .then((keys) => {
+        setTimeOffset(Date.now() - keys.serverTime.getTime());
+
         if (keys.options.publicKey?.allowCredentials?.length === 0) {
           setStep('password');
         } else {
-          setPasskeyUuid(keys.uuid);
-          setPasskeyOptions(keys.options);
-          setStep('passkey');
+          startTransition(() => {
+            setPasskeyUuid(keys.uuid);
+            setPasskeyOptions(keys.options);
+            setStep('passkey');
+          });
         }
       })
       .catch((err) => {
@@ -157,12 +170,14 @@ export default function Login() {
       })
         .then((response) => {
           if (response.type === 'two_factor_required') {
-            setTwoFactorToken(response.token!);
-            setStep('totp');
+            startTransition(() => {
+              setTwoFactorInformation({ user: response.user, token: response.token });
+              setStep('totp');
+            });
             return;
           }
 
-          doLogin(response.user!);
+          doLogin(response.user);
         })
         .catch((msg) => {
           setError(httpErrorToHuman(msg));
@@ -175,7 +190,10 @@ export default function Login() {
   const doSubmitTotp = () => {
     setLoading(true);
 
-    checkpointLogin({ code: totpForm.values.code, confirmation_token: twoFactorToken })
+    checkpointLogin({
+      code: totpForm.values.code,
+      confirmation_token: twoFactorInformation?.token ?? '',
+    })
       .then((response) => {
         doLogin(response.user);
       })
@@ -187,7 +205,14 @@ export default function Login() {
 
   return (
     <AuthWrapper>
-      <Stack>
+      <div className='flex flex-col space-y-4 mb-4 w-full'>
+        {(timeOffset > 5000 || timeOffset < -5000) && (
+          <Alert icon={<FontAwesomeIcon icon={faExclamationTriangle} />} color='yellow' title='Warning'>
+            Your system clock is out of sync with the server by more than 5 seconds. This may cause issues with passkey
+            authentication and two-factor authentication. Please sync your clock if issues arise. Current offset:{' '}
+            {Math.round(timeOffset / 1000)} seconds.
+          </Alert>
+        )}
         {error && (
           <Alert
             icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
@@ -199,196 +224,219 @@ export default function Login() {
             {error}
           </Alert>
         )}
-        <Card>
-          {step === 'username' ? (
-            <Stack>
-              <Title order={2} ta='center'>
-                Login
-              </Title>
-              <Text c='dimmed' ta='center'>
-                Enter your username to continue
-              </Text>
+      </div>
 
-              <TextInput
-                label='Username'
-                placeholder='Enter your username'
-                autoComplete='username'
-                onKeyDown={(e) => e.key === 'Enter' && doSubmitUsername()}
-                leftSection={<FontAwesomeIcon icon={faUser} />}
-                size='md'
-                {...usernameForm.getInputProps('username')}
-              />
-
-              <Button
-                onClick={doSubmitUsername}
-                disabled={!usernameForm.isValid()}
-                loading={loading}
-                size='md'
-                fullWidth
-              >
-                Continue
-              </Button>
-
-              <Divider label='OR' labelPosition='center' />
-
-              {settings.app.registrationEnabled && (
-                <Button variant='light' onClick={() => navigate('/auth/register')} size='md' fullWidth>
-                  Register
-                </Button>
-              )}
-              {oAuthProviders.length > 0 && (
+      <Stack className='w-full'>
+        {step === 'username' ? (
+          <>
+            <div>
+              <Title order={2}>Login</Title>
+              <Text className='text-neutral-400!'>Enter your username to continue</Text>
+            </div>
+            <Card>
+              <Stack>
+                <div className='flex flex-col gap-1'>
+                  <TextInput
+                    label='Username'
+                    placeholder='Enter your username'
+                    autoComplete='username'
+                    onKeyDown={(e) => e.key === 'Enter' && doSubmitUsername()}
+                    leftSection={<FontAwesomeIcon icon={faUser} />}
+                    size='md'
+                    autoFocus
+                    {...usernameForm.getInputProps('username')}
+                  />
+                  <NavLink className='text-neutral-400' to='/auth/forgot-password'>
+                    Forgot Password
+                  </NavLink>
+                </div>
                 <Button
-                  variant='light'
-                  disabled={!oAuthProviders.length}
-                  onClick={() => navigate('/auth/login/oauth')}
+                  onClick={doSubmitUsername}
+                  disabled={!usernameForm.isValid()}
+                  loading={loading}
                   size='md'
                   fullWidth
                 >
-                  OAuth Login
+                  Continue
                 </Button>
-              )}
-              <Button variant='light' onClick={() => navigate('/auth/forgot-password')} size='md' fullWidth>
-                Forgot Password
-              </Button>
-            </Stack>
-          ) : step === 'passkey' ? (
-            <Stack>
-              <Title order={2} ta='center'>
-                Authenticate with Passkey
-              </Title>
-              <Text c='dimmed' ta='center'>
+                <Divider
+                  label='OR'
+                  labelPosition='center'
+                  hidden={oAuthProviders.length === 0 && !settings.app.registrationEnabled}
+                />
+                {oAuthProviders.length > 3 ? (
+                  <Button
+                    variant='light'
+                    disabled={!oAuthProviders.length}
+                    onClick={() => navigate('/auth/login/oauth')}
+                    size='md'
+                    fullWidth
+                  >
+                    OAuth Login
+                  </Button>
+                ) : (
+                  oAuthProviders.length > 0 && (
+                    <>
+                      {oAuthProviders.map((oAuthProvider) => (
+                        <a key={oAuthProvider.uuid} href={`/api/auth/oauth/redirect/${oAuthProvider.uuid}`}>
+                          <Button leftSection={<FontAwesomeIcon icon={faFingerprint} />} size='md' fullWidth>
+                            Login with {oAuthProvider.name}
+                          </Button>
+                        </a>
+                      ))}
+                    </>
+                  )
+                )}
+                {settings.app.registrationEnabled && (
+                  <NavLink to='/auth/register' className='text-neutral-400 flex gap-1 items-center'>
+                    Not registered? <p>Create account</p>
+                  </NavLink>
+                )}
+              </Stack>
+            </Card>
+          </>
+        ) : step === 'passkey' ? (
+          <>
+            <div>
+              <Title order={2}>Authenticate with Passkey</Title>
+              <Text className='text-neutral-400!'>
                 We found a passkey associated with <strong>{usernameForm.values.username}</strong>
               </Text>
-
-              <Button
-                onClick={doPasskeyAuth}
-                loading={loading}
-                leftSection={<FontAwesomeIcon icon={faFingerprint} />}
-                size='md'
-                fullWidth
-              >
-                Use Passkey
-              </Button>
-
-              <Divider label='OR' labelPosition='center' />
-
-              <Button variant='light' onClick={() => setStep('password')} size='md' fullWidth>
-                Use Password
-              </Button>
-            </Stack>
-          ) : step === 'password' ? (
-            <Stack>
-              <Title order={2} ta='center'>
-                Enter Password
-              </Title>
-              <Text c='dimmed' ta='center'>
+            </div>
+            <Card>
+              <Stack>
+                <Button
+                  onClick={doPasskeyAuth}
+                  loading={loading}
+                  leftSection={<FontAwesomeIcon icon={faFingerprint} />}
+                  size='md'
+                  fullWidth
+                >
+                  Use Passkey
+                </Button>
+                <Divider label='OR' labelPosition='center' />
+                <Button variant='light' onClick={() => setStep('password')} size='md' fullWidth>
+                  Use Password
+                </Button>
+              </Stack>
+            </Card>
+          </>
+        ) : step === 'password' ? (
+          <>
+            <div>
+              <Title order={2}>Enter Password</Title>
+              <Text className='text-neutral-400!'>
                 Please enter your password for <strong>{usernameForm.values.username}</strong>
               </Text>
-
-              <PasswordInput
-                label='Password'
-                placeholder='Enter your password'
-                autoComplete='current-password'
-                onKeyDown={(e) => e.key === 'Enter' && doSubmitPassword()}
-                size='md'
-                {...passwordForm.getInputProps('password')}
-              />
-
-              <Captcha ref={captchaRef} />
-
-              <Button
-                onClick={doSubmitPassword}
-                disabled={!passwordForm.isValid()}
-                loading={loading}
-                size='md'
-                fullWidth
-              >
-                Sign In
-              </Button>
-
-              <Divider label='OR' labelPosition='center' />
-
-              <Button variant='light' onClick={() => navigate('/auth/forgot-password')} size='md' fullWidth>
-                Forgot Password
-              </Button>
-            </Stack>
-          ) : step === 'totp' ? (
-            <Stack>
-              <Title order={2} ta='center'>
-                Two-Factor Authentication
-              </Title>
-              <Text c='dimmed' ta='center'>
-                Enter the 6-digit code from your authenticator app
-              </Text>
-
-              <Center>
-                <PinInput
-                  length={6}
-                  placeholder='0'
+            </div>
+            <Card>
+              <Stack>
+                <PasswordInput
+                  label='Password'
+                  placeholder='Enter your password'
+                  autoComplete='current-password'
+                  onKeyDown={(e) => e.key === 'Enter' && doSubmitPassword()}
                   size='md'
-                  type='number'
-                  oneTimeCode
-                  {...totpForm.getInputProps('code')}
+                  autoFocus
+                  {...passwordForm.getInputProps('password')}
                 />
-              </Center>
-
-              <Button onClick={doSubmitTotp} loading={loading} disabled={!totpForm.isValid()} size='md' fullWidth>
-                Verify Code
-              </Button>
-
-              <Divider label='OR' labelPosition='center' />
-
-              <Button
-                variant='light'
-                onClick={() => {
-                  totpForm.reset();
-                  setStep('totp-recovery');
-                }}
-                size='md'
-                fullWidth
-              >
-                Use Recovery Code
-              </Button>
-            </Stack>
-          ) : step === 'totp-recovery' ? (
-            <Stack>
-              <Title order={2} ta='center'>
-                Two-Factor Authentication
-              </Title>
-              <Text c='dimmed' ta='center'>
-                Enter a recovery code
-              </Text>
-
-              <Center>
+                <Captcha ref={captchaRef} />
+                <Button
+                  onClick={doSubmitPassword}
+                  disabled={!passwordForm.isValid()}
+                  loading={loading}
+                  size='md'
+                  fullWidth
+                >
+                  Sign In
+                </Button>
+                <Divider label='OR' labelPosition='center' />
+                <Button variant='light' onClick={() => navigate('/auth/forgot-password')} size='md' fullWidth>
+                  Forgot Password
+                </Button>
+              </Stack>
+            </Card>
+          </>
+        ) : step === 'totp' ? (
+          <>
+            <Title order={2}>Two-Factor Authentication</Title>
+            <Card>
+              <Stack>
+                <div className='flex items-center gap-2'>
+                  <img
+                    src={twoFactorInformation?.user.avatar ?? '/icon.svg'}
+                    alt={twoFactorInformation?.user.username}
+                    className='size-14 rounded-full'
+                  />
+                  <span className='text-neutral-400'>
+                    Welcome back <span className='text-white'>{twoFactorInformation?.user.username}</span>!
+                  </span>
+                </div>
+                <Text className=' text-neutral-400!'>Enter the 6-digit code from your authenticator app</Text>
+                <Center>
+                  <PinInput
+                    length={6}
+                    placeholder='0'
+                    size='md'
+                    type='number'
+                    oneTimeCode
+                    autoFocus
+                    {...totpForm.getInputProps('code')}
+                  />
+                </Center>
+                <Button onClick={doSubmitTotp} loading={loading} disabled={!totpForm.isValid()} size='md' fullWidth>
+                  Verify Code
+                </Button>
+                <Divider label='OR' labelPosition='center' />
+                <Button
+                  variant='light'
+                  onClick={() => {
+                    totpForm.reset();
+                    setStep('totp-recovery');
+                  }}
+                  size='md'
+                  fullWidth
+                >
+                  Use Recovery Code
+                </Button>
+              </Stack>
+            </Card>
+          </>
+        ) : step === 'totp-recovery' ? (
+          <>
+            <div>
+              <Title order={2}>Two-Factor Authentication</Title>
+              <Text className='text-neutral-400!'>Enter a recovery code</Text>
+            </div>
+            <Card>
+              <Stack>
                 <TextInput
                   label='Recovery Code'
                   placeholder='Enter a recovery code'
                   onKeyDown={(e) => e.key === 'Enter' && doSubmitTotp()}
                   size='md'
+                  autoFocus
                   {...totpForm.getInputProps('code')}
                 />
-              </Center>
-
-              <Button onClick={doSubmitTotp} loading={loading} disabled={!totpForm.isValid()} size='md' fullWidth>
-                Verify Code
-              </Button>
-
-              <Divider label='OR' labelPosition='center' />
-
-              <Button
-                variant='light'
-                onClick={() => {
-                  totpForm.reset();
-                  setStep('totp');
-                }}
-                size='md'
-                fullWidth
-              >
-                Use TOTP
-              </Button>
-            </Stack>
-          ) : null}
-        </Card>
+                <Button onClick={doSubmitTotp} loading={loading} disabled={!totpForm.isValid()} size='md' fullWidth>
+                  Verify Code
+                </Button>
+                <Divider label='OR' labelPosition='center' />
+                <Button
+                  variant='light'
+                  onClick={() => {
+                    totpForm.reset();
+                    setStep('totp');
+                  }}
+                  size='md'
+                  fullWidth
+                >
+                  Use TOTP
+                </Button>
+              </Stack>
+            </Card>
+          </>
+        ) : null}
       </Stack>
     </AuthWrapper>
   );

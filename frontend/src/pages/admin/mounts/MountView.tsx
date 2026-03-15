@@ -1,11 +1,13 @@
 import { faCog, faComputer, faEgg, faServer } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { z } from 'zod';
 import getMount from '@/api/admin/mounts/getMount.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
+import { adminMountSchema } from '@/lib/schemas/admin/mounts.ts';
 import MountCreateOrUpdate from '@/pages/admin/mounts/MountCreateOrUpdate.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import AdminMountEggs from './eggs/AdminMountEggs.tsx';
@@ -15,7 +17,7 @@ import AdminMountServers from './servers/AdminMountServers.tsx';
 export default function MountView() {
   const params = useParams<'id'>();
   const { addToast } = useToast();
-  const [mount, setMount] = useState<Mount | null>(null);
+  const [mount, setMount] = useState<z.infer<typeof adminMountSchema> | null>(null);
 
   useEffect(() => {
     if (params.id) {

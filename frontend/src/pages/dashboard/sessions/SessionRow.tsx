@@ -1,5 +1,6 @@
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteSession from '@/api/me/sessions/deleteSession.ts';
 import Code from '@/elements/Code.tsx';
@@ -8,11 +9,12 @@ import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { userSessionSchema } from '@/lib/schemas/user/sessions.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
 
-export default function SessionRow({ session }: { session: UserSession }) {
+export default function SessionRow({ session }: { session: z.infer<typeof userSessionSchema> }) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { removeSession } = useUserStore();
@@ -53,6 +55,8 @@ export default function SessionRow({ session }: { session: UserSession }) {
             canAccess: !session.isUsing,
           },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.dashboard.sessions.sessionContextMenu}
+        registryProps={{ session }}
       >
         {({ items, openMenu }) => (
           <TableRow

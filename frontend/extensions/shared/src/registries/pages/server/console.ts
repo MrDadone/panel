@@ -1,5 +1,8 @@
 import type { FC } from 'react';
 import { ContainerRegistry, Registry } from 'shared';
+import type { Props as ContainerProps } from '@/elements/containers/ServerContentContainer.tsx';
+import { ComponentListRegistry } from '../../slices/componentList.ts';
+import { XTermRegistry } from '../../slices/xterm.ts';
 
 interface ConsoleFeatureDefinition {
   filter?: (features: string[]) => boolean;
@@ -8,27 +11,53 @@ interface ConsoleFeatureDefinition {
 
 export class ConsoleRegistry implements Registry {
   public mergeFrom(other: this): this {
+    this.container.mergeFrom(other.container);
+    this.powerButtonComponents.mergeFrom(other.powerButtonComponents);
+    this.terminalHeaderLeftComponents.mergeFrom(other.terminalHeaderLeftComponents);
+    this.terminalHeaderRightComponents.mergeFrom(other.terminalHeaderRightComponents);
+    this.xterm.mergeFrom(other.xterm);
+
     this.features.push(...other.features);
     this.statCards.push(...other.statCards);
     this.statBlocks.push(...other.statBlocks);
-    this.terminalHeaderLeftComponents.push(...other.terminalHeaderLeftComponents);
-    this.terminalHeaderRightComponents.push(...other.terminalHeaderRightComponents);
     this.terminalInputRowComponents.push(...other.terminalInputRowComponents);
 
     return this;
   }
 
-  public container: ContainerRegistry = new ContainerRegistry();
+  public container: ContainerRegistry<ContainerProps> = new ContainerRegistry();
+  public powerButtonComponents: ComponentListRegistry = new ComponentListRegistry();
+  public terminalHeaderLeftComponents: ComponentListRegistry = new ComponentListRegistry();
+  public terminalHeaderRightComponents: ComponentListRegistry = new ComponentListRegistry();
+  public xterm: XTermRegistry = new XTermRegistry();
 
   public features: ConsoleFeatureDefinition[] = [];
   public statCards: FC[] = [];
   public statBlocks: FC[] = [];
-  public terminalHeaderLeftComponents: FC[] = [];
-  public terminalHeaderRightComponents: FC[] = [];
   public terminalInputRowComponents: FC[] = [];
 
-  public enterContainer(callback: (registry: ContainerRegistry) => unknown): this {
+  public enterContainer(callback: (registry: ContainerRegistry<ContainerProps>) => unknown): this {
     callback(this.container);
+    return this;
+  }
+
+  public enterPowerButtonComponents(callback: (registry: ComponentListRegistry) => unknown): this {
+    callback(this.powerButtonComponents);
+    return this;
+  }
+
+  public enterTerminalHeaderLeftComponents(callback: (registry: ComponentListRegistry) => unknown): this {
+    callback(this.terminalHeaderLeftComponents);
+    return this;
+  }
+
+  public enterTerminalHeaderRightComponents(callback: (registry: ComponentListRegistry) => unknown): this {
+    callback(this.terminalHeaderRightComponents);
+    return this;
+  }
+
+  public enterXTerm(callback: (registry: XTermRegistry) => unknown): this {
+    callback(this.xterm);
     return this;
   }
 
@@ -46,18 +75,6 @@ export class ConsoleRegistry implements Registry {
 
   public addStatBlock(block: FC): this {
     this.statBlocks.push(block);
-
-    return this;
-  }
-
-  public addTerminalHeaderLeftComponent(component: FC): this {
-    this.terminalHeaderLeftComponents.push(component);
-
-    return this;
-  }
-
-  public addTerminalHeaderRightComponent(component: FC): this {
-    this.terminalHeaderRightComponents.push(component);
 
     return this;
   }

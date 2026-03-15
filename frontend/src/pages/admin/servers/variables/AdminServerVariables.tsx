@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import getServerVariables from '@/api/admin/servers/variables/getServerVariables.ts';
 import updateServerVariables from '@/api/admin/servers/variables/updateServerVariables.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import VariableContainer from '@/elements/VariableContainer.tsx';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { useKeyboardShortcut } from '@/plugins/useKeyboardShortcuts.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
-export default function AdminServerVariables({ server }: { server: AdminServer }) {
+export default function AdminServerVariables({ server }: { server: z.infer<typeof adminServerSchema> }) {
   const { addToast } = useToast();
   const { serverVariables, setServerVariables, updateServerVariable } = useAdminStore();
   const [values, setValues] = useState<Record<string, string>>({});

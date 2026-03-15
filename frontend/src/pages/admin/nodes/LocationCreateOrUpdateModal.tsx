@@ -2,7 +2,6 @@ import { Group, Stack, Text } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
-import { NIL as uuidNil } from 'uuid';
 import { z } from 'zod';
 import getBackupConfigurations from '@/api/admin/backup-configurations/getBackupConfigurations.ts';
 import createLocation from '@/api/admin/locations/createLocation.ts';
@@ -12,8 +11,9 @@ import { AdminCan } from '@/elements/Can.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
-import { adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
+import { Modal } from '@/elements/modals/Modal.tsx';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
+import { adminLocationUpdateSchema } from '@/lib/schemas/admin/locations.ts';
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
@@ -33,17 +33,18 @@ export default function LocationCreateOrUpdateModal({
   const canReadBackupConfigurations = useAdminCan('backup-configurations.read');
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof adminLocationSchema>>({
+  const form = useForm<z.infer<typeof adminLocationUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       description: null,
-      backupConfigurationUuid: uuidNil,
+      backupConfigurationUuid: null,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminLocationSchema),
+    validate: zod4Resolver(adminLocationUpdateSchema),
   });
 
-  const backupConfigurations = useSearchableResource<BackupConfiguration>({
+  const backupConfigurations = useSearchableResource<z.infer<typeof adminBackupConfigurationSchema>>({
     fetcher: (search) => getBackupConfigurations(1, search),
     defaultSearchValue: '',
     canRequest: canReadBackupConfigurations,
@@ -56,7 +57,7 @@ export default function LocationCreateOrUpdateModal({
 
     setLoading(true);
     try {
-      await createLocation(form.values);
+      await createLocation(adminLocationUpdateSchema.parse(form.getValues()));
       addToast('Location created.', 'success');
       form.reset();
       onLocationCreated();
@@ -78,24 +79,27 @@ export default function LocationCreateOrUpdateModal({
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap='md'>
             <Group grow>
-              <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+              <TextInput
+                withAsterisk
+                label='Name'
+                placeholder='Name'
+                key={form.key('name')}
+                {...form.getInputProps('name')}
+              />
               <Select
-                allowDeselect
                 label='Backup Configuration'
-                data={[
-                  {
-                    label: 'None',
-                    value: uuidNil,
-                  },
-                  ...backupConfigurations.items.map((backupConfiguration) => ({
-                    label: backupConfiguration.name,
-                    value: backupConfiguration.uuid,
-                  })),
-                ]}
+                placeholder='None'
+                data={backupConfigurations.items.map((backupConfiguration) => ({
+                  label: backupConfiguration.name,
+                  value: backupConfiguration.uuid,
+                }))}
                 searchable
                 searchValue={backupConfigurations.search}
                 onSearchChange={backupConfigurations.setSearch}
+                allowDeselect
+                clearable
                 disabled={!canReadBackupConfigurations}
+                key={form.key('backupConfigurationUuid')}
                 {...form.getInputProps('backupConfigurationUuid')}
               />
             </Group>

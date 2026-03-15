@@ -1,6 +1,6 @@
 import { faSkull } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Grid, Group, Stack } from '@mantine/core';
+import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
@@ -45,31 +45,29 @@ export default function AutokillContainer() {
   };
 
   return (
-    <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-      <TitleCard
-        title={t('pages.server.settings.autokill.title', {})}
-        icon={<FontAwesomeIcon icon={faSkull} />}
-        className='h-full'
-      >
-        <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack>
-            <Switch
-              label={t('pages.server.settings.autokill.form.enabled', {})}
-              {...form.getInputProps('enabled', { type: 'checkbox' })}
-            />
-            <NumberInput
-              label={t('pages.server.settings.autokill.form.secondsUntilAutoKill', {})}
-              {...form.getInputProps('seconds')}
-            />
+    <TitleCard
+      title={t('pages.server.settings.autokill.title', {})}
+      icon={<FontAwesomeIcon icon={faSkull} />}
+      className='h-full order-20'
+    >
+      <form onSubmit={form.onSubmit(() => doUpdate())}>
+        <Stack>
+          <Switch
+            label={t('pages.server.settings.autokill.form.enabled', {})}
+            {...form.getInputProps('enabled', { type: 'checkbox' })}
+          />
+          <NumberInput
+            label={t('pages.server.settings.autokill.form.secondsUntilAutoKill', {})}
+            {...form.getInputProps('seconds')}
+          />
 
-            <Group mt='auto'>
-              <Button type='submit' loading={loading} disabled={!form.isValid()}>
-                {t('common.button.save', {})}
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </TitleCard>
-    </Grid.Col>
+          <Group mt='auto'>
+            <Button type='submit' loading={loading} disabled={!form.isValid()}>
+              {t('common.button.save', {})}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </TitleCard>
   );
 }

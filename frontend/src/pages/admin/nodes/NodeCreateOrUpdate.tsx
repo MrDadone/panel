@@ -2,7 +2,6 @@ import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
-import { NIL as uuidNil } from 'uuid';
 import { z } from 'zod';
 import getBackupConfigurations from '@/api/admin/backup-configurations/getBackupConfigurations.ts';
 import getLocations from '@/api/admin/locations/getLocations.ts';
@@ -22,20 +21,23 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
+import { adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
+import { adminNodeSchema, adminNodeUpdateSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
-export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node }) {
+export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: z.infer<typeof adminNodeSchema> }) {
   const { addToast } = useToast();
 
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminNodeSchema>>({
+  const form = useForm<z.infer<typeof adminNodeUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       locationUuid: '',
-      backupConfigurationUuid: uuidNil,
+      backupConfigurationUuid: null,
       name: '',
       deploymentEnabled: true,
       maintenanceEnabled: false,
@@ -48,13 +50,18 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
       disk: 10240,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminNodeSchema),
+    validate: zod4Resolver(adminNodeUpdateSchema),
   });
 
-  const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminNodeSchema>, Node>({
+  const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<
+    z.infer<typeof adminNodeUpdateSchema>,
+    z.infer<typeof adminNodeSchema>
+  >({
     form,
-    createFn: () => createNode(form.values),
-    updateFn: contextNode ? () => updateNode(contextNode.uuid, form.values) : undefined,
+    createFn: () => createNode(adminNodeUpdateSchema.parse(form.getValues())),
+    updateFn: contextNode
+      ? () => updateNode(contextNode.uuid, adminNodeUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextNode ? () => deleteNode(contextNode.uuid) : undefined,
     doUpdate: !!contextNode,
     basePath: '/admin/nodes',
@@ -65,7 +72,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
     if (contextNode) {
       form.setValues({
         locationUuid: contextNode.location.uuid,
-        backupConfigurationUuid: contextNode.backupConfiguration?.uuid ?? uuidNil,
+        backupConfigurationUuid: contextNode.backupConfiguration?.uuid ?? null,
         name: contextNode.name,
         deploymentEnabled: contextNode.deploymentEnabled,
         maintenanceEnabled: contextNode.maintenanceEnabled,
@@ -80,11 +87,11 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
     }
   }, [contextNode]);
 
-  const locations = useSearchableResource<Location>({
+  const locations = useSearchableResource<z.infer<typeof adminLocationSchema>>({
     fetcher: (search) => getLocations(1, search),
     defaultSearchValue: contextNode?.location.name,
   });
-  const backupConfigurations = useSearchableResource<BackupConfiguration>({
+  const backupConfigurations = useSearchableResource<z.infer<typeof adminBackupConfigurationSchema>>({
     fetcher: (search) => getBackupConfigurations(1, search),
     defaultSearchValue: contextNode?.backupConfiguration?.name,
   });
@@ -107,7 +114,11 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
   };
 
   return (
-    <AdminContentContainer title={`${contextNode ? 'Update' : 'Create'} Node`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextNode ? 'Update' : 'Create'} Node`}
+      fullscreen={!!contextNode}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -115,13 +126,19 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
             <Select
               withAsterisk
               label='Location'
@@ -133,6 +150,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
               searchable
               searchValue={locations.search}
               onSearchChange={locations.setSearch}
+              key={form.key('locationUuid')}
               {...form.getInputProps('locationUuid')}
             />
           </Group>
@@ -143,24 +161,32 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
               label='URL'
               description='used for internal communication with the node'
               placeholder='URL'
+              key={form.key('url')}
               {...form.getInputProps('url')}
             />
             <TextInput
               label='Public URL'
               description='used for websocket/downloads'
               placeholder='URL'
+              key={form.key('publicUrl')}
               {...form.getInputProps('publicUrl')}
             />
           </Group>
 
           <Group grow>
-            <TextInput label='SFTP Host' placeholder='SFTP Host' {...form.getInputProps('sftpHost')} />
+            <TextInput
+              label='SFTP Host'
+              placeholder='SFTP Host'
+              key={form.key('sftpHost')}
+              {...form.getInputProps('sftpHost')}
+            />
             <NumberInput
               withAsterisk
               label='SFTP Port'
               placeholder='SFTP Port'
               min={1}
               max={65535}
+              key={form.key('sftpPort')}
               {...form.getInputProps('sftpPort')}
             />
           </Group>
@@ -171,7 +197,7 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
               label='Memory'
               mode='mb'
               min={0}
-              value={form.values.memory}
+              value={form.getValues().memory}
               onChange={(value) => form.setFieldValue('memory', value)}
             />
             <SizeInput
@@ -179,36 +205,47 @@ export default function NodeCreateOrUpdate({ contextNode }: { contextNode?: Node
               label='Disk'
               mode='mb'
               min={0}
-              value={form.values.disk}
+              value={form.getValues().disk}
               onChange={(value) => form.setFieldValue('disk', value)}
             />
           </Group>
 
           <Group grow align='start'>
             <Select
-              allowDeselect
               label='Backup Configuration'
-              data={[
-                {
-                  label: 'Inherit from Location',
-                  value: uuidNil,
-                },
-                ...backupConfigurations.items.map((backupConfiguration) => ({
-                  label: backupConfiguration.name,
-                  value: backupConfiguration.uuid,
-                })),
-              ]}
+              placeholder='Inherit from Location'
+              data={backupConfigurations.items.map((backupConfiguration) => ({
+                label: backupConfiguration.name,
+                value: backupConfiguration.uuid,
+              }))}
               searchable
               searchValue={backupConfigurations.search}
               onSearchChange={backupConfigurations.setSearch}
+              allowDeselect
+              clearable
+              key={form.key('backupConfigurationUuid')}
               {...form.getInputProps('backupConfigurationUuid')}
             />
-            <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
+            <TextArea
+              label='Description'
+              placeholder='Description'
+              rows={3}
+              key={form.key('description')}
+              {...form.getInputProps('description')}
+            />
           </Group>
 
           <Group grow>
-            <Switch label='Deployment Enabled' {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })} />
-            <Switch label='Maintenance Enabled' {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })} />
+            <Switch
+              label='Deployment Enabled'
+              key={form.key('deploymentEnabled')}
+              {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })}
+            />
+            <Switch
+              label='Maintenance Enabled'
+              key={form.key('maintenanceEnabled')}
+              {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })}
+            />
           </Group>
 
           <Group>

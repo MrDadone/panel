@@ -4,7 +4,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 interface UseSearchableResourceOptions<T> {
-  fetcher: (search: string) => Promise<ResponseMeta<T>>;
+  fetcher: (search: string) => Promise<Pagination<T>>;
   defaultSearchValue?: string;
   deps?: unknown[];
   debounceMs?: number;
@@ -42,10 +42,10 @@ export function useSearchableResource<T>({
 
   useEffect(() => {
     setDebouncedSearch(search);
-  }, [search, setDebouncedSearch]);
+  }, [search]);
 
   useEffect(() => {
-    if (deps.filter((d) => !!d).length !== deps.length) {
+    if (!deps?.length || deps.filter((d) => !!d).length !== deps.length) {
       return;
     }
 

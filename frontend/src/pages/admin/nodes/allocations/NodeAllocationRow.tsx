@@ -1,20 +1,22 @@
 import { forwardRef, memo } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminNodeAllocationSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useAdminStore } from '@/stores/admin.tsx';
 
 interface NodeAllocationRowProps {
-  allocation: NodeAllocation;
+  allocation: z.infer<typeof adminNodeAllocationSchema>;
 }
 
 const NodeAllocationRow = memo(
   forwardRef<HTMLTableRowElement, NodeAllocationRowProps>(function FileRow({ allocation }, ref) {
     const { selectedNodeAllocations, addSelectedNodeAllocation, removeSelectedNodeAllocation } = useAdminStore();
 
-    const isNodeAllocationSelected = selectedNodeAllocations.some((a) => a.uuid === allocation.uuid);
+    const isNodeAllocationSelected = selectedNodeAllocations.has(allocation);
 
     return (
       <TableRow

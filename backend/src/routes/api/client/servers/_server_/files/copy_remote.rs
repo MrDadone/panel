@@ -151,6 +151,7 @@ mod post {
                 .fetch_cached(&state.database)
                 .await?
                 .api_client(&state.database)
+                .await?
                 .post_servers_server_files_copy_remote(server.uuid, &request_body)
                 .await
             {

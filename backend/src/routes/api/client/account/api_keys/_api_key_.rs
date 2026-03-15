@@ -68,38 +68,18 @@ mod delete {
 
 mod patch {
     use axum::{extract::Path, http::StatusCode};
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
+            UpdatableModel,
             user::{AuthMethod, GetAuthMethod, GetPermissionManager, GetUser},
             user_activity::GetUserActivityLogger,
-            user_api_key::UserApiKey,
+            user_api_key::{UpdateUserApiKeyOptions, UserApiKey},
         },
-        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
-    use std::sync::Arc;
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 3, max = 31))]
-        #[schema(min_length = 3, max_length = 31)]
-        name: Option<compact_str::CompactString>,
-        #[schema(value_type = Vec<String>)]
-        allowed_ips: Option<Vec<sqlx::types::ipnetwork::IpNetwork>>,
-
-        #[validate(custom(function = "shared::permissions::validate_user_permissions"))]
-        user_permissions: Option<Vec<compact_str::CompactString>>,
-        #[validate(custom(function = "shared::permissions::validate_admin_permissions"))]
-        admin_permissions: Option<Vec<compact_str::CompactString>>,
-        #[validate(custom(function = "shared::permissions::validate_server_permissions"))]
-        server_permissions: Option<Vec<compact_str::CompactString>>,
-
-        expires: Option<Option<chrono::DateTime<chrono::Utc>>>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -116,7 +96,7 @@ mod patch {
             description = "The API key identifier",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateUserApiKeyOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
@@ -124,14 +104,8 @@ mod patch {
         user: GetUser,
         activity_logger: GetUserActivityLogger,
         Path(api_key): Path<uuid::Uuid>,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateUserApiKeyOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_user_permission("api-keys.update")?;
 
         if let AuthMethod::ApiKey(api_key) = &*auth
@@ -163,53 +137,14 @@ mod patch {
                 }
             };
 
-        if let Some(name) = data.name {
-            api_key.name = name;
-        }
-        if let Some(allowed_ips) = data.allowed_ips {
-            api_key.allowed_ips = allowed_ips;
-        }
-        if let Some(user_permissions) = data.user_permissions {
-            api_key.user_permissions = Arc::new(user_permissions);
-        }
-        if let Some(admin_permissions) = data.admin_permissions {
-            api_key.admin_permissions = Arc::new(admin_permissions);
-        }
-        if let Some(server_permissions) = data.server_permissions {
-            api_key.server_permissions = Arc::new(server_permissions);
-        }
-        if let Some(expires) = data.expires {
-            api_key.expires = expires.map(|dt| dt.naive_utc());
-        }
-
-        match sqlx::query!(
-            "UPDATE user_api_keys
-            SET name = $2, allowed_ips = $3, user_permissions = $4, admin_permissions = $5, server_permissions = $6, expires = $7
-            WHERE user_api_keys.uuid = $1",
-            api_key.uuid,
-            &api_key.name,
-            &api_key.allowed_ips,
-            &api_key.user_permissions as &[compact_str::CompactString],
-            &api_key.admin_permissions as &[compact_str::CompactString],
-            &api_key.server_permissions as &[compact_str::CompactString],
-            api_key.expires.as_ref(),
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match api_key.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("api key with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update api key: {:?}", err);
-
-                return ApiResponse::error("failed to update api key")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

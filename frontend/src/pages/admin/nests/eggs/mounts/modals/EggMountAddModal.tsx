@@ -1,11 +1,15 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import getMounts from '@/api/admin/mounts/getMounts.ts';
 import createEggMount from '@/api/admin/nests/eggs/mounts/createEggMount.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminMountSchema } from '@/lib/schemas/admin/mounts.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
@@ -15,14 +19,14 @@ export default function EggMountAddModal({
   egg,
   opened,
   onClose,
-}: ModalProps & { nest: AdminNest; egg: AdminNestEgg }) {
+}: ModalProps & { nest: z.infer<typeof adminNestSchema>; egg: z.infer<typeof adminEggSchema> }) {
   const { addToast } = useToast();
   const { addEggMount } = useAdminStore();
 
   const [loading, setLoading] = useState(false);
-  const [mount, setMount] = useState<Mount | null>(null);
+  const [mount, setMount] = useState<z.infer<typeof adminMountSchema> | null>(null);
 
-  const mounts = useSearchableResource<Mount>({ fetcher: (search) => getMounts(1, search) });
+  const mounts = useSearchableResource<z.infer<typeof adminMountSchema>>({ fetcher: (search) => getMounts(1, search) });
 
   const doAdd = () => {
     if (!mount) {
@@ -62,14 +66,14 @@ export default function EggMountAddModal({
           onSearchChange={mounts.setSearch}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doAdd} loading={loading} disabled={!mount}>
             Add
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

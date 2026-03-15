@@ -1,6 +1,7 @@
 import { faEye, faLock, faLockOpen, faPencil, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import getDatabaseSize from '@/api/server/databases/getDatabaseSize.ts';
 import Code from '@/elements/Code.tsx';
 import ContextMenu, { ContextMenuToggle } from '@/elements/ContextMenu.tsx';
@@ -8,6 +9,7 @@ import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
+import { serverDatabaseSchema } from '@/lib/schemas/server/databases.ts';
 import { bytesToString } from '@/lib/size.ts';
 import { useServerCan } from '@/plugins/usePermissions.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -16,7 +18,7 @@ import DatabaseDeleteModal from './modals/DatabaseDeleteModal.tsx';
 import DatabaseDetailsModal from './modals/DatabaseDetailsModal.tsx';
 import DatabaseEditModal from './modals/DatabaseEditModal.tsx';
 
-export default function DatabaseRow({ database }: { database: ServerDatabase }) {
+export default function DatabaseRow({ database }: { database: z.infer<typeof serverDatabaseSchema> }) {
   const { t } = useTranslations();
   const [openModal, setOpenModal] = useState<'edit' | 'details' | 'delete' | null>(null);
   const [size, setSize] = useState(0);
@@ -61,6 +63,8 @@ export default function DatabaseRow({ database }: { database: ServerDatabase }) 
             canAccess: useServerCan('databases.delete'),
           },
         ]}
+        registry={window.extensionContext.extensionRegistry.pages.server.databases.databaseContextMenu}
+        registryProps={{ database }}
       >
         {({ items, openMenu }) => (
           <TableRow

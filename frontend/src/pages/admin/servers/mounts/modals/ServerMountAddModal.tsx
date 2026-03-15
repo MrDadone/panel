@@ -1,23 +1,30 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import createServerMount from '@/api/admin/servers/mounts/createServerMount.ts';
 import getAvailableServerMounts from '@/api/admin/servers/mounts/getAvailableServerMounts.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { adminNodeMountSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerMountSchema, adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
-export default function ServerMountAddModal({ server, opened, onClose }: ModalProps & { server: AdminServer }) {
+export default function ServerMountAddModal({
+  server,
+  opened,
+  onClose,
+}: ModalProps & { server: z.infer<typeof adminServerSchema> }) {
   const { addToast } = useToast();
   const { addServerMount } = useAdminStore();
 
   const [loading, setLoading] = useState(false);
-  const [selectedMount, setSelectedMount] = useState<NodeMount | null>(null);
+  const [selectedMount, setSelectedMount] = useState<z.infer<typeof adminNodeMountSchema> | null>(null);
 
-  const mounts = useSearchableResource<AdminServerMount>({
+  const mounts = useSearchableResource<z.infer<typeof adminServerMountSchema>>({
     fetcher: (search) => getAvailableServerMounts(server.uuid, 1, search),
   });
 
@@ -64,14 +71,14 @@ export default function ServerMountAddModal({ server, opened, onClose }: ModalPr
           onSearchChange={mounts.setSearch}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doAdd} loading={loading} disabled={!selectedMount}>
             Add
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

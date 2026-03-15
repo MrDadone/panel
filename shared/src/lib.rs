@@ -5,6 +5,8 @@
 //! and ensure consistency across the project. If something for a job exists in here,
 //! it's generally preferred to be used instead of re-implementing it elsewhere.
 
+use anyhow::Context;
+use colored::Colorize;
 use include_dir::{Dir, include_dir};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -12,7 +14,6 @@ use std::{
     time::Instant,
 };
 use utoipa::ToSchema;
-use validator::ValidationError;
 
 pub mod cache;
 pub mod cap;
@@ -26,6 +27,7 @@ pub mod extract;
 pub mod jwt;
 pub mod mail;
 pub mod models;
+pub mod ntp;
 pub mod payload;
 pub mod permissions;
 pub mod prelude;
@@ -36,11 +38,22 @@ pub mod telemetry;
 pub mod utils;
 
 pub use payload::Payload;
+pub use schema_extension_core::Extendible;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GIT_COMMIT: &str = env!("CARGO_GIT_COMMIT");
 pub const GIT_BRANCH: &str = env!("CARGO_GIT_BRANCH");
 pub const TARGET: &str = env!("CARGO_TARGET");
+
+pub fn full_version() -> String {
+    if GIT_BRANCH == "unknown" {
+        VERSION.to_string()
+    } else {
+        format!("{VERSION}:{GIT_COMMIT}@{GIT_BRANCH}")
+    }
+}
+
+pub const BUFFER_SIZE: usize = 32 * 1024;
 
 pub type GetIp = axum::extract::Extension<std::net::IpAddr>;
 
@@ -93,12 +106,77 @@ pub struct AppState {
     pub shutdown_handlers: Arc<extensions::shutdown_handlers::ShutdownHandlerManager>,
     pub settings: Arc<settings::Settings>,
     pub jwt: Arc<jwt::Jwt>,
+    pub ntp: Arc<ntp::Ntp>,
     pub storage: Arc<storage::Storage>,
     pub captcha: Arc<captcha::Captcha>,
     pub mail: Arc<mail::Mail>,
     pub database: Arc<database::Database>,
     pub cache: Arc<cache::Cache>,
     pub env: Arc<env::Env>,
+}
+
+impl AppState {
+    pub async fn new_cli(env: Option<Arc<env::Env>>) -> Result<State, anyhow::Error> {
+        let env = match env {
+            Some(env) => env,
+            None => {
+                eprintln!(
+                    "{}",
+                    "please setup the new panel environment before using this command.".red()
+                );
+                std::process::exit(1);
+            }
+        };
+
+        let jwt = Arc::new(jwt::Jwt::new(&env));
+        let ntp = ntp::Ntp::new();
+        let cache = cache::Cache::new(&env).await;
+        let database = Arc::new(database::Database::new(&env, cache.clone()).await);
+
+        let background_tasks =
+            Arc::new(extensions::background_tasks::BackgroundTaskManager::default());
+        let shutdown_handlers =
+            Arc::new(extensions::shutdown_handlers::ShutdownHandlerManager::default());
+        let settings = Arc::new(
+            settings::Settings::new(database.clone())
+                .await
+                .context("failed to load settings")?,
+        );
+        let storage = Arc::new(storage::Storage::new(settings.clone()));
+        let captcha = Arc::new(captcha::Captcha::new(settings.clone()));
+        let mail = Arc::new(mail::Mail::new(settings.clone()));
+
+        let state = Arc::new(AppState {
+            start_time: Instant::now(),
+            container_type: match std::env::var("OCI_CONTAINER").as_deref() {
+                Ok("official") => AppContainerType::Official,
+                Ok("official-heavy") => AppContainerType::OfficialHeavy,
+                Ok(_) => AppContainerType::Unknown,
+                Err(_) => AppContainerType::None,
+            },
+            version: full_version(),
+
+            client: reqwest::ClientBuilder::new()
+                .user_agent(format!("github.com/calagopus/panel {}", VERSION))
+                .build()
+                .unwrap(),
+
+            extensions: Arc::new(extensions::manager::ExtensionManager::new(vec![])),
+            background_tasks: background_tasks.clone(),
+            shutdown_handlers: shutdown_handlers.clone(),
+            settings: settings.clone(),
+            jwt,
+            ntp,
+            storage,
+            captcha,
+            mail,
+            database: database.clone(),
+            cache: cache.clone(),
+            env: env.clone(),
+        });
+
+        Ok(state)
+    }
 }
 
 pub type State = Arc<AppState>;
@@ -147,12 +225,3 @@ pub static FRONTEND_LANGUAGES: LazyLock<Vec<compact_str::CompactString>> = LazyL
 
     languages
 });
-
-pub fn validate_language(language: &compact_str::CompactString) -> Result<(), ValidationError> {
-    if !FRONTEND_LANGUAGES.contains(language) {
-        return Err(ValidationError::new("language")
-            .with_message(format!("invalid language: {language}").into()));
-    }
-
-    Ok(())
-}

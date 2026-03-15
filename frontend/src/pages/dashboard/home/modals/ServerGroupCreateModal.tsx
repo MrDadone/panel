@@ -7,7 +7,7 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import createServerGroup from '@/api/me/servers/groups/createServerGroup.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -63,14 +63,14 @@ export default function ServerGroupCreateModal({ opened, onClose }: ModalProps) 
         {...form.getInputProps('name')}
       />
 
-      <Modal.Footer>
+      <ModalFooter>
         <Button onClick={doCreate} loading={loading} disabled={!form.isValid()}>
           {t('common.button.create', {})}
         </Button>
         <Button variant='default' onClick={onClose}>
           {t('common.button.close', {})}
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

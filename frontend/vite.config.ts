@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import type { LanguageData } from 'shared';
 import { defineConfig } from 'vite';
 import dynamicPublicDirectory from 'vite-multiple-assets';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 // Minifies all JSON translation files in the dist/translations/ directory after build
 const minifyTranslations = () => {
@@ -63,7 +63,6 @@ const minifyTranslations = () => {
           }
         });
 
-        // Now write minified files
         for (const [language, namespaces] of Object.entries(languageData)) {
           const minifiedContent = JSON.stringify(namespaces);
           fs.writeFileSync(path.join(dir, `${language}.json`), minifiedContent);
@@ -82,17 +81,16 @@ const minifyTranslations = () => {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react({
-      babel: {
-        overrides: [
-          {
-            include: ['./src/elements/**/*.{ts,tsx}', './src/pages/**/*.{ts,tsx}'],
-            plugins: ['babel-plugin-react-compiler'],
-          },
-        ],
-      },
+    react(),
+    babel({
+      presets: [reactCompilerPreset()],
+      //overrides: [
+      //  {
+      //    include: ['./src/elements/**/*.{ts,tsx}', './src/pages/**/*.{ts,tsx}'],
+      //    plugins: ['babel-plugin-react-compiler'],
+      //  },
+      //],
     }),
-    tsconfigPaths(),
     tailwindcss(),
     dynamicPublicDirectory(['public/**', 'extensions/*/public/**'], {
       dst(path) {
@@ -122,25 +120,26 @@ export default defineConfig({
     chunkSizeWarningLimit: 1024,
     target: 'es2020',
     cssCodeSplit: false,
-    rollupOptions: {
+    rolldownOptions: {
       external: ['monaco-editor'],
       output: {
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
         assetFileNames: 'assets/[name].[hash].[ext]',
-        experimentalMinChunkSize: 102400,
-        manualChunks(id) {
-          if (id.includes('zod/v4/locales')) {
-            return 'zod-locale';
-          }
-          if (
-            id.includes('src/providers/') ||
-            id.includes('src/plugins/') ||
-            id.includes('src/stores/') ||
-            id.includes('src/lib/')
-          ) {
-            return 'shared';
-          }
+        advancedChunks: {
+          groups: [
+            {
+              name: 'react',
+              test: /node_modules\/react/,
+              priority: 20,
+            },
+            {
+              name: 'common',
+              minShareCount: 5,
+              minSize: 10240,
+              priority: 5,
+            },
+          ],
         },
       },
     },
@@ -153,6 +152,9 @@ export default defineConfig({
       '/avatars': `http://localhost:${process.env.BACKEND_PORT ?? 8000}`,
     },
     allowedHosts: true,
+  },
+  resolve: {
+    tsconfigPaths: true,
   },
   publicDir: false,
 });

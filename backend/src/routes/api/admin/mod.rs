@@ -9,7 +9,7 @@ use shared::{
     GetState,
     models::{
         admin_activity::AdminActivityLogger,
-        user::{AuthMethod, GetAuthMethod, GetUser},
+        user::{AuthMethod, GetAuthMethod, GetUser, GetUserImpersonator},
     },
     response::ApiResponse,
 };
@@ -17,6 +17,7 @@ use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
 
 mod activity;
+mod assets;
 mod backup_configurations;
 mod database_hosts;
 mod egg_repositories;
@@ -37,6 +38,7 @@ pub async fn auth(
     state: GetState,
     ip: shared::GetIp,
     user: GetUser,
+    user_impersonator: GetUserImpersonator,
     auth: GetAuthMethod,
     mut req: Request,
     next: Next,
@@ -55,6 +57,7 @@ pub async fn auth(
     req.extensions_mut().insert(AdminActivityLogger {
         state: Arc::clone(&state),
         user_uuid: user.uuid,
+        impersonator_uuid: user_impersonator.as_ref().map(|i| i.uuid),
         api_key_uuid: match &*auth {
             AuthMethod::ApiKey(api_key) => Some(api_key.uuid),
             AuthMethod::Session(_) => None,
@@ -62,6 +65,7 @@ pub async fn auth(
         ip: ip.0,
     });
     req.extensions_mut().insert(user.0);
+    req.extensions_mut().insert(user_impersonator.0);
     req.extensions_mut().insert(auth.0);
 
     Ok(next.run(req).await)
@@ -72,6 +76,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
         .nest("/system", system::router(state))
         .nest("/stats", stats::router(state))
         .nest("/settings", settings::router(state))
+        .nest("/assets", assets::router(state))
         .nest("/locations", locations::router(state))
         .nest("/servers", servers::router(state))
         .nest("/nodes", nodes::router(state))

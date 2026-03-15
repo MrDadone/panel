@@ -37,21 +37,21 @@ mod post {
             Ok(pool) => match pool {
                 shared::models::database_host::DatabasePool::Mysql(pool) => {
                     if let Err(err) = sqlx::query("SELECT 1").execute(pool.as_ref()).await {
-                        return ApiResponse::error(&err.to_string())
+                        return ApiResponse::error(err.to_string())
                             .with_status(StatusCode::EXPECTATION_FAILED)
                             .ok();
                     }
                 }
                 shared::models::database_host::DatabasePool::Postgres(pool) => {
                     if let Err(err) = sqlx::query("SELECT 1").execute(pool.as_ref()).await {
-                        return ApiResponse::error(&err.to_string())
+                        return ApiResponse::error(err.to_string())
                             .with_status(StatusCode::EXPECTATION_FAILED)
                             .ok();
                     }
                 }
             },
             Err(err) => {
-                return ApiResponse::error(&err.to_string())
+                return ApiResponse::error(err.to_string())
                     .with_status(StatusCode::EXPECTATION_FAILED)
                     .ok();
             }

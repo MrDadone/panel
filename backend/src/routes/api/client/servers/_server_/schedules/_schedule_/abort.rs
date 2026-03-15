@@ -58,6 +58,7 @@ mod post {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .post_servers_server_schedules_schedule_abort(server.uuid, schedule.uuid)
             .await?;
 

@@ -1,41 +1,55 @@
 import { ModalProps } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import renameFiles from '@/api/server/files/renameFiles.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
-import { serverFilesNameSchema } from '@/lib/schemas/server/files.ts';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { serverDirectoryEntrySchema, serverFilesNameSchema } from '@/lib/schemas/server/files.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  file: DirectoryEntry;
+  file: z.infer<typeof serverDirectoryEntrySchema> | null;
 };
 
 export default function FileRenameModal({ file, opened, onClose }: Props) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
-  const { server, browsingDirectory, browsingEntries, setBrowsingEntries } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory, invalidateFilemanager } = useFileManager();
 
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof serverFilesNameSchema>>({
     initialValues: {
-      name: file.name,
+      name: '',
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(serverFilesNameSchema),
   });
 
+  useEffect(() => {
+    if (file) {
+      form.setValues({
+        name: file.name,
+      });
+    }
+  }, [file]);
+
   const doRename = () => {
+    if (!file) return;
+
     setLoading(true);
 
     renameFiles({
       uuid: server.uuid,
-      root: browsingDirectory!,
+      root: browsingDirectory,
       files: [
         {
           from: file.name,
@@ -45,17 +59,12 @@ export default function FileRenameModal({ file, opened, onClose }: Props) {
     })
       .then(({ renamed }) => {
         if (renamed < 1) {
-          addToast('File could not be renamed.', 'error');
+          addToast(t('pages.server.files.toast.fileCouldNotBeRenamed', {}), 'error');
           return;
         }
 
-        addToast('File has been renamed.', 'success');
-        setBrowsingEntries({
-          ...browsingEntries,
-          data: browsingEntries.data.map((entry) =>
-            entry.name === file.name ? { ...entry, name: form.values.name } : entry,
-          ),
-        });
+        addToast(t('pages.server.files.toast.fileRenamed', {}), 'success');
+        invalidateFilemanager();
         onClose();
       })
       .catch((msg) => {
@@ -65,18 +74,23 @@ export default function FileRenameModal({ file, opened, onClose }: Props) {
   };
 
   return (
-    <Modal title='Rename File' onClose={onClose} opened={opened}>
+    <Modal title={t('pages.server.files.modal.renameFile.title', {})} onClose={onClose} opened={opened}>
       <form onSubmit={form.onSubmit(() => doRename())}>
-        <TextInput withAsterisk label='File Name' placeholder='File Name' {...form.getInputProps('name')} />
+        <TextInput
+          withAsterisk
+          label={t('pages.server.files.modal.renameFile.form.fileName', {})}
+          placeholder={t('pages.server.files.modal.renameFile.form.fileName', {})}
+          {...form.getInputProps('name')}
+        />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading}>
-            Rename
+            {t('pages.server.files.button.rename', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
-            Close
+            {t('common.button.close', {})}
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

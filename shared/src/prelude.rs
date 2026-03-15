@@ -1,9 +1,11 @@
 use std::borrow::Cow;
 
 pub use crate::models::{
-    BaseModel, ByUuid, DeletableModel, DeleteListenerList, EventEmittingModel, Fetchable,
-    ListenerPriority, ModelHandlerList,
+    BaseModel, ByUuid, CreatableModel, CreateListenerList, DeletableModel, DeleteListenerList,
+    EventEmittingModel, Fetchable, ListenerPriority, ModelHandlerList, UpdatableModel,
+    UpdateListenerList,
 };
+pub use schema_extension_core::finish_extendible;
 
 pub trait IteratorExt<R, E>: Iterator<Item = Result<R, E>> {
     fn try_collect_vec(self) -> Result<Vec<R>, E>
@@ -12,8 +14,10 @@ pub trait IteratorExt<R, E>: Iterator<Item = Result<R, E>> {
     {
         let mut vec = Vec::new();
 
-        let (_, hint_max) = self.size_hint();
-        if let Some(hint_max) = hint_max {
+        let (hint_min, hint_max) = self.size_hint();
+        if let Some(hint_max) = hint_max
+            && hint_min == hint_max
+        {
             vec.reserve_exact(hint_max);
         }
 

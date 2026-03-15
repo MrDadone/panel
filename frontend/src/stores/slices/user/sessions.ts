@@ -1,16 +1,18 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { userSessionSchema } from '@/lib/schemas/user/sessions.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface SessionSlice {
-  sessions: ResponseMeta<UserSession>;
+  sessions: Pagination<z.infer<typeof userSessionSchema>>;
 
-  setSessions: (sessions: ResponseMeta<UserSession>) => void;
-  removeSession: (session: UserSession) => void;
+  setSessions: (sessions: Pagination<z.infer<typeof userSessionSchema>>) => void;
+  removeSession: (session: z.infer<typeof userSessionSchema>) => void;
 }
 
 export const createSessionsSlice: StateCreator<UserStore, [], [], SessionSlice> = (set): SessionSlice => ({
-  sessions: getEmptyPaginationSet<UserSession>(),
+  sessions: getEmptyPaginationSet<z.infer<typeof userSessionSchema>>(),
 
   setSessions: (value) => set((state) => ({ ...state, sessions: value })),
 

@@ -27,6 +27,7 @@ export default function StorageContainer() {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof adminSettingsStorageSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       type: 'filesystem',
       path: '',
@@ -43,7 +44,7 @@ export default function StorageContainer() {
 
   const doUpdate = () => {
     setLoading(true);
-    updateStorageSettings(form.values)
+    updateStorageSettings(adminSettingsStorageSchema.parse(form.getValues()))
       .then(() => {
         addToast('Storage settings updated.', 'success');
       })
@@ -62,12 +63,13 @@ export default function StorageContainer() {
             value,
             label,
           }))}
+          key={form.key('type')}
           {...form.getInputProps('type')}
         />
 
-        {form.values.type === 'filesystem' ? (
+        {form.getValues().type === 'filesystem' ? (
           <StorageFilesystem form={form as UseFormReturnType<z.infer<typeof adminSettingsStorageFilesystemSchema>>} />
-        ) : form.values.type === 's3' ? (
+        ) : form.getValues().type === 's3' ? (
           <StorageS3 form={form as UseFormReturnType<z.infer<typeof adminSettingsStorageS3Schema>>} />
         ) : null}
 

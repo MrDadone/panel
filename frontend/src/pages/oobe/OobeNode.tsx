@@ -60,13 +60,13 @@ export default function OobeNode({ onNext, skipFrom }: OobeComponentProps) {
 
     createNode({
       name: form.values.name,
-      public: true,
       description: null,
+      deploymentEnabled: true,
+      maintenanceEnabled: false,
       publicUrl: form.values.publicUrl,
       url: form.values.url,
       sftpHost: form.values.sftpHost,
       sftpPort: form.values.sftpPort,
-      maintenanceMessage: null,
       memory: form.values.memory,
       disk: form.values.disk,
       locationUuid: locationUuid,

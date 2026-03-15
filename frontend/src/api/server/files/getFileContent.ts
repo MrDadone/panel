@@ -1,11 +1,11 @@
 import { axiosInstance } from '@/api/axios.ts';
 
-export default async (uuid: string, path: string): Promise<string> => {
+export default async (uuid: string, path: string): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/client/servers/${uuid}/files/contents`, {
         params: { file: path },
-        responseType: 'text',
+        responseType: 'blob',
       })
       .then(({ data }) => resolve(data))
       .catch(reject);

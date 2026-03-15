@@ -7,14 +7,14 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import updateAllocation from '@/api/server/allocations/updateAllocation.ts';
 import Button from '@/elements/Button.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
-import { serverAllocationsEditSchema } from '@/lib/schemas/server/allocations.ts';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { serverAllocationSchema, serverAllocationsEditSchema } from '@/lib/schemas/server/allocations.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  allocation: ServerAllocation;
+  allocation: z.infer<typeof serverAllocationSchema>;
 };
 
 export default function AllocationEditModal({ allocation, opened, onClose }: Props) {
@@ -59,14 +59,14 @@ export default function AllocationEditModal({ allocation, opened, onClose }: Pro
             {...form.getInputProps('notes')}
           />
 
-          <Modal.Footer>
+          <ModalFooter>
             <Button type='submit' loading={loading}>
               {t('common.button.edit', {})}
             </Button>
             <Button variant='default' onClick={onClose}>
               {t('common.button.close', {})}
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Stack>
       </form>
     </Modal>

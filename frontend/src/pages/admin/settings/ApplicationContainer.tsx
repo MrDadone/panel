@@ -3,17 +3,22 @@ import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
+import getAssets from '@/api/admin/assets/getAssets.ts';
 import updateApplicationSettings from '@/api/admin/settings/updateApplicationSettings.ts';
-import getAdminSystemTelemetry from '@/api/admin/system/getAdminSystemTelemetry.ts';
+import getTelemetry from '@/api/admin/system/getTelemetry.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import { AdminCan } from '@/elements/Can.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
+import Autocomplete from '@/elements/input/Autocomplete.tsx';
 import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
+import { storageAssetSchema } from '@/lib/schemas/admin/assets.ts';
 import { adminSettingsApplicationSchema } from '@/lib/schemas/admin/settings.ts';
+import { useAdminCan } from '@/plugins/usePermissions.ts';
+import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
@@ -27,18 +32,25 @@ export default function ApplicationContainer() {
   const [loading, setLoading] = useState(false);
   const [telemetryData, setTelemetryData] = useState<object | null>(null);
   const [openModal, setOpenModal] = useState<'disableTelemetry' | 'enableRegistration' | null>(null);
+  const canReadAssets = useAdminCan('assets.read');
 
   const form = useForm<z.infer<typeof adminSettingsApplicationSchema>>({
     initialValues: {
       name: '',
+      icon: '',
       url: '',
-      language: 'en-US',
+      language: 'en',
       twoFactorRequirement: 'none',
       telemetryEnabled: true,
       registrationEnabled: true,
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(adminSettingsApplicationSchema),
+  });
+
+  const assets = useSearchableResource<z.infer<typeof storageAssetSchema>>({
+    fetcher: () => getAssets(1),
+    canRequest: canReadAssets,
   });
 
   useEffect(() => {
@@ -49,7 +61,7 @@ export default function ApplicationContainer() {
 
   const doUpdate = () => {
     setLoading(true);
-    updateApplicationSettings(form.values)
+    updateApplicationSettings(adminSettingsApplicationSchema.parse(form.getValues()))
       .then(() => {
         addToast('Application settings updated.', 'success');
       })
@@ -62,7 +74,7 @@ export default function ApplicationContainer() {
   const doPreviewTelemetry = () => {
     setLoading(true);
 
-    getAdminSystemTelemetry()
+    getTelemetry()
       .then((data) => {
         setTelemetryData(data);
       })
@@ -109,7 +121,24 @@ export default function ApplicationContainer() {
       <form onSubmit={form.onSubmit(() => doUpdate())}>
         <Stack>
           <Group grow>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
+            <Autocomplete
+              withAsterisk
+              label='Icon'
+              placeholder='Icon'
+              data={assets.items.map((asset) => asset.url)}
+              key={form.key('icon')}
+              {...form.getInputProps('icon')}
+            />
+          </Group>
+
+          <Group grow>
             <Select
               withAsterisk
               label='Language'
@@ -119,29 +148,29 @@ export default function ApplicationContainer() {
                 value: language,
               }))}
               searchable
+              key={form.key('language')}
               {...form.getInputProps('language')}
             />
-          </Group>
-
-          <Group grow>
             <TextInput withAsterisk label='URL' placeholder='URL' {...form.getInputProps('url')} />
-
-            <Select
-              withAsterisk
-              label='Two-Factor Authentication Requirement'
-              data={[
-                { label: 'Admins', value: 'admins' },
-                { label: 'All Users', value: 'all_users' },
-                { label: 'None', value: 'none' },
-              ]}
-              {...form.getInputProps('twoFactorRequirement')}
-            />
           </Group>
+
+          <Select
+            withAsterisk
+            label='Two-Factor Authentication Requirement'
+            data={[
+              { label: 'Admins', value: 'admins' },
+              { label: 'All Users', value: 'all_users' },
+              { label: 'None', value: 'none' },
+            ]}
+            key={form.key('twoFactorRequirement')}
+            {...form.getInputProps('twoFactorRequirement')}
+          />
 
           <Group grow>
             <Switch
               label='Enable Telemetry'
               description='Allow Calagopus to collect limited and anonymous usage data to help improve the application.'
+              key={form.key('telemetryEnabled')}
               {...form.getInputProps('telemetryEnabled', { type: 'checkbox' })}
               onChange={(e) => {
                 if (!e.target.checked) {
@@ -154,6 +183,7 @@ export default function ApplicationContainer() {
             <Switch
               label='Enable Registration'
               name='registrationEnabled'
+              key={form.key('registrationEnabled')}
               {...form.getInputProps('registrationEnabled', { type: 'checkbox' })}
               onChange={(e) => {
                 if (e.target.checked) {
@@ -168,14 +198,14 @@ export default function ApplicationContainer() {
 
         <Group mt='md'>
           <AdminCan action='settings.update' cantSave>
-            <>
-              <Button type='submit' disabled={!form.isValid()} loading={loading}>
-                Save
-              </Button>
-              <Button variant='outline' loading={loading} onClick={doPreviewTelemetry}>
-                Telemetry Preview
-              </Button>
-            </>
+            <Button type='submit' disabled={!form.isValid()} loading={loading}>
+              Save
+            </Button>
+          </AdminCan>
+          <AdminCan action='stats.read'>
+            <Button variant='outline' loading={loading} onClick={doPreviewTelemetry}>
+              Preview Telemetry
+            </Button>
           </AdminCan>
         </Group>
       </form>

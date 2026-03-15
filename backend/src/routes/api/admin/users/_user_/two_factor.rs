@@ -54,7 +54,12 @@ mod delete {
         .await?;
 
         activity_logger
-            .log("user:two-factor.disable", serde_json::json!({}))
+            .log(
+                "user:two-factor.disable",
+                serde_json::json!({
+                    "uuid": user.uuid
+                }),
+            )
             .await;
 
         ApiResponse::new_serialized(Response {}).ok()

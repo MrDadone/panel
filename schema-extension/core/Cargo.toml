@@ -1,0 +1,12 @@
+[package]
+name = "schema-extension-core"
+license = { workspace = true }
+version = "0.1.0"
+edition = { workspace = true }
+
+[dependencies]
+utoipa = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+garde = { workspace = true }

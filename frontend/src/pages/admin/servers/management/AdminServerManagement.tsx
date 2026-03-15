@@ -1,8 +1,10 @@
 import { Stack, Text, Title } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import ServerDeleteModal from '@/pages/admin/servers/management/modals/ServerDeleteModal.tsx';
 import ServerSuspendModal from '@/pages/admin/servers/management/modals/ServerSuspendModal.tsx';
 import ServerTransferModal from '@/pages/admin/servers/management/modals/ServerTransferModal.tsx';
@@ -10,7 +12,7 @@ import ServerUnsuspendModal from '@/pages/admin/servers/management/modals/Server
 import { useAdminCan } from '@/plugins/usePermissions.ts';
 import ServerClearStateModal from './modals/ServerClearStateModal.tsx';
 
-export default function AdminServerManagement({ server }: { server: AdminServer }) {
+export default function AdminServerManagement({ server }: { server: z.infer<typeof adminServerSchema> }) {
   const canTransfer = useAdminCan(['server.transfer', 'nodes.read'], false);
 
   const [openModal, setOpenModal] = useState<'transfer' | 'suspend' | 'unsuspend' | 'clear-state' | 'delete' | null>(
@@ -43,7 +45,7 @@ export default function AdminServerManagement({ server }: { server: AdminServer 
         </Card>
         <Card className='h-fit!'>
           <Stack gap='xs'>
-            {server.suspended ? (
+            {server.isSuspended ? (
               <>
                 <Title order={2}>Unsuspend</Title>
                 <Text size='sm'>

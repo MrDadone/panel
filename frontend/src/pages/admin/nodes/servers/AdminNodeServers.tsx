@@ -1,5 +1,6 @@
 import { Group } from '@mantine/core';
-import { Ref, useEffect, useState } from 'react';
+import { Ref, useCallback, useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
 import getNodeServers from '@/api/admin/nodes/servers/getNodeServers.ts';
 import sendNodeServersPowerAction from '@/api/admin/nodes/servers/sendNodeServersPowerAction.ts';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
@@ -7,36 +8,49 @@ import Button from '@/elements/Button.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import { serverPowerAction } from '@/lib/schemas/server/server.ts';
 import { serverTableColumns } from '@/lib/tableColumns.ts';
 import ServerRow from '@/pages/admin/servers/ServerRow.tsx';
-import BulkActionBar from '@/pages/dashboard/home/BulkActionBar.tsx';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
+import BulkActionBar from './BulkActionBar.tsx';
+import ServersTransferModal from './modals/ServersTransferModal.tsx';
 
-export default function AdminNodeServers({ node }: { node: Node }) {
+export default function AdminNodeServers({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const { t, tItem } = useTranslations();
   const { addToast } = useToast();
-  const [nodeServers, setNodeServers] = useState<ResponseMeta<AdminServer>>(getEmptyPaginationSet());
-  const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set());
-  const [selectedServersPrevious, setSelectedServersPrevious] = useState<Set<string>>(new Set());
+  const [nodeServers, setNodeServers] = useState<Pagination<z.infer<typeof adminServerSchema>>>(
+    getEmptyPaginationSet(),
+  );
+  const [selectedServers, setSelectedServers] = useState(
+    new ObjectSet<z.infer<typeof adminServerSchema>, 'uuid'>('uuid'),
+  );
+  const selectedServersPreviousRef = useRef<z.infer<typeof adminServerSchema>[]>([]);
   const [sKeyPressed, setSKeyPressed] = useState(false);
-  const [bulkActionLoading, setBulkActionLoading] = useState<ServerPowerAction | null>(null);
-  const [allActionLoading, setAllActionLoading] = useState<ServerPowerAction | null>(null);
+  const [bulkActionLoading, setBulkActionLoading] = useState<z.infer<typeof serverPowerAction> | null>(null);
+  const [allActionLoading, setAllActionLoading] = useState<z.infer<typeof serverPowerAction> | null>(null);
+  const [openModal, setOpenModal] = useState<'transfer' | null>(null);
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getNodeServers(node.uuid, page, search),
     setStoreData: setNodeServers,
   });
 
-  const onSelectedStart = (event: React.MouseEvent | MouseEvent) => {
-    setSelectedServersPrevious(event.shiftKey ? selectedServers : new Set());
-  };
+  const onSelectedStart = useCallback(
+    (event: React.MouseEvent | MouseEvent) => {
+      selectedServersPreviousRef.current = event.shiftKey ? selectedServers.values() : [];
+    },
+    [selectedServers],
+  );
 
-  const onSelected = (selected: string[]) => {
-    setSelectedServers(new Set([...selectedServersPrevious, ...selected]));
-  };
+  const onSelected = useCallback((selected: z.infer<typeof adminServerSchema>[]) => {
+    setSelectedServers(new ObjectSet('uuid', [...selectedServersPreviousRef.current, ...selected]));
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -63,33 +77,37 @@ export default function AdminNodeServers({ node }: { node: Node }) {
     };
   }, []);
 
-  const handleServerSelectionChange = (serverUuid: string, selected: boolean) => {
+  const handleServerSelectionChange = (server: z.infer<typeof adminServerSchema>, selected: boolean) => {
     setSelectedServers((prev) => {
-      const newSet = new Set(prev);
+      const newSet = new ObjectSet('uuid', prev.values());
       if (selected) {
-        newSet.add(serverUuid);
+        newSet.add(server);
       } else {
-        newSet.delete(serverUuid);
+        newSet.delete(server);
       }
       return newSet;
     });
   };
 
-  const handleServerClick = (serverUuid: string, event: React.MouseEvent) => {
+  const handleServerClick = (server: z.infer<typeof adminServerSchema>, event: React.MouseEvent) => {
     if (sKeyPressed || event.ctrlKey || event.metaKey) {
       event.preventDefault();
       event.stopPropagation();
-      handleServerSelectionChange(serverUuid, !selectedServers.has(serverUuid));
+      handleServerSelectionChange(server, !selectedServers.has(server));
     }
   };
 
-  const handleBulkPowerAction = async (action: ServerPowerAction) => {
+  const handleBulkPowerAction = async (action: z.infer<typeof serverPowerAction>) => {
     setBulkActionLoading(action);
-    sendNodeServersPowerAction(node.uuid, Array.from(selectedServers), action)
+
+    sendNodeServersPowerAction(node.uuid, selectedServers.keys(), action)
       .then((successful) => {
         const failed = selectedServers.size - successful;
 
-        const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
+        const actionPastTenseMap: Record<
+          z.infer<typeof serverPowerAction>,
+          'started' | 'stopped' | 'restarted' | 'killed'
+        > = {
           start: 'started',
           stop: 'stopped',
           restart: 'restarted',
@@ -121,17 +139,21 @@ export default function AdminNodeServers({ node }: { node: Node }) {
       })
       .finally(() => {
         setBulkActionLoading(null);
-        setSelectedServers(new Set());
+        setSelectedServers(new ObjectSet('uuid'));
       });
   };
 
-  const handleAllPowerAction = async (action: ServerPowerAction) => {
+  const handleAllPowerAction = async (action: z.infer<typeof serverPowerAction>) => {
     setAllActionLoading(action);
+
     sendNodeServersPowerAction(node.uuid, [], action)
       .then((successful) => {
         const failed = nodeServers.total - successful;
 
-        const actionPastTenseMap: Record<ServerPowerAction, 'started' | 'stopped' | 'restarted' | 'killed'> = {
+        const actionPastTenseMap: Record<
+          z.infer<typeof serverPowerAction>,
+          'started' | 'stopped' | 'restarted' | 'killed'
+        > = {
           start: 'started',
           stop: 'stopped',
           restart: 'restarted',
@@ -171,12 +193,11 @@ export default function AdminNodeServers({ node }: { node: Node }) {
       {
         key: 'a',
         modifiers: ['ctrlOrMeta'],
-        callback: () => setSelectedServers(new Set(nodeServers.data.map((server) => server.uuid))),
+        callback: () => setSelectedServers(new ObjectSet('uuid', nodeServers.data)),
       },
       {
         key: 'Escape',
-        modifiers: ['ctrlOrMeta'],
-        callback: () => setSelectedServers(new Set()),
+        callback: () => setSelectedServers(new ObjectSet('uuid')),
       },
     ],
     deps: [nodeServers.data],
@@ -186,6 +207,14 @@ export default function AdminNodeServers({ node }: { node: Node }) {
 
   return (
     <>
+      <ServersTransferModal
+        contextNode={node}
+        servers={selectedServers}
+        clearSelected={() => setSelectedServers(new ObjectSet('uuid'))}
+        opened={openModal === 'transfer'}
+        onClose={() => setOpenModal(null)}
+      />
+
       <AdminSubContentContainer
         title='Node Servers'
         titleOrder={2}
@@ -217,6 +246,13 @@ export default function AdminNodeServers({ node }: { node: Node }) {
             >
               {t('pages.server.console.power.stop', {})} ({nodeServers.total})
             </Button>
+            <Button
+              color='gray'
+              onClick={() => setOpenModal('transfer')}
+              disabled={allActionLoading !== null || nodeServers.total === 0}
+            >
+              Transfer ({nodeServers.total})
+            </Button>
           </Group>
         }
       >
@@ -229,7 +265,7 @@ export default function AdminNodeServers({ node }: { node: Node }) {
             allowSelect={false}
           >
             {nodeServers.data.map((server) => (
-              <SelectionArea.Selectable key={server.uuid} item={server.uuid}>
+              <SelectionArea.Selectable key={server.uuid} item={server}>
                 {(innerRef: Ref<HTMLElement>) => (
                   <ServerRow
                     key={server.uuid}
@@ -237,8 +273,8 @@ export default function AdminNodeServers({ node }: { node: Node }) {
                     ref={innerRef as Ref<HTMLTableRowElement>}
                     showSelection={true}
                     isSelected={selectedServers.has(server.uuid)}
-                    onSelectionChange={(selected) => handleServerSelectionChange(server.uuid, selected)}
-                    onClick={(e) => handleServerClick(server.uuid, e)}
+                    onSelectionChange={(selected) => handleServerSelectionChange(server, selected)}
+                    onClick={(e) => handleServerClick(server, e)}
                   />
                 )}
               </SelectionArea.Selectable>
@@ -249,8 +285,9 @@ export default function AdminNodeServers({ node }: { node: Node }) {
 
       <BulkActionBar
         selectedCount={selectedServers.size}
-        onClear={() => setSelectedServers(new Set())}
-        onAction={handleBulkPowerAction}
+        onClear={() => setSelectedServers(new ObjectSet('uuid'))}
+        onPowerAction={handleBulkPowerAction}
+        onTransfer={() => setOpenModal('transfer')}
         loading={bulkActionLoading}
       />
     </>

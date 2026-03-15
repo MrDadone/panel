@@ -3,22 +3,25 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod put {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{server::GetServer, server_activity::ServerActivity},
+        models::{
+            CreatableModel, UpdatableModel, server::GetServer, server_activity::ServerActivity,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         schedule_uuid: Option<uuid::Uuid>,
 
-        #[validate(length(min = 1, max = 255))]
+        #[garde(length(chars, min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
-        image: String,
+        image: compact_str::CompactString,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -38,7 +41,7 @@ mod put {
     ), request_body = inline(Payload))]
     pub async fn route(
         state: GetState,
-        server: GetServer,
+        mut server: GetServer,
         shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
@@ -72,27 +75,31 @@ mod put {
                 .ok();
         }
 
-        sqlx::query!(
-            "UPDATE servers
-            SET image = $1
-            WHERE servers.uuid = $2",
-            data.image,
-            server.uuid
-        )
-        .execute(state.database.write())
-        .await?;
+        server
+            .update(
+                &state,
+                shared::models::server::UpdateServerOptions {
+                    image: Some(data.image),
+                    ..Default::default()
+                },
+            )
+            .await?;
 
-        if let Err(err) = ServerActivity::log_remote(
-            &state.database,
-            server.uuid,
-            None,
-            data.schedule_uuid,
-            "server:startup.docker-image",
-            None,
-            serde_json::json!({
-                "image": data.image,
-            }),
-            chrono::Utc::now(),
+        if let Err(err) = ServerActivity::create(
+            &state,
+            shared::models::server_activity::CreateServerActivityOptions {
+                server_uuid: server.uuid,
+                user_uuid: None,
+                impersonator_uuid: None,
+                api_key_uuid: None,
+                schedule_uuid: data.schedule_uuid,
+                event: "server:startup.docker-image".into(),
+                ip: None,
+                data: serde_json::json!({
+                    "image": server.image,
+                }),
+                created: None,
+            },
         )
         .await
         {

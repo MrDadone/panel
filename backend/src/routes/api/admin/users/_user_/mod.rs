@@ -182,55 +182,17 @@ mod delete {
 mod patch {
     use crate::routes::api::admin::users::_user_::GetParamUser;
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger, role::Role, user::GetPermissionManager,
+            UpdatableModel,
+            admin_activity::GetAdminActivityLogger,
+            user::{GetPermissionManager, UpdateUserOptions},
         },
-        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        role_uuid: Option<uuid::Uuid>,
-
-        #[validate(length(max = 255))]
-        #[schema(max_length = 255)]
-        external_id: Option<compact_str::CompactString>,
-
-        #[validate(
-            length(min = 3, max = 15),
-            regex(path = "*shared::models::user::USERNAME_REGEX")
-        )]
-        #[schema(min_length = 3, max_length = 15)]
-        #[schema(pattern = "^[a-zA-Z0-9_]+$")]
-        username: Option<compact_str::CompactString>,
-        #[validate(email)]
-        #[schema(format = "email")]
-        email: Option<String>,
-        #[validate(length(min = 2, max = 255))]
-        #[schema(min_length = 2, max_length = 255)]
-        name_first: Option<compact_str::CompactString>,
-        #[validate(length(min = 2, max = 255))]
-        #[schema(min_length = 2, max_length = 255)]
-        name_last: Option<compact_str::CompactString>,
-        #[validate(length(min = 8, max = 512))]
-        #[schema(min_length = 8, max_length = 512)]
-        password: Option<compact_str::CompactString>,
-
-        admin: Option<bool>,
-
-        #[validate(
-            length(min = 5, max = 15),
-            custom(function = "shared::validate_language")
-        )]
-        #[schema(min_length = 5, max_length = 15)]
-        language: Option<compact_str::CompactString>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -246,106 +208,24 @@ mod patch {
             description = "The user ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateUserOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         mut user: GetParamUser,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateUserOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("users.update")?;
 
-        if let Some(role_uuid) = data.role_uuid {
-            if role_uuid.is_nil() {
-                user.role = None;
-            } else {
-                let role = match Role::by_uuid_optional(&state.database, role_uuid).await? {
-                    Some(role) => role,
-                    None => {
-                        return ApiResponse::error("role not found")
-                            .with_status(StatusCode::NOT_FOUND)
-                            .ok();
-                    }
-                };
-
-                user.role = Some(role);
-            }
-        }
-        if let Some(external_id) = data.external_id {
-            if external_id.is_empty() {
-                user.external_id = None;
-            } else {
-                user.external_id = Some(external_id);
-            }
-        }
-        if let Some(username) = data.username {
-            user.username = username;
-        }
-        if let Some(email) = data.email {
-            user.email = email.into();
-        }
-        if let Some(name_first) = data.name_first {
-            user.name_first = name_first;
-        }
-        if let Some(name_last) = data.name_last {
-            user.name_last = name_last;
-        }
-        if let Some(password) = data.password {
-            match user.update_password(&state.database, &password).await {
-                Ok(_) => {}
-                Err(err) => {
-                    tracing::error!("failed to update user password: {:?}", err);
-
-                    return ApiResponse::error("failed to update user password")
-                        .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                        .ok();
-                }
-            }
-        }
-        if let Some(admin) = data.admin {
-            user.admin = admin;
-        }
-        if let Some(language) = data.language {
-            user.language = language;
-        }
-
-        match sqlx::query!(
-            "UPDATE users
-            SET role_uuid = $2, external_id = $3, username = $4, email = $5, name_first = $6, name_last = $7, admin = $8, language = $9
-            WHERE users.uuid = $1",
-            user.uuid,
-            user.role.as_ref().map(|role| role.uuid),
-            user.external_id.as_deref(),
-            &user.username,
-            &user.email,
-            &user.name_first,
-            &user.name_last,
-            user.admin,
-            &user.language,
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match user.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("user with email/username/external_id already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update user: {:?}", err);
-
-                return ApiResponse::error("failed to update user")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

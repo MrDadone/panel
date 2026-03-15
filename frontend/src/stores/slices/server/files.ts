@@ -1,113 +1,16 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
-import { getEmptyPaginationSet } from '@/api/axios.ts';
-import loadDirectory from '@/api/server/files/loadDirectory.ts';
+import { serverFileOperationSchema } from '@/lib/schemas/server/files.ts';
 import { ServerStore } from '@/stores/server.ts';
 
 export interface FilesSlice {
-  browsingDirectory: string;
-  setBrowsingDirectory: (dir: string) => void;
-
-  browsingBackup: ServerBackup | null;
-  setBrowsingBackup: (backup: ServerBackup | null) => void;
-
-  browsingWritableDirectory: boolean;
-  setBrowsingWritableDirectory: (writable: boolean) => void;
-  browsingFastDirectory: boolean;
-  setBrowsingFastDirectory: (fast: boolean) => void;
-
-  browsingEntries: ResponseMeta<DirectoryEntry>;
-  setBrowsingEntries: (entries: ResponseMeta<DirectoryEntry>) => void;
-  addBrowsingEntry: (entry: DirectoryEntry) => void;
-  removeBrowsingEntry: (entry: DirectoryEntry) => void;
-
-  selectedFileNames: Set<string>;
-  setSelectedFiles: (files: DirectoryEntry[]) => void;
-  addSelectedFile: (file: DirectoryEntry) => void;
-  removeSelectedFile: (file: DirectoryEntry) => void;
-  getSelectedFiles: () => DirectoryEntry[];
-
-  actingFileMode: 'copy' | 'move' | null;
-  actingFileNames: Set<string>;
-  actingFilesDirectory: string | null;
-  setActingFiles: (mode: 'copy' | 'move', files: DirectoryEntry[]) => void;
-  clearActingFiles: () => void;
-
-  fileOperations: Map<string, FileOperation>;
-  setFileOperation: (uuid: string, operation: FileOperation) => void;
+  fileOperations: Map<string, z.infer<typeof serverFileOperationSchema>>;
+  setFileOperation: (uuid: string, operation: z.infer<typeof serverFileOperationSchema>) => void;
   removeFileOperation: (uuid: string) => void;
-
-  refreshFiles: (page: number) => void;
 }
 
 export const createFilesSlice: StateCreator<ServerStore, [], [], FilesSlice> = (set, get): FilesSlice => ({
-  browsingDirectory: '',
-  setBrowsingDirectory: (value) => set((state) => ({ ...state, browsingDirectory: value })),
-
-  browsingBackup: null,
-  setBrowsingBackup: (value) => set((state) => ({ ...state, browsingBackup: value })),
-
-  browsingWritableDirectory: true,
-  setBrowsingWritableDirectory: (value) => set((state) => ({ ...state, browsingWritableDirectory: value })),
-  browsingFastDirectory: true,
-  setBrowsingFastDirectory: (value) => set((state) => ({ ...state, browsingFastDirectory: value })),
-
-  browsingEntries: getEmptyPaginationSet<DirectoryEntry>(),
-  setBrowsingEntries: (value) => set((state) => ({ ...state, browsingEntries: value })),
-  addBrowsingEntry: (entry) =>
-    set((state) => ({
-      browsingEntries: {
-        ...state.browsingEntries,
-        data: [...state.browsingEntries.data, entry],
-        total: state.browsingEntries.total + 1,
-      },
-    })),
-  removeBrowsingEntry: (entry) =>
-    set((state) => ({
-      browsingEntries: {
-        ...state.browsingEntries,
-        data: state.browsingEntries.data.filter((e) => e.name !== entry.name),
-        total: state.browsingEntries.total - 1,
-      },
-    })),
-
-  selectedFileNames: new Set<string>(),
-  setSelectedFiles: (files) => set((state) => ({ ...state, selectedFileNames: new Set(files.map((f) => f.name)) })),
-  addSelectedFile: (file) =>
-    set((state) => {
-      const newSet = new Set(state.selectedFileNames);
-      newSet.add(file.name);
-      return { ...state, selectedFileNames: newSet };
-    }),
-  removeSelectedFile: (file) =>
-    set((state) => {
-      const newSet = new Set(state.selectedFileNames);
-      newSet.delete(file.name);
-      return { ...state, selectedFileNames: newSet };
-    }),
-  getSelectedFiles: () => {
-    const state = get();
-    return state.browsingEntries.data.filter((entry) => state.selectedFileNames.has(entry.name));
-  },
-
-  actingFileMode: null,
-  actingFileNames: new Set<string>(),
-  actingFilesDirectory: null,
-  setActingFiles: (mode, files) =>
-    set((state) => ({
-      ...state,
-      actingFileMode: mode,
-      actingFileNames: new Set(files.map((f) => f.name)),
-      actingFilesDirectory: state.browsingDirectory,
-    })),
-  clearActingFiles: () =>
-    set((state) => ({
-      ...state,
-      actingFileMode: null,
-      actingFileNames: new Set<string>(),
-      actingFilesDirectory: null,
-    })),
-
-  fileOperations: new Map<string, FileOperation>(),
+  fileOperations: new Map<string, z.infer<typeof serverFileOperationSchema>>(),
   setFileOperation: (uuid, operation) =>
     set((state) => {
       const newMap = new Map(state.fileOperations);
@@ -120,17 +23,4 @@ export const createFilesSlice: StateCreator<ServerStore, [], [], FilesSlice> = (
       newMap.delete(uuid);
       return { ...state, fileOperations: newMap };
     }),
-
-  refreshFiles: (page: number) => {
-    const state = get();
-
-    loadDirectory(state.server.uuid, state.browsingDirectory!, page).then((data) => {
-      set((state) => ({
-        ...state,
-        browsingWritableDirectory: data.isFilesystemWritable,
-        browsingFastDirectory: data.isFilesystemFast,
-        browsingEntries: data.entries,
-      }));
-    });
-  },
 });

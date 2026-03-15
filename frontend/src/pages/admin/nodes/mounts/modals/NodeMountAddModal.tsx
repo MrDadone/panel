@@ -1,23 +1,30 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import getMounts from '@/api/admin/mounts/getMounts.ts';
 import createNodeMount from '@/api/admin/nodes/mounts/createNodeMount.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { adminMountSchema } from '@/lib/schemas/admin/mounts.ts';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
-export default function NodeMountAddModal({ node, opened, onClose }: ModalProps & { node: Node }) {
+export default function NodeMountAddModal({
+  node,
+  opened,
+  onClose,
+}: ModalProps & { node: z.infer<typeof adminNodeSchema> }) {
   const { addToast } = useToast();
   const { addNodeMount } = useAdminStore();
 
   const [loading, setLoading] = useState(false);
-  const [selectedMount, setSelectedMount] = useState<Mount | null>(null);
+  const [selectedMount, setSelectedMount] = useState<z.infer<typeof adminMountSchema> | null>(null);
 
-  const mounts = useSearchableResource<Mount>({ fetcher: (search) => getMounts(1, search) });
+  const mounts = useSearchableResource<z.infer<typeof adminMountSchema>>({ fetcher: (search) => getMounts(1, search) });
 
   useEffect(() => {
     if (!opened) {
@@ -27,14 +34,18 @@ export default function NodeMountAddModal({ node, opened, onClose }: ModalProps 
   }, [opened]);
 
   const doAdd = () => {
+    if (!selectedMount) {
+      return;
+    }
+
     setLoading(true);
 
-    createNodeMount(node.uuid, selectedMount!.uuid)
+    createNodeMount(node.uuid, selectedMount.uuid)
       .then(() => {
         addToast('Node Mount added.', 'success');
 
         onClose();
-        addNodeMount({ mount: selectedMount!, created: new Date() });
+        addNodeMount({ mount: selectedMount, created: new Date() });
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
@@ -60,14 +71,14 @@ export default function NodeMountAddModal({ node, opened, onClose }: ModalProps 
           onSearchChange={mounts.setSearch}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doAdd} loading={loading} disabled={!selectedMount}>
             Add
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

@@ -7,24 +7,28 @@ mod security_key;
 mod post {
     use crate::routes::api::auth::login::checkpoint::TwoFactorRequiredJwt;
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
         jwt::BasePayload,
-        models::{user::User, user_activity::UserActivity, user_session::UserSession},
+        models::{
+            CreatableModel, user::User, user_activity::UserActivity, user_session::UserSession,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use tower_cookies::{Cookie, Cookies};
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         user: String,
-        #[validate(length(max = 512))]
+        #[garde(length(max = 512))]
         #[schema(max_length = 512)]
         password: String,
 
+        #[garde(skip)]
         captcha: Option<String>,
     }
 
@@ -35,6 +39,7 @@ mod post {
             user: Box<shared::models::user::ApiFullUser>,
         },
         TwoFactorRequired {
+            user: Box<shared::models::user::ApiUser>,
             token: String,
         },
     }
@@ -101,29 +106,49 @@ mod post {
                 user_uuid: user.uuid,
             })?;
 
-            if let Err(err) = UserActivity::log(
-                &state.database,
-                user.uuid,
-                None,
-                "auth:checkpoint",
-                Some(ip.0.into()),
-                serde_json::json!({}),
+            if let Err(err) = UserActivity::create(
+                &state,
+                shared::models::user_activity::CreateUserActivityOptions {
+                    user_uuid: user.uuid,
+                    impersonator_uuid: None,
+                    api_key_uuid: None,
+                    event: "auth:checkpoint".into(),
+                    ip: Some(ip.0.into()),
+                    data: serde_json::json!({
+                        "user_agent": headers
+                            .get("User-Agent")
+                            .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                            .unwrap_or("unknown"),
+                    }),
+                    created: None,
+                },
             )
             .await
             {
-                tracing::warn!(user = %user.uuid, "failed to log user activity: {:?}", err);
+                tracing::warn!(
+                    user = %user.uuid,
+                    "failed to log user activity: {:#?}",
+                    err
+                );
             }
 
-            ApiResponse::new_serialized(Response::TwoFactorRequired { token }).ok()
+            ApiResponse::new_serialized(Response::TwoFactorRequired {
+                user: Box::new(user.into_api_object(&state.storage.retrieve_urls().await?)),
+                token,
+            })
+            .ok()
         } else {
             let key = UserSession::create(
-                &state.database,
-                user.uuid,
-                ip.0.into(),
-                headers
-                    .get("User-Agent")
-                    .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
-                    .unwrap_or("unknown"),
+                &state,
+                shared::models::user_session::CreateUserSessionOptions {
+                    user_uuid: user.uuid,
+                    ip: ip.0.into(),
+                    user_agent: headers
+                        .get("User-Agent")
+                        .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                        .unwrap_or("unknown")
+                        .into(),
+                },
             )
             .await?;
 
@@ -144,19 +169,32 @@ mod post {
 
             drop(settings);
 
-            if let Err(err) = UserActivity::log(
-                &state.database,
-                user.uuid,
-                None,
-                "auth:success",
-                Some(ip.0.into()),
-                serde_json::json!({
-                    "using": "password",
-                }),
+            if let Err(err) = UserActivity::create(
+                &state,
+                shared::models::user_activity::CreateUserActivityOptions {
+                    user_uuid: user.uuid,
+                    impersonator_uuid: None,
+                    api_key_uuid: None,
+                    event: "auth:success".into(),
+                    ip: Some(ip.0.into()),
+                    data: serde_json::json!({
+                        "using": "password",
+
+                        "user_agent": headers
+                            .get("User-Agent")
+                            .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                            .unwrap_or("unknown"),
+                    }),
+                    created: None,
+                },
             )
             .await
             {
-                tracing::warn!(user = %user.uuid, "failed to log user activity: {:?}", err);
+                tracing::warn!(
+                    user = %user.uuid,
+                    "failed to log user activity: {:#?}",
+                    err
+                );
             }
 
             ApiResponse::new_serialized(Response::Completed {

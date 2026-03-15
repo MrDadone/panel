@@ -9,6 +9,11 @@ interface TranslationContextType {
 }
 
 export const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
+export let globalTranslationHandle: TranslationContextType | null = null;
+
+export function setGlobalTranslationHandle(handle: TranslationContextType) {
+  globalTranslationHandle = handle;
+}
 
 export type LanguageData = {
   items: TranslationItemRecord;

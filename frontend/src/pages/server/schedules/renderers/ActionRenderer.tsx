@@ -1,34 +1,38 @@
 import { Stack, Text } from '@mantine/core';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
+import { serverScheduleStepActionSchema } from '@/lib/schemas/server/schedules.ts';
 import { formatMiliseconds } from '@/lib/time.ts';
 import ScheduleDynamicParameterRenderer from '../ScheduleDynamicParameterRenderer.tsx';
 
 type ActionRendererMode = 'compact' | 'detailed';
 
+type ServerScheduleStepActionSchema = z.infer<typeof serverScheduleStepActionSchema>;
+
 interface ActionRendererProps {
-  action: ScheduleAction;
+  action: ServerScheduleStepActionSchema;
   mode?: ActionRendererMode;
 }
 
 class RendererMap {
   // @ts-ignore
-  private compactRenderers: Record<ScheduleAction['type'], (action: never) => React.ReactNode> = {};
+  private compactRenderers: Record<ServerScheduleStepActionSchema['type'], (action: never) => React.ReactNode> = {};
   // @ts-ignore
-  private detailedRenderers: Record<ScheduleAction['type'], (action: never) => React.ReactNode> = {};
+  private detailedRenderers: Record<ServerScheduleStepActionSchema['type'], (action: never) => React.ReactNode> = {};
 
-  public addRenderer<T extends ScheduleAction['type']>(
+  public addRenderer<T extends ServerScheduleStepActionSchema['type']>(
     type: T,
-    compactRenderer: (action: Extract<ScheduleAction, { type: T }>) => React.ReactNode,
-    detailedRenderer: (action: Extract<ScheduleAction, { type: T }>) => React.ReactNode,
+    compactRenderer: (action: Extract<ServerScheduleStepActionSchema, { type: T }>) => React.ReactNode,
+    detailedRenderer: (action: Extract<ServerScheduleStepActionSchema, { type: T }>) => React.ReactNode,
   ) {
     this.compactRenderers[type] = compactRenderer;
     this.detailedRenderers[type] = detailedRenderer;
   }
 
-  public getRenderer<T extends ScheduleAction['type']>(
+  public getRenderer<T extends ServerScheduleStepActionSchema['type']>(
     type: T,
     mode: ActionRendererMode,
-  ): ((action: Extract<ScheduleAction, { type: T }>) => React.ReactNode) | undefined {
+  ): ((action: Extract<ServerScheduleStepActionSchema, { type: T }>) => React.ReactNode) | undefined {
     return mode === 'compact' ? (this.compactRenderers[type] as never) : (this.detailedRenderers[type] as never);
   }
 }

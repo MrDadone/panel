@@ -9,28 +9,29 @@ import Button from '@/elements/Button.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import MonacoEditor from '@/elements/MonacoEditor.tsx';
-import { adminEggScriptSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminEggConfigScriptSchema, adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function EggInstallationScriptContainer({
   contextNest,
   contextEgg,
 }: {
-  contextNest: AdminNest;
-  contextEgg: AdminNestEgg;
+  contextNest: z.infer<typeof adminNestSchema>;
+  contextEgg: z.infer<typeof adminEggSchema>;
 }) {
   const { addToast } = useToast();
 
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof adminEggScriptSchema>>({
+  const form = useForm<z.infer<typeof adminEggConfigScriptSchema>>({
     initialValues: {
       container: '',
       entrypoint: '',
       content: '',
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminEggScriptSchema),
+    validate: zod4Resolver(adminEggConfigScriptSchema),
   });
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function EggInstallationScriptContainer({
   const doUpdate = () => {
     setLoading(true);
 
-    updateEggScript(contextNest.uuid, contextEgg.uuid, form.values)
+    updateEggScript(contextNest.uuid, contextEgg.uuid, adminEggConfigScriptSchema.parse(form.values))
       .then(() => {
         addToast('Egg script updated.', 'success');
         contextEgg.configScript = form.values;

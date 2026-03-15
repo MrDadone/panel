@@ -8,14 +8,14 @@ import updateBackup from '@/api/server/backups/updateBackup.ts';
 import Button from '@/elements/Button.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
-import { serverBackupEditSchema } from '@/lib/schemas/server/backups.ts';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { serverBackupEditSchema, serverBackupSchema } from '@/lib/schemas/server/backups.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  backup: ServerBackup;
+  backup: z.infer<typeof serverBackupSchema>;
 };
 
 export default function BackupEditModal({ backup, opened, onClose }: Props) {
@@ -67,14 +67,14 @@ export default function BackupEditModal({ backup, opened, onClose }: Props) {
             {...form.getInputProps('locked', { type: 'checkbox' })}
           />
 
-          <Modal.Footer>
+          <ModalFooter>
             <Button type='submit' loading={loading} disabled={!form.isValid()}>
               {t('common.button.save', {})}
             </Button>
             <Button variant='default' onClick={onClose}>
               {t('common.button.close', {})}
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Stack>
       </form>
     </Modal>

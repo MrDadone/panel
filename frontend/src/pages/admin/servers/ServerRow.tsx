@@ -1,16 +1,18 @@
 import classNames from 'classnames';
 import { forwardRef, memo } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
-import { statusToColor } from '@/pages/dashboard/home/ServerItem.tsx';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import { statusToColor } from '@/lib/server.ts';
+import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
-import { useUserStore } from '@/stores/user.ts';
 
 interface ServerRowProps {
-  server: AdminServer;
+  server: z.infer<typeof adminServerSchema>;
   showSelection?: boolean;
   isSelected?: boolean;
   onSelectionChange?: (selected: boolean) => void;
@@ -23,9 +25,7 @@ const ServerRow = memo(
     ref,
   ) {
     const { t } = useTranslations();
-    const { getServerResourceUsage } = useUserStore();
-
-    const stats = getServerResourceUsage(server.uuid, server.node.uuid);
+    const stats = useServerStats(server);
 
     return (
       <TableRow bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined} onClick={onClick} ref={ref}>

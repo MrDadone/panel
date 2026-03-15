@@ -64,6 +64,7 @@ mod put {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .post_servers_server_files_chmod(server.uuid, &request_body)
             .await
         {

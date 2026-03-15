@@ -1,11 +1,13 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { adminNodeMountSchema } from '@/lib/schemas/admin/nodes.ts';
 
 export default async (
   nestUuid: string,
   eggUuid: string,
   page: number,
   search?: string,
-): Promise<ResponseMeta<NodeMount>> => {
+): Promise<Pagination<z.infer<typeof adminNodeMountSchema>>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/nests/${nestUuid}/eggs/${eggUuid}/mounts`, {

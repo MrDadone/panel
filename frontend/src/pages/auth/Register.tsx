@@ -54,7 +54,7 @@ export default function Register() {
 
   return (
     <AuthWrapper>
-      <Stack>
+      <div className='flex flex-col space-y-4 mb-4 w-full'>
         {error && (
           <Alert
             icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
@@ -66,15 +66,16 @@ export default function Register() {
             {error}
           </Alert>
         )}
+      </div>
+
+      <Stack className='w-full'>
+        <div>
+          <Title order={2}>Register</Title>
+          <Text className='text-neutral-400!'>Please enter your details to register</Text>
+        </div>
+
         <Card>
           <Stack>
-            <Title order={2} ta='center'>
-              Register
-            </Title>
-            <Text c='dimmed' ta='center'>
-              Please enter your details to register
-            </Text>
-
             <TextInput placeholder='Username' {...form.getInputProps('username')} />
             <TextInput placeholder='Email' {...form.getInputProps('email')} />
             <TextInput placeholder='First Name' {...form.getInputProps('nameFirst')} />

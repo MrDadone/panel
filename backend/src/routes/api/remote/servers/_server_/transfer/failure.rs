@@ -71,6 +71,7 @@ mod post {
 
         if let Err(err) = destination_node
             .api_client(&state.database)
+            .await?
             .delete_servers_server(server.uuid)
             .await
         {

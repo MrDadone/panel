@@ -6,6 +6,7 @@ mod hosts;
 
 mod get {
     use axum::{extract::Query, http::StatusCode};
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -16,25 +17,25 @@ mod get {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Params {
-        #[validate(range(min = 1))]
+        #[garde(range(min = 1))]
         #[serde(default = "Pagination::default_page")]
-        pub page: i64,
-        #[validate(range(min = 1, max = 100))]
+        page: i64,
+        #[garde(range(min = 1, max = 100))]
         #[serde(default = "Pagination::default_per_page")]
-        pub per_page: i64,
-        #[validate(length(min = 1, max = 100))]
+        per_page: i64,
+        #[garde(length(chars, min = 1, max = 100))]
         #[serde(
             default,
             deserialize_with = "shared::deserialize::deserialize_string_option"
         )]
-        pub search: Option<compact_str::CompactString>,
+        search: Option<compact_str::CompactString>,
 
+        #[garde(skip)]
         #[serde(default)]
-        pub include_password: bool,
+        include_password: bool,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -115,10 +116,12 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             database_host::DatabaseHost,
             server::{GetServer, GetServerActivityLogger},
             server_database::ServerDatabase,
@@ -127,19 +130,15 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         database_host_uuid: uuid::Uuid,
 
-        #[validate(
-            length(min = 3, max = 31),
-            regex(path = "*shared::models::server_database::DB_NAME_REGEX")
-        )]
-        #[schema(min_length = 3, max_length = 31)]
-        #[schema(pattern = "^[a-zA-Z0-9_]+$")]
-        name: String,
+        #[garde(length(chars, min = 3, max = 31), pattern("^[a-zA-Z0-9_]+$"))]
+        #[schema(min_length = 3, max_length = 31, pattern = "^[a-zA-Z0-9_]+$")]
+        name: compact_str::CompactString,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -195,6 +194,15 @@ mod post {
             }
         };
 
+        let databases_lock = state
+            .cache
+            .lock(
+                format!("servers::{}::databases", server.uuid),
+                Some(30),
+                Some(5),
+            )
+            .await?;
+
         let databases = ServerDatabase::count_by_server_uuid(&state.database, server.uuid).await;
         if databases >= server.database_limit as i64 {
             return ApiResponse::error("maximum number of databases reached")
@@ -210,35 +218,22 @@ mod post {
             .ok();
         }
 
-        let database = match ServerDatabase::create(
-            &state.database,
-            &server,
-            &database_host,
-            &data.name,
-        )
-        .await
-        {
-            Ok(database_uuid) => ServerDatabase::by_uuid(&state.database, database_uuid)
-                .await?
-                .ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "failed to retrieve database after creation: {}",
-                        database_uuid
-                    )
-                })?,
+        let options = shared::models::server_database::CreateServerDatabaseOptions {
+            server: &server,
+            database_host: &database_host,
+            name: data.name,
+        };
+        let database = match ServerDatabase::create(&state, options).await {
+            Ok(database) => database,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("database with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!(server = %server.uuid, "failed to create database: {:?}", err);
-
-                return ApiResponse::error("failed to create database")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
+
+        drop(databases_lock);
 
         activity_logger
             .log(

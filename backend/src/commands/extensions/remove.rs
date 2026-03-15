@@ -42,7 +42,7 @@ impl shared::extensions::commands::CliCommand<RemoveArgs> for RemoveCommand {
                         ".sqlx".bright_red(),
                         "directory, make sure you are in the panel root.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let frontend_path = Path::new("frontend/extensions").join(
@@ -63,7 +63,7 @@ impl shared::extensions::commands::CliCommand<RemoveArgs> for RemoveCommand {
                         .bright_red(),
                         "directory, make sure you are in the panel root.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let backend_path = Path::new("backend-extensions").join(
@@ -84,7 +84,7 @@ impl shared::extensions::commands::CliCommand<RemoveArgs> for RemoveCommand {
                         .bright_red(),
                         "directory, make sure you are in the panel root.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let schema_path = Path::new("database/src/schema/extensions").join(
@@ -132,7 +132,7 @@ impl shared::extensions::commands::CliCommand<RemoveArgs> for RemoveCommand {
                         "does not match requirement".red(),
                         node_req.to_string().bright_red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let pnpm_bin = which("pnpm")
@@ -158,7 +158,7 @@ impl shared::extensions::commands::CliCommand<RemoveArgs> for RemoveCommand {
                         "does not match requirement".red(),
                         pnpm_req.to_string().bright_red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 tokio::fs::remove_dir_all(frontend_path).await?;
@@ -179,7 +179,7 @@ impl shared::extensions::commands::CliCommand<RemoveArgs> for RemoveCommand {
                         "failed to resync internal extension list:".red(),
                         err.to_string().red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 println!(
@@ -228,7 +228,7 @@ impl shared::extensions::commands::CliCommand<RemoveArgs> for RemoveCommand {
                             "pnpm install".bright_red(),
                             "did not run successfully, aborting process".red()
                         );
-                        std::process::exit(1);
+                        return Ok(1);
                     }
 
                     let status = Command::new(&pnpm_bin)
@@ -242,13 +242,13 @@ impl shared::extensions::commands::CliCommand<RemoveArgs> for RemoveCommand {
                             "pnpm kit:generate".bright_red(),
                             "did not run successfully, aborting process".red()
                         );
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 }
 
                 println!("sucessfully removed {}", args.package_name.cyan(),);
 
-                Ok(())
+                Ok(0)
             })
         })
     }

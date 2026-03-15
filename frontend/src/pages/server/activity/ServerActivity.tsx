@@ -1,5 +1,6 @@
 import { Group } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import getServerActivity from '@/api/server/getServerActivity.ts';
 import ActivityInfoButton from '@/elements/activity/ActivityInfoButton.tsx';
@@ -7,13 +8,16 @@ import Code from '@/elements/Code.tsx';
 import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
 import Table, { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { serverActivitySchema } from '@/lib/schemas/server/activity.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 export default function ServerActivity() {
   const { t } = useTranslations();
-  const [activities, setActivities] = useState<ResponseMeta<ServerActivity>>(getEmptyPaginationSet());
+  const [activities, setActivities] = useState<Pagination<z.infer<typeof serverActivitySchema>>>(
+    getEmptyPaginationSet(),
+  );
   const server = useServerStore((state) => state.server);
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
@@ -22,7 +26,12 @@ export default function ServerActivity() {
   });
 
   return (
-    <ServerContentContainer title={t('pages.server.activity.title', {})} search={search} setSearch={setSearch}>
+    <ServerContentContainer
+      title={t('pages.server.activity.title', {})}
+      search={search}
+      setSearch={setSearch}
+      registry={window.extensionContext.extensionRegistry.pages.server.activity.container}
+    >
       <Table
         columns={[
           '',
@@ -50,10 +59,12 @@ export default function ServerActivity() {
 
             <TableData>
               {activity.user
-                ? `${activity.user.username} (${activity.isApi ? 'API' : 'Web'})`
+                ? `${activity.user.username} (${activity.isApi ? t('common.api', {}) : t('common.web', {})})`
                 : activity.isSchedule
                   ? t('common.schedule', {})
                   : t('common.system', {})}
+              {activity.impersonator &&
+                ` (${t('common.impersonatedBy', { username: activity.impersonator.username })})`}
             </TableData>
 
             <TableData>

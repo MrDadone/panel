@@ -2,6 +2,7 @@ import { faEllipsis, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Menu, MenuProps } from '@mantine/core';
 import { createContext, memo, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { ContextMenuRegistry } from 'shared/src/registries/slices/contextMenu';
 import { useCurrentWindow } from '@/providers/CurrentWindowProvider.tsx';
 
 export interface ContextMenuItem {
@@ -42,6 +43,7 @@ export const ContextMenuProvider = ({ children, menuProps }: { children: ReactNo
 
   const showMenu = (x: number, y: number, items: ContextMenuItem[]) => {
     const windowContainer = getParent();
+
     if (windowContainer) {
       const windowRect = windowContainer.getBoundingClientRect();
 
@@ -165,41 +167,46 @@ export const ContextMenuProvider = ({ children, menuProps }: { children: ReactNo
   );
 };
 
-const ContextMenu = memo(
-  ({
-    items = [],
-    children,
-  }: {
+type ContextMenuProps<P = unknown> = {
+  items: ContextMenuItem[];
+  children: (ctx: {
     items: ContextMenuItem[];
-    children: (ctx: {
-      items: ContextMenuItem[];
-      openMenu: (x: number, y: number) => void;
-      hideMenu: () => void;
-    }) => ReactNode;
-  }) => {
-    const context = useContext(ContextMenuContext);
+    openMenu: (x: number, y: number) => void;
+    hideMenu: () => void;
+  }) => ReactNode;
+} & ({ registry: ContextMenuRegistry<P>; registryProps: P } | { registry?: never; registryProps?: never }); // Discriminated union: If registry is provided, registryProps is required.
 
-    if (!context) {
-      throw new Error('ContextMenu must be used within a ContextMenuProvider');
+function ContextMenuBase<P>({ items: rawItems = [], registry, registryProps, children }: ContextMenuProps<P>) {
+  const context = useContext(ContextMenuContext);
+
+  if (!context) {
+    throw new Error('ContextMenu must be used within a ContextMenuProvider');
+  }
+
+  const items = useMemo(() => {
+    const combinedItems = [...rawItems];
+
+    if (registry && registryProps) {
+      for (const interceptor of registry.itemInterceptors) {
+        interceptor(combinedItems, registryProps);
+      }
     }
 
-    const { showMenu, hideMenu } = context;
+    return combinedItems.filter((item) => item);
+  }, [rawItems, registry, registryProps]);
 
-    const openMenu = useMemo(() => {
-      return (x: number, y: number) => {
-        showMenu(
-          x,
-          y,
-          items.filter((item) => item),
-        );
-      };
-    }, [items, showMenu]);
+  const { showMenu, hideMenu } = context;
 
-    return children({ items, openMenu, hideMenu });
-  },
-);
+  const openMenu = useMemo(() => {
+    return (x: number, y: number) => {
+      showMenu(x, y, items);
+    };
+  }, [items, showMenu]);
 
-ContextMenu.displayName = 'ContextMenu';
+  return children({ items, openMenu, hideMenu });
+}
+
+const ContextMenu = memo(ContextMenuBase) as typeof ContextMenuBase;
 
 const ContextMenuToggle = memo(
   ({ openMenu, items }: { openMenu: (x: number, y: number) => void; items: ContextMenuItem[] }) => {
@@ -225,5 +232,6 @@ const ContextMenuToggle = memo(
 
 ContextMenuToggle.displayName = 'ContextMenuToggle';
 
+// biome-ignore lint/style/useComponentExportOnlyModules: This is a component
 export default ContextMenu;
 export { ContextMenuToggle };

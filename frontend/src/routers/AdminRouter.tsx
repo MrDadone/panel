@@ -1,18 +1,28 @@
 import { faReply } from '@fortawesome/free-solid-svg-icons';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { NavLink, Route, Routes } from 'react-router';
+import getLatest from '@/api/admin/system/getLatest.ts';
 import { AdminCan } from '@/elements/Can.tsx';
 import Container from '@/elements/Container.tsx';
+import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
+import ScreenBlock from '@/elements/ScreenBlock.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { to } from '@/lib/routes.ts';
-import NotFound from '@/pages/NotFound.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import AdminPermissionGuard from '@/routers/guards/AdminPermissionGuard.tsx';
 import adminRoutes from '@/routers/routes/adminRoutes.ts';
+import { useAdminStore } from '@/stores/admin.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 
 export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
+  const { t } = useTranslations();
   const { settings } = useGlobalStore();
+  const { setLatestVersions } = useAdminStore();
+
+  useEffect(() => {
+    getLatest().then(setLatestVersions);
+  }, []);
 
   return (
     <div className='lg:flex h-full'>
@@ -20,7 +30,7 @@ export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
         <Sidebar>
           <NavLink to='/' className='w-full'>
             <div className='h-16 w-full flex flex-row items-center justify-between mt-1 select-none cursor-pointer'>
-              <img src='/icon.svg' className='h-12 w-12' alt='Calagopus Icon' />
+              <img src={settings.app.icon} className='h-12 w-12' alt='Calagopus Icon' />
               <h1 className='grow text-md font-bold! ml-2'>{settings.app.name}</h1>
             </div>
           </NavLink>
@@ -70,7 +80,17 @@ export default function AdminRouter({ isNormal }: { isNormal: boolean }) {
                     <Route path={path} element={<Element />} />
                   </Route>
                 ))}
-              <Route path='*' element={<NotFound />} />
+              <Route
+                path='*'
+                element={
+                  <AdminContentContainer title={t('elements.screenBlock.notFound.title', {})} hideTitleComponent>
+                    <ScreenBlock
+                      title={t('elements.screenBlock.notFound.title', {})}
+                      content={t('elements.screenBlock.notFound.content', {})}
+                    />
+                  </AdminContentContainer>
+                }
+              />
             </Routes>
           </Suspense>
         </Container>

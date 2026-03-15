@@ -76,75 +76,84 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid,
-            admin_activity::GetAdminActivityLogger,
-            backup_configurations::BackupConfiguration,
-            nest_egg::NestEgg,
-            nest_egg_variable::NestEggVariable,
-            node::Node,
-            server::Server,
-            user::{GetPermissionManager, User},
+            CreatableModel, admin_activity::GetAdminActivityLogger,
+            nest_egg_variable::NestEggVariable, server::Server, user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use std::collections::HashMap;
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Serialize, Deserialize)]
     pub struct PayloadVariable {
-        #[validate(length(min = 1, max = 255))]
+        #[garde(length(chars, min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
         env_variable: String,
-        #[validate(length(max = 4096))]
+        #[garde(length(max = 4096))]
         #[schema(max_length = 4096)]
         value: String,
     }
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         node_uuid: uuid::Uuid,
+        #[garde(skip)]
         owner_uuid: uuid::Uuid,
+        #[garde(skip)]
         egg_uuid: uuid::Uuid,
+        #[garde(skip)]
         backup_configuration_uuid: Option<uuid::Uuid>,
 
+        #[garde(skip)]
         allocation_uuid: Option<uuid::Uuid>,
+        #[garde(skip)]
         allocation_uuids: Vec<uuid::Uuid>,
 
+        #[garde(skip)]
         start_on_completion: bool,
+        #[garde(skip)]
         skip_installer: bool,
 
-        #[validate(length(max = 255))]
+        #[garde(length(max = 255))]
         #[schema(max_length = 255)]
         external_id: Option<compact_str::CompactString>,
-        #[validate(length(min = 3, max = 255))]
+        #[garde(length(chars, min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: compact_str::CompactString,
-        #[validate(length(max = 1024))]
+        #[garde(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
 
-        limits: shared::models::server::ApiServerLimits,
+        #[garde(dive)]
+        limits: shared::models::server::AdminApiServerLimits,
+        #[garde(inner(range(min = 0)))]
         pinned_cpus: Vec<i16>,
 
-        #[validate(length(min = 1, max = 8192))]
+        #[garde(length(chars, min = 1, max = 8192))]
         #[schema(min_length = 1, max_length = 8192)]
         startup: compact_str::CompactString,
-        #[validate(length(min = 2, max = 255))]
+        #[garde(length(chars, min = 2, max = 255))]
         #[schema(min_length = 2, max_length = 255)]
         image: compact_str::CompactString,
-        #[schema(min_length = 3, max_length = 255, value_type = String)]
+        #[garde(skip)]
+        #[schema(value_type = Option<String>)]
         timezone: Option<chrono_tz::Tz>,
 
+        #[garde(skip)]
         hugepages_passthrough_enabled: bool,
+        #[garde(skip)]
         kvm_passthrough_enabled: bool,
 
+        #[garde(dive)]
         feature_limits: shared::models::server::ApiServerFeatureLimits,
         #[schema(inline)]
+        #[garde(dive)]
         variables: Vec<PayloadVariable>,
     }
 
@@ -173,52 +182,7 @@ mod post {
 
         permissions.has_admin_permission("servers.create")?;
 
-        let node = match Node::by_uuid_optional(&state.database, data.node_uuid).await? {
-            Some(node) => node,
-            None => {
-                return ApiResponse::error("node not found")
-                    .with_status(StatusCode::NOT_FOUND)
-                    .ok();
-            }
-        };
-
-        let owner = match User::by_uuid_optional(&state.database, data.owner_uuid).await? {
-            Some(user) => user,
-            None => {
-                return ApiResponse::error("owner not found")
-                    .with_status(StatusCode::NOT_FOUND)
-                    .ok();
-            }
-        };
-
-        let egg = match NestEgg::by_uuid_optional(&state.database, data.egg_uuid).await? {
-            Some(egg) => egg,
-            None => {
-                return ApiResponse::error("egg not found")
-                    .with_status(StatusCode::NOT_FOUND)
-                    .ok();
-            }
-        };
-
-        let backup_configuration = if let Some(backup_configuration_uuid) =
-            data.backup_configuration_uuid
-            && !backup_configuration_uuid.is_nil()
-        {
-            match BackupConfiguration::by_uuid_optional(&state.database, backup_configuration_uuid)
-                .await?
-            {
-                Some(backup_configuration) => Some(backup_configuration),
-                None => {
-                    return ApiResponse::error("backup configuration not found")
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
-                }
-            }
-        } else {
-            None
-        };
-
-        let variables = NestEggVariable::all_by_egg_uuid(&state.database, egg.uuid).await?;
+        let variables = NestEggVariable::all_by_egg_uuid(&state.database, data.egg_uuid).await?;
 
         let mut validator_variables = HashMap::new();
         validator_variables.reserve(variables.len());
@@ -268,47 +232,41 @@ mod post {
                 None => continue,
             };
 
-            server_variables.insert(variable_uuid, data_variable.value.as_str());
+            server_variables.insert(variable_uuid, data_variable.value.clone().into());
         }
 
-        let server = match Server::create(
-            &state.database,
-            &node,
-            owner.uuid,
-            egg.uuid,
-            backup_configuration.map(|backup_configuration| backup_configuration.uuid),
-            data.allocation_uuid,
-            &data.allocation_uuids,
-            data.external_id.as_deref(),
-            data.start_on_completion,
-            data.skip_installer,
-            &data.name,
-            data.description.as_deref(),
-            &data.limits,
-            &data.pinned_cpus,
-            &data.startup,
-            &data.image,
-            data.timezone.as_ref().map(|tz| tz.name()),
-            data.hugepages_passthrough_enabled,
-            data.kvm_passthrough_enabled,
-            &data.feature_limits,
-            &server_variables,
-        )
-        .await
-        {
-            Ok(server_uuid) => Server::by_uuid(&state.database, server_uuid).await?,
+        let options = shared::models::server::CreateServerOptions {
+            node_uuid: data.node_uuid,
+            owner_uuid: data.owner_uuid,
+            egg_uuid: data.egg_uuid,
+            backup_configuration_uuid: data.backup_configuration_uuid,
+            allocation_uuid: data.allocation_uuid,
+            allocation_uuids: data.allocation_uuids.clone(),
+            start_on_completion: data.start_on_completion,
+            skip_installer: data.skip_installer,
+            external_id: data.external_id,
+            name: data.name,
+            description: data.description,
+            limits: data.limits,
+            pinned_cpus: data.pinned_cpus,
+            startup: data.startup,
+            image: data.image,
+            timezone: data.timezone,
+            hugepages_passthrough_enabled: data.hugepages_passthrough_enabled,
+            kvm_passthrough_enabled: data.kvm_passthrough_enabled,
+            feature_limits: data.feature_limits.clone(),
+            variables: server_variables,
+        };
+        let server = match Server::create(&state, options).await {
+            Ok(server) => server,
             Err(err) if err.is_unique_violation() => {
-                return ApiResponse::error("server with allocation(s) already exists")
-                    .with_status(StatusCode::CONFLICT)
-                    .ok();
+                return ApiResponse::error(
+                    "server with allocation(s) or external id already exists",
+                )
+                .with_status(StatusCode::CONFLICT)
+                .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create server: {:?}", err);
-
-                return ApiResponse::error(&format!("failed to create server: {err}"))
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger
@@ -316,27 +274,27 @@ mod post {
                 "server:create",
                 serde_json::json!({
                     "uuid": server.uuid,
-                    "node_uuid": node.uuid,
-                    "owner_uuid": owner.uuid,
-                    "egg_uuid": egg.uuid,
+                    "node_uuid": server.node.uuid,
+                    "owner_uuid": server.owner.uuid,
+                    "egg_uuid": server.egg.uuid,
 
                     "allocation_uuid": data.allocation_uuid,
                     "allocation_uuids": data.allocation_uuids,
-                    "external_id": data.external_id,
+                    "external_id": server.external_id,
 
                     "start_on_completion": data.start_on_completion,
                     "skip_installer": data.skip_installer,
 
-                    "name": data.name,
-                    "description": data.description,
+                    "name": server.name,
+                    "description": server.description,
                     "limits": data.limits,
-                    "pinned_cpus": data.pinned_cpus,
-                    "startup": data.startup,
-                    "image": data.image,
-                    "timezone": data.timezone,
+                    "pinned_cpus": server.pinned_cpus,
+                    "startup": server.startup,
+                    "image": server.image,
+                    "timezone": server.timezone,
 
-                    "hugepages_passthrough_enabled": data.hugepages_passthrough_enabled,
-                    "kvm_passthrough_enabled": data.kvm_passthrough_enabled,
+                    "hugepages_passthrough_enabled": server.hugepages_passthrough_enabled,
+                    "kvm_passthrough_enabled": server.kvm_passthrough_enabled,
 
                     "feature_limits": data.feature_limits,
                     "variables": data.variables,

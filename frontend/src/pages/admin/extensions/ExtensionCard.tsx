@@ -3,18 +3,20 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Title } from '@mantine/core';
 import { Link } from 'react-router';
 import { Extension } from 'shared';
+import { z } from 'zod';
 import Badge from '@/elements/Badge.tsx';
 import Button from '@/elements/Button.tsx';
 import ConditionalTooltip from '@/elements/ConditionalTooltip.tsx';
 import Divider from '@/elements/Divider.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
+import { adminBackendExtensionSchema } from '@/lib/schemas/admin/backendExtension.ts';
 
 export default function ExtensionCard({
   extension,
   backendExtension,
 }: {
   extension?: Extension;
-  backendExtension?: AdminBackendExtension;
+  backendExtension?: z.infer<typeof adminBackendExtensionSchema>;
 }) {
   return (
     <TitleCard

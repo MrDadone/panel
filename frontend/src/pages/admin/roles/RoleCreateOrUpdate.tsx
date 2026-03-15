@@ -16,16 +16,18 @@ import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import PermissionSelector from '@/elements/PermissionSelector.tsx';
-import { adminRoleSchema } from '@/lib/schemas/admin/roles.ts';
+import { adminRoleUpdateSchema } from '@/lib/schemas/admin/roles.ts';
+import { roleSchema } from '@/lib/schemas/user.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useGlobalStore } from '@/stores/global.ts';
 
-export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role }) {
+export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: z.infer<typeof roleSchema> }) {
   const { availablePermissions, setAvailablePermissions } = useGlobalStore();
 
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminRoleSchema>>({
+  const form = useForm<z.infer<typeof adminRoleUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       description: null,
@@ -34,13 +36,18 @@ export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role
       serverPermissions: [],
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminRoleSchema),
+    validate: zod4Resolver(adminRoleUpdateSchema),
   });
 
-  const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminRoleSchema>, Role>({
+  const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<
+    z.infer<typeof adminRoleUpdateSchema>,
+    z.infer<typeof roleSchema>
+  >({
     form,
-    createFn: () => createRole(form.values),
-    updateFn: contextRole ? () => updateRole(contextRole.uuid, form.values) : undefined,
+    createFn: () => createRole(adminRoleUpdateSchema.parse(form.getValues())),
+    updateFn: contextRole
+      ? () => updateRole(contextRole.uuid, adminRoleUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextRole ? () => deleteRole(contextRole.uuid) : undefined,
     doUpdate: !!contextRole,
     basePath: '/admin/roles',
@@ -68,7 +75,11 @@ export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role
   }, []);
 
   return (
-    <AdminContentContainer title={`${contextRole ? 'Update' : 'Create'} Role`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextRole ? 'Update' : 'Create'} Role`}
+      fullscreen={!!contextRole}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -76,22 +87,35 @@ export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
           </Group>
 
           <Group grow align='start'>
-            <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
+            <TextArea
+              label='Description'
+              placeholder='Description'
+              rows={3}
+              key={form.key('description')}
+              {...form.getInputProps('description')}
+            />
           </Group>
 
           <Switch
             label='Require Two Factor'
             description='Require users with this role to use two factor authentication.'
+            key={form.key('requireTwoFactor')}
             {...form.getInputProps('requireTwoFactor', { type: 'checkbox' })}
           />
 
@@ -101,7 +125,7 @@ export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role
                 label='Server Permissions'
                 permissionsMapType='serverPermissions'
                 permissions={availablePermissions.serverPermissions}
-                selectedPermissions={form.values.serverPermissions}
+                selectedPermissions={form.getValues().serverPermissions}
                 setSelectedPermissions={(permissions) => form.setFieldValue('serverPermissions', permissions)}
               />
             )}
@@ -110,7 +134,7 @@ export default function RoleCreateOrUpdate({ contextRole }: { contextRole?: Role
                 label='Admin Permissions'
                 permissionsMapType='adminPermissions'
                 permissions={availablePermissions.adminPermissions}
-                selectedPermissions={form.values.adminPermissions}
+                selectedPermissions={form.getValues().adminPermissions}
                 setSelectedPermissions={(permissions) => form.setFieldValue('adminPermissions', permissions)}
               />
             )}

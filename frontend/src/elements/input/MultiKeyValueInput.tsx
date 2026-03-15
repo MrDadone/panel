@@ -1,7 +1,7 @@
 import { faCheck, faGripVertical, faPencil, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Badge, Button, Group, Input, Stack, Text, TextInput } from '@mantine/core';
-import { ComponentProps, useEffect, useRef, useState } from 'react';
+import { ComponentProps, startTransition, useEffect, useRef, useState } from 'react';
 import { DndContainer, DndItem, SortableItem } from '@/elements/DragAndDrop.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import Card from '../Card.tsx';
@@ -79,22 +79,26 @@ export default function MultiKeyValueInput({
       return;
     }
 
-    const newOptions = [...selectedOptions, { key: trimmedKey, value: trimmedValue }];
-    setSelectedOptions(newOptions);
-    emitChange(newOptions);
+    startTransition(() => {
+      const newOptions = [...selectedOptions, { key: trimmedKey, value: trimmedValue }];
+      setSelectedOptions(newOptions);
+      emitChange(newOptions);
 
-    setNewKey('');
-    setNewValue('');
-    keyInputRef.current?.focus();
+      setNewKey('');
+      setNewValue('');
+      keyInputRef.current?.focus();
+    });
   };
 
   const handleStartEdit = (key: string) => {
     const option = selectedOptions.find((opt) => opt.key === key);
     if (!option) return;
 
-    setEditingKey(key);
-    setEditKey(option.key);
-    setEditValue(option.value);
+    startTransition(() => {
+      setEditingKey(key);
+      setEditKey(option.key);
+      setEditValue(option.value);
+    });
   };
 
   const handleSaveEdit = () => {
@@ -111,9 +115,12 @@ export default function MultiKeyValueInput({
     const newOptions = selectedOptions.map((opt) =>
       opt.key === editingKey ? { key: trimmedKey, value: trimmedValue } : opt,
     );
-    setSelectedOptions(newOptions);
-    emitChange(newOptions);
-    setEditingKey(null);
+
+    startTransition(() => {
+      setSelectedOptions(newOptions);
+      emitChange(newOptions);
+      setEditingKey(null);
+    });
   };
 
   const handleCancelEdit = () => {
@@ -149,8 +156,10 @@ export default function MultiKeyValueInput({
     const hiddenItems = selectedOptions.filter((opt) => hideKey?.(opt.key));
     const newOptions = [...reorderedVisible, ...hiddenItems];
 
-    setSelectedOptions(newOptions);
-    emitChange(newOptions);
+    startTransition(() => {
+      setSelectedOptions(newOptions);
+      emitChange(newOptions);
+    });
   };
 
   const renderItem = (item: DndKeyValue, dragHandleProps?: ComponentProps<'button'>) => {

@@ -145,41 +145,16 @@ mod delete {
 mod patch {
     use crate::routes::api::admin::database_hosts::_database_host_::GetDatabaseHost;
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
-        models::{admin_activity::GetAdminActivityLogger, user::GetPermissionManager},
-        prelude::SqlxErrorExt,
+        models::{
+            UpdatableModel, admin_activity::GetAdminActivityLogger,
+            database_host::UpdateDatabaseHostOptions, user::GetPermissionManager,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: Option<compact_str::CompactString>,
-
-        deployment_enabled: Option<bool>,
-        maintenance_enabled: Option<bool>,
-
-        #[validate(length(max = 255))]
-        #[schema(max_length = 255)]
-        public_host: Option<compact_str::CompactString>,
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        host: Option<compact_str::CompactString>,
-        public_port: Option<u16>,
-        port: Option<u16>,
-
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        username: Option<compact_str::CompactString>,
-        #[validate(length(min = 1, max = 512))]
-        #[schema(min_length = 1, max_length = 512)]
-        password: Option<compact_str::CompactString>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -195,89 +170,24 @@ mod patch {
             description = "The database host ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateDatabaseHostOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         mut database_host: GetDatabaseHost,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateDatabaseHostOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("database-hosts.update")?;
 
-        if let Some(name) = data.name {
-            database_host.name = name;
-        }
-        if let Some(deployment_enabled) = data.deployment_enabled {
-            database_host.deployment_enabled = deployment_enabled;
-        }
-        if let Some(maintenance_enabled) = data.maintenance_enabled {
-            database_host.maintenance_enabled = maintenance_enabled;
-        }
-        if let Some(public_host) = data.public_host {
-            if public_host.is_empty() {
-                database_host.public_host = None;
-            } else {
-                database_host.public_host = Some(public_host);
-            }
-        }
-        if let Some(host) = data.host {
-            database_host.host = host;
-        }
-        if let Some(public_port) = data.public_port {
-            if public_port == 0 {
-                database_host.public_port = None;
-            } else {
-                database_host.public_port = Some(public_port as i32);
-            }
-        }
-        if let Some(port) = data.port {
-            database_host.port = port as i32;
-        }
-        if let Some(username) = data.username {
-            database_host.username = username;
-        }
-        if let Some(password) = data.password {
-            database_host.password = state.database.encrypt(password).await?;
-        }
-
-        match sqlx::query!(
-            "UPDATE database_hosts
-            SET name = $2, deployment_enabled = $3, maintenance_enabled = $4, public_host = $5, host = $6, public_port = $7, port = $8, username = $9, password = $10
-            WHERE database_hosts.uuid = $1",
-            database_host.uuid,
-            &database_host.name,
-            database_host.deployment_enabled,
-            database_host.maintenance_enabled,
-            database_host.public_host.as_deref(),
-            &database_host.host,
-            database_host.public_port,
-            database_host.port,
-            &database_host.username,
-            database_host.password,
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match database_host.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("database host with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update database host: {:?}", err);
-
-                return ApiResponse::error("failed to update database host")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

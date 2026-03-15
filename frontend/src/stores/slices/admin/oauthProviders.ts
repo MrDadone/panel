@@ -1,19 +1,21 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { adminOAuthProviderSchema } from '@/lib/schemas/admin/oauthProviders.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface OAuthProvidersSlice {
-  oauthProviders: ResponseMeta<AdminOAuthProvider>;
+  oauthProviders: Pagination<z.infer<typeof adminOAuthProviderSchema>>;
 
-  setOAuthProviders: (oauthProviders: ResponseMeta<AdminOAuthProvider>) => void;
-  addOAuthProvider: (oauthProvider: AdminOAuthProvider) => void;
-  removeOAuthProvider: (oauthProvider: AdminOAuthProvider) => void;
+  setOAuthProviders: (oauthProviders: Pagination<z.infer<typeof adminOAuthProviderSchema>>) => void;
+  addOAuthProvider: (oauthProvider: z.infer<typeof adminOAuthProviderSchema>) => void;
+  removeOAuthProvider: (oauthProvider: z.infer<typeof adminOAuthProviderSchema>) => void;
 }
 
 export const createOAuthProvidersSlice: StateCreator<AdminStore, [], [], OAuthProvidersSlice> = (
   set,
 ): OAuthProvidersSlice => ({
-  oauthProviders: getEmptyPaginationSet<AdminOAuthProvider>(),
+  oauthProviders: getEmptyPaginationSet<z.infer<typeof adminOAuthProviderSchema>>(),
 
   setOAuthProviders: (value) => set((state) => ({ ...state, oauthProviders: value })),
   addOAuthProvider: (oauthProvider) =>

@@ -14,32 +14,20 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon } from '@mantine/core';
 import { useState } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Card from '@/elements/Card.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import Divider from '@/elements/Divider.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
-import { formatAllocation } from '@/lib/server.ts';
+import { serverSchema } from '@/lib/schemas/server/server.ts';
+import { formatAllocation, statusToColor } from '@/lib/server.ts';
 import { bytesToString, mbToBytes } from '@/lib/size.ts';
+import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useUserStore } from '@/stores/user.ts';
 import ServerAddGroupModal from './modals/ServerAddGroupModal.tsx';
-
-export const statusToColor = (status: ServerPowerState | undefined) => {
-  switch (status) {
-    case 'running':
-      return 'bg-green-500';
-    case 'starting':
-      return 'bg-yellow-500';
-    case 'stopping':
-      return 'bg-red-500';
-    case 'offline':
-      return 'bg-red-500';
-    default:
-      return 'bg-gray-500';
-  }
-};
 
 export default function ServerItem({
   server,
@@ -51,7 +39,7 @@ export default function ServerItem({
   showSelection = true,
   sKeyPressed = false,
 }: {
-  server: Server;
+  server: z.infer<typeof serverSchema>;
   showGroupAddButton?: boolean;
   onGroupRemove?: () => void;
   isSelected?: boolean;
@@ -61,11 +49,11 @@ export default function ServerItem({
   sKeyPressed?: boolean;
 }) {
   const { t } = useTranslations();
-  const { serverGroups, getServerResourceUsage } = useUserStore();
+  const { serverGroups } = useUserStore();
   const { serverListShowOthers } = useGlobalStore();
 
   const [openModal, setOpenModal] = useState<'add-group' | null>(null);
-  const stats = getServerResourceUsage(server.uuid, server.nodeUuid);
+  const stats = useServerStats(server);
 
   const diskLimit = server.limits.disk !== 0 ? bytesToString(mbToBytes(server.limits.disk)) : t('common.unlimited', {});
   const memoryLimit =
@@ -195,10 +183,20 @@ export default function ServerItem({
               <div className='flex flex-col justify-between'>
                 <Divider my='md' />
 
-                {server.suspended ? (
+                {server.isSuspended ? (
                   <div className='col-span-3 flex flex-row items-center justify-center'>
                     <FontAwesomeIcon size='1x' icon={faBan} color='red' />
                     <p className='ml-2 text-sm'>{t('common.server.state.suspended', {})}</p>
+                  </div>
+                ) : server.isTransferring ? (
+                  <div className='col-span-3 flex flex-row items-center justify-center'>
+                    <Spinner size={16} />
+                    <p className='ml-2 text-sm'>{t('common.server.state.transferring', {})}</p>
+                  </div>
+                ) : server.nodeMaintenanceEnabled ? (
+                  <div className='col-span-3 flex flex-row items-center justify-center'>
+                    <FontAwesomeIcon size='1x' icon={faBan} color='red' />
+                    <p className='ml-2 text-sm'>{t('common.server.state.nodeMaintenance', {})}</p>
                   </div>
                 ) : server.status === 'installing' ? (
                   <div className='col-span-3 flex flex-row items-center justify-center'>
@@ -213,7 +211,7 @@ export default function ServerItem({
                 ) : server.status === 'install_failed' ? (
                   <div className='col-span-3 flex flex-row items-center justify-center'>
                     <FontAwesomeIcon size='1x' icon={faTriangleExclamation} color='yellow' />
-                    <p className='ml-2 text-sm'>{t('common.server.state.InstallFailed', {})}</p>
+                    <p className='ml-2 text-sm'>{t('common.server.state.installFailed', {})}</p>
                   </div>
                 ) : !stats ? (
                   <div className='col-span-3 flex flex-row items-center justify-center'>

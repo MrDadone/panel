@@ -3,21 +3,25 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod post {
     use axum::http::{HeaderMap, StatusCode};
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{user::User, user_activity::UserActivity, user_password_reset::UserPasswordReset},
+        models::{
+            CreatableModel, user::User, user_activity::UserActivity,
+            user_password_reset::UserPasswordReset,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(email)]
-        #[schema(format = "email")]
+        #[garde(email, length(max = 255))]
+        #[schema(format = "email", max_length = 255)]
         email: String,
 
+        #[garde(skip)]
         captcha: Option<String>,
     }
 
@@ -85,40 +89,46 @@ mod post {
                 }
             };
 
-            let mail = shared::mail::MAIL_PASSWORD_RESET
-                .replace("{{app_name}}", &settings.app.name)
-                .replace("{{user_username}}", &user.username)
-                .replace(
-                    "{{reset_link}}",
-                    &format!(
-                        "{}/auth/reset-password?token={}",
-                        settings.app.url,
-                        urlencoding::encode(&token),
-                    ),
-                );
-
-            UserActivity::log(
-                &state.database,
-                user.uuid,
-                None,
-                "email:password-reset",
-                Some(ip.0.into()),
-                serde_json::json!({
-                    "user_agent": headers
-                        .get("User-Agent")
-                        .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
-                        .unwrap_or("unknown"),
-                }),
+            if let Err(err) = UserActivity::create(
+                &state,
+                shared::models::user_activity::CreateUserActivityOptions {
+                    user_uuid: user.uuid,
+                    impersonator_uuid: None,
+                    api_key_uuid: None,
+                    event: "email:password-reset".into(),
+                    ip: Some(ip.0.into()),
+                    data: serde_json::json!({
+                        "user_agent": headers
+                            .get("User-Agent")
+                            .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                            .unwrap_or("unknown"),
+                    }),
+                    created: None,
+                },
             )
             .await
-            .ok();
+            {
+                tracing::warn!(
+                    user = %user.uuid,
+                    "failed to log user activity: {:#?}",
+                    err
+                );
+            }
 
             state
                 .mail
                 .send(
-                    user.email,
+                    user.email.clone(),
                     format!("{} - Password Reset", settings.app.name).into(),
-                    mail,
+                    shared::mail::MAIL_PASSWORD_RESET,
+                    minijinja::context! {
+                        user => user,
+                        reset_link => format!(
+                            "{}/auth/reset-password?token={}",
+                            settings.app.url,
+                            urlencoding::encode(&token),
+                        )
+                    },
                 )
                 .await;
         });

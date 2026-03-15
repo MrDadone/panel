@@ -1,17 +1,19 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { adminMountSchema } from '@/lib/schemas/admin/mounts.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface MountsSlice {
-  mounts: ResponseMeta<Mount>;
+  mounts: Pagination<z.infer<typeof adminMountSchema>>;
 
-  setMounts: (mounts: ResponseMeta<Mount>) => void;
-  addMount: (mount: Mount) => void;
-  removeMount: (mount: Mount) => void;
+  setMounts: (mounts: Pagination<z.infer<typeof adminMountSchema>>) => void;
+  addMount: (mount: z.infer<typeof adminMountSchema>) => void;
+  removeMount: (mount: z.infer<typeof adminMountSchema>) => void;
 }
 
 export const createMountsSlice: StateCreator<AdminStore, [], [], MountsSlice> = (set): MountsSlice => ({
-  mounts: getEmptyPaginationSet<Mount>(),
+  mounts: getEmptyPaginationSet<z.infer<typeof adminMountSchema>>(),
 
   setMounts: (value) => set((state) => ({ ...state, mounts: value })),
   addMount: (mount) =>

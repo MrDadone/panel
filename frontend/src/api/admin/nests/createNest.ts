@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
-import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
+import { adminNestSchema, adminNestUpdateSchema } from '@/lib/schemas/admin/nests.ts';
 import { transformKeysToSnakeCase } from '@/lib/transformers.ts';
 
-export default async (data: z.infer<typeof adminNestSchema>): Promise<AdminNest> => {
+export default async (data: z.infer<typeof adminNestUpdateSchema>): Promise<z.infer<typeof adminNestSchema>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .post('/api/admin/nests', transformKeysToSnakeCase(data))

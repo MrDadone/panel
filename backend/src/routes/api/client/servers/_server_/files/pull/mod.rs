@@ -5,6 +5,7 @@ mod query;
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -15,21 +16,24 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         #[serde(default)]
         #[schema(default = "/")]
         root: compact_str::CompactString,
 
-        #[validate(url)]
+        #[garde(url)]
         #[schema(format = "uri")]
         url: String,
+        #[garde(skip)]
         name: Option<compact_str::CompactString>,
 
+        #[garde(skip)]
         #[serde(default)]
         use_header: bool,
+        #[garde(skip)]
         #[serde(default)]
         foreground: bool,
     }
@@ -65,12 +69,7 @@ mod post {
 
         state
             .cache
-            .ratelimit(
-                format!("client/servers/{}/files/pull", server.uuid),
-                5,
-                60,
-                server.uuid,
-            )
+            .ratelimit("client/servers/files/pull", 5, 60, server.uuid.to_string())
             .await?;
 
         if let Some(name) = &data.name
@@ -94,6 +93,7 @@ mod post {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .post_servers_server_files_pull(server.uuid, &request_body)
             .await
         {

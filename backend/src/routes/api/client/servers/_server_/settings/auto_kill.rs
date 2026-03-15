@@ -3,6 +3,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod put {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -13,13 +14,13 @@ mod put {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         enabled: bool,
 
-        #[validate(range(min = 1, max = 3600))]
+        #[garde(range(min = 1, max = 3600))]
         #[schema(minimum = 1, maximum = 3600)]
         seconds: Option<u64>,
     }

@@ -1,18 +1,20 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { userSshKeySchema } from '@/lib/schemas/user/sshKeys.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface SshKeySlice {
-  sshKeys: ResponseMeta<UserSshKey>;
+  sshKeys: Pagination<z.infer<typeof userSshKeySchema>>;
 
-  setSshKeys: (keys: ResponseMeta<UserSshKey>) => void;
-  addSshKey: (key: UserSshKey) => void;
-  removeSshKey: (key: UserSshKey) => void;
-  updateSshKey: (uuid: string, data: Partial<UserSshKey>) => void;
+  setSshKeys: (keys: Pagination<z.infer<typeof userSshKeySchema>>) => void;
+  addSshKey: (key: z.infer<typeof userSshKeySchema>) => void;
+  removeSshKey: (key: z.infer<typeof userSshKeySchema>) => void;
+  updateSshKey: (uuid: string, data: Partial<z.infer<typeof userSshKeySchema>>) => void;
 }
 
 export const createSshKeysSlice: StateCreator<UserStore, [], [], SshKeySlice> = (set): SshKeySlice => ({
-  sshKeys: getEmptyPaginationSet<UserSshKey>(),
+  sshKeys: getEmptyPaginationSet<z.infer<typeof userSshKeySchema>>(),
 
   setSshKeys: (value) => set((state) => ({ ...state, sshKeys: value })),
   addSshKey: (key) =>

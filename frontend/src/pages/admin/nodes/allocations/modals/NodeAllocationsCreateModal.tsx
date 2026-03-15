@@ -8,8 +8,8 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
-import { adminNodeAllocationsSchema } from '@/lib/schemas/admin/nodes.ts';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { adminNodeAllocationsSchema, adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function NodeAllocationsCreateModal({
@@ -17,7 +17,7 @@ export default function NodeAllocationsCreateModal({
   loadAllocations,
   opened,
   onClose,
-}: ModalProps & { node: Node; loadAllocations: () => void }) {
+}: ModalProps & { node: z.infer<typeof adminNodeSchema>; loadAllocations: () => void }) {
   const { addToast } = useToast();
 
   const [resolvedPorts, setResolvedPorts] = useState<number[]>([]);
@@ -94,14 +94,14 @@ export default function NodeAllocationsCreateModal({
 
         <TagsInput label='Port Ranges' placeholder='Port Ranges' {...form.getInputProps('ports')} />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doCreate} loading={loading} disabled={!form.isValid() || !resolvedPorts.length}>
             Create {resolvedPorts.length}
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

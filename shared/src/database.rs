@@ -153,7 +153,6 @@ impl Database {
         self.read.as_ref().unwrap_or(&self.write)
     }
 
-    #[inline]
     pub async fn encrypt(
         &self,
         data: impl AsRef<[u8]> + Send + 'static,
@@ -167,18 +166,16 @@ impl Database {
     }
 
     #[inline]
-    pub fn encrypt_sync(&self, data: impl AsRef<[u8]>) -> Option<Vec<u8>> {
-        simple_crypt::encrypt(data.as_ref(), self.encryption_key.as_bytes()).ok()
+    pub fn blocking_encrypt(&self, data: impl AsRef<[u8]>) -> Result<Vec<u8>, anyhow::Error> {
+        simple_crypt::encrypt(data.as_ref(), self.encryption_key.as_bytes())
     }
 
-    #[inline]
     pub async fn decrypt(
         &self,
         data: impl AsRef<[u8]> + Send + 'static,
     ) -> Result<compact_str::CompactString, anyhow::Error> {
         if self.use_decryption_cache {
-            return self
-                .cache
+            self.cache
                 .cached(
                     &format!(
                         "decryption_cache::{}",
@@ -196,31 +193,33 @@ impl Database {
                         .await?
                     },
                 )
-                .await;
+                .await
+        } else {
+            let encryption_key = self.encryption_key.clone();
+
+            tokio::task::spawn_blocking(move || {
+                simple_crypt::decrypt(data.as_ref(), encryption_key.as_bytes())
+                    .map(|s| compact_str::CompactString::from_utf8_lossy(&s))
+            })
+            .await?
         }
-
-        let encryption_key = self.encryption_key.clone();
-
-        tokio::task::spawn_blocking(move || {
-            simple_crypt::decrypt(data.as_ref(), encryption_key.as_bytes())
-                .map(|s| compact_str::CompactString::from_utf8_lossy(&s))
-        })
-        .await?
     }
 
     #[inline]
-    pub fn decrypt_sync(&self, data: impl AsRef<[u8]>) -> Option<compact_str::CompactString> {
+    pub fn blocking_decrypt(
+        &self,
+        data: impl AsRef<[u8]>,
+    ) -> Result<compact_str::CompactString, anyhow::Error> {
         simple_crypt::decrypt(data.as_ref(), self.encryption_key.as_bytes())
             .map(|s| compact_str::CompactString::from_utf8_lossy(&s))
-            .ok()
     }
 
     #[inline]
-    pub async fn batch_action<F: Future<Output = Result<(), anyhow::Error>> + Send + 'static>(
+    pub async fn batch_action(
         &self,
         key: &'static str,
         uuid: uuid::Uuid,
-        action: F,
+        action: impl Future<Output = Result<(), anyhow::Error>> + Send + 'static,
     ) {
         let mut actions = self.batch_actions.lock().await;
         actions.insert((key, uuid), Box::pin(action));
@@ -232,6 +231,8 @@ pub enum DatabaseError {
     Sqlx(sqlx::Error),
     Serde(serde_json::Error),
     Any(anyhow::Error),
+    Validation(garde::Report),
+    InvalidRelation(InvalidRelationError),
 }
 
 impl Display for DatabaseError {
@@ -240,6 +241,8 @@ impl Display for DatabaseError {
             Self::Sqlx(sqlx_value) => sqlx_value.fmt(f),
             Self::Serde(serde_value) => serde_value.fmt(f),
             Self::Any(any_value) => any_value.fmt(f),
+            Self::Validation(validation_value) => validation_value.fmt(f),
+            Self::InvalidRelation(relation_value) => relation_value.fmt(f),
         }
     }
 }
@@ -269,6 +272,19 @@ impl From<sqlx::Error> for DatabaseError {
     #[inline]
     fn from(value: sqlx::Error) -> Self {
         Self::Sqlx(value)
+    }
+}
+
+impl From<garde::Report> for DatabaseError {
+    #[inline]
+    fn from(value: garde::Report) -> Self {
+        Self::Validation(value)
+    }
+}
+
+impl From<InvalidRelationError> for DatabaseError {
+    fn from(value: InvalidRelationError) -> Self {
+        Self::InvalidRelation(value)
     }
 }
 
@@ -302,15 +318,25 @@ impl DatabaseError {
             _ => false,
         }
     }
+
+    #[inline]
+    pub const fn is_validation_error(&self) -> bool {
+        matches!(self, Self::Validation(_))
+    }
+
+    #[inline]
+    pub const fn is_invalid_relation(&self) -> bool {
+        matches!(self, Self::InvalidRelation(_))
+    }
 }
 
-impl From<DatabaseError> for anyhow::Error {
-    #[inline]
-    fn from(value: DatabaseError) -> Self {
-        match value {
-            DatabaseError::Sqlx(sqlx_value) => anyhow::anyhow!(sqlx_value),
-            DatabaseError::Serde(serde_value) => anyhow::anyhow!(serde_value),
-            DatabaseError::Any(any_value) => any_value,
-        }
+impl std::error::Error for DatabaseError {}
+
+#[derive(Debug)]
+pub struct InvalidRelationError(pub &'static str);
+
+impl Display for InvalidRelationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "invalid relation `{}` provided", self.0)
     }
 }

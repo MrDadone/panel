@@ -10,19 +10,24 @@ import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
-import { serverFilesCopyRemoteSchema } from '@/lib/schemas/server/files.ts';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { serverDirectoryEntrySchema, serverFilesCopyRemoteSchema } from '@/lib/schemas/server/files.ts';
+import { serverSchema } from '@/lib/schemas/server/server.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  files: DirectoryEntry[];
+  files: z.infer<typeof serverDirectoryEntrySchema>[];
 };
 
-export default function FileCopyModal({ files, opened, onClose }: Props) {
+export default function FileCopyRemoteModal({ files, opened, onClose }: Props) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
-  const { server, browsingDirectory, setSelectedFiles } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory, doSelectFiles } = useFileManager();
 
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +40,7 @@ export default function FileCopyModal({ files, opened, onClose }: Props) {
     validate: zod4Resolver(serverFilesCopyRemoteSchema),
   });
 
-  const servers = useSearchableResource<Server>({
+  const servers = useSearchableResource<z.infer<typeof serverSchema>>({
     fetcher: (search) => getServers(1, search),
   });
 
@@ -44,12 +49,12 @@ export default function FileCopyModal({ files, opened, onClose }: Props) {
 
     copyFilesRemote(server.uuid, {
       ...form.values,
-      root: browsingDirectory!,
+      root: browsingDirectory,
       files: files.map((f) => f.name),
     })
       .then(() => {
-        setSelectedFiles([]);
-        addToast('File copying has started.', 'success');
+        doSelectFiles([]);
+        addToast(t('pages.server.files.toast.fileCopyingStarted', {}), 'success');
         onClose();
       })
       .catch((msg) => {
@@ -59,13 +64,13 @@ export default function FileCopyModal({ files, opened, onClose }: Props) {
   };
 
   return (
-    <Modal title='Remote Copy Files' onClose={onClose} opened={opened}>
+    <Modal title={t('pages.server.files.modal.copyRemote.title', {})} onClose={onClose} opened={opened}>
       <form onSubmit={form.onSubmit(() => doCopy())}>
         <Stack>
           <Select
             withAsterisk
-            label='Server'
-            placeholder='Server'
+            label={t('pages.server.files.modal.copyRemote.form.server', {})}
+            placeholder={t('pages.server.files.modal.copyRemote.form.server', {})}
             data={servers.items.reduce(
               (acc, server) => {
                 const group = acc.find((g) => g.group === server.nodeName);
@@ -89,25 +94,29 @@ export default function FileCopyModal({ files, opened, onClose }: Props) {
             onChange={(value) => form.setFieldValue('destinationServer', value || '')}
           />
 
-          <TextInput label='Destination' placeholder='Destination' {...form.getInputProps('destination')} />
+          <TextInput
+            label={t('pages.server.files.modal.copyRemote.form.destination', {})}
+            placeholder={t('pages.server.files.modal.copyRemote.form.destination', {})}
+            {...form.getInputProps('destination')}
+          />
         </Stack>
 
         <p className='mt-2 text-sm md:text-base break-all'>
-          <span className='text-neutral-200'>These files will be created on the remote server under&nbsp;</span>
+          <span className='text-neutral-200'>{t('pages.server.files.modal.copyRemote.createdAs', {})}</span>
           <Code>
             /home/container/
             <span className='text-cyan-200'>{form.values.destination.replace(/^(\.\.\/|\/)+/, '')}</span>
           </Code>
         </p>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading}>
-            Copy
+            {t('pages.server.files.button.copy', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
-            Close
+            {t('common.button.close', {})}
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

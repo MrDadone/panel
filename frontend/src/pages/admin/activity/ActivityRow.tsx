@@ -1,10 +1,15 @@
 import { Group } from '@mantine/core';
+import { z } from 'zod';
 import ActivityInfoButton from '@/elements/activity/ActivityInfoButton.tsx';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { activitySchema } from '@/lib/schemas/activity.ts';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
-export default function ActivityRow({ activity }: { activity: AdminActivity }) {
+export default function ActivityRow({ activity }: { activity: z.infer<typeof activitySchema> }) {
+  const { t } = useTranslations();
+
   return (
     <TableRow>
       <TableData>
@@ -18,7 +23,10 @@ export default function ActivityRow({ activity }: { activity: AdminActivity }) {
       </TableData>
 
       <TableData>
-        {activity.user ? `${activity.user.username} (${activity.isApi ? 'API' : 'Web'})` : 'System'}
+        {activity.user
+          ? `${activity.user.username} (${activity.isApi ? t('common.api', {}) : t('common.web', {})})`
+          : 'System'}
+        {activity.impersonator && ` (${t('common.impersonatedBy', { username: activity.impersonator.username })})`}
       </TableData>
 
       <TableData>

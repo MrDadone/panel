@@ -1,0 +1,289 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "release-*"
+
+env:
+  BIN_NAME: panel-rs
+  PROJECT_NAME: panel-rs
+  REPO_NAME: calagopus/panel
+
+jobs:
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          pnpm install
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          pnpm build:ci
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+  dist:
+    name: Dist
+    needs: [build-frontend]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          - x86_64-linux
+          - aarch64-linux
+          - riscv64-linux
+          - ppc64le-linux
+          - x86_64-windows
+        include:
+          - build: x86_64-linux
+            os: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+            binary_suffix: ""
+          - build: aarch64-linux
+            os: ubuntu-24.04
+            target: aarch64-unknown-linux-musl
+            binary_suffix: ""
+          - build: riscv64-linux
+            os: ubuntu-24.04
+            target: riscv64gc-unknown-linux-gnu
+            binary_suffix: ""
+          - build: ppc64le-linux
+            os: ubuntu-24.04
+            target: powerpc64le-unknown-linux-gnu
+            binary_suffix: ""
+          - build: x86_64-windows
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_suffix: ".exe"
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Install Windows extra tools
+        if: runner.os == 'Windows'
+        run: |
+          choco install nasm
+          echo "C:\Program Files\NASM" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          cache-key: ${{ matrix.target }}
+
+      - name: Install cross
+        if: contains(matrix.target, 'linux')
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Run tests (Linux)
+        if: contains(matrix.target, 'linux')
+        run: cross test --release --target ${{ matrix.target }}
+
+      - name: Run tests (Non-Linux)
+        if: ${{ !contains(matrix.target, 'linux') }}
+        run: cargo test --target ${{ matrix.target }}
+
+      - name: Build release binary (Linux)
+        if: contains(matrix.target, 'linux')
+        run: |
+          RUSTFLAGS="-C target-feature=+crt-static" \
+          cross build --release --target ${{ matrix.target }}
+
+      - name: Build release binary (Non-Linux)
+        if: ${{ !contains(matrix.target, 'linux') }}
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Prepare binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p dist
+          cp "target/${{ matrix.target }}/release/$BIN_NAME${{ matrix.binary_suffix }}" "dist/$BIN_NAME-${{ matrix.build }}"
+
+      - name: Prepare binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item "target\${{ matrix.target }}\release\$env:BIN_NAME${{ matrix.binary_suffix }}" "dist\$env:BIN_NAME-${{ matrix.build }}${{ matrix.binary_suffix }}"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME }}-${{ matrix.build }}
+          path: dist/${{ env.BIN_NAME }}-${{ matrix.build }}${{ matrix.binary_suffix }}
+
+  publish-draft-release:
+    name: Publish Draft Release
+    needs: [dist]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Determine if pre-release and strip prefix
+        id: release_info
+        run: |
+          RAW_TAG="${{ github.ref_name }}"
+          VERSION="${RAW_TAG#release-}"
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          if [[ "$VERSION" == *-* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.release_info.outputs.version }}
+          draft: true
+          prerelease: ${{ steps.release_info.outputs.is_prerelease == 'true' }}
+          generate_release_notes: true
+          files: artifacts/${{ env.PROJECT_NAME }}-*/*
+
+  create-multiarch-image:
+    name: Create multi-arch Docker image
+    needs: [dist]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare binaries
+        run: |
+          mkdir -p .docker/amd64 .docker/arm64 .docker/riscv64 .docker/ppc64le
+          cp dist/${{ env.PROJECT_NAME }}-x86_64-linux/${{ env.BIN_NAME }}-x86_64-linux .docker/amd64/panel-rs
+          cp dist/${{ env.PROJECT_NAME }}-aarch64-linux/${{ env.BIN_NAME }}-aarch64-linux .docker/arm64/panel-rs
+          cp dist/${{ env.PROJECT_NAME }}-riscv64-linux/${{ env.BIN_NAME }}-riscv64-linux .docker/riscv64/panel-rs
+          cp dist/${{ env.PROJECT_NAME }}-ppc64le-linux/${{ env.BIN_NAME }}-ppc64le-linux .docker/ppc64le/panel-rs
+
+          chmod +x .docker/*/panel-rs
+
+      - name: Extract version and determine tags
+        id: prep_tags
+        run: |
+          RAW_TAG="${{ github.ref_name }}"
+          VERSION="${RAW_TAG#release-}"
+
+          DOCKER_TAGS="ghcr.io/${{ env.REPO_NAME }}:${VERSION}"
+
+          if [[ "$VERSION" == *-* ]]; then
+            DOCKER_TAGS="$DOCKER_TAGS,ghcr.io/${{ env.REPO_NAME }}:latest-pre"
+
+            if [[ "$VERSION" == 1.0.0-* ]]; then
+              DOCKER_TAGS="$DOCKER_TAGS,ghcr.io/${{ env.REPO_NAME }}:latest"
+            fi
+          else
+            DOCKER_TAGS="$DOCKER_TAGS,ghcr.io/${{ env.REPO_NAME }}:latest"
+          fi
+
+          echo "DOCKER_TAGS=$DOCKER_TAGS" >> $GITHUB_ENV
+
+          HEAVY_TAGS="ghcr.io/${{ env.REPO_NAME }}:${VERSION}-heavy"
+
+          if [[ "$VERSION" == *-* ]]; then
+            HEAVY_TAGS="$HEAVY_TAGS,ghcr.io/${{ env.REPO_NAME }}:latest-pre-heavy"
+
+            if [[ "$VERSION" == 1.0.0-* ]]; then
+              HEAVY_TAGS="$HEAVY_TAGS,ghcr.io/${{ env.REPO_NAME }}:heavy"
+            fi
+          else
+            HEAVY_TAGS="$HEAVY_TAGS,ghcr.io/${{ env.REPO_NAME }}:heavy"
+          fi
+
+          echo "HEAVY_TAGS=$HEAVY_TAGS" >> $GITHUB_ENV
+
+      - name: Build & push multi-arch image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/riscv64,linux/ppc64le
+          push: true
+          tags: ${{ env.DOCKER_TAGS }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push multi-arch heavy image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.heavy
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.HEAVY_TAGS }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

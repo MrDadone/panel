@@ -20,6 +20,7 @@ import {
   adminBackupConfigurationResticSchema,
   adminBackupConfigurationS3Schema,
   adminBackupConfigurationSchema,
+  adminBackupConfigurationUpdateSchema,
 } from '@/lib/schemas/admin/backupConfigurations.ts';
 import BackupRestic from '@/pages/admin/backupConfigurations/forms/BackupRestic.tsx';
 import BackupS3 from '@/pages/admin/backupConfigurations/forms/BackupS3.tsx';
@@ -28,11 +29,12 @@ import { useResourceForm } from '@/plugins/useResourceForm.ts';
 export default function BackupConfigurationCreateOrUpdate({
   contextBackupConfiguration,
 }: {
-  contextBackupConfiguration?: BackupConfiguration;
+  contextBackupConfiguration?: z.infer<typeof adminBackupConfigurationSchema>;
 }) {
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminBackupConfigurationSchema>>({
+  const form = useForm<Partial<z.infer<typeof adminBackupConfigurationUpdateSchema>>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       description: null,
@@ -40,10 +42,11 @@ export default function BackupConfigurationCreateOrUpdate({
       backupDisk: 'local',
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminBackupConfigurationSchema),
+    validate: zod4Resolver(adminBackupConfigurationUpdateSchema),
   });
 
   const backupConfigS3Form = useForm<z.infer<typeof adminBackupConfigurationS3Schema>>({
+    mode: 'uncontrolled',
     initialValues: {
       accessKey: '',
       secretKey: '',
@@ -58,6 +61,7 @@ export default function BackupConfigurationCreateOrUpdate({
   });
 
   const backupConfigResticForm = useForm<z.infer<typeof adminBackupConfigurationResticSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       repository: '',
       retryLockSeconds: 0,
@@ -68,20 +72,34 @@ export default function BackupConfigurationCreateOrUpdate({
   });
 
   const { loading, doCreateOrUpdate, doDelete } = useResourceForm<
-    z.infer<typeof adminBackupConfigurationSchema>,
-    BackupConfiguration
+    Partial<z.infer<typeof adminBackupConfigurationUpdateSchema>>,
+    z.infer<typeof adminBackupConfigurationSchema>
   >({
     form,
     createFn: () =>
       createBackupConfiguration({
-        ...form.values,
-        backupConfigs: { s3: backupConfigS3Form.values, restic: backupConfigResticForm.values },
+        ...adminBackupConfigurationSchema.parse(form.getValues()),
+        backupConfigs: {
+          s3: backupConfigS3Form.isDirty()
+            ? adminBackupConfigurationS3Schema.parse(backupConfigS3Form.getValues())
+            : null,
+          restic: backupConfigResticForm.isDirty()
+            ? adminBackupConfigurationResticSchema.parse(backupConfigResticForm.getValues())
+            : null,
+        },
       }),
     updateFn: contextBackupConfiguration
       ? () =>
           updateBackupConfiguration(contextBackupConfiguration.uuid, {
-            ...form.values,
-            backupConfigs: { s3: backupConfigS3Form.values, restic: backupConfigResticForm.values },
+            ...adminBackupConfigurationSchema.parse(form.getValues()),
+            backupConfigs: {
+              s3: backupConfigS3Form.isDirty()
+                ? adminBackupConfigurationS3Schema.parse(backupConfigS3Form.getValues())
+                : null,
+              restic: backupConfigResticForm.isDirty()
+                ? adminBackupConfigurationResticSchema.parse(backupConfigResticForm.getValues())
+                : null,
+            },
           })
       : undefined,
     deleteFn: contextBackupConfiguration ? () => deleteBackupConfiguration(contextBackupConfiguration.uuid) : undefined,
@@ -98,13 +116,21 @@ export default function BackupConfigurationCreateOrUpdate({
         maintenanceEnabled: contextBackupConfiguration.maintenanceEnabled,
         backupDisk: contextBackupConfiguration.backupDisk,
       });
-      backupConfigS3Form.setValues(contextBackupConfiguration.backupConfigs.s3);
-      backupConfigResticForm.setValues(contextBackupConfiguration.backupConfigs.restic);
+      if (contextBackupConfiguration.backupConfigs.s3) {
+        backupConfigS3Form.setValues(contextBackupConfiguration.backupConfigs.s3);
+      }
+      if (contextBackupConfiguration.backupConfigs.restic) {
+        backupConfigResticForm.setValues(contextBackupConfiguration.backupConfigs.restic);
+      }
     }
   }, [contextBackupConfiguration]);
 
   return (
-    <AdminContentContainer title={`${contextBackupConfiguration ? 'Update' : 'Create'} Backup Config`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextBackupConfiguration ? 'Update' : 'Create'} Backup Config`}
+      fullscreen={!!contextBackupConfiguration}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -112,13 +138,19 @@ export default function BackupConfigurationCreateOrUpdate({
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
             <Select
               withAsterisk
               label='Backup Disk'
@@ -127,15 +159,26 @@ export default function BackupConfigurationCreateOrUpdate({
                 value,
                 label,
               }))}
+              key={form.key('backupDisk')}
               {...form.getInputProps('backupDisk')}
             />
           </Group>
 
           <Group grow align='start'>
-            <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
+            <TextArea
+              label='Description'
+              placeholder='Description'
+              rows={3}
+              key={form.key('description')}
+              {...form.getInputProps('description')}
+            />
           </Group>
 
-          <Switch label='Maintenance Enabled' {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })} />
+          <Switch
+            label='Maintenance Enabled'
+            key={form.key('maintenanceEnabled')}
+            {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })}
+          />
 
           <Group>
             <AdminCan
@@ -146,9 +189,9 @@ export default function BackupConfigurationCreateOrUpdate({
                 type='submit'
                 disabled={
                   !form.isValid() ||
-                  ((form.values.backupDisk === 's3' || backupConfigS3Form.isDirty()) &&
+                  ((form.getValues().backupDisk === 's3' || backupConfigS3Form.isDirty()) &&
                     !backupConfigS3Form.isValid()) ||
-                  ((form.values.backupDisk === 'restic' || backupConfigResticForm.isDirty()) &&
+                  ((form.getValues().backupDisk === 'restic' || backupConfigResticForm.isDirty()) &&
                     !backupConfigResticForm.isValid())
                 }
                 loading={loading}
@@ -160,9 +203,9 @@ export default function BackupConfigurationCreateOrUpdate({
                   onClick={() => doCreateOrUpdate(true)}
                   disabled={
                     !form.isValid() ||
-                    ((form.values.backupDisk === 's3' || backupConfigS3Form.isDirty()) &&
+                    ((form.getValues().backupDisk === 's3' || backupConfigS3Form.isDirty()) &&
                       !backupConfigS3Form.isValid()) ||
-                    ((form.values.backupDisk === 'restic' || backupConfigResticForm.isDirty()) &&
+                    ((form.getValues().backupDisk === 'restic' || backupConfigResticForm.isDirty()) &&
                       !backupConfigResticForm.isValid())
                   }
                   loading={loading}
@@ -179,10 +222,12 @@ export default function BackupConfigurationCreateOrUpdate({
               </AdminCan>
             )}
           </Group>
-          {(form.values.backupDisk === 's3' || backupConfigS3Form.isDirty()) && <BackupS3 form={backupConfigS3Form} />}
-          {(form.values.backupDisk === 'restic' || backupConfigResticForm.isDirty()) && (
-            <BackupRestic form={backupConfigResticForm} />
+          {(form.getValues().backupDisk === 's3' || backupConfigS3Form.isDirty() || backupConfigS3Form.isTouched()) && (
+            <BackupS3 form={backupConfigS3Form} />
           )}
+          {(form.getValues().backupDisk === 'restic' ||
+            backupConfigResticForm.isDirty() ||
+            backupConfigResticForm.isTouched()) && <BackupRestic form={backupConfigResticForm} />}
         </Stack>
       </form>
     </AdminContentContainer>

@@ -1,18 +1,20 @@
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
+import { z } from 'zod';
 import getNodeMounts from '@/api/admin/nodes/mounts/getNodeMounts.ts';
 import Button from '@/elements/Button.tsx';
 import { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { nodeMountTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useAdminStore } from '@/stores/admin.tsx';
 import NodeMountAddModal from './modals/NodeMountAddModal.tsx';
 import NodeMountRow from './NodeMountRow.tsx';
 
-export default function AdminNodeMounts({ node }: { node: Node }) {
+export default function AdminNodeMounts({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const { nodeMounts, setNodeMounts } = useAdminStore();
 
   const [openModal, setOpenModal] = useState<'add' | null>(null);

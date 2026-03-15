@@ -1,4 +1,11 @@
-use crate::{prelude::*, storage::StorageUrlRetriever};
+use crate::{
+    jwt::BasePayload,
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+    storage::StorageUrlRetriever,
+};
+use compact_str::ToCompactString;
+use garde::Validate;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type};
@@ -40,7 +47,7 @@ pub struct ServerBackup {
     pub uuid: uuid::Uuid,
     pub server: Option<Fetchable<super::server::Server>>,
     pub node: Fetchable<super::node::Node>,
-    pub backup_configuration: Option<Fetchable<super::backup_configurations::BackupConfiguration>>,
+    pub backup_configuration: Option<Fetchable<super::backup_configuration::BackupConfiguration>>,
 
     pub name: compact_str::CompactString,
     pub successful: bool,
@@ -160,7 +167,7 @@ impl BaseModel for ServerBackup {
                 compact_str::format_compact!("{prefix}server_uuid"),
             ),
             backup_configuration:
-                super::backup_configurations::BackupConfiguration::get_fetchable_from_row(
+                super::backup_configuration::BackupConfiguration::get_fetchable_from_row(
                     row,
                     compact_str::format_compact!("{prefix}backup_configuration_uuid"),
                 ),
@@ -189,119 +196,15 @@ impl BaseModel for ServerBackup {
 }
 
 impl ServerBackup {
-    pub async fn create(
-        database: &Arc<crate::database::Database>,
-        server: super::server::Server,
-        name: &str,
-        ignored_files: Vec<String>,
-    ) -> Result<Self, anyhow::Error> {
-        let backup_configuration =
-            server.backup_configuration(database).await.ok_or_else(|| {
-                crate::response::DisplayError::new(
-                    "no backup configuration available, unable to create backup",
-                )
-                .with_status(StatusCode::EXPECTATION_FAILED)
-            })?;
-
-        if backup_configuration.maintenance_enabled {
-            return Err(crate::response::DisplayError::new(
-                "cannot create backup while backup configuration is in maintenance mode",
-            )
-            .with_status(StatusCode::EXPECTATION_FAILED)
-            .into());
-        }
-
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO server_backups (server_uuid, node_uuid, backup_configuration_uuid, name, ignored_files, bytes, disk)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(server.uuid)
-        .bind(server.node.uuid)
-        .bind(backup_configuration.uuid)
-        .bind(name)
-        .bind(&ignored_files)
-        .bind(0i64)
-        .bind(backup_configuration.backup_disk)
-        .fetch_one(database.write())
-        .await?;
-
-        tokio::spawn({
-            let uuid = row.get::<uuid::Uuid, _>("uuid");
-            let backup_disk = backup_configuration.backup_disk;
-            let database = Arc::clone(database);
-
-            async move {
-                tracing::debug!(backup = %uuid, "creating server backup");
-
-                let node = match server.node.fetch_cached(&database).await {
-                    Ok(node) => node,
-                    Err(err) => {
-                        tracing::error!(backup = %uuid, "failed to create server backup: {:?}", err);
-
-                        if let Err(err) = sqlx::query!(
-                            r#"
-                            UPDATE server_backups
-                            SET successful = false, completed = NOW()
-                            WHERE server_backups.uuid = $1
-                            "#,
-                            uuid
-                        )
-                        .execute(database.write())
-                        .await
-                        {
-                            tracing::error!(backup = %uuid, "failed to update server backup status: {:?}", err);
-                        }
-
-                        return;
-                    }
-                };
-
-                if let Err(err) = node
-                    .api_client(&database)
-                    .post_servers_server_backup(
-                        server.uuid,
-                        &wings_api::servers_server_backup::post::RequestBody {
-                            adapter: backup_disk.to_wings_adapter(),
-                            uuid,
-                            ignore: ignored_files.join("\n").into(),
-                        },
-                    )
-                    .await
-                {
-                    tracing::error!(backup = %uuid, "failed to create server backup: {:?}", err);
-
-                    if let Err(err) = sqlx::query!(
-                        r#"
-                        UPDATE server_backups
-                        SET successful = false, completed = NOW()
-                        WHERE server_backups.uuid = $1
-                        "#,
-                        uuid
-                    )
-                    .execute(database.write())
-                    .await
-                    {
-                        tracing::error!(backup = %uuid, "failed to update server backup status: {:?}", err);
-                    }
-                }
-            }
-        });
-
-        Ok(Self::map(None, &row)?)
-    }
-
     pub async fn create_raw(
-        database: &Arc<crate::database::Database>,
-        server: &super::server::Server,
-        name: &str,
-        ignored_files: Vec<String>,
+        state: &crate::State,
+        options: CreateServerBackupOptions<'_>,
     ) -> Result<Self, anyhow::Error> {
-        let backup_configuration =
-            server.backup_configuration(database).await.ok_or_else(|| {
+        let backup_configuration = options
+            .server
+            .backup_configuration(&state.database)
+            .await
+            .ok_or_else(|| {
                 crate::response::DisplayError::new(
                     "no backup configuration available, unable to create backup",
                 )
@@ -324,14 +227,14 @@ impl ServerBackup {
             "#,
             Self::columns_sql(None)
         ))
-        .bind(server.uuid)
-        .bind(server.node.uuid)
+        .bind(options.server.uuid)
+        .bind(options.server.node.uuid)
         .bind(backup_configuration.uuid)
-        .bind(name)
-        .bind(&ignored_files)
+        .bind(options.name)
+        .bind(&options.ignored_files)
         .bind(0i64)
         .bind(backup_configuration.backup_disk)
-        .fetch_one(database.write())
+        .fetch_one(state.database.write())
         .await?;
 
         Ok(Self::map(None, &row)?)
@@ -548,6 +451,27 @@ impl ServerBackup {
         })
     }
 
+    pub async fn all_uuids_by_server_uuid(
+        database: &crate::database::Database,
+        server_uuid: uuid::Uuid,
+    ) -> Result<Vec<uuid::Uuid>, crate::database::DatabaseError> {
+        let rows = sqlx::query(
+            r#"
+            SELECT server_backups.uuid
+            FROM server_backups
+            WHERE server_backups.server_uuid = $1 AND server_backups.deleted IS NULL
+            "#,
+        )
+        .bind(server_uuid)
+        .fetch_all(database.read())
+        .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|row| row.get::<uuid::Uuid, _>("uuid"))
+            .collect())
+    }
+
     pub async fn all_by_server_uuid(
         database: &crate::database::Database,
         server_uuid: uuid::Uuid,
@@ -586,6 +510,98 @@ impl ServerBackup {
         .unwrap_or(0)
     }
 
+    pub async fn download_url(
+        &self,
+        state: &crate::State,
+        user: &super::user::User,
+        node: &super::node::Node,
+        archive_format: wings_api::StreamableArchiveFormat,
+    ) -> Result<String, anyhow::Error> {
+        let backup_configuration = self
+            .backup_configuration
+            .as_ref()
+            .ok_or_else(|| {
+                crate::response::DisplayError::new(
+                    "no backup configuration available, unable to restore backup",
+                )
+                .with_status(StatusCode::EXPECTATION_FAILED)
+            })?
+            .fetch_cached(&state.database)
+            .await?;
+
+        if backup_configuration.maintenance_enabled {
+            return Err(crate::response::DisplayError::new(
+                "cannot restore backup while backup configuration is in maintenance mode",
+            )
+            .with_status(StatusCode::EXPECTATION_FAILED)
+            .into());
+        }
+
+        if matches!(self.disk, BackupDisk::S3)
+            && let Some(mut s3_configuration) = backup_configuration.backup_configs.s3
+        {
+            s3_configuration.decrypt(&state.database).await?;
+
+            let client = match s3_configuration.into_client() {
+                Ok(client) => client,
+                Err(err) => {
+                    return Err(anyhow::Error::from(err).context("failed to create s3 client"));
+                }
+            };
+            let file_path = match &self.upload_path {
+                Some(path) => path,
+                None => {
+                    return Err(crate::response::DisplayError::new(
+                        "backup does not have an upload path",
+                    )
+                    .with_status(StatusCode::EXPECTATION_FAILED)
+                    .into());
+                }
+            };
+
+            let url = client.presign_get(file_path, 15 * 60, None).await?;
+
+            return Ok(url);
+        }
+
+        #[derive(Serialize)]
+        struct BackupDownloadJwt {
+            #[serde(flatten)]
+            base: BasePayload,
+
+            backup_uuid: uuid::Uuid,
+            unique_id: uuid::Uuid,
+        }
+
+        let token = node.create_jwt(
+            &state.database,
+            &state.jwt,
+            &BackupDownloadJwt {
+                base: BasePayload {
+                    issuer: "panel".into(),
+                    subject: None,
+                    audience: Vec::new(),
+                    expiration_time: Some(chrono::Utc::now().timestamp() + 900),
+                    not_before: None,
+                    issued_at: Some(chrono::Utc::now().timestamp()),
+                    jwt_id: user.uuid.to_string(),
+                },
+                backup_uuid: self.uuid,
+                unique_id: uuid::Uuid::new_v4(),
+            },
+        )?;
+
+        let mut url = node.public_url();
+        url.set_path("/download/backup");
+        url.set_query(Some(&format!(
+            "token={}&archive_format={}",
+            urlencoding::encode(&token),
+            archive_format
+        )));
+
+        Ok(url.to_string())
+    }
+
     pub async fn restore(
         self,
         database: &crate::database::Database,
@@ -616,6 +632,7 @@ impl ServerBackup {
             .fetch_cached(database)
             .await?
             .api_client(database)
+            .await?
             .post_servers_server_backup_backup_restore(
                 server.uuid,
                 self.uuid,
@@ -673,10 +690,17 @@ impl ServerBackup {
         if let Some(row) = row {
             let backup = Self::map(None, &row)?;
 
-            backup.delete(state, ()).await
+            backup.delete(state, Default::default()).await
         } else {
             Err(sqlx::Error::RowNotFound.into())
         }
+    }
+
+    #[inline]
+    pub fn default_name() -> compact_str::CompactString {
+        let now = chrono::Local::now();
+
+        now.format("%Y-%m-%d %H:%M:%S %z").to_compact_string()
     }
 
     #[inline]
@@ -693,7 +717,43 @@ impl ServerBackup {
         }
     }
 
-    #[inline]
+    pub async fn into_admin_node_api_object(
+        self,
+        database: &crate::database::Database,
+        storage_url_retriever: &StorageUrlRetriever<'_>,
+    ) -> Result<AdminApiNodeServerBackup, anyhow::Error> {
+        Ok(AdminApiNodeServerBackup {
+            uuid: self.uuid,
+            server: match self.server {
+                Some(server) => Some(
+                    server
+                        .fetch_cached(database)
+                        .await?
+                        .into_admin_api_object(database, storage_url_retriever)
+                        .await?,
+                ),
+                None => None,
+            },
+            node: self
+                .node
+                .fetch_cached(database)
+                .await?
+                .into_admin_api_object(database)
+                .await?,
+            name: self.name,
+            ignored_files: self.ignored_files,
+            is_successful: self.successful,
+            is_locked: self.locked,
+            is_browsable: self.browsable,
+            is_streaming: self.streaming,
+            checksum: self.checksum,
+            bytes: self.bytes,
+            files: self.files,
+            completed: self.completed.map(|dt| dt.and_utc()),
+            created: self.created.and_utc(),
+        })
+    }
+
     pub async fn into_admin_api_object(
         self,
         database: &crate::database::Database,
@@ -744,6 +804,228 @@ impl ServerBackup {
     }
 }
 
+#[derive(Validate)]
+pub struct CreateServerBackupOptions<'a> {
+    #[garde(skip)]
+    pub server: &'a super::server::Server,
+    #[garde(length(chars, min = 1, max = 255))]
+    pub name: compact_str::CompactString,
+    #[garde(skip)]
+    pub ignored_files: Vec<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for ServerBackup {
+    type CreateOptions<'a> = CreateServerBackupOptions<'a>;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<ServerBackup>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let backup_configuration = options
+            .server
+            .backup_configuration(&state.database)
+            .await
+            .ok_or_else(|| {
+                anyhow::Error::new(
+                    crate::response::DisplayError::new(
+                        "no backup configuration available, unable to create backup",
+                    )
+                    .with_status(StatusCode::EXPECTATION_FAILED),
+                )
+            })?;
+
+        if backup_configuration.maintenance_enabled {
+            return Err(anyhow::Error::new(
+                crate::response::DisplayError::new(
+                    "cannot create backup while backup configuration is in maintenance mode",
+                )
+                .with_status(StatusCode::EXPECTATION_FAILED),
+            )
+            .into());
+        }
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("server_backups");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("server_uuid", options.server.uuid)
+            .set("node_uuid", options.server.node.uuid)
+            .set("backup_configuration_uuid", backup_configuration.uuid)
+            .set("name", &options.name)
+            .set("ignored_files", &options.ignored_files)
+            .set("bytes", 0i64)
+            .set("disk", backup_configuration.backup_disk);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let backup = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        let server = options.server.clone();
+        let database = Arc::clone(&state.database);
+        let backup_uuid = backup.uuid;
+        let backup_disk = backup_configuration.backup_disk;
+        let ignored_files_str = options
+            .ignored_files
+            .iter()
+            .map(|s| s.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        tokio::spawn(async move {
+            tracing::debug!(backup = %backup_uuid, "creating server backup");
+
+            let node = match server.node.fetch_cached(&database).await {
+                Ok(node) => node,
+                Err(err) => {
+                    tracing::error!(backup = %backup_uuid, "failed to create server backup: {:?}", err);
+
+                    if let Err(err) = sqlx::query!(
+                        "UPDATE server_backups
+                        SET successful = false, completed = NOW()
+                        WHERE server_backups.uuid = $1",
+                        backup_uuid
+                    )
+                    .execute(database.write())
+                    .await
+                    {
+                        tracing::error!(backup = %backup_uuid, "failed to update server backup status: {:?}", err);
+                    }
+
+                    return;
+                }
+            };
+
+            let api_client = match node.api_client(&database).await {
+                Ok(api_client) => api_client,
+                Err(err) => {
+                    tracing::error!(backup = %backup_uuid, "failed to create server backup: {:?}", err);
+
+                    if let Err(err) = sqlx::query!(
+                        "UPDATE server_backups
+                        SET successful = false, completed = NOW()
+                        WHERE server_backups.uuid = $1",
+                        backup_uuid
+                    )
+                    .execute(database.write())
+                    .await
+                    {
+                        tracing::error!(backup = %backup_uuid, "failed to update server backup status: {:?}", err);
+                    }
+
+                    return;
+                }
+            };
+
+            if let Err(err) = api_client
+                .post_servers_server_backup(
+                    server.uuid,
+                    &wings_api::servers_server_backup::post::RequestBody {
+                        adapter: backup_disk.to_wings_adapter(),
+                        uuid: backup_uuid,
+                        ignore: ignored_files_str.into(),
+                    },
+                )
+                .await
+            {
+                tracing::error!(backup = %backup_uuid, "failed to create server backup: {:?}", err);
+
+                if let Err(err) = sqlx::query!(
+                    "UPDATE server_backups
+                    SET successful = false, completed = NOW()
+                    WHERE server_backups.uuid = $1",
+                    backup_uuid
+                )
+                .execute(database.write())
+                .await
+                {
+                    tracing::error!(backup = %backup_uuid, "failed to update server backup status: {:?}", err);
+                }
+            }
+        });
+
+        Ok(backup)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Default)]
+pub struct UpdateServerBackupOptions {
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub name: Option<compact_str::CompactString>,
+    #[garde(skip)]
+    pub locked: Option<bool>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for ServerBackup {
+    type UpdateOptions = UpdateServerBackupOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<ServerBackup>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("server_backups");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("name", options.name.as_ref())
+            .set("locked", options.locked)
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(locked) = options.locked {
+            self.locked = locked;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
+    }
+}
+
 #[async_trait::async_trait]
 impl ByUuid for ServerBackup {
     async fn by_uuid(
@@ -766,9 +1048,14 @@ impl ByUuid for ServerBackup {
     }
 }
 
+#[derive(Default)]
+pub struct DeleteServerBackupOptions {
+    pub force: bool,
+}
+
 #[async_trait::async_trait]
 impl DeletableModel for ServerBackup {
-    type DeleteOptions = ();
+    type DeleteOptions = DeleteServerBackupOptions;
 
     fn get_delete_handlers() -> &'static LazyLock<DeleteListenerList<Self>> {
         static DELETE_LISTENERS: LazyLock<DeleteListenerList<ServerBackup>> =
@@ -789,17 +1076,60 @@ impl DeletableModel for ServerBackup {
 
         let node = self.node.fetch_cached(&state.database).await?;
 
-        let backup_configuration = self
-            .backup_configuration
-            .as_ref()
-            .ok_or_else(|| {
-                crate::response::DisplayError::new(
+        let backup_configuration = match &self.backup_configuration {
+            Some(backup_configuration) => {
+                backup_configuration.fetch_cached(&state.database).await?
+            }
+            None if options.force => {
+                let database = Arc::clone(&state.database);
+                let backup_uuid = self.uuid;
+                let backup_disk = self.disk;
+
+                return tokio::spawn(async move {
+                    if backup_disk != BackupDisk::S3
+                        && let Err(err) = node
+                            .api_client(&database)
+                            .await?
+                            .delete_backups_backup(
+                                backup_uuid,
+                                &wings_api::backups_backup::delete::RequestBody {
+                                    adapter: backup_disk.to_wings_adapter(),
+                                },
+                            )
+                            .await
+                            && !matches!(
+                                err,
+                                wings_api::client::ApiHttpError::Http(StatusCode::NOT_FOUND, _)
+                            )
+                    {
+                        tracing::error!(node = %node.uuid, backup = %backup_uuid, "unable to delete backup on node: {:?}", err)
+                    }
+
+                    sqlx::query(
+                        r#"
+                        UPDATE server_backups
+                        SET deleted = NOW()
+                        WHERE server_backups.uuid = $1
+                        "#,
+                    )
+                    .bind(backup_uuid)
+                    .execute(&mut *transaction)
+                    .await?;
+
+                    transaction.commit().await?;
+
+                    Ok(())
+                })
+                .await?;
+            }
+            None => {
+                return Err(crate::response::DisplayError::new(
                     "no backup configuration available, unable to delete backup",
                 )
                 .with_status(StatusCode::EXPECTATION_FAILED)
-            })?
-            .fetch_cached(&state.database)
-            .await?;
+                .into());
+            }
+        };
 
         if backup_configuration.maintenance_enabled {
             return Err(crate::response::DisplayError::new(
@@ -829,20 +1159,27 @@ impl DeletableModel for ServerBackup {
                             None => if let Some(server_uuid) = server_uuid {
                                 Self::s3_path(server_uuid, backup_uuid)
                             } else {
-                                return Err(anyhow::anyhow!("upload path not found"))
+                                return Err(anyhow::anyhow!("backup upload path not found"))
                             }
                         };
 
                         if let Err(err) = client.delete_object(file_path).await {
-                            tracing::error!(server = ?server_uuid, backup = %backup_uuid, "failed to delete S3 backup: {:?}", err);
+                            if options.force {
+                                tracing::error!(server = ?server_uuid, backup = %backup_uuid, "failed to delete S3 backup, ignoring: {:?}", err);
+                            } else {
+                                return Err(err.into());
+                            }
                         }
-                    } else {
+                    } else if options.force {
                         tracing::warn!(server = ?server_uuid, backup = %backup_uuid, "S3 backup deletion attempted but no S3 configuration found, ignoring");
+                    } else {
+                        return Err(anyhow::anyhow!("s3 backup deletion attempted but no S3 configuration found"));
                     }
                 }
                 _ => {
                     if let Err(err) = node
                         .api_client(&database)
+                        .await?
                         .delete_backups_backup(
                             backup_uuid,
                             &wings_api::backups_backup::delete::RequestBody {
@@ -873,6 +1210,29 @@ impl DeletableModel for ServerBackup {
             Ok(())
         }).await?
     }
+}
+
+#[derive(ToSchema, Serialize)]
+#[schema(title = "AdminNodeServerBackup")]
+pub struct AdminApiNodeServerBackup {
+    pub uuid: uuid::Uuid,
+    pub server: Option<super::server::AdminApiServer>,
+    pub node: super::node::AdminApiNode,
+
+    pub name: compact_str::CompactString,
+    pub ignored_files: Vec<compact_str::CompactString>,
+
+    pub is_successful: bool,
+    pub is_locked: bool,
+    pub is_browsable: bool,
+    pub is_streaming: bool,
+
+    pub checksum: Option<compact_str::CompactString>,
+    pub bytes: i64,
+    pub files: i64,
+
+    pub completed: Option<chrono::DateTime<chrono::Utc>>,
+    pub created: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(ToSchema, Serialize)]

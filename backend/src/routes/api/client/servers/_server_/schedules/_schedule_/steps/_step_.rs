@@ -4,23 +4,18 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 mod patch {
     use crate::routes::api::client::servers::_server_::schedules::_schedule_::GetServerSchedule;
     use axum::{extract::Path, http::StatusCode};
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
+            UpdatableModel,
             server::{GetServer, GetServerActivityLogger},
-            server_schedule_step::ServerScheduleStep,
+            server_schedule_step::{ServerScheduleStep, UpdateServerScheduleStepOptions},
             user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-
-    #[derive(ToSchema, Deserialize)]
-    pub struct Payload {
-        action: Option<wings_api::ScheduleActionInner>,
-        order: Option<i16>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -46,7 +41,7 @@ mod patch {
             description = "The schedule step ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ))]
+    ), request_body = inline(UpdateServerScheduleStepOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
@@ -54,7 +49,7 @@ mod patch {
         activity_logger: GetServerActivityLogger,
         schedule: GetServerSchedule,
         Path((_server, _schedule, schedule_step)): Path<(String, uuid::Uuid, uuid::Uuid)>,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateServerScheduleStepOptions>,
     ) -> ApiResponseResult {
         let mut schedule_step = match ServerScheduleStep::by_schedule_uuid_uuid(
             &state.database,
@@ -73,23 +68,7 @@ mod patch {
 
         permissions.has_server_permission("schedules.update")?;
 
-        if let Some(action) = data.action {
-            schedule_step.action = action;
-        }
-        if let Some(order) = data.order {
-            schedule_step.order = order;
-        }
-
-        sqlx::query!(
-            "UPDATE server_schedule_steps
-            SET action = $2, order_ = $3
-            WHERE server_schedule_steps.uuid = $1",
-            schedule_step.uuid,
-            serde_json::to_value(&schedule_step.action)?,
-            schedule_step.order
-        )
-        .execute(state.database.write())
-        .await?;
+        schedule_step.update(&state, data).await?;
 
         activity_logger
             .log(

@@ -2,22 +2,24 @@ use super::State;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod post {
-    use axum::http::StatusCode;
+    use axum::http::{HeaderMap, StatusCode};
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{user_activity::UserActivity, user_password_reset::UserPasswordReset},
+        models::{
+            CreatableModel, user_activity::UserActivity, user_password_reset::UserPasswordReset,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 96, max = 96))]
+        #[garde(length(chars, min = 96, max = 96))]
         #[schema(min_length = 96, max_length = 96)]
         token: String,
-        #[validate(length(min = 8, max = 512))]
+        #[garde(length(chars, min = 8, max = 512))]
         #[schema(min_length = 8, max_length = 512)]
         new_password: String,
     }
@@ -32,6 +34,7 @@ mod post {
     pub async fn route(
         state: GetState,
         ip: shared::GetIp,
+        headers: HeaderMap,
         shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
         if let Err(errors) = shared::utils::validate_data(&data) {
@@ -40,22 +43,32 @@ mod post {
                 .ok();
         }
 
-        let token = match UserPasswordReset::delete_by_token(&state.database, &data.token).await? {
-            Some(token) => token,
-            None => {
-                return ApiResponse::error("invalid or expired token")
-                    .with_status(StatusCode::BAD_REQUEST)
-                    .ok();
-            }
-        };
+        let mut token =
+            match UserPasswordReset::delete_by_token(&state.database, &data.token).await? {
+                Some(token) => token,
+                None => {
+                    return ApiResponse::error("invalid or expired token")
+                        .with_status(StatusCode::BAD_REQUEST)
+                        .ok();
+                }
+            };
 
-        if let Err(err) = UserActivity::log(
-            &state.database,
-            token.user.uuid,
-            None,
-            "auth:reset-password",
-            Some(ip.0.into()),
-            serde_json::json!({}),
+        if let Err(err) = UserActivity::create(
+            &state,
+            shared::models::user_activity::CreateUserActivityOptions {
+                user_uuid: token.user.uuid,
+                impersonator_uuid: None,
+                api_key_uuid: None,
+                event: "auth:reset-password".into(),
+                ip: Some(ip.0.into()),
+                data: serde_json::json!({
+                    "user_agent": headers
+                        .get("User-Agent")
+                        .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                        .unwrap_or("unknown"),
+                }),
+                created: None,
+            },
         )
         .await
         {
@@ -68,7 +81,7 @@ mod post {
 
         token
             .user
-            .update_password(&state.database, &data.new_password)
+            .update_password(&state.database, Some(&data.new_password))
             .await?;
 
         ApiResponse::new_serialized(Response {}).ok()

@@ -56,7 +56,7 @@ impl shared::extensions::commands::CliCommand<AddArgs> for AddCommand {
                             .bright_red(),
                         "but the current panel version is incompatible.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 if tokio::fs::metadata(".sqlx")
@@ -70,7 +70,7 @@ impl shared::extensions::commands::CliCommand<AddArgs> for AddCommand {
                         ".sqlx".bright_red(),
                         "directory, make sure you are in the panel root.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let installed_extensions = tokio::task::spawn_blocking(move || {
@@ -91,7 +91,7 @@ impl shared::extensions::commands::CliCommand<AddArgs> for AddCommand {
                         format!("panel-rs extensions update {}", args.file).bright_red(),
                         "instead.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let package_json = tokio::fs::read_to_string("frontend/package.json")
@@ -126,7 +126,7 @@ impl shared::extensions::commands::CliCommand<AddArgs> for AddCommand {
                         "does not match requirement".red(),
                         pnpm_req.to_string().bright_red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let node_bin = which("node")
@@ -153,7 +153,7 @@ impl shared::extensions::commands::CliCommand<AddArgs> for AddCommand {
                         "does not match requirement".red(),
                         node_req.to_string().bright_red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let frontend_path = Path::new("frontend/extensions")
@@ -192,7 +192,7 @@ impl shared::extensions::commands::CliCommand<AddArgs> for AddCommand {
                             "pnpm install".bright_red(),
                             "did not run successfully, aborting process".red()
                         );
-                        std::process::exit(1);
+                        return Ok(1);
                     }
 
                     let status = Command::new(&pnpm_bin)
@@ -206,7 +206,7 @@ impl shared::extensions::commands::CliCommand<AddArgs> for AddCommand {
                             "pnpm kit:generate".bright_red(),
                             "did not run successfully, aborting process".red()
                         );
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 }
 
@@ -220,7 +220,7 @@ impl shared::extensions::commands::CliCommand<AddArgs> for AddCommand {
                         "failed to resync internal extension list:".red(),
                         err.to_string().red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 println!(
@@ -237,7 +237,7 @@ impl shared::extensions::commands::CliCommand<AddArgs> for AddCommand {
                     "panel-rs extensions apply".bright_black(),
                 );
 
-                Ok(())
+                Ok(0)
             })
         })
     }

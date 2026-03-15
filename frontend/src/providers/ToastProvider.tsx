@@ -1,7 +1,9 @@
 import classNames from 'classnames';
 import { AnimatePresence, motion } from 'motion/react';
 import { FC, ReactNode, useCallback, useMemo, useState } from 'react';
+import { z } from 'zod';
 import Notification from '@/elements/Notification.tsx';
+import { userToastPosition } from '@/lib/schemas/user.ts';
 import { Toast, ToastContext, ToastType } from '@/providers/contexts/toastContext.ts';
 
 let toastId = 1;
@@ -21,7 +23,7 @@ const getToastColor = (type: ToastType) => {
   }
 };
 
-const getToastPositionClasses = (position: UserToastPosition) => {
+const getToastPositionClasses = (position: z.infer<typeof userToastPosition>) => {
   switch (position) {
     case 'top_left':
       return 'top-4 left-4';
@@ -38,7 +40,7 @@ const getToastPositionClasses = (position: UserToastPosition) => {
   }
 };
 
-const getToastPositionInitial = (position: UserToastPosition) => {
+const getToastPositionInitial = (position: z.infer<typeof userToastPosition>) => {
   switch (position) {
     case 'top_left':
       return { opacity: 0, x: -50, y: 0 };
@@ -56,7 +58,7 @@ const getToastPositionInitial = (position: UserToastPosition) => {
 };
 
 const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [toastPosition, setToastPosition] = useState<UserToastPosition>('bottom_right');
+  const [toastPosition, setToastPosition] = useState<z.infer<typeof userToastPosition>>('bottom_right');
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const addToast = useCallback((message: string, type: ToastType = 'success') => {
@@ -111,5 +113,5 @@ const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
 };
 
-export { ToastProvider };
 export { useToast } from './contexts/toastContext.ts';
+export { ToastProvider };

@@ -1,114 +1,230 @@
-import { faArrowDown, faClockRotateLeft, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowDown,
+  faArrowUp,
+  faClockRotateLeft,
+  faMagnifyingGlass,
+  faMinus,
+  faPlus,
+  faServer,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon } from '@mantine/core';
-import { AnsiUp } from 'ansi_up';
+import { ActionIcon, ComboboxItem, OptionsFilter } from '@mantine/core';
+import { FitAddon } from '@xterm/addon-fit';
+import { SearchAddon } from '@xterm/addon-search';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import { WebglAddon } from '@xterm/addon-webgl';
+import { ITerminalInitOnlyOptions, ITerminalOptions, Terminal as XTerm } from '@xterm/xterm';
 import classNames from 'classnames';
-import DOMPurify from 'dompurify';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import Popover from '@/elements/Popover.tsx';
 import Progress from '@/elements/Progress.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import { useKeyboardShortcut } from '@/plugins/useKeyboardShortcuts.ts';
 import { SocketEvent, SocketRequest } from '@/plugins/useWebsocketEvent.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 import CommandHistoryDrawer from './drawers/CommandHistoryDrawer.tsx';
 import FeatureProvider from './features/FeatureProvider.tsx';
+import SshDetailsModal from './modals/SshDetailsModal.tsx';
 
-const ansiUp = new AnsiUp();
-const MAX_LINES = 1000;
-
-const configureDOMPurify = () => {
-  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-    if (node.tagName === 'A') {
-      node.setAttribute('target', '_blank');
-      node.setAttribute('rel', 'noopener noreferrer');
-      node.setAttribute('class', 'hover:text-blue-300 underline cursor-pointer');
-    }
-  });
-};
-
-configureDOMPurify();
-
-const URL_REGEX = /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)/gi;
-
-const linkifyText = (html: string): string => {
-  const linked = html.replace(URL_REGEX, (url) => {
-    try {
-      const urlObj = new URL(url);
-      if (!['http:', 'https:'].includes(urlObj.protocol)) {
-        return url;
-      }
-    } catch {
-      return url;
-    }
-
-    const escapedHref = url
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    return `<a href="${escapedHref}">${url}</a>`;
-  });
-
-  return DOMPurify.sanitize(linked, {
-    ALLOWED_TAGS: ['a', 'span', 'div'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
-    ALLOWED_URI_REGEXP: /^https?:\/\//i,
-  });
-};
+import '@xterm/xterm/css/xterm.css';
+import './xterm.css';
+import Autocomplete from '@/elements/input/Autocomplete.tsx';
 
 const RAW_PRELUDE = '\u001b[1m\u001b[33mcontainer@calagopus~ \u001b[0m';
-const PRELUDE_HTML = linkifyText(ansiUp.ansi_to_html(RAW_PRELUDE));
 
-interface TerminalLine {
-  id: number;
-  html: string;
-  content: string;
-}
+const commandSnippetFilter: OptionsFilter = ({ options, search }) => {
+  if (!search.startsWith('!')) {
+    return [];
+  }
+
+  const splittedSearch = search.toLowerCase().trim().split(' ');
+  return (options as ComboboxItem[]).filter((option) => {
+    const words = option.label.toLowerCase().trim().split(' ');
+    return splittedSearch.every((searchWord) => words.some((word) => word.includes(searchWord)));
+  });
+};
 
 export default function Terminal() {
   const { t } = useTranslations();
-  const { server, imagePulls, socketConnected, socketInstance, state } = useServerStore();
+  const { server, commandSnippets, imagePulls, socketConnected, socketInstance, state } = useServerStore();
 
-  const [lines, setLines] = useState<TerminalLine[]>([]);
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [inputValue, setInputValue] = useState('');
+  const [searchText, setSearchText] = useState('');
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [websocketPing, setWebsocketPing] = useState(0);
   const [consoleFontSize, setConsoleFontSize] = useState(14);
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [openModal, setOpenModal] = useState<'search' | 'commandHistory' | 'sshDetails' | null>(null);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const isAutoScrolling = useRef(false);
-  const isInitialLoad = useRef(true);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lineIdCounter = useRef(0);
+  const inputValueRef = useRef(inputValue);
+  const inputValueUpdatedRef = useRef(false);
+  const inputValueCompletedRef = useRef(false);
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const xtermInstance = useRef<XTerm | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
+  const searchAddonRef = useRef<SearchAddon | null>(null);
+  const isFirstLine = useRef(true);
 
   const HISTORY_STORAGE_KEY = `terminal_command_history_${server.uuid}`;
   const CONSOLE_FONT_SIZE_KEY = 'terminal_console_font_size';
 
   useEffect(() => {
-    let pingInterval: NodeJS.Timeout;
+    const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
+    if (savedHistory) {
+      try {
+        const parsed = JSON.parse(savedHistory);
+        if (Array.isArray(parsed)) setHistory(parsed);
+      } catch (e) {
+        console.error('Failed to parse terminal history:', e);
+      }
+    }
+    const savedFontSize = localStorage.getItem(CONSOLE_FONT_SIZE_KEY);
+    if (savedFontSize) {
+      const size = parseInt(savedFontSize, 10);
+      if (!isNaN(size)) setConsoleFontSize(size);
+    }
+  }, [HISTORY_STORAGE_KEY, CONSOLE_FONT_SIZE_KEY]);
+
+  useEffect(() => {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+  }, [history, HISTORY_STORAGE_KEY]);
+
+  useEffect(() => {
+    localStorage.setItem(CONSOLE_FONT_SIZE_KEY, consoleFontSize.toString());
+    if (xtermInstance.current) {
+      xtermInstance.current.options.fontSize = consoleFontSize;
+      fitAddonRef.current?.fit();
+    }
+  }, [consoleFontSize, CONSOLE_FONT_SIZE_KEY]);
+
+  useEffect(() => {
+    if (!terminalRef.current) return;
+
+    const initOptions: ITerminalOptions & ITerminalInitOnlyOptions = {
+      fontSize: consoleFontSize,
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+      theme: {
+        background: '#00000000',
+        cursor: '#00000000',
+        cursorAccent: '#00000000',
+        selectionBackground: '#FFFFFF4D',
+        selectionInactiveBackground: '#FFFFFF80',
+      },
+      allowTransparency: true,
+      lineHeight: 1.2,
+      disableStdin: true,
+      convertEol: true,
+      smoothScrollDuration: 250,
+      allowProposedApi: true,
+      fontWeightBold: '500',
+      rescaleOverlappingGlyphs: true,
+    };
+
+    for (const handler of window.extensionContext.extensionRegistry.pages.server.console.xterm.initHandlers) {
+      handler(initOptions, {});
+    }
+
+    const term = new XTerm(initOptions);
+
+    for (const handler of window.extensionContext.extensionRegistry.pages.server.console.xterm.beforePluginsHandlers) {
+      handler(term, {});
+    }
+
+    const fitAddon = new FitAddon();
+    const searchAddon = new SearchAddon();
+
+    term.loadAddon(fitAddon);
+    term.loadAddon(searchAddon);
+    term.loadAddon(new WebLinksAddon());
+    term.loadAddon(new WebglAddon());
+    term.loadAddon(new Unicode11Addon());
+
+    term.unicode.activeVersion = '11';
+
+    for (const handler of window.extensionContext.extensionRegistry.pages.server.console.xterm.afterPluginsHandlers) {
+      handler(term, {});
+    }
+
+    term.open(terminalRef.current);
+    fitAddon.fit();
+
+    for (const handler of window.extensionContext.extensionRegistry.pages.server.console.xterm.afterOpenHandlers) {
+      handler(term, {});
+    }
+
+    // prevent cursor
+    term.write('\x1b[?25l');
+
+    document.fonts.ready.then(() => {
+      if (fitAddonRef.current) {
+        fitAddonRef.current.fit();
+      }
+    });
+
+    xtermInstance.current = term;
+    fitAddonRef.current = fitAddon;
+    searchAddonRef.current = searchAddon;
+
+    const resizeObserver = new ResizeObserver(() => {
+      fitAddon.fit();
+    });
+    resizeObserver.observe(terminalRef.current);
+
+    term.onScroll(() => {
+      setIsAtBottom(term.buffer.active.viewportY === term.buffer.active.baseY);
+    });
+
+    term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        if (term.hasSelection()) {
+          navigator.clipboard.writeText(term.getSelection());
+          term.clearSelection();
+
+          return false;
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        return false;
+      }
+
+      return true;
+    });
+
+    return () => {
+      resizeObserver.disconnect();
+      term.dispose();
+      xtermInstance.current = null;
+      fitAddonRef.current = null;
+      searchAddonRef.current = null;
+
+      for (const handler of window.extensionContext.extensionRegistry.pages.server.console.xterm.onUnmountHandlers) {
+        handler(term, {});
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let pingInterval: ReturnType<typeof setInterval>;
 
     if (socketConnected && socketInstance) {
       const pingFn = () => {
         const start = Date.now();
         socketInstance.send(SocketRequest.PING);
 
-        let timeout: NodeJS.Timeout | null = null;
+        let timeout: ReturnType<typeof setTimeout> | null = null;
         const handlePong = () => {
           const latency = Date.now() - start;
           setWebsocketPing(latency);
           socketInstance.removeListener(SocketEvent.PONG, handlePong);
-          if (timeout) {
-            clearTimeout(timeout);
-          }
+          if (timeout) clearTimeout(timeout);
         };
 
         timeout = setTimeout(() => {
@@ -123,145 +239,44 @@ export default function Terminal() {
     }
 
     return () => {
-      if (pingInterval) {
-        clearInterval(pingInterval);
-      }
+      if (pingInterval) clearInterval(pingInterval);
     };
   }, [socketConnected, socketInstance]);
 
-  useEffect(() => {
-    const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
-    if (savedHistory) {
-      try {
-        const parsed = JSON.parse(savedHistory);
-        if (Array.isArray(parsed)) {
-          setHistory(parsed);
-        }
-      } catch (e) {
-        console.error('Failed to parse terminal history:', e);
-      }
-    }
-  }, [HISTORY_STORAGE_KEY]);
-
-  useEffect(() => {
-    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
-  }, [history, HISTORY_STORAGE_KEY]);
-
-  useEffect(() => {
-    const savedFontSize = localStorage.getItem(CONSOLE_FONT_SIZE_KEY);
-    if (savedFontSize) {
-      const size = parseInt(savedFontSize, 10);
-      if (!isNaN(size)) {
-        setConsoleFontSize(size);
-      }
-    }
-  }, [CONSOLE_FONT_SIZE_KEY]);
-
-  useEffect(() => {
-    localStorage.setItem(CONSOLE_FONT_SIZE_KEY, consoleFontSize.toString());
-  }, [consoleFontSize, CONSOLE_FONT_SIZE_KEY]);
-
-  const checkIfAtBottom = useCallback(() => {
-    if (!containerRef.current) return true;
-
-    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-    const threshold = 50;
-    return scrollHeight - scrollTop - clientHeight < threshold;
-  }, []);
-
-  const handleScroll = useCallback(() => {
-    if (isAutoScrolling.current || isInitialLoad.current) return;
-
-    const atBottom = checkIfAtBottom();
-    setIsAtBottom(atBottom);
-  }, [checkIfAtBottom]);
-
   const scrollToBottom = useCallback(() => {
-    if (containerRef.current) {
-      isAutoScrolling.current = true;
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    if (xtermInstance.current) {
+      xtermInstance.current.scrollToBottom();
       setIsAtBottom(true);
-
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      scrollTimeoutRef.current = setTimeout(() => {
-        isAutoScrolling.current = false;
-        scrollTimeoutRef.current = null;
-      }, 100);
     }
   }, []);
 
-  const addLine = useCallback(
-    (text: string, prelude = false) => {
-      if (text.includes('container@pterodactyl~')) {
-        text = text.replace('container@pterodactyl~', 'container@calagopus~');
-      }
+  const addLine = useCallback((text: string, prelude = false) => {
+    if (!xtermInstance.current) return;
 
-      const processed = text.replace(/(?:\r\n|\r|\n)$/im, '');
-      const ansiHtml = ansiUp.ansi_to_html(processed);
-      let html = linkifyText(ansiHtml);
+    let processed = text.replaceAll('\x1b[?25h', '').replaceAll('\x1b[?25l', '');
 
-      if (prelude && !processed.includes('\u001b[1m\u001b[41m')) {
-        html = PRELUDE_HTML + html;
-      }
-
-      setLines((prev) => {
-        const newLine: TerminalLine = {
-          id: lineIdCounter.current++,
-          html,
-          content: processed,
-        };
-
-        const updated = [...prev, newLine];
-        return updated.length > MAX_LINES ? updated.slice(-MAX_LINES) : updated;
-      });
-
-      if (isInitialLoad.current) {
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
-
-        scrollTimeoutRef.current = setTimeout(() => {
-          isInitialLoad.current = false;
-          scrollToBottom();
-          scrollTimeoutRef.current = null;
-        }, 100);
-      }
-    },
-    [scrollToBottom],
-  );
-
-  useEffect(() => {
-    if (isInitialLoad.current || lines.length === 0) return;
-
-    if (isAtBottom && containerRef.current) {
-      isAutoScrolling.current = true;
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      requestAnimationFrame(() => {
-        if (containerRef.current) {
-          containerRef.current.scrollTop = containerRef.current.scrollHeight;
-
-          scrollTimeoutRef.current = setTimeout(() => {
-            isAutoScrolling.current = false;
-            scrollTimeoutRef.current = null;
-          }, 100);
-        }
-      });
+    if (processed.includes('container@pterodactyl~')) {
+      processed = processed.replace('container@pterodactyl~', 'container@calagopus~');
     }
-  }, [lines, isAtBottom]);
+
+    if (prelude && !processed.includes('\u001b[1m\u001b[41m')) {
+      processed = RAW_PRELUDE.concat(processed);
+    }
+
+    if (isFirstLine.current) {
+      xtermInstance.current.write(processed);
+      isFirstLine.current = false;
+    } else {
+      xtermInstance.current.write('\n'.concat(processed));
+    }
+  }, []);
 
   useEffect(() => {
-    if (!socketConnected || !socketInstance) return;
+    if (!socketConnected || !socketInstance || !xtermInstance.current) return;
 
-    setLines([]);
-    lineIdCounter.current = 0;
-    isInitialLoad.current = true;
+    xtermInstance.current.clear();
     setIsAtBottom(true);
+    isFirstLine.current = true;
 
     const listeners: Record<string, (msg: string) => void> = {
       [SocketEvent.STATUS]: (s) =>
@@ -282,6 +297,10 @@ export default function Terminal() {
         ),
       [SocketEvent.CONSOLE_OUTPUT]: (l) => addLine(l),
       [SocketEvent.INSTALL_OUTPUT]: (l) => addLine(l),
+      [SocketEvent.INSTALL_COMPLETED]: (s) => {
+        if (s === 'false') addLine(t('pages.server.console.message.installFailed', {}), true);
+        else addLine(t('pages.server.console.message.installCompleted', {}), true);
+      },
       [SocketEvent.TRANSFER_LOGS]: (l) => addLine(l),
       [SocketEvent.TRANSFER_STATUS]: (s) => {
         if (s === 'failure') addLine(t('pages.server.console.message.transferFailed', {}), true);
@@ -295,66 +314,81 @@ export default function Terminal() {
 
     return () => {
       Object.entries(listeners).forEach(([k, fn]) => socketInstance.removeListener(k, fn));
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
     };
-  }, [socketConnected, socketInstance, addLine]);
+  }, [socketConnected, socketInstance]);
+
+  useEffect(() => {
+    if (!openModal) {
+      searchAddonRef.current?.clearDecorations();
+    }
+  }, [openModal]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (!inputRef.current) return;
-
-      if (e.key === 'ArrowUp') {
+      if (e.key === 'ArrowUp' && !inputValueRef.current.startsWith('!')) {
         const newIndex = Math.min(historyIndex + 1, history.length - 1);
         setHistoryIndex(newIndex);
-        inputRef.current.value = history[newIndex] || '';
+        setInputValue(history[newIndex] || '');
         e.preventDefault();
       }
 
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' && !inputValueRef.current.startsWith('!')) {
         const newIndex = Math.max(historyIndex - 1, -1);
         setHistoryIndex(newIndex);
-        inputRef.current.value = history[newIndex] || '';
+        setInputValue(history[newIndex] || '');
         e.preventDefault();
       }
 
-      if (e.key === 'Enter') {
-        const command = inputRef.current.value.trim();
-        if (!command) return;
-
-        if (history[0] !== command) {
-          setHistory((prev) => [command, ...prev].slice(0, 32));
+      setTimeout(() => {
+        if (inputValueCompletedRef.current) {
+          inputValueCompletedRef.current = false;
+          return;
         }
-        setHistoryIndex(-1);
-        socketInstance?.send('send command', command);
-        inputRef.current.value = '';
-      }
+
+        if (e.key === 'Enter') {
+          const command = inputValueRef.current.trim();
+          if (!command) return;
+
+          if (history[0] !== command) {
+            setHistory((prev) => [command, ...prev].slice(0, 32));
+          }
+          setHistoryIndex(-1);
+          socketInstance?.send(SocketRequest.SEND_COMMAND, command);
+          setInputValue('');
+        }
+      });
     },
     [history, historyIndex, socketInstance],
   );
 
-  const MemoizedLines = useMemo(
-    () =>
-      lines.map((line) => (
-        <div
-          key={line.id}
-          className='whitespace-pre-wrap break-all'
-          dangerouslySetInnerHTML={{
-            __html: line.html,
-          }}
-        />
-      )),
-    [lines],
+  useKeyboardShortcut(
+    'f',
+    () => {
+      if (openModal && openModal !== 'search') return;
+
+      setOpenModal(openModal ? null : 'search');
+    },
+    {
+      modifiers: ['ctrlOrMeta'],
+      allowWhenInputFocused: true,
+      deps: [openModal],
+    },
   );
 
   return (
     <>
       <FeatureProvider />
+      <CommandHistoryDrawer opened={openModal === 'commandHistory'} onClose={() => setOpenModal(null)} />
+      <SshDetailsModal opened={openModal === 'sshDetails'} onClose={() => setOpenModal(null)} />
 
       <Card className='h-full flex flex-col font-mono text-sm relative p-2!'>
         <div className='flex flex-row justify-between items-center mb-2 text-xs'>
           <div className='flex flex-row items-center'>
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderLeftComponents.prependedComponents.map(
+              (Component, i) => (
+                <Component key={`console-terminalHeaderLeft-prepended-${i}`} />
+              ),
+            )}
             <span
               className={classNames(
                 'rounded-full size-3 animate-pulse mr-2',
@@ -362,22 +396,91 @@ export default function Terminal() {
               )}
             />
             {socketConnected && socketInstance
-              ? t('pages.server.console.socketConnected', { ping: websocketPing })
+              ? t('pages.server.console.socketConnected', {
+                  ping: websocketPing,
+                })
               : t('pages.server.console.socketDisconnected', {})}
-            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderLeftComponents.map(
-              (Component, idx) => (
-                <Component key={idx} />
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderLeftComponents.appendedComponents.map(
+              (Component, i) => (
+                <Component key={`console-terminalHeaderLeft-appended-${i}`} />
               ),
             )}
           </div>
           <div className='flex flex-row items-center gap-2'>
-            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderRightComponents.map(
-              (Component, idx) => (
-                <Component key={idx} />
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderRightComponents.prependedComponents.map(
+              (Component, i) => (
+                <Component key={`console-terminalHeaderRight-prepended-${i}`} />
               ),
             )}
+            <Popover
+              trapFocus
+              opened={openModal === 'search'}
+              onChange={(opened) => setOpenModal(opened ? 'search' : null)}
+            >
+              <Popover.Target>
+                <Tooltip label={t('pages.server.console.tooltip.search', {})}>
+                  <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setOpenModal('search')}>
+                    <FontAwesomeIcon icon={faMagnifyingGlass} />
+                  </ActionIcon>
+                </Tooltip>
+              </Popover.Target>
+              <Popover.Dropdown className='flex flex-row space-x-2'>
+                <TextInput
+                  placeholder={t('common.input.search', {})}
+                  value={searchText}
+                  onChange={(e) => {
+                    setSearchText(e.currentTarget.value);
+                    searchAddonRef.current?.findNext(e.currentTarget.value, {
+                      incremental: true,
+                    });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (e.shiftKey) {
+                        searchAddonRef.current?.findPrevious(searchText);
+                      } else {
+                        searchAddonRef.current?.findNext(searchText);
+                      }
+                    }
+                  }}
+                />
+                <ActionIcon
+                  size='input-sm'
+                  variant='light'
+                  color='gray'
+                  onClick={() => searchAddonRef.current?.findPrevious(searchText)}
+                >
+                  <FontAwesomeIcon icon={faArrowUp} />
+                </ActionIcon>
+                <ActionIcon
+                  size='input-sm'
+                  variant='light'
+                  color='gray'
+                  onClick={() => searchAddonRef.current?.findNext(searchText)}
+                >
+                  <FontAwesomeIcon icon={faArrowDown} />
+                </ActionIcon>
+              </Popover.Dropdown>
+            </Popover>
+            <Tooltip label={t('pages.server.console.tooltip.sshDetails', {})}>
+              <ActionIcon
+                size='xs'
+                variant='subtle'
+                color='gray'
+                disabled={server.status !== null || server.isSuspended || server.isTransferring}
+                onClick={() => setOpenModal('sshDetails')}
+              >
+                <FontAwesomeIcon icon={faServer} />
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label={t('pages.server.console.tooltip.commandHistory', {})}>
-              <ActionIcon size='xs' variant='subtle' color='gray' onClick={() => setHistoryModalOpen(true)}>
+              <ActionIcon
+                size='xs'
+                variant='subtle'
+                color='gray'
+                disabled={server.status !== null || server.isSuspended || server.isTransferring}
+                onClick={() => setOpenModal('commandHistory')}
+              >
                 <FontAwesomeIcon icon={faClockRotateLeft} />
               </ActionIcon>
             </Tooltip>
@@ -406,24 +509,24 @@ export default function Terminal() {
                 </ActionIcon>
               </Tooltip>
             </div>
+            {window.extensionContext.extensionRegistry.pages.server.console.terminalHeaderRightComponents.appendedComponents.map(
+              (Component, i) => (
+                <Component key={`console-terminalHeaderRight-appended-${i}`} />
+              ),
+            )}
           </div>
         </div>
 
         {!socketConnected && <Spinner.Centered />}
 
-        <div
-          ref={containerRef}
-          className='flex-1 overflow-auto custom-scrollbar space-y-1 select-text'
-          style={{ fontSize: `${consoleFontSize}px` }}
-          onScroll={handleScroll}
-        >
-          {MemoizedLines}
+        <div className='flex-1 relative overflow-hidden'>
+          <div ref={terminalRef} className='absolute inset-0' />
         </div>
 
         {imagePulls.size > 0 && (
           <span className='flex flex-col justify-end mt-4'>
             {t('pages.server.console.message.pullingImage', {})}
-            {Array.from(imagePulls).map(([id, progress]) => (
+            {imagePulls.entries().map(([id, progress]) => (
               <span key={id} className='flex flex-row w-full items-center whitespace-pre-wrap break-all'>
                 {progress.status === 'pulling'
                   ? t('pages.server.console.message.pulling', {})
@@ -440,7 +543,7 @@ export default function Terminal() {
         )}
 
         {!isAtBottom && (
-          <div className='absolute bottom-2 right-2 z-90 w-fit'>
+          <div className='absolute bottom-16 right-4 z-90 w-fit'>
             <Button onClick={scrollToBottom} variant='transparent'>
               <FontAwesomeIcon icon={faArrowDown} />
             </Button>
@@ -448,8 +551,17 @@ export default function Terminal() {
         )}
 
         <div className='w-full mt-4 flex flex-row'>
-          <TextInput
-            ref={inputRef}
+          <Autocomplete
+            value={inputValue}
+            onChange={(value) => {
+              if (inputValueUpdatedRef.current) {
+                inputValueUpdatedRef.current = false;
+                return;
+              }
+
+              inputValueRef.current = value;
+              setInputValue(value);
+            }}
             placeholder={t('pages.server.console.input.placeholder', {})}
             aria-label={t('pages.server.console.input.ariaLabel', {})}
             disabled={!socketConnected || state === 'offline'}
@@ -457,16 +569,25 @@ export default function Terminal() {
             autoCorrect='off'
             autoCapitalize='none'
             className='w-full'
+            data={commandSnippets.map((s) => `!${s.name}`)}
+            filter={commandSnippetFilter}
+            onOptionSubmit={(option) => {
+              const snippet = commandSnippets.find((s) => `!${s.name}` === option);
+              if (snippet) {
+                inputValueUpdatedRef.current = true;
+                inputValueCompletedRef.current = true;
+                inputValueRef.current = snippet.command;
+                setInputValue(snippet.command);
+              }
+            }}
           />
           {window.extensionContext.extensionRegistry.pages.server.console.terminalInputRowComponents.map(
-            (Component, idx) => (
-              <Component key={idx} />
+            (Component, i) => (
+              <Component key={`console-terminalInputRow-${i}`} />
             ),
           )}
         </div>
       </Card>
-
-      <CommandHistoryDrawer opened={historyModalOpen} onClose={() => setHistoryModalOpen(false)} />
     </>
   );
 }

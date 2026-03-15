@@ -1,25 +1,32 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, startTransition, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import getMe from '@/api/me/getMe.ts';
 import logout from '@/api/me/logout.ts';
 import Spinner from '@/elements/Spinner.tsx';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 import { AuthContext } from '@/providers/contexts/authContext.ts';
 import { useToast } from './ToastProvider.tsx';
 import { useTranslations } from './TranslationProvider.tsx';
+import { useWindows } from './WindowProvider.tsx';
 
 const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const navigate = useNavigate();
   const { setToastPosition, addToast } = useToast();
   const { setLanguage } = useTranslations();
+  const { closeAllWindows } = useWindows();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<z.infer<typeof fullUserSchema> | null>(null);
+  const [impersonating, setImpersonating] = useState(window.localStorage.getItem('impersonatedUser') !== null);
 
   useEffect(() => {
     if (user) {
-      setToastPosition(user.toastPosition);
-      setLanguage(user.language);
+      startTransition(() => {
+        setToastPosition(user.toastPosition);
+        setLanguage(user.language);
+      });
     }
   }, [user, setToastPosition, setLanguage]);
 
@@ -32,7 +39,16 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       .finally(() => setLoading(false));
   }, []);
 
-  const doLogin = (user: User, doNavigate: boolean = true) => {
+  const doImpersonate = (user: z.infer<typeof fullUserSchema>) => {
+    localStorage.setItem('impersonatedUser', user.uuid);
+
+    navigate('/');
+    closeAllWindows();
+    setUser(user);
+    setImpersonating(true);
+  };
+
+  const doLogin = (user: z.infer<typeof fullUserSchema>, doNavigate: boolean = true) => {
     setUser(user);
     if (doNavigate) {
       navigate('/');
@@ -40,6 +56,25 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const doLogout = () => {
+    if (localStorage.getItem('impersonatedUser')) {
+      localStorage.removeItem('impersonatedUser');
+
+      navigate('/');
+      setLoading(true);
+      getMe()
+        .then((user) => {
+          setUser(user);
+          setImpersonating(false);
+        })
+        .catch(() => {
+          setUser(null);
+          setImpersonating(false);
+        })
+        .finally(() => setLoading(false));
+
+      return;
+    }
+
     logout()
       .then(() => {
         setUser(null);
@@ -50,11 +85,11 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, doLogin, doLogout }}>
+    <AuthContext.Provider value={{ user, impersonating, setUser, doImpersonate, doLogin, doLogout }}>
       {loading ? <Spinner.Centered /> : children}
     </AuthContext.Provider>
   );
 };
 
-export { AuthProvider };
 export { useAuth } from './contexts/authContext.ts';
+export { AuthProvider };

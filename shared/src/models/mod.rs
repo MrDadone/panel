@@ -1,20 +1,23 @@
 use crate::database::DatabaseError;
 use compact_str::CompactStringExt;
 use futures_util::{StreamExt, TryStreamExt};
+use garde::Validate;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use sqlx::{Row, postgres::PgRow};
+use sqlx::{
+    Arguments, Postgres, QueryBuilder, Row,
+    postgres::{PgArguments, PgRow},
+};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashSet},
     marker::PhantomData,
     pin::Pin,
     sync::{Arc, LazyLock},
 };
 use tokio::sync::RwLock;
 use utoipa::ToSchema;
-use validator::Validate;
 
 pub mod admin_activity;
-pub mod backup_configurations;
+pub mod backup_configuration;
 pub mod database_host;
 pub mod egg_repository;
 pub mod egg_repository_egg;
@@ -43,6 +46,7 @@ pub mod server_variable;
 pub mod user;
 pub mod user_activity;
 pub mod user_api_key;
+pub mod user_command_snippet;
 pub mod user_oauth_link;
 pub mod user_password_reset;
 pub mod user_recovery_code;
@@ -53,11 +57,11 @@ pub mod user_ssh_key;
 
 #[derive(ToSchema, Validate, Deserialize)]
 pub struct PaginationParams {
-    #[validate(range(min = 1))]
+    #[garde(range(min = 1))]
     #[schema(minimum = 1)]
     #[serde(default = "Pagination::default_page")]
     pub page: i64,
-    #[validate(range(min = 1, max = 100))]
+    #[garde(range(min = 1, max = 100))]
     #[schema(minimum = 1, maximum = 100)]
     #[serde(default = "Pagination::default_per_page")]
     pub per_page: i64,
@@ -65,15 +69,15 @@ pub struct PaginationParams {
 
 #[derive(ToSchema, Validate, Deserialize)]
 pub struct PaginationParamsWithSearch {
-    #[validate(range(min = 1))]
+    #[garde(range(min = 1))]
     #[schema(minimum = 1)]
     #[serde(default = "Pagination::default_page")]
     pub page: i64,
-    #[validate(range(min = 1, max = 100))]
+    #[garde(range(min = 1, max = 100))]
     #[schema(minimum = 1, maximum = 100)]
     #[serde(default = "Pagination::default_per_page")]
     pub per_page: i64,
-    #[validate(length(min = 1, max = 128))]
+    #[garde(length(chars, min = 1, max = 128))]
     #[schema(min_length = 1, max_length = 128)]
     #[serde(
         default,
@@ -192,13 +196,185 @@ pub trait EventEmittingModel: BaseModel {
     }
 }
 
+type CreateListenerResult<'a> =
+    Pin<Box<dyn Future<Output = Result<(), crate::database::DatabaseError>> + Send + 'a>>;
+type CreateListener<M> = dyn for<'a> Fn(
+        &'a mut <M as CreatableModel>::CreateOptions<'_>,
+        &'a mut InsertQueryBuilder,
+        &'a crate::State,
+        &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
+    ) -> CreateListenerResult<'a>
+    + Send
+    + Sync;
+pub type CreateListenerList<M> = Arc<ModelHandlerList<Box<CreateListener<M>>>>;
+
+#[async_trait::async_trait]
+pub trait CreatableModel: BaseModel + Send + Sync + 'static {
+    type CreateOptions<'a>: Send + Sync + Validate;
+    type CreateResult: Send;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>>;
+
+    async fn register_create_handler<
+        F: for<'a> Fn(
+                &'a mut Self::CreateOptions<'_>,
+                &'a mut InsertQueryBuilder,
+                &'a crate::State,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
+            ) -> Pin<
+                Box<dyn Future<Output = Result<(), crate::database::DatabaseError>> + Send + 'a>,
+            > + Send
+            + Sync
+            + 'static,
+    >(
+        priority: ListenerPriority,
+        callback: F,
+    ) {
+        let erased = Box::new(callback) as Box<CreateListener<Self>>;
+
+        Self::get_create_handlers()
+            .register_handler(priority, erased)
+            .await;
+    }
+
+    /// # Warning
+    /// This method will block the current thread if the lock is not available
+    fn blocking_register_create_handler<
+        F: for<'a> Fn(
+                &'a mut Self::CreateOptions<'_>,
+                &'a mut InsertQueryBuilder,
+                &'a crate::State,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
+            ) -> Pin<
+                Box<dyn Future<Output = Result<(), crate::database::DatabaseError>> + Send + 'a>,
+            > + Send
+            + Sync
+            + 'static,
+    >(
+        priority: ListenerPriority,
+        callback: F,
+    ) {
+        let erased = Box::new(callback) as Box<CreateListener<Self>>;
+
+        Self::get_create_handlers().blocking_register_handler(priority, erased);
+    }
+
+    async fn run_create_handlers(
+        options: &mut Self::CreateOptions<'_>,
+        query_builder: &mut InsertQueryBuilder,
+        state: &crate::State,
+        transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    ) -> Result<(), crate::database::DatabaseError> {
+        let listeners = Self::get_create_handlers().listeners.read().await;
+
+        for listener in listeners.iter() {
+            (*listener.callback)(options, query_builder, state, transaction).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn create(
+        state: &crate::State,
+        options: Self::CreateOptions<'_>,
+    ) -> Result<Self::CreateResult, crate::database::DatabaseError>;
+}
+
+type UpdateListenerResult<'a> =
+    Pin<Box<dyn Future<Output = Result<(), crate::database::DatabaseError>> + Send + 'a>>;
+type UpdateListener<M> = dyn for<'a> Fn(
+        &'a mut M,
+        &'a mut <M as UpdatableModel>::UpdateOptions,
+        &'a mut UpdateQueryBuilder,
+        &'a crate::State,
+        &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
+    ) -> UpdateListenerResult<'a>
+    + Send
+    + Sync;
+pub type UpdateListenerList<M> = Arc<ModelHandlerList<Box<UpdateListener<M>>>>;
+
+#[async_trait::async_trait]
+pub trait UpdatableModel: BaseModel + Send + Sync + 'static {
+    type UpdateOptions: Send + Sync + Default + ToSchema + DeserializeOwned + Serialize + Validate;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>>;
+
+    async fn register_update_handler<
+        F: for<'a> Fn(
+                &'a mut Self,
+                &'a mut Self::UpdateOptions,
+                &'a mut UpdateQueryBuilder,
+                &'a crate::State,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
+            ) -> Pin<
+                Box<dyn Future<Output = Result<(), crate::database::DatabaseError>> + Send + 'a>,
+            > + Send
+            + Sync
+            + 'static,
+    >(
+        priority: ListenerPriority,
+        callback: F,
+    ) {
+        let erased = Box::new(callback) as Box<UpdateListener<Self>>;
+
+        Self::get_update_handlers()
+            .register_handler(priority, erased)
+            .await;
+    }
+
+    /// # Warning
+    /// This method will block the current thread if the lock is not available
+    fn blocking_register_update_handler<
+        F: for<'a> Fn(
+                &'a mut Self,
+                &'a mut Self::UpdateOptions,
+                &'a mut UpdateQueryBuilder,
+                &'a crate::State,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
+            ) -> Pin<
+                Box<dyn Future<Output = Result<(), crate::database::DatabaseError>> + Send + 'a>,
+            > + Send
+            + Sync
+            + 'static,
+    >(
+        priority: ListenerPriority,
+        callback: F,
+    ) {
+        let erased = Box::new(callback) as Box<UpdateListener<Self>>;
+
+        Self::get_update_handlers().blocking_register_handler(priority, erased);
+    }
+
+    async fn run_update_handlers(
+        &mut self,
+        options: &mut Self::UpdateOptions,
+        query_builder: &mut UpdateQueryBuilder,
+        state: &crate::State,
+        transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    ) -> Result<(), crate::database::DatabaseError> {
+        let listeners = Self::get_update_handlers().listeners.read().await;
+
+        for listener in listeners.iter() {
+            (*listener.callback)(self, options, query_builder, state, transaction).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError>;
+}
+
 type DeleteListenerResult<'a> =
     Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'a>>;
 type DeleteListener<M> = dyn for<'a> Fn(
         &'a M,
         &'a <M as DeletableModel>::DeleteOptions,
         &'a crate::State,
-        &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+        &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> DeleteListenerResult<'a>
     + Send
     + Sync;
@@ -215,7 +391,7 @@ pub trait DeletableModel: BaseModel + Send + Sync + 'static {
                 &'a Self,
                 &'a Self::DeleteOptions,
                 &'a crate::State,
-                &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
             )
                 -> Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'a>>
             + Send
@@ -239,7 +415,7 @@ pub trait DeletableModel: BaseModel + Send + Sync + 'static {
                 &'a Self,
                 &'a Self::DeleteOptions,
                 &'a crate::State,
-                &'a mut sqlx::Transaction<'a, sqlx::Postgres>,
+                &'a mut sqlx::Transaction<'_, sqlx::Postgres>,
             )
                 -> Pin<Box<dyn Future<Output = Result<(), anyhow::Error>> + Send + 'a>>
             + Send
@@ -263,11 +439,7 @@ pub trait DeletableModel: BaseModel + Send + Sync + 'static {
         let listeners = Self::get_delete_handlers().listeners.read().await;
 
         for listener in listeners.iter() {
-            let transaction_ref: &mut sqlx::Transaction<'_, sqlx::Postgres> = unsafe {
-                std::mem::transmute(transaction as &mut sqlx::Transaction<'_, sqlx::Postgres>)
-            };
-
-            (*listener.callback)(self, options, state, transaction_ref).await?;
+            (*listener.callback)(self, options, state, transaction).await?;
         }
 
         Ok(())
@@ -384,11 +556,24 @@ impl Ord for ListenerPriority {
     }
 }
 
-pub struct ModelHandlerList<F> {
+#[async_trait::async_trait]
+impl<F: Send + Sync> crate::events::DisconnectEventHandler for ModelHandlerList<F> {
+    #[inline]
+    async fn disconnect(&self, id: uuid::Uuid) {
+        self.listeners.write().await.retain(|l| l.uuid != id);
+    }
+
+    #[inline]
+    fn blocking_disconnect(&self, id: uuid::Uuid) {
+        self.listeners.blocking_write().retain(|l| l.uuid != id);
+    }
+}
+
+pub struct ModelHandlerList<F: Send + Sync + 'static> {
     listeners: RwLock<Vec<ModelHandler<F>>>,
 }
 
-impl<F> Default for ModelHandlerList<F> {
+impl<F: Send + Sync + 'static> Default for ModelHandlerList<F> {
     fn default() -> Self {
         Self {
             listeners: RwLock::new(Vec::new()),
@@ -396,12 +581,12 @@ impl<F> Default for ModelHandlerList<F> {
     }
 }
 
-impl<F> ModelHandlerList<F> {
+impl<F: Send + Sync + 'static> ModelHandlerList<F> {
     pub async fn register_handler(
         self: &Arc<Self>,
         priority: ListenerPriority,
         callback: F,
-    ) -> ModelHandlerHandle<F> {
+    ) -> ModelHandlerHandle {
         let listener = ModelHandler::new(callback, priority, self.clone());
         let aborter = listener.handle();
 
@@ -418,7 +603,7 @@ impl<F> ModelHandlerList<F> {
         self: &Arc<Self>,
         priority: ListenerPriority,
         callback: F,
-    ) -> ModelHandlerHandle<F> {
+    ) -> ModelHandlerHandle {
         let listener = ModelHandler::new(callback, priority, self.clone());
         let aborter = listener.handle();
 
@@ -430,7 +615,7 @@ impl<F> ModelHandlerList<F> {
     }
 }
 
-pub struct ModelHandler<F> {
+pub struct ModelHandler<F: Send + Sync + 'static> {
     uuid: uuid::Uuid,
     priority: ListenerPriority,
     list: Arc<ModelHandlerList<F>>,
@@ -438,7 +623,7 @@ pub struct ModelHandler<F> {
     pub callback: F,
 }
 
-impl<F> ModelHandler<F> {
+impl<F: Send + Sync + 'static> ModelHandler<F> {
     pub fn new(callback: F, priority: ListenerPriority, list: Arc<ModelHandlerList<F>>) -> Self {
         Self {
             uuid: uuid::Uuid::new_v4(),
@@ -448,35 +633,28 @@ impl<F> ModelHandler<F> {
         }
     }
 
-    pub fn handle(&self) -> ModelHandlerHandle<F> {
+    pub fn handle(&self) -> ModelHandlerHandle {
         ModelHandlerHandle {
-            uuid: self.uuid,
-            list: self.list.clone(),
+            list_ref: self.list.clone(),
+            id: self.uuid,
         }
     }
 }
 
-pub struct ModelHandlerHandle<F> {
-    uuid: uuid::Uuid,
-    list: Arc<ModelHandlerList<F>>,
+pub struct ModelHandlerHandle {
+    list_ref: Arc<dyn crate::events::DisconnectEventHandler + Send + Sync>,
+    id: uuid::Uuid,
 }
 
-impl<F> ModelHandlerHandle<F> {
+impl ModelHandlerHandle {
     pub async fn disconnect(&self) {
-        self.list
-            .listeners
-            .write()
-            .await
-            .retain(|l| l.uuid != self.uuid);
+        self.list_ref.disconnect(self.id).await;
     }
 
     /// # Warning
     /// This method will block the current thread if the lists' lock is not available
     pub fn blocking_disconnect(&self) {
-        self.list
-            .listeners
-            .blocking_write()
-            .retain(|l| l.uuid != self.uuid);
+        self.list_ref.blocking_disconnect(self.id);
     }
 }
 
@@ -515,5 +693,188 @@ impl<M: ByUuid + Send> Fetchable<M> {
         database: &crate::database::Database,
     ) -> Result<Option<M>, anyhow::Error> {
         M::by_uuid_optional_cached(database, self.uuid).await
+    }
+}
+
+pub struct InsertQueryBuilder<'a> {
+    table: &'a str,
+    columns: Vec<&'a str>,
+    expressions: Vec<String>,
+    arguments: PgArguments,
+    returning_clause: Option<&'a str>,
+}
+
+impl<'a> InsertQueryBuilder<'a> {
+    pub fn new(table: &'a str) -> Self {
+        Self {
+            table,
+            columns: Vec::new(),
+            expressions: Vec::new(),
+            arguments: PgArguments::default(),
+            returning_clause: None,
+        }
+    }
+
+    pub fn set<T: 'a + sqlx::Encode<'a, Postgres> + sqlx::Type<Postgres> + Send>(
+        &mut self,
+        column: &'a str,
+        value: T,
+    ) -> &mut Self {
+        if self.columns.contains(&column) {
+            return self;
+        }
+
+        if self.arguments.add(value).is_ok() {
+            self.columns.push(column);
+            let idx = self.arguments.len();
+            self.expressions.push(format!("${}", idx));
+        }
+
+        self
+    }
+
+    pub fn set_expr<T: 'a + sqlx::Encode<'a, Postgres> + sqlx::Type<Postgres> + Send>(
+        &mut self,
+        column: &'a str,
+        expression: &str,
+        values: Vec<T>,
+    ) -> &mut Self {
+        if self.columns.contains(&column) {
+            return self;
+        }
+
+        let start_len = self.arguments.len();
+
+        for value in values {
+            if self.arguments.add(value).is_err() {
+                return self;
+            }
+        }
+
+        let mut expr = expression.to_string();
+        let added_count = self.arguments.len() - start_len;
+
+        for i in (1..=added_count).rev() {
+            let global_idx = start_len + i;
+            expr = expr.replace(&format!("${}", i), &format!("${}", global_idx));
+        }
+
+        self.columns.push(column);
+        self.expressions.push(expr);
+
+        self
+    }
+
+    pub fn returning(mut self, clause: &'a str) -> Self {
+        self.returning_clause = Some(clause);
+        self
+    }
+
+    fn build_sql(&self) -> String {
+        let columns_sql = self.columns.join(", ");
+        let values_sql = self.expressions.join(", ");
+
+        let mut sql = format!(
+            "INSERT INTO {} ({}) VALUES ({})",
+            self.table, columns_sql, values_sql
+        );
+
+        if let Some(clause) = self.returning_clause {
+            sql.push_str(" RETURNING ");
+            sql.push_str(clause);
+        }
+
+        sql
+    }
+
+    pub async fn execute(
+        self,
+        executor: impl sqlx::Executor<'a, Database = Postgres>,
+    ) -> Result<sqlx::postgres::PgQueryResult, sqlx::Error> {
+        let sql = self.build_sql();
+        sqlx::query_with(&sql, self.arguments)
+            .execute(executor)
+            .await
+    }
+
+    pub async fn fetch_one(
+        self,
+        executor: impl sqlx::Executor<'a, Database = Postgres>,
+    ) -> Result<sqlx::postgres::PgRow, sqlx::Error> {
+        let sql = self.build_sql();
+        sqlx::query_with(&sql, self.arguments)
+            .fetch_one(executor)
+            .await
+    }
+}
+
+pub struct UpdateQueryBuilder<'a> {
+    builder: QueryBuilder<'a, Postgres>,
+    updated_fields: HashSet<&'a str>,
+    has_set_fields: bool,
+}
+
+impl<'a> UpdateQueryBuilder<'a> {
+    pub fn new(table: &'a str) -> Self {
+        let mut builder = QueryBuilder::new("UPDATE ");
+        builder.push(table);
+        builder.push(" SET ");
+
+        Self {
+            builder,
+            updated_fields: HashSet::new(),
+            has_set_fields: false,
+        }
+    }
+
+    /// Adds a field to be updated, if `None`, will not add the field
+    /// To set a field to null (`None`), you need a `Some(None)`
+    pub fn set<T: 'a + sqlx::Encode<'a, Postgres> + sqlx::Type<Postgres> + Send>(
+        &mut self,
+        column: &'a str,
+        value: Option<T>,
+    ) -> &mut Self {
+        let Some(value) = value else {
+            return self;
+        };
+
+        if !self.updated_fields.insert(column) {
+            return self;
+        }
+
+        if self.has_set_fields {
+            self.builder.push(", ");
+        }
+
+        self.builder.push(column);
+        self.builder.push(" = ");
+        self.builder.push_bind(value);
+
+        self.has_set_fields = true;
+        self
+    }
+
+    pub fn where_eq<T: 'a + sqlx::Encode<'a, Postgres> + sqlx::Type<Postgres> + Send>(
+        &mut self,
+        column: &'a str,
+        value: T,
+    ) -> &mut Self {
+        self.builder.push(" WHERE ");
+        self.builder.push(column);
+        self.builder.push(" = ");
+        self.builder.push_bind(value);
+        self
+    }
+
+    pub async fn execute(
+        mut self,
+        executor: impl sqlx::Executor<'a, Database = Postgres>,
+    ) -> Result<sqlx::any::AnyQueryResult, sqlx::Error> {
+        if !self.has_set_fields {
+            return Ok(sqlx::any::AnyQueryResult::default());
+        }
+
+        let query = self.builder.build();
+        query.execute(executor).await.map(|r| r.into())
     }
 }

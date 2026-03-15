@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
-import { adminEggVariableSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminEggVariableUpdateSchema } from '@/lib/schemas/admin/eggs.ts';
 import { transformKeysToSnakeCase } from '@/lib/transformers.ts';
 
 export default async (
   nestUuid: string,
   eggUuid: string,
   variableUuid: string,
-  data: z.infer<typeof adminEggVariableSchema>,
+  data: z.infer<typeof adminEggVariableUpdateSchema>,
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
     axiosInstance

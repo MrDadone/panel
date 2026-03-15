@@ -7,7 +7,8 @@ use axum::{
 };
 use shared::{
     models::{
-        user::{AuthMethod, PermissionManager, User},
+        ByUuid,
+        user::{AuthMethod, PermissionManager, User, UserImpersonator},
         user_activity::UserActivityLogger,
     },
     response::ApiResponse,
@@ -49,52 +50,33 @@ pub async fn auth(
                 .into_response());
         }
 
-        let user = User::by_session(&state.database, session_id.value()).await;
-        let (user, session) = match user {
-            Ok(Some(data)) => data,
-            Ok(None) => {
-                return Ok(ApiResponse::error("invalid session")
-                    .with_status(StatusCode::UNAUTHORIZED)
-                    .into_response());
-            }
-            Err(err) => return Ok(ApiResponse::from(err).into_response()),
-        };
-
-        state
-            .database
-            .batch_action("update_user_session", session.uuid, {
-                let state = state.clone();
-                let user_agent = shared::utils::slice_up_to(
-                    req.headers()
-                        .get("User-Agent")
-                        .and_then(|ua| ua.to_str().ok())
-                        .unwrap_or("unknown"),
-                    255,
-                )
-                .to_string();
-
-                async move {
-                    sqlx::query!(
-                        "UPDATE user_sessions
-                        SET ip = $1, user_agent = $2, last_used = NOW()
-                        WHERE user_sessions.uuid = $3",
-                        sqlx::types::ipnetwork::IpNetwork::from(ip.0),
-                        user_agent,
-                        session.uuid,
-                    )
-                    .execute(state.database.write())
-                    .await?;
-
-                    Ok(())
+        let (auth_user, session) =
+            match User::by_session_cached(&state.database, session_id.value()).await {
+                Ok(Some(data)) => data,
+                Ok(None) => {
+                    return Ok(ApiResponse::error("invalid session")
+                        .with_status(StatusCode::UNAUTHORIZED)
+                        .into_response());
                 }
-            })
+                Err(err) => return Ok(ApiResponse::from(err).into_response()),
+            };
+
+        session
+            .update_last_used(
+                &state.database,
+                ip.0,
+                req.headers()
+                    .get("User-Agent")
+                    .and_then(|ua| ua.to_str().ok())
+                    .unwrap_or("unknown"),
+            )
             .await;
 
         let settings = match state.settings.get().await {
             Ok(settings) => settings,
             Err(err) => return Ok(ApiResponse::from(err).into_response()),
         };
-        let require_two_factor = user.require_two_factor(&settings);
+        let require_two_factor = auth_user.require_two_factor(&settings);
         let secure = settings.app.url.starts_with("https://");
         drop(settings);
 
@@ -112,7 +94,7 @@ pub async fn auth(
         );
 
         if !IGNORED_TWO_FACTOR_PATHS.contains(&matched_path.as_str())
-            && !user.totp_enabled
+            && !auth_user.totp_enabled
             && require_two_factor
         {
             return Ok(ApiResponse::error("two-factor authentication required")
@@ -120,14 +102,53 @@ pub async fn auth(
                 .into_response());
         }
 
-        req.extensions_mut().insert(PermissionManager::new(&user));
-        req.extensions_mut().insert(UserActivityLogger {
-            state: Arc::clone(&state),
-            user_uuid: user.uuid,
-            api_key_uuid: None,
-            ip: ip.0,
-        });
-        req.extensions_mut().insert(user);
+        let auth_permission_manager = PermissionManager::new(&auth_user);
+
+        if auth_permission_manager
+            .has_admin_permission("users.impersonate")
+            .is_ok()
+            && let Some(user_uuid) = req
+                .headers()
+                .get("Calagopus-User")
+                .and_then(|h| h.to_str().ok())
+                .and_then(|h| h.parse().ok())
+        {
+            let user = match User::by_uuid_optional_cached(&state.database, user_uuid).await {
+                Ok(Some(user)) => user,
+                Ok(None) => {
+                    return Ok(ApiResponse::error(
+                        "unable to find user from calagopus-user header",
+                    )
+                    .with_status(StatusCode::UNAUTHORIZED)
+                    .into_response());
+                }
+                Err(err) => return Ok(ApiResponse::from(err).into_response()),
+            };
+
+            req.extensions_mut().insert(PermissionManager::new(&user));
+            req.extensions_mut().insert(UserActivityLogger {
+                state: Arc::clone(&state),
+                user_uuid: user.uuid,
+                impersonator_uuid: Some(auth_user.uuid),
+                api_key_uuid: None,
+                ip: ip.0,
+            });
+            req.extensions_mut().insert(user);
+            req.extensions_mut()
+                .insert(Some(UserImpersonator(auth_user)));
+        } else {
+            req.extensions_mut().insert(auth_permission_manager);
+            req.extensions_mut().insert(UserActivityLogger {
+                state: Arc::clone(&state),
+                user_uuid: auth_user.uuid,
+                impersonator_uuid: None,
+                api_key_uuid: None,
+                ip: ip.0,
+            });
+            req.extensions_mut().insert(auth_user);
+            req.extensions_mut().insert(None::<UserImpersonator>);
+        }
+
         req.extensions_mut().insert(AuthMethod::Session(session));
     } else if let Some(api_token) = req.headers().get("Authorization") {
         if api_token.len() != 55 {
@@ -136,15 +157,11 @@ pub async fn auth(
                 .into_response());
         }
 
-        let user = User::by_api_key(
-            &state.database,
-            api_token
-                .to_str()
-                .unwrap_or("")
-                .trim_start_matches("Bearer "),
-        )
-        .await;
-        let (user, api_key) = match user {
+        let api_token = api_token
+            .to_str()
+            .unwrap_or("")
+            .trim_start_matches("Bearer ");
+        let (auth_user, api_key) = match User::by_api_key_cached(&state.database, api_token).await {
             Ok(Some(data)) => data,
             Ok(None) => {
                 return Ok(ApiResponse::error("invalid api key")
@@ -167,35 +184,17 @@ pub async fn auth(
             );
         }
 
-        state
-            .database
-            .batch_action("update_user_api_key", api_key.uuid, {
-                let state = state.clone();
-
-                async move {
-                    sqlx::query!(
-                        "UPDATE user_api_keys
-                        SET last_used = NOW()
-                        WHERE user_api_keys.uuid = $1",
-                        api_key.uuid,
-                    )
-                    .execute(state.database.write())
-                    .await?;
-
-                    Ok(())
-                }
-            })
-            .await;
+        api_key.update_last_used(&state.database).await;
 
         let settings = match state.settings.get().await {
             Ok(settings) => settings,
             Err(err) => return Ok(ApiResponse::from(err).into_response()),
         };
-        let require_two_factor = user.require_two_factor(&settings);
+        let require_two_factor = auth_user.require_two_factor(&settings);
         drop(settings);
 
         if !IGNORED_TWO_FACTOR_PATHS.contains(&matched_path.as_str())
-            && !user.totp_enabled
+            && !auth_user.totp_enabled
             && require_two_factor
         {
             return Ok(ApiResponse::error("two-factor authentication required")
@@ -203,15 +202,53 @@ pub async fn auth(
                 .into_response());
         }
 
-        req.extensions_mut()
-            .insert(PermissionManager::new(&user).add_api_key(&api_key));
-        req.extensions_mut().insert(UserActivityLogger {
-            state: Arc::clone(&state),
-            user_uuid: user.uuid,
-            api_key_uuid: Some(api_key.uuid),
-            ip: ip.0,
-        });
-        req.extensions_mut().insert(user);
+        let auth_permission_manager = PermissionManager::new(&auth_user).add_api_key(&api_key);
+
+        if auth_permission_manager
+            .has_admin_permission("users.impersonate")
+            .is_ok()
+            && let Some(user_uuid) = req
+                .headers()
+                .get("Calagopus-User")
+                .and_then(|h| h.to_str().ok())
+                .and_then(|h| h.parse().ok())
+        {
+            let user = match User::by_uuid_optional_cached(&state.database, user_uuid).await {
+                Ok(Some(user)) => user,
+                Ok(None) => {
+                    return Ok(ApiResponse::error(
+                        "unable to find user from calagopus-user header",
+                    )
+                    .with_status(StatusCode::UNAUTHORIZED)
+                    .into_response());
+                }
+                Err(err) => return Ok(ApiResponse::from(err).into_response()),
+            };
+
+            req.extensions_mut().insert(PermissionManager::new(&user));
+            req.extensions_mut().insert(UserActivityLogger {
+                state: Arc::clone(&state),
+                user_uuid: user.uuid,
+                impersonator_uuid: Some(auth_user.uuid),
+                api_key_uuid: Some(api_key.uuid),
+                ip: ip.0,
+            });
+            req.extensions_mut().insert(user);
+            req.extensions_mut()
+                .insert(Some(UserImpersonator(auth_user)));
+        } else {
+            req.extensions_mut().insert(auth_permission_manager);
+            req.extensions_mut().insert(UserActivityLogger {
+                state: Arc::clone(&state),
+                user_uuid: auth_user.uuid,
+                impersonator_uuid: None,
+                api_key_uuid: Some(api_key.uuid),
+                ip: ip.0,
+            });
+            req.extensions_mut().insert(auth_user);
+            req.extensions_mut().insert(None::<UserImpersonator>);
+        }
+
         req.extensions_mut().insert(AuthMethod::ApiKey(api_key));
     } else {
         return Ok(ApiResponse::error("missing authorization")

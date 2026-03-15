@@ -145,29 +145,16 @@ mod delete {
 mod patch {
     use crate::routes::api::admin::egg_repositories::_egg_repository_::GetEggRepository;
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
-        models::{admin_activity::GetAdminActivityLogger, user::GetPermissionManager},
-        prelude::SqlxErrorExt,
+        models::{
+            UpdatableModel, admin_activity::GetAdminActivityLogger,
+            egg_repository::UpdateEggRepositoryOptions, user::GetPermissionManager,
+        },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: Option<compact_str::CompactString>,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-
-        #[validate(url)]
-        #[schema(example = "https://github.com/example/repo.git", format = "uri")]
-        git_repository: Option<compact_str::CompactString>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -183,48 +170,17 @@ mod patch {
             description = "The egg repository ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateEggRepositoryOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         mut egg_repository: GetEggRepository,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateEggRepositoryOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("egg-repositories.update")?;
 
-        if let Some(name) = data.name {
-            egg_repository.name = name;
-        }
-        if let Some(description) = data.description {
-            if description.is_empty() {
-                egg_repository.description = None;
-            } else {
-                egg_repository.description = Some(description);
-            }
-        }
-        if let Some(git_repository) = data.git_repository {
-            egg_repository.git_repository = git_repository;
-        }
-
-        match sqlx::query!(
-            "UPDATE egg_repositories
-            SET name = $1, description = $2, git_repository = $3
-            WHERE egg_repositories.uuid = $4",
-            &egg_repository.name,
-            egg_repository.description.as_deref(),
-            &egg_repository.git_repository,
-            egg_repository.uuid,
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match egg_repository.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error(
@@ -233,13 +189,7 @@ mod patch {
                 .with_status(StatusCode::CONFLICT)
                 .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update egg repository: {:?}", err);
-
-                return ApiResponse::error("failed to update egg repository")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

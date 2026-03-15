@@ -1,17 +1,20 @@
-use crate::{prelude::*, response::ApiResponse, storage::StorageUrlRetriever};
+use crate::{
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+    response::ApiResponse,
+    storage::StorageUrlRetriever,
+};
 use axum::http::StatusCode;
-use regex::Regex;
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type};
 use std::{
     collections::BTreeMap,
+    ops::{Deref, DerefMut},
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
 use webauthn_rs::prelude::CredentialID;
-
-pub static USERNAME_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[a-zA-Z0-9_]+$").expect("Failed to compile username regex"));
 
 #[derive(Clone)]
 pub enum AuthMethod {
@@ -19,7 +22,25 @@ pub enum AuthMethod {
     ApiKey(super::user_api_key::UserApiKey),
 }
 
+#[derive(Clone)]
+pub struct UserImpersonator(pub User);
+
+impl Deref for UserImpersonator {
+    type Target = User;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for UserImpersonator {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 pub type GetUser = crate::extract::ConsumingExtension<User>;
+pub type GetUserImpersonator = crate::extract::ConsumingExtension<Option<UserImpersonator>>;
 pub type GetAuthMethod = crate::extract::ConsumingExtension<AuthMethod>;
 pub type GetPermissionManager = axum::extract::Extension<PermissionManager>;
 
@@ -53,13 +74,11 @@ impl PermissionManager {
         self.api_key_user_permissions = Some(api_key.user_permissions.clone());
         self.api_key_admin_permissions = Some(api_key.admin_permissions.clone());
         self.api_key_server_permissions = Some(api_key.server_permissions.clone());
-
         self
     }
 
     pub fn set_user_server_owner(mut self, is_owner: bool) -> Self {
         self.user_server_owner = is_owner;
-
         self
     }
 
@@ -68,45 +87,42 @@ impl PermissionManager {
         permissions: Option<Arc<Vec<compact_str::CompactString>>>,
     ) -> Self {
         self.server_subuser_permissions = permissions;
-
         self
     }
 
     pub fn has_user_permission(&self, permission: &str) -> Result<(), ApiResponse> {
-        if let Some(permissions) = &self.api_key_user_permissions {
-            if permissions.iter().any(|p| p == permission) {
-                return Ok(());
-            } else {
-                return Err(ApiResponse::error(&format!(
-                    "you do not have permission to perform this action: {permission}"
-                ))
-                .with_status(StatusCode::FORBIDDEN));
-            }
+        if let Some(api_key_permissions) = &self.api_key_user_permissions
+            && !api_key_permissions.iter().any(|p| p == permission)
+        {
+            return Err(ApiResponse::error(format!(
+                "you do not have permission to perform this action: {permission}"
+            ))
+            .with_status(StatusCode::FORBIDDEN));
         }
 
         Ok(())
     }
 
     pub fn has_admin_permission(&self, permission: &str) -> Result<(), ApiResponse> {
-        let has_role_permission = if !self.user_admin
-            && let Some(permissions) = &self.role_admin_permissions
-        {
-            permissions.iter().any(|p| p == permission)
-        } else {
-            self.user_admin
-        };
+        let is_admin = self.user_admin;
+        let has_role_perm = self
+            .role_admin_permissions
+            .as_ref()
+            .is_some_and(|perms| perms.iter().any(|p| p == permission));
 
-        if !has_role_permission {
-            return Err(ApiResponse::error(&format!(
+        let has_base_permission = is_admin || has_role_perm;
+
+        if !has_base_permission {
+            return Err(ApiResponse::error(format!(
                 "you do not have permission to perform this action: {permission}"
             ))
             .with_status(StatusCode::FORBIDDEN));
         }
 
-        if let Some(permissions) = &self.api_key_admin_permissions
-            && !permissions.iter().any(|p| p == permission)
+        if let Some(api_key_permissions) = &self.api_key_admin_permissions
+            && !api_key_permissions.iter().any(|p| p == permission)
         {
-            return Err(ApiResponse::error(&format!(
+            return Err(ApiResponse::error(format!(
                 "you do not have permission to perform this action: {permission}"
             ))
             .with_status(StatusCode::FORBIDDEN));
@@ -116,40 +132,24 @@ impl PermissionManager {
     }
 
     pub fn has_server_permission(&self, permission: &str) -> Result<(), ApiResponse> {
-        if !self.user_admin
-            && self.server_subuser_permissions.is_none()
-            && self.role_server_permissions.is_none()
-        {
-            if let Some(api_key_permissions) = &self.api_key_server_permissions
-                && api_key_permissions.iter().all(|p| p != permission)
-            {
-                return Err(ApiResponse::error(&format!(
-                    "you do not have permission to perform this action: {permission}"
-                ))
-                .with_status(StatusCode::FORBIDDEN));
-            }
+        let is_admin = self.user_admin;
 
-            return Ok(());
-        }
+        let has_role_perm = self
+            .role_server_permissions
+            .as_ref()
+            .is_some_and(|perms| perms.iter().any(|p| p == permission));
 
-        let has_role_permission = if !self.user_admin
-            && let Some(permissions) = &self.role_server_permissions
-        {
-            permissions.iter().any(|p| p == permission)
-        } else {
-            self.user_admin
-        };
+        let is_owner = self.user_server_owner;
 
-        let has_subuser_permission = if let Some(permissions) = &self.server_subuser_permissions {
-            permissions.iter().any(|p| p == permission)
-        } else {
-            self.user_server_owner
-        };
+        let has_subuser_perm = self
+            .server_subuser_permissions
+            .as_ref()
+            .is_some_and(|perms| perms.iter().any(|p| p == permission));
 
-        let has_base_permission = has_role_permission || has_subuser_permission;
+        let has_base_permission = is_admin || has_role_perm || is_owner || has_subuser_perm;
 
         if !has_base_permission {
-            return Err(ApiResponse::error(&format!(
+            return Err(ApiResponse::error(format!(
                 "you do not have permission to perform this action: {permission}"
             ))
             .with_status(StatusCode::FORBIDDEN));
@@ -158,7 +158,7 @@ impl PermissionManager {
         if let Some(api_key_permissions) = &self.api_key_server_permissions
             && !api_key_permissions.iter().any(|p| p == permission)
         {
-            return Err(ApiResponse::error(&format!(
+            return Err(ApiResponse::error(format!(
                 "you do not have permission to perform this action: {permission}"
             ))
             .with_status(StatusCode::FORBIDDEN));
@@ -202,6 +202,8 @@ pub struct User {
     pub language: compact_str::CompactString,
     pub toast_position: UserToastPosition,
     pub start_on_grouped_servers: bool,
+
+    pub has_password: bool,
 
     pub created: chrono::NaiveDateTime,
 }
@@ -262,6 +264,10 @@ impl BaseModel for User {
                 compact_str::format_compact!("{prefix}start_on_grouped_servers"),
             ),
             (
+                "(users.password IS NOT NULL)",
+                compact_str::format_compact!("{prefix}has_password"),
+            ),
+            (
                 "users.created",
                 compact_str::format_compact!("{prefix}created"),
             ),
@@ -308,52 +314,16 @@ impl BaseModel for User {
             start_on_grouped_servers: row.try_get(
                 compact_str::format_compact!("{prefix}start_on_grouped_servers").as_str(),
             )?,
+            has_password: row
+                .try_get(compact_str::format_compact!("{prefix}has_password").as_str())?,
             created: row.try_get(compact_str::format_compact!("{prefix}created").as_str())?,
         })
     }
 }
 
 impl User {
-    #[allow(clippy::too_many_arguments)]
-    pub async fn create(
-        database: &crate::database::Database,
-        role_uuid: Option<uuid::Uuid>,
-        external_id: Option<&str>,
-        username: &str,
-        email: &str,
-        name_first: &str,
-        name_last: &str,
-        password: &str,
-        admin: bool,
-        language: &str,
-    ) -> Result<uuid::Uuid, crate::database::DatabaseError> {
-        let row = sqlx::query(
-            r#"
-            INSERT INTO users (role_uuid, external_id, username, email, name_first, name_last, password, admin, language)
-            VALUES ($1, $2, $3, $4, $5, $6, crypt($7, gen_salt('bf', 8)), $8, $9)
-            RETURNING users.uuid
-            "#,
-        )
-        .bind(role_uuid)
-        .bind(external_id)
-        .bind(username)
-        .bind(email)
-        .bind(name_first)
-        .bind(name_last)
-        .bind(password)
-        .bind(admin)
-        .bind(language)
-        .fetch_one(database.write())
-        .await?;
-
-        Ok(row.try_get("uuid")?)
-    }
-
-    #[allow(clippy::too_many_arguments)]
     pub async fn create_automatic_admin(
         database: &crate::database::Database,
-        role_uuid: Option<uuid::Uuid>,
-        external_id: Option<&str>,
         username: &str,
         email: &str,
         name_first: &str,
@@ -362,13 +332,11 @@ impl User {
     ) -> Result<uuid::Uuid, crate::database::DatabaseError> {
         let row = sqlx::query(
             r#"
-            INSERT INTO users (role_uuid, external_id, username, email, name_first, name_last, password, admin)
-            VALUES ($1, $2, $3, $4, $5, $6, crypt($7, gen_salt('bf', 8)), (SELECT COUNT(*) = 0 FROM users))
+            INSERT INTO users (username, email, name_first, name_last, password, admin)
+            VALUES ($1, $2, $3, $4, crypt($5, gen_salt('bf', 8)), (SELECT COUNT(*) = 0 FROM users))
             RETURNING users.uuid
             "#,
         )
-        .bind(role_uuid)
-        .bind(external_id)
         .bind(username)
         .bind(email)
         .bind(name_first)
@@ -404,7 +372,7 @@ impl User {
     /// Returns the user and session associated with the given session string, if valid.
     ///
     /// Cached for 5 seconds.
-    pub async fn by_session(
+    pub async fn by_session_cached(
         database: &crate::database::Database,
         session: &str,
     ) -> Result<Option<(Self, super::user_session::UserSession)>, anyhow::Error> {
@@ -445,7 +413,7 @@ impl User {
     /// Returns the user and API key associated with the given API key string, if valid.
     ///
     /// Cached for 5 seconds.
-    pub async fn by_api_key(
+    pub async fn by_api_key_cached(
         database: &crate::database::Database,
         key: &str,
     ) -> Result<Option<(Self, super::user_api_key::UserApiKey)>, anyhow::Error> {
@@ -528,6 +496,48 @@ impl User {
         row.try_map(|row| Self::map(None, &row))
     }
 
+    pub async fn by_email_password(
+        database: &crate::database::Database,
+        email: &str,
+        password: &str,
+    ) -> Result<Option<Self>, crate::database::DatabaseError> {
+        let row = sqlx::query(&format!(
+            r#"
+            SELECT {}
+            FROM users
+            LEFT JOIN roles ON roles.uuid = users.role_uuid
+            WHERE lower(users.email) = lower($1) AND users.password IS NOT NULL AND users.password = crypt($2, users.password)
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(email)
+        .bind(password)
+        .fetch_optional(database.read())
+        .await?;
+
+        row.try_map(|row| Self::map(None, &row))
+    }
+
+    pub async fn by_username(
+        database: &crate::database::Database,
+        username: &str,
+    ) -> Result<Option<Self>, crate::database::DatabaseError> {
+        let row = sqlx::query(&format!(
+            r#"
+            SELECT {}
+            FROM users
+            LEFT JOIN roles ON roles.uuid = users.role_uuid
+            WHERE lower(users.username) = lower($1)
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(username)
+        .fetch_optional(database.read())
+        .await?;
+
+        row.try_map(|row| Self::map(None, &row))
+    }
+
     pub async fn by_username_password(
         database: &crate::database::Database,
         username: &str,
@@ -538,7 +548,7 @@ impl User {
             SELECT {}
             FROM users
             LEFT JOIN roles ON roles.uuid = users.role_uuid
-            WHERE lower(users.username) = lower($1) AND users.password = crypt($2, users.password)
+            WHERE lower(users.username) = lower($1) AND users.password IS NOT NULL AND users.password = crypt($2, users.password)
             "#,
             Self::columns_sql(None)
         ))
@@ -571,28 +581,6 @@ impl User {
                 .fingerprint(russh::keys::HashAlg::Sha256)
                 .to_string(),
         )
-        .fetch_optional(database.read())
-        .await?;
-
-        row.try_map(|row| Self::map(None, &row))
-    }
-
-    pub async fn by_email_password(
-        database: &crate::database::Database,
-        email: &str,
-        password: &str,
-    ) -> Result<Option<Self>, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            SELECT {}
-            FROM users
-            LEFT JOIN roles ON roles.uuid = users.role_uuid
-            WHERE lower(users.email) = lower($1) AND users.password = crypt($2, users.password)
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(email)
-        .bind(password)
         .fetch_optional(database.read())
         .await?;
 
@@ -694,6 +682,10 @@ impl User {
         database: &crate::database::Database,
         password: &str,
     ) -> Result<bool, crate::database::DatabaseError> {
+        if !self.has_password {
+            return Ok(true);
+        }
+
         let row = sqlx::query(
             r#"
             SELECT 1
@@ -709,22 +701,41 @@ impl User {
         Ok(row.is_some())
     }
 
+    /// Update the User password, `None` will disallow password login and not require one when changing
     pub async fn update_password(
-        &self,
+        &mut self,
         database: &crate::database::Database,
-        password: &str,
+        password: Option<&str>,
     ) -> Result<(), crate::database::DatabaseError> {
-        sqlx::query(
-            r#"
-            UPDATE users
-            SET password = crypt($2, gen_salt('bf'))
-            WHERE users.uuid = $1
-            "#,
-        )
-        .bind(self.uuid)
-        .bind(password)
-        .execute(database.write())
-        .await?;
+        if let Some(password) = password {
+            sqlx::query(
+                r#"
+		            UPDATE users
+		            SET password = crypt($2, gen_salt('bf'))
+		            WHERE users.uuid = $1
+		            "#,
+            )
+            .bind(self.uuid)
+            .bind(password)
+            .execute(database.write())
+            .await?;
+
+            self.has_password = true;
+        } else {
+            sqlx::query(
+                r#"
+		            UPDATE users
+		            SET password = NULL
+		            WHERE users.uuid = $1
+		            "#,
+            )
+            .bind(self.uuid)
+            .bind(password)
+            .execute(database.write())
+            .await?;
+
+            self.has_password = false;
+        }
 
         Ok(())
     }
@@ -734,9 +745,9 @@ impl User {
             role.require_two_factor
         } else {
             match settings.app.two_factor_requirement {
-                crate::settings::TwoFactorRequirement::Admins => self.admin,
-                crate::settings::TwoFactorRequirement::AllUsers => true,
-                crate::settings::TwoFactorRequirement::None => false,
+                crate::settings::app::TwoFactorRequirement::Admins => self.admin,
+                crate::settings::app::TwoFactorRequirement::AllUsers => true,
+                crate::settings::app::TwoFactorRequirement::None => false,
             }
         }
     }
@@ -746,12 +757,10 @@ impl User {
         ApiUser {
             uuid: self.uuid,
             username: self.username,
-            role: self.role.map(|r| r.name),
             avatar: self
                 .avatar
                 .as_ref()
                 .map(|a| storage_url_retriever.get_url(a)),
-            admin: self.admin,
             totp_enabled: self.totp_enabled,
             created: self.created.and_utc(),
         }
@@ -782,8 +791,246 @@ impl User {
             language: self.language,
             toast_position: self.toast_position,
             start_on_grouped_servers: self.start_on_grouped_servers,
+            has_password: self.has_password,
             created: self.created.and_utc(),
         }
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateUserOptions {
+    #[garde(skip)]
+    pub role_uuid: Option<uuid::Uuid>,
+
+    #[garde(length(max = 255))]
+    #[schema(max_length = 255)]
+    pub external_id: Option<compact_str::CompactString>,
+
+    #[garde(length(chars, min = 3, max = 15), pattern("^[a-zA-Z0-9_]+$"))]
+    #[schema(min_length = 3, max_length = 15)]
+    #[schema(pattern = "^[a-zA-Z0-9_]+$")]
+    pub username: compact_str::CompactString,
+    #[garde(email, length(max = 255))]
+    #[schema(format = "email", max_length = 255)]
+    pub email: compact_str::CompactString,
+    #[garde(length(chars, min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub name_first: compact_str::CompactString,
+    #[garde(length(chars, min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub name_last: compact_str::CompactString,
+    #[garde(length(chars, min = 1, max = 512))]
+    #[schema(min_length = 1, max_length = 512)]
+    pub password: Option<String>,
+
+    #[garde(skip)]
+    pub admin: bool,
+
+    #[garde(
+        length(chars, min = 2, max = 15),
+        custom(crate::utils::validate_language)
+    )]
+    #[schema(min_length = 2, max_length = 15)]
+    pub language: compact_str::CompactString,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for User {
+    type CreateOptions<'a> = CreateUserOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<User>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        if let Some(role_uuid) = options.role_uuid {
+            super::role::Role::by_uuid_optional_cached(&state.database, role_uuid)
+                .await?
+                .ok_or(crate::database::InvalidRelationError("role"))?;
+        }
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("users");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("role_uuid", options.role_uuid)
+            .set("external_id", options.external_id.as_deref())
+            .set("username", &options.username)
+            .set("email", &options.email)
+            .set("name_first", &options.name_first)
+            .set("name_last", &options.name_last);
+
+        if let Some(password) = &options.password {
+            query_builder.set_expr("password", "crypt($1, gen_salt('bf', 8))", vec![password]);
+        }
+
+        query_builder
+            .set("admin", options.admin)
+            .set("language", &options.language);
+
+        let row = query_builder
+            .returning("uuid")
+            .fetch_one(&mut *transaction)
+            .await?;
+        let uuid: uuid::Uuid = row.get("uuid");
+
+        transaction.commit().await?;
+
+        Self::by_uuid(&state.database, uuid).await
+    }
+}
+
+#[derive(Default, ToSchema, Serialize, Deserialize, Validate)]
+pub struct UpdateUserOptions {
+    #[garde(skip)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub role_uuid: Option<Option<uuid::Uuid>>,
+
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub external_id: Option<Option<compact_str::CompactString>>,
+
+    #[garde(length(chars, min = 3, max = 15), pattern("^[a-zA-Z0-9_]+$"))]
+    #[schema(min_length = 3, max_length = 15)]
+    #[schema(pattern = "^[a-zA-Z0-9_]+$")]
+    pub username: Option<compact_str::CompactString>,
+    #[garde(email, length(max = 255))]
+    #[schema(format = "email", max_length = 255)]
+    pub email: Option<compact_str::CompactString>,
+    #[garde(length(chars, min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub name_first: Option<compact_str::CompactString>,
+    #[garde(length(chars, min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub name_last: Option<compact_str::CompactString>,
+    #[garde(length(chars, min = 8, max = 512))]
+    #[schema(min_length = 8, max_length = 512)]
+    pub password: Option<Option<compact_str::CompactString>>,
+
+    #[garde(skip)]
+    pub admin: Option<bool>,
+
+    #[garde(
+        length(chars, min = 2, max = 15),
+        inner(custom(crate::utils::validate_language))
+    )]
+    #[schema(min_length = 2, max_length = 15)]
+    pub language: Option<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for User {
+    type UpdateOptions = UpdateUserOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<User>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let role = if let Some(role_uuid) = options.role_uuid {
+            if let Some(role_uuid) = role_uuid {
+                Some(Some(
+                    super::role::Role::by_uuid_optional_cached(&state.database, role_uuid)
+                        .await?
+                        .ok_or(crate::database::InvalidRelationError("role"))?,
+                ))
+            } else {
+                Some(None)
+            }
+        } else {
+            None
+        };
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("users");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("role_uuid", options.role_uuid.as_ref())
+            .set("external_id", options.external_id.as_ref())
+            .set("username", options.username.as_ref())
+            .set("email", options.email.as_ref())
+            .set("name_first", options.name_first.as_ref())
+            .set("name_last", options.name_last.as_ref())
+            .set("admin", options.admin)
+            .set("language", options.language.as_ref())
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(role) = role {
+            self.role = role;
+        }
+        if let Some(external_id) = options.external_id {
+            self.external_id = external_id;
+        }
+        if let Some(username) = options.username {
+            self.username = username;
+        }
+        if let Some(email) = options.email {
+            self.email = email;
+        }
+        if let Some(name_first) = options.name_first {
+            self.name_first = name_first;
+        }
+        if let Some(name_last) = options.name_last {
+            self.name_last = name_last;
+        }
+        if let Some(admin) = options.admin {
+            self.admin = admin;
+        }
+        if let Some(language) = options.language {
+            self.language = language;
+        }
+
+        transaction.commit().await?;
+
+        if let Some(password) = options.password {
+            self.update_password(&state.database, password.as_deref())
+                .await?;
+        }
+
+        Ok(())
     }
 }
 
@@ -855,10 +1102,8 @@ pub struct ApiUser {
     pub uuid: uuid::Uuid,
 
     pub username: compact_str::CompactString,
-    pub role: Option<compact_str::CompactString>,
     pub avatar: Option<String>,
 
-    pub admin: bool,
     pub totp_enabled: bool,
 
     pub created: chrono::DateTime<chrono::Utc>,
@@ -885,6 +1130,8 @@ pub struct ApiFullUser {
     pub language: compact_str::CompactString,
     pub toast_position: UserToastPosition,
     pub start_on_grouped_servers: bool,
+
+    pub has_password: bool,
 
     pub created: chrono::DateTime<chrono::Utc>,
 }

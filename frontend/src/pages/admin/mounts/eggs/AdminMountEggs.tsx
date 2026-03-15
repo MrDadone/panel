@@ -1,15 +1,19 @@
 import { useState } from 'react';
+import { z } from 'zod';
 import getMountNestEggs from '@/api/admin/mounts/nest-eggs/getMountNestEggs.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
+import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminMountSchema } from '@/lib/schemas/admin/mounts.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { eggTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import EggRow from '../../nests/eggs/EggRow.tsx';
 
-export default function AdminMountNestEggs({ mount }: { mount: Mount }) {
+export default function AdminMountNestEggs({ mount }: { mount: z.infer<typeof adminMountSchema> }) {
   const [mountNestEggs, setMountNestEggs] = useState<
-    ResponseMeta<AndCreated<{ nest: AdminNest; nestEgg: AdminNestEgg }>>
+    Pagination<AndCreated<{ nest: z.infer<typeof adminNestSchema>; nestEgg: z.infer<typeof adminEggSchema> }>>
   >(getEmptyPaginationSet());
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({

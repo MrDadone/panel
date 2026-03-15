@@ -9,8 +9,9 @@ import getDatabaseHosts from '@/api/server/databases/getDatabaseHosts.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
+import { databaseHostSchema } from '@/lib/schemas/generic.ts';
 import { serverDatabaseCreateSchema } from '@/lib/schemas/server/databases.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -21,7 +22,7 @@ export default function DatabaseCreateModal({ opened, onClose }: ModalProps) {
   const { addToast } = useToast();
   const { server, addDatabase } = useServerStore();
 
-  const [databaseHosts, setDatabaseHosts] = useState<DatabaseHost[]>([]);
+  const [databaseHosts, setDatabaseHosts] = useState<z.infer<typeof databaseHostSchema>[]>([]);
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof serverDatabaseCreateSchema>>({
@@ -84,14 +85,14 @@ export default function DatabaseCreateModal({ opened, onClose }: ModalProps) {
             {...form.getInputProps('databaseHostUuid')}
           />
 
-          <Modal.Footer>
+          <ModalFooter>
             <Button type='submit' loading={loading} disabled={!form.isValid()}>
               {t('common.button.create', {})}
             </Button>
             <Button variant='default' onClick={onClose}>
               {t('common.button.close', {})}
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Stack>
       </form>
     </Modal>

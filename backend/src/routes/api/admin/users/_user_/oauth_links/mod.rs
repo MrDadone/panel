@@ -82,23 +82,24 @@ mod get {
 mod post {
     use crate::routes::api::admin::users::_user_::GetParamUser;
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger, oauth_provider::OAuthProvider,
-            user::GetPermissionManager, user_oauth_link::UserOAuthLink,
+            ByUuid, CreatableModel, admin_activity::GetAdminActivityLogger,
+            oauth_provider::OAuthProvider, user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         oauth_provider_uuid: uuid::Uuid,
 
-        #[validate(length(min = 1, max = 255))]
+        #[garde(length(chars, min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
         identifier: String,
     }
@@ -145,27 +146,24 @@ mod post {
                 }
             };
 
-        let oauth_link = match UserOAuthLink::create(
-            &state.database,
-            user.uuid,
-            oauth_provider.uuid,
-            &data.identifier,
-        )
-        .await
-        {
-            Ok(oauth_link) => oauth_link,
-            Err(err) if err.is_unique_violation() => {
-                return ApiResponse::error("oauth link with provider + identifier already exists")
-                    .ok();
-            }
-            Err(err) => {
-                tracing::error!("failed to create oauth link: {:?}", err);
-
-                return ApiResponse::error("failed to create oauth link")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+        let options = shared::models::user_oauth_link::CreateUserOAuthLinkOptions {
+            user_uuid: user.uuid,
+            oauth_provider_uuid: oauth_provider.uuid,
+            identifier: data.identifier.into(),
         };
+
+        let oauth_link =
+            match shared::models::user_oauth_link::UserOAuthLink::create(&state, options).await {
+                Ok(oauth_link) => oauth_link,
+                Err(err) if err.is_unique_violation() => {
+                    return ApiResponse::error(
+                        "oauth link with provider + identifier already exists",
+                    )
+                    .with_status(StatusCode::CONFLICT)
+                    .ok();
+                }
+                Err(err) => return ApiResponse::from(err).ok(),
+            };
 
         activity_logger
             .log(

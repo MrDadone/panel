@@ -1,9 +1,15 @@
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminOAuthProviderSchema } from '@/lib/schemas/admin/oauthProviders.ts';
 
-export default function OAuthProviderRow({ oauthProvider }: { oauthProvider: AdminOAuthProvider }) {
+export default function OAuthProviderRow({
+  oauthProvider,
+}: {
+  oauthProvider: z.infer<typeof adminOAuthProviderSchema>;
+}) {
   return (
     <TableRow>
       <TableData>

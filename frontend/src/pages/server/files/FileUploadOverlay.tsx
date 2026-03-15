@@ -1,12 +1,15 @@
 import { faUpload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { memo } from 'react';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 interface FileUploadOverlayProps {
   visible: boolean;
 }
 
-const FileUploadOverlay = memo(function FileUploadOverlay({ visible }: FileUploadOverlayProps) {
+function FileUploadOverlay({ visible }: FileUploadOverlayProps) {
+  const { t } = useTranslations();
+
   if (!visible) return null;
 
   return (
@@ -15,13 +18,15 @@ const FileUploadOverlay = memo(function FileUploadOverlay({ visible }: FileUploa
         <div className='bg-gray-800 rounded-lg p-8 shadow-2xl border-2 border-dashed border-blue-500 dark:border-blue-400'>
           <div className='flex flex-col items-center gap-4 z-100'>
             <FontAwesomeIcon icon={faUpload} className='text-6xl text-blue-500 dark:text-blue-400 animate-bounce' />
-            <p className='text-xl font-semibold text-gray-800 dark:text-gray-200'>Drop files here to upload</p>
-            <p className='text-sm text-gray-600 dark:text-gray-400'>Release to start uploading</p>
+            <p className='text-xl font-semibold text-gray-800 dark:text-gray-200'>
+              {t('pages.server.files.dropzone.title', {})}
+            </p>
+            <p className='text-sm text-gray-600 dark:text-gray-400'>{t('pages.server.files.dropzone.subtitle', {})}</p>
           </div>
         </div>
       </div>
     </div>
   );
-});
+}
 
-export default FileUploadOverlay;
+export default memo(FileUploadOverlay);

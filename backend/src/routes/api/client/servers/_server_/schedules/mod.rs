@@ -88,10 +88,12 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             server::{GetServer, GetServerActivityLogger},
             server_schedule::ServerSchedule,
             user::GetPermissionManager,
@@ -99,16 +101,17 @@ mod post {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 1, max = 255))]
+        #[garde(length(chars, min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
-        name: String,
+        name: compact_str::CompactString,
+        #[garde(skip)]
         enabled: bool,
-
+        #[garde(dive)]
         triggers: Vec<wings_api::ScheduleTrigger>,
+        #[garde(dive)]
         condition: wings_api::SchedulePreCondition,
     }
 
@@ -143,6 +146,15 @@ mod post {
 
         permissions.has_server_permission("schedules.create")?;
 
+        let schedules_lock = state
+            .cache
+            .lock(
+                format!("servers::{}::schedules", server.uuid),
+                Some(30),
+                Some(5),
+            )
+            .await?;
+
         let schedules = ServerSchedule::count_by_server_uuid(&state.database, server.uuid).await;
         if schedules >= server.schedule_limit as i64 {
             return ApiResponse::error("maximum number of schedules reached")
@@ -150,30 +162,24 @@ mod post {
                 .ok();
         }
 
-        let schedule = match ServerSchedule::create(
-            &state.database,
-            server.uuid,
-            &data.name,
-            data.enabled,
-            data.triggers,
-            data.condition,
-        )
-        .await
-        {
+        let options = shared::models::server_schedule::CreateServerScheduleOptions {
+            server_uuid: server.uuid,
+            name: data.name,
+            enabled: data.enabled,
+            triggers: data.triggers,
+            condition: data.condition,
+        };
+        let schedule = match ServerSchedule::create(&state, options).await {
             Ok(schedule) => schedule,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("schedule with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!(name = %data.name, "failed to create schedule: {:?}", err);
-
-                return ApiResponse::error("failed to create schedule")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
+
+        drop(schedules_lock);
 
         activity_logger
             .log(

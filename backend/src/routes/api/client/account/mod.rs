@@ -4,6 +4,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 mod activity;
 mod api_keys;
 mod avatar;
+mod command_snippets;
 mod email;
 mod logout;
 mod oauth_links;
@@ -42,6 +43,7 @@ mod get {
 
 mod patch {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -52,31 +54,29 @@ mod patch {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(
-            length(min = 3, max = 15),
-            regex(path = "*shared::models::user::USERNAME_REGEX")
-        )]
+        #[garde(length(chars, min = 3, max = 15), pattern("^[a-zA-Z0-9_]+$"))]
         #[schema(min_length = 3, max_length = 15)]
         #[schema(pattern = "^[a-zA-Z0-9_]+$")]
         username: Option<compact_str::CompactString>,
-        #[validate(length(min = 2, max = 255))]
+        #[garde(length(chars, min = 2, max = 255))]
         #[schema(min_length = 2, max_length = 255)]
         name_first: Option<compact_str::CompactString>,
-        #[validate(length(min = 2, max = 255))]
+        #[garde(length(chars, min = 2, max = 255))]
         #[schema(min_length = 2, max_length = 255)]
         name_last: Option<compact_str::CompactString>,
 
-        #[validate(
-            length(min = 5, max = 15),
-            custom(function = "shared::validate_language")
+        #[garde(
+            length(chars, min = 2, max = 15),
+            inner(custom(shared::utils::validate_language))
         )]
-        #[schema(min_length = 5, max_length = 15)]
+        #[schema(min_length = 2, max_length = 15)]
         language: Option<compact_str::CompactString>,
+        #[garde(skip)]
         toast_position: Option<UserToastPosition>,
+        #[garde(skip)]
         start_on_grouped_servers: Option<bool>,
     }
 
@@ -161,6 +161,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
         .nest("/two-factor", two_factor::router(state))
         .nest("/security-keys", security_keys::router(state))
         .nest("/oauth-links", oauth_links::router(state))
+        .nest("/command-snippets", command_snippets::router(state))
         .nest("/api-keys", api_keys::router(state))
         .nest("/ssh-keys", ssh_keys::router(state))
         .nest("/sessions", sessions::router(state))

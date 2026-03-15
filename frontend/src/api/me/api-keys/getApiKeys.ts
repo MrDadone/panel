@@ -1,6 +1,8 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { userApiKeySchema } from '@/lib/schemas/user/apiKeys.ts';
 
-export default async (page: number, search?: string): Promise<ResponseMeta<UserApiKey>> => {
+export default async (page: number, search?: string): Promise<Pagination<z.infer<typeof userApiKeySchema>>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get('/api/client/account/api-keys', {

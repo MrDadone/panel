@@ -15,7 +15,8 @@ import TagsInput from '@/elements/input/TagsInput.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminEggVariableSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminEggSchema, adminEggVariableSchema, adminEggVariableUpdateSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
@@ -24,9 +25,9 @@ export default function EggVariableContainer({
   contextEgg,
   contextVariable,
 }: {
-  contextNest: AdminNest;
-  contextEgg: AdminNestEgg;
-  contextVariable?: NestEggVariable;
+  contextNest: z.infer<typeof adminNestSchema>;
+  contextEgg: z.infer<typeof adminEggSchema>;
+  contextVariable?: z.infer<typeof adminEggVariableSchema>;
 }) {
   const { eggVariables, setEggVariables, removeEggVariable } = useAdminStore();
   const { addToast } = useToast();
@@ -34,7 +35,7 @@ export default function EggVariableContainer({
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof adminEggVariableSchema>>({
+  const form = useForm<z.infer<typeof adminEggVariableUpdateSchema>>({
     initialValues: {
       name: '',
       description: null,
@@ -47,7 +48,7 @@ export default function EggVariableContainer({
       rules: [],
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminEggVariableSchema),
+    validate: zod4Resolver(adminEggVariableUpdateSchema),
   });
 
   useEffect(() => {
@@ -70,7 +71,12 @@ export default function EggVariableContainer({
     setLoading(true);
 
     if (contextVariable?.uuid) {
-      updateEggVariable(contextNest.uuid, contextEgg.uuid, contextVariable.uuid, form.values)
+      updateEggVariable(
+        contextNest.uuid,
+        contextEgg.uuid,
+        contextVariable.uuid,
+        adminEggVariableUpdateSchema.parse(form.values),
+      )
         .then(() => {
           addToast('Egg variable updated.', 'success');
         })
@@ -81,7 +87,7 @@ export default function EggVariableContainer({
           setLoading(false);
         });
     } else {
-      createEggVariable(contextNest.uuid, contextEgg.uuid, form.values)
+      createEggVariable(contextNest.uuid, contextEgg.uuid, adminEggVariableUpdateSchema.parse(form.values))
         .then((variable) => {
           setEggVariables([...eggVariables.filter((v) => v.uuid || v.order !== contextVariable!.order), variable]);
           addToast('Egg variable created.', 'success');

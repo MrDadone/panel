@@ -1,18 +1,20 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { userApiKeySchema, userApiKeyUpdateSchema } from '@/lib/schemas/user/apiKeys.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface ApiKeySlice {
-  apiKeys: ResponseMeta<UserApiKey>;
+  apiKeys: Pagination<z.infer<typeof userApiKeySchema>>;
 
-  setApiKeys: (keys: ResponseMeta<UserApiKey>) => void;
-  addApiKey: (key: UserApiKey) => void;
-  removeApiKey: (key: UserApiKey) => void;
-  updateApiKey: (uuid: string, key: UpdateUserApiKey) => void;
+  setApiKeys: (keys: Pagination<z.infer<typeof userApiKeySchema>>) => void;
+  addApiKey: (key: z.infer<typeof userApiKeySchema>) => void;
+  removeApiKey: (key: z.infer<typeof userApiKeySchema>) => void;
+  updateApiKey: (uuid: string, key: z.infer<typeof userApiKeyUpdateSchema>) => void;
 }
 
 export const createApiKeysSlice: StateCreator<UserStore, [], [], ApiKeySlice> = (set): ApiKeySlice => ({
-  apiKeys: getEmptyPaginationSet<UserApiKey>(),
+  apiKeys: getEmptyPaginationSet<z.infer<typeof userApiKeySchema>>(),
 
   setApiKeys: (value) => set((state) => ({ ...state, apiKeys: value })),
   addApiKey: (key) =>

@@ -1,7 +1,7 @@
 import { Group, Modal as MantineModal, ModalProps } from '@mantine/core';
 import { forwardRef } from 'react';
 
-const Modal = forwardRef<HTMLDivElement, ModalProps>(({ children, className, ...rest }, ref) => {
+export const Modal = forwardRef<HTMLDivElement, ModalProps>(({ children, className, ...rest }, ref) => {
   return (
     <MantineModal
       centered
@@ -18,12 +18,10 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(({ children, className, ...
   );
 });
 
-export default Object.assign(Modal, {
-  Footer: function ModalFooter({ children }: { children: React.ReactNode }) {
-    return (
-      <Group mt='md' justify='flex-end'>
-        {children}
-      </Group>
-    );
-  },
-});
+export function ModalFooter({ children }: { children: React.ReactNode }) {
+  return (
+    <Group mt='md' justify='flex-end'>
+      {children}
+    </Group>
+  );
+}

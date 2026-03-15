@@ -1,8 +1,8 @@
 import { Modal as MantineModal, Stack, Text, useModalsStack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useEffect, useState } from 'react';
-import QRCode from 'react-qr-code';
+import QRCode from 'qrcode';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import enableTwoFactor from '@/api/me/account/enableTwoFactor.ts';
@@ -12,7 +12,7 @@ import Code from '@/elements/Code.tsx';
 import CopyOnClick from '@/elements/CopyOnClick.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { dashboardTwoFactorEnableSchema } from '@/lib/schemas/dashboard.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
@@ -31,6 +31,7 @@ export default function TwoFactorSetupButton() {
 
   const stageStack = useModalsStack(['setup', 'recovery']);
 
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [token, setToken] = useState<TwoFactorSetupResponse | null>(null);
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -61,6 +62,16 @@ export default function TwoFactorSetupButton() {
       });
   }, [open]);
 
+  const setCanvasRef = useCallback(
+    (node: HTMLCanvasElement) => {
+      canvasRef.current = node;
+
+      if (!node || !token?.otpUrl) return;
+      QRCode.toCanvas(node, token.otpUrl);
+    },
+    [token],
+  );
+
   const doEnable = () => {
     setLoading(true);
 
@@ -90,7 +101,7 @@ export default function TwoFactorSetupButton() {
             ) : (
               <div className='flex flex-col items-center justify-center my-4'>
                 <div className='flex items-center justify-center w-56 h-56 p-2 bg-gray-50 shadow'>
-                  <QRCode title='QR Code' value={token.otpUrl} />
+                  <canvas ref={setCanvasRef}></canvas>
                 </div>
                 <div className='mt-2'>
                   <CopyOnClick content={token.secret}>
@@ -99,7 +110,7 @@ export default function TwoFactorSetupButton() {
                 </div>
               </div>
             )}
-            <Text>{t('pages.account.account.containers.twoFactor.modal.setupTwoFactor.descriptionQR', {}).md()}</Text>
+            <Text>{t('pages.account.account.containers.twoFactor.modal.setupTwoFactor.descriptionQR', {})}</Text>
 
             <TextInput
               withAsterisk
@@ -117,14 +128,14 @@ export default function TwoFactorSetupButton() {
               {...form.getInputProps('password')}
             />
 
-            <Modal.Footer>
+            <ModalFooter>
               <Button onClick={doEnable} loading={loading} disabled={!form.isValid()}>
                 {t('common.button.enable', {})}
               </Button>
               <Button variant='default' onClick={() => stageStack.closeAll()}>
                 {t('common.button.close', {})}
               </Button>
-            </Modal.Footer>
+            </ModalFooter>
           </Stack>
         </Modal>
         <Modal
@@ -147,7 +158,7 @@ export default function TwoFactorSetupButton() {
               </Code>
             </CopyOnClick>
 
-            <Modal.Footer>
+            <ModalFooter>
               <Button
                 variant='default'
                 onClick={() => {
@@ -157,7 +168,7 @@ export default function TwoFactorSetupButton() {
               >
                 {t('common.button.close', {})}
               </Button>
-            </Modal.Footer>
+            </ModalFooter>
           </Stack>
         </Modal>
       </MantineModal.Stack>

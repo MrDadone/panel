@@ -1,4 +1,4 @@
-import { Group, Tooltip } from '@mantine/core';
+import { Group } from '@mantine/core';
 import { UseFormReturnType, useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -21,14 +21,17 @@ import { useAdminStore } from '@/stores/admin.tsx';
 import EmailFile from './forms/EmailFile.tsx';
 import EmailSendmail from './forms/EmailSendmail.tsx';
 import EmailSmtp from './forms/EmailSmtp.tsx';
+import EmailSendTestModal from './modals/EmailSendTestModal.tsx';
 
 export default function EmailContainer() {
   const { addToast } = useToast();
   const { mailMode } = useAdminStore();
 
   const [loading, setLoading] = useState(false);
+  const [openModal, setOpenModal] = useState<'sendTestEmail' | null>(null);
 
   const form = useForm<z.infer<typeof adminSettingsEmailSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       type: 'none',
     },
@@ -44,7 +47,7 @@ export default function EmailContainer() {
 
   const doUpdate = () => {
     setLoading(true);
-    updateEmailSettings(form.values)
+    updateEmailSettings(adminSettingsEmailSchema.parse(form.getValues()))
       .then(() => {
         addToast('Email settings updated.', 'success');
       })
@@ -56,6 +59,8 @@ export default function EmailContainer() {
 
   return (
     <AdminSubContentContainer title='Email Settings' titleOrder={2}>
+      <EmailSendTestModal opened={openModal === 'sendTestEmail'} onClose={() => setOpenModal(null)} />
+
       <form onSubmit={form.onSubmit(() => doUpdate())}>
         <Select
           label='Provider'
@@ -63,28 +68,27 @@ export default function EmailContainer() {
             value,
             label,
           }))}
+          key={form.key('type')}
           {...form.getInputProps('type')}
         />
 
-        {form.values.type === 'smtp' ? (
+        {form.getValues().type === 'smtp' ? (
           <EmailSmtp form={form as UseFormReturnType<z.infer<typeof adminSettingsEmailSmtpSchema>>} />
-        ) : form.values.type === 'sendmail' ? (
+        ) : form.getValues().type === 'sendmail' ? (
           <EmailSendmail form={form as UseFormReturnType<z.infer<typeof adminSettingsEmailSendmailSchema>>} />
-        ) : form.values.type === 'filesystem' ? (
+        ) : form.getValues().type === 'filesystem' ? (
           <EmailFile form={form as UseFormReturnType<z.infer<typeof adminSettingsEmailFilesystemSchema>>} />
         ) : null}
 
         <Group mt='md'>
-          <AdminCan
-            action='settings.update'
-            renderOnCant={
-              <Tooltip label='You do not have permission to update settings.'>
-                <Button disabled>Save</Button>
-              </Tooltip>
-            }
-          >
+          <AdminCan action='settings.update' cantSave>
             <Button type='submit' disabled={!form.isValid()} loading={loading}>
               Save
+            </Button>
+          </AdminCan>
+          <AdminCan action='settings.read'>
+            <Button variant='outline' loading={loading} onClick={() => setOpenModal('sendTestEmail')}>
+              Send Test Email
             </Button>
           </AdminCan>
         </Group>

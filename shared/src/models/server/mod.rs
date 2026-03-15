@@ -1,5 +1,12 @@
-use crate::{State, prelude::*, response::DisplayError, storage::StorageUrlRetriever};
+use crate::{
+    State,
+    models::{InsertQueryBuilder, UpdateQueryBuilder},
+    prelude::*,
+    response::DisplayError,
+    storage::StorageUrlRetriever,
+};
 use compact_str::ToCompactString;
+use garde::Validate;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type};
@@ -8,7 +15,6 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::Validate;
 
 mod events;
 pub use events::ServerEvent;
@@ -21,6 +27,7 @@ pub struct ServerActivityLogger {
     pub state: State,
     pub server_uuid: uuid::Uuid,
     pub user_uuid: uuid::Uuid,
+    pub impersonator_uuid: Option<uuid::Uuid>,
     pub user_admin: bool,
     pub user_owner: bool,
     pub user_subuser: bool,
@@ -29,7 +36,7 @@ pub struct ServerActivityLogger {
 }
 
 impl ServerActivityLogger {
-    pub async fn log(&self, event: &str, data: serde_json::Value) {
+    pub async fn log(&self, event: impl Into<compact_str::CompactString>, data: serde_json::Value) {
         let settings = match self.state.settings.get().await {
             Ok(settings) => settings,
             Err(_) => return,
@@ -44,16 +51,18 @@ impl ServerActivityLogger {
         }
         drop(settings);
 
-        if let Err(err) = crate::models::server_activity::ServerActivity::log(
-            &self.state.database,
-            self.server_uuid,
-            Some(self.user_uuid),
-            self.api_key_uuid,
-            event,
-            Some(self.ip.into()),
+        let options = super::server_activity::CreateServerActivityOptions {
+            server_uuid: self.server_uuid,
+            user_uuid: Some(self.user_uuid),
+            impersonator_uuid: self.impersonator_uuid,
+            api_key_uuid: self.api_key_uuid,
+            schedule_uuid: None,
+            event: event.into(),
+            ip: Some(self.ip.into()),
             data,
-        )
-        .await
+            created: None,
+        };
+        if let Err(err) = super::server_activity::ServerActivity::create(&self.state, options).await
         {
             tracing::warn!(
                 user = %self.user_uuid,
@@ -97,6 +106,19 @@ impl From<ServerAutoStartBehavior> for wings_api::ServerAutoStartBehavior {
     }
 }
 
+pub struct ServerTransferOptions {
+    pub destination_node: super::node::Node,
+
+    pub allocation_uuid: Option<uuid::Uuid>,
+    pub allocation_uuids: Vec<uuid::Uuid>,
+
+    pub backups: Vec<uuid::Uuid>,
+    pub delete_source_backups: bool,
+    pub archive_format: wings_api::TransferArchiveFormat,
+    pub compression_level: Option<wings_api::CompressionLevel>,
+    pub multiplex_channels: u64,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Server {
     pub uuid: uuid::Uuid,
@@ -109,7 +131,7 @@ pub struct Server {
     pub owner: super::user::User,
     pub egg: Box<super::nest_egg::NestEgg>,
     pub nest: Box<super::nest::Nest>,
-    pub backup_configuration: Option<Fetchable<super::backup_configurations::BackupConfiguration>>,
+    pub backup_configuration: Option<Fetchable<super::backup_configuration::BackupConfiguration>>,
 
     pub status: Option<ServerStatus>,
     pub suspended: bool,
@@ -118,6 +140,7 @@ pub struct Server {
     pub description: Option<compact_str::CompactString>,
 
     pub memory: i64,
+    pub memory_overhead: i64,
     pub swap: i64,
     pub disk: i64,
     pub io_weight: Option<i16>,
@@ -195,6 +218,10 @@ impl BaseModel for Server {
             (
                 "servers.memory",
                 compact_str::format_compact!("{prefix}memory"),
+            ),
+            (
+                "servers.memory_overhead",
+                compact_str::format_compact!("{prefix}memory_overhead"),
             ),
             ("servers.swap", compact_str::format_compact!("{prefix}swap")),
             ("servers.disk", compact_str::format_compact!("{prefix}disk")),
@@ -305,7 +332,7 @@ impl BaseModel for Server {
             egg: Box::new(super::nest_egg::NestEgg::map(Some("egg_"), row)?),
             nest: Box::new(super::nest::Nest::map(Some("nest_"), row)?),
             backup_configuration:
-                super::backup_configurations::BackupConfiguration::get_fetchable_from_row(
+                super::backup_configuration::BackupConfiguration::get_fetchable_from_row(
                     row,
                     compact_str::format_compact!("{prefix}backup_configuration_uuid"),
                 ),
@@ -315,6 +342,8 @@ impl BaseModel for Server {
             description: row
                 .try_get(compact_str::format_compact!("{prefix}description").as_str())?,
             memory: row.try_get(compact_str::format_compact!("{prefix}memory").as_str())?,
+            memory_overhead: row
+                .try_get(compact_str::format_compact!("{prefix}memory_overhead").as_str())?,
             swap: row.try_get(compact_str::format_compact!("{prefix}swap").as_str())?,
             disk: row.try_get(compact_str::format_compact!("{prefix}disk").as_str())?,
             io_weight: row.try_get(compact_str::format_compact!("{prefix}io_weight").as_str())?,
@@ -357,213 +386,6 @@ impl BaseModel for Server {
 }
 
 impl Server {
-    #[allow(clippy::too_many_arguments)]
-    pub async fn create(
-        database: &crate::database::Database,
-        node: &super::node::Node,
-        owner_uuid: uuid::Uuid,
-        egg_uuid: uuid::Uuid,
-        backup_configuration_uuid: Option<uuid::Uuid>,
-        allocation_uuid: Option<uuid::Uuid>,
-        allocation_uuids: &[uuid::Uuid],
-        external_id: Option<&str>,
-        start_on_completion: bool,
-        skip_installer: bool,
-        name: &str,
-        description: Option<&str>,
-        limits: &ApiServerLimits,
-        pinned_cpus: &[i16],
-        startup: &str,
-        image: &str,
-        timezone: Option<&str>,
-        hugepages_passthrough_enabled: bool,
-        kvm_passthrough_enabled: bool,
-        feature_limits: &ApiServerFeatureLimits,
-        variables: &HashMap<uuid::Uuid, &'_ str>,
-    ) -> Result<uuid::Uuid, crate::database::DatabaseError> {
-        let mut transaction = database.write().begin().await?;
-        let mut attempts = 0;
-
-        loop {
-            let uuid = uuid::Uuid::new_v4();
-            let uuid_short = uuid.as_fields().0 as i32;
-
-            match sqlx::query(
-                r#"
-                INSERT INTO servers (
-                    uuid,
-                    uuid_short,
-                    external_id,
-                    node_uuid,
-                    owner_uuid,
-                    egg_uuid,
-                    backup_configuration_uuid,
-                    name,
-                    description,
-                    status,
-                    memory,
-                    swap,
-                    disk,
-                    io_weight,
-                    cpu,
-                    pinned_cpus,
-                    startup,
-                    image,
-                    timezone,
-                    hugepages_passthrough_enabled,
-                    kvm_passthrough_enabled,
-                    allocation_limit,
-                    database_limit,
-                    backup_limit,
-                    schedule_limit
-                )
-                VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8, $9,
-                    $10, $11, $12, $13, $14, $15, $16,
-                    $17, $18, $19, $20, $21, $22, $23,
-                    $24, $25
-                )
-                RETURNING uuid
-                "#,
-            )
-            .bind(uuid)
-            .bind(uuid_short)
-            .bind(external_id)
-            .bind(node.uuid)
-            .bind(owner_uuid)
-            .bind(egg_uuid)
-            .bind(backup_configuration_uuid)
-            .bind(name)
-            .bind(description)
-            .bind(if skip_installer {
-                None
-            } else {
-                Some(ServerStatus::Installing)
-            })
-            .bind(limits.memory)
-            .bind(limits.swap)
-            .bind(limits.disk)
-            .bind(limits.io_weight)
-            .bind(limits.cpu)
-            .bind(pinned_cpus)
-            .bind(startup)
-            .bind(image)
-            .bind(timezone)
-            .bind(hugepages_passthrough_enabled)
-            .bind(kvm_passthrough_enabled)
-            .bind(feature_limits.allocations)
-            .bind(feature_limits.databases)
-            .bind(feature_limits.backups)
-            .bind(feature_limits.schedules)
-            .fetch_one(&mut *transaction)
-            .await
-            {
-                Ok(row) => {
-                    let uuid: uuid::Uuid = row.get("uuid");
-
-                    let allocation_uuid: Option<uuid::Uuid> =
-                        if let Some(allocation_uuid) = allocation_uuid {
-                            let row = sqlx::query(
-                                r#"
-                                INSERT INTO server_allocations (server_uuid, allocation_uuid)
-                                VALUES ($1, $2)
-                                RETURNING uuid
-                                "#,
-                            )
-                            .bind(uuid)
-                            .bind(allocation_uuid)
-                            .fetch_one(&mut *transaction)
-                            .await?;
-
-                            Some(row.get("uuid"))
-                        } else {
-                            None
-                        };
-
-                    for allocation_uuid in allocation_uuids {
-                        sqlx::query(
-                            r#"
-                            INSERT INTO server_allocations (server_uuid, allocation_uuid)
-                            VALUES ($1, $2)
-                            "#,
-                        )
-                        .bind(uuid)
-                        .bind(allocation_uuid)
-                        .execute(&mut *transaction)
-                        .await?;
-                    }
-
-                    sqlx::query(
-                        r#"
-                        UPDATE servers
-                        SET allocation_uuid = $1
-                        WHERE servers.uuid = $2
-                        "#,
-                    )
-                    .bind(allocation_uuid)
-                    .bind(uuid)
-                    .execute(&mut *transaction)
-                    .await?;
-
-                    for (variable_uuid, value) in variables {
-                        sqlx::query(
-                            r#"
-                            INSERT INTO server_variables (server_uuid, variable_uuid, value)
-                            VALUES ($1, $2, $3)
-                            "#,
-                        )
-                        .bind(uuid)
-                        .bind(variable_uuid)
-                        .bind(value)
-                        .execute(&mut *transaction)
-                        .await?;
-                    }
-
-                    transaction.commit().await?;
-
-                    if let Err(err) = node
-                        .api_client(database)
-                        .post_servers(&wings_api::servers::post::RequestBody {
-                            uuid,
-                            start_on_completion,
-                            skip_scripts: skip_installer,
-                        })
-                        .await
-                    {
-                        tracing::error!(server = %uuid, node = %node.uuid, "failed to create server: {:?}", err);
-
-                        sqlx::query!("DELETE FROM servers WHERE servers.uuid = $1", uuid)
-                            .execute(database.write())
-                            .await?;
-
-                        return Err(err.into());
-                    }
-
-                    return Ok(uuid);
-                }
-                Err(err) => {
-                    if attempts >= 8 {
-                        tracing::error!(
-                            "failed to create server after 8 attempts, giving up: {:#?}",
-                            err
-                        );
-                        transaction.rollback().await?;
-
-                        return Err(err.into());
-                    }
-                    attempts += 1;
-
-                    tracing::warn!(
-                        "failed to create server, retrying with new uuid: {:#?}",
-                        err
-                    );
-
-                    continue;
-                }
-            }
-        }
-    }
-
     pub async fn by_node_uuid_uuid(
         database: &crate::database::Database,
         node_uuid: uuid::Uuid,
@@ -962,6 +784,52 @@ impl Server {
         })
     }
 
+    pub async fn by_node_uuid_transferring_with_pagination(
+        database: &crate::database::Database,
+        node_uuid: uuid::Uuid,
+        page: i64,
+        per_page: i64,
+        search: Option<&str>,
+    ) -> Result<super::Pagination<Self>, crate::database::DatabaseError> {
+        let offset = (page - 1) * per_page;
+
+        let rows = sqlx::query(&format!(
+            r#"
+            SELECT {}, COUNT(*) OVER() AS total_count
+            FROM servers
+            LEFT JOIN server_allocations ON server_allocations.uuid = servers.allocation_uuid
+            LEFT JOIN node_allocations ON node_allocations.uuid = server_allocations.allocation_uuid
+            JOIN users ON users.uuid = servers.owner_uuid
+            LEFT JOIN roles ON roles.uuid = users.role_uuid
+            JOIN nest_eggs ON nest_eggs.uuid = servers.egg_uuid
+            JOIN nests ON nests.uuid = nest_eggs.nest_uuid
+            WHERE servers.node_uuid = $1 AND servers.destination_node_uuid IS NOT NULL
+                AND ($2 IS NULL OR servers.name ILIKE '%' || $2 || '%')
+            ORDER BY servers.created
+            LIMIT $3 OFFSET $4
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(node_uuid)
+        .bind(search)
+        .bind(per_page)
+        .bind(offset)
+        .fetch_all(database.read())
+        .await?;
+
+        Ok(super::Pagination {
+            total: rows
+                .first()
+                .map_or(Ok(0), |row| row.try_get("total_count"))?,
+            per_page,
+            page,
+            data: rows
+                .into_iter()
+                .map(|row| Self::map(None, &row))
+                .try_collect_vec()?,
+        })
+    }
+
     pub async fn by_egg_uuid_with_pagination(
         database: &crate::database::Database,
         egg_uuid: uuid::Uuid,
@@ -1151,6 +1019,7 @@ impl Server {
             .fetch_cached(database)
             .await?
             .api_client(database)
+            .await?
             .post_servers_server_sync(
                 self.uuid,
                 &wings_api::servers_server_sync::post::RequestBody {
@@ -1197,6 +1066,7 @@ impl Server {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .post_servers_server_reinstall(
                 self.uuid,
                 &wings_api::servers_server_reinstall::post::RequestBody {
@@ -1249,6 +1119,122 @@ impl Server {
         Ok(())
     }
 
+    /// Triggers a transfer of the server to another node.
+    /// This will only work if the server is in a state that allows transferring. (None status)
+    /// If this is not the case, a `DisplayError` will be returned.
+    pub async fn transfer(
+        self,
+        state: &crate::State,
+        options: ServerTransferOptions,
+    ) -> Result<(), anyhow::Error> {
+        if self.destination_node.is_some() {
+            return Err(DisplayError::new("server is already being transferred")
+                .with_status(axum::http::StatusCode::CONFLICT)
+                .into());
+        }
+
+        if self.node.uuid == options.destination_node.uuid {
+            return Err(DisplayError::new(
+                "destination node must be different from the current node",
+            )
+            .with_status(axum::http::StatusCode::CONFLICT)
+            .into());
+        }
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let destination_allocation_uuid = if let Some(allocation_uuid) = options.allocation_uuid {
+            Some(
+                sqlx::query!(
+                    "INSERT INTO server_allocations (server_uuid, allocation_uuid)
+                    VALUES ($1, $2)
+                    ON CONFLICT DO NOTHING
+                    RETURNING uuid",
+                    self.uuid,
+                    allocation_uuid
+                )
+                .fetch_one(&mut *transaction)
+                .await?
+                .uuid,
+            )
+        } else {
+            None
+        };
+
+        sqlx::query!(
+            "UPDATE servers
+            SET destination_node_uuid = $2, destination_allocation_uuid = $3
+            WHERE servers.uuid = $1",
+            self.uuid,
+            options.destination_node.uuid,
+            destination_allocation_uuid
+        )
+        .execute(&mut *transaction)
+        .await?;
+
+        if !options.allocation_uuids.is_empty() {
+            sqlx::query!(
+                "INSERT INTO server_allocations (server_uuid, allocation_uuid)
+                SELECT $1, UNNEST($2::uuid[])
+                ON CONFLICT DO NOTHING",
+                self.uuid,
+                &options.allocation_uuids
+            )
+            .execute(&mut *transaction)
+            .await?;
+        }
+
+        let token = options.destination_node.create_jwt(
+            &state.database,
+            &state.jwt,
+            &crate::jwt::BasePayload {
+                issuer: "panel".into(),
+                subject: Some(self.uuid.to_string()),
+                audience: Vec::new(),
+                expiration_time: Some(chrono::Utc::now().timestamp() + 600),
+                not_before: None,
+                issued_at: Some(chrono::Utc::now().timestamp()),
+                jwt_id: self.node.uuid.to_string(),
+            },
+        )?;
+
+        transaction.commit().await?;
+
+        let mut url = options.destination_node.url.clone();
+        url.set_path("/api/transfers");
+
+        self.node
+            .fetch_cached(&state.database)
+            .await?
+            .api_client(&state.database)
+            .await?
+            .post_servers_server_transfer(
+                self.uuid,
+                &wings_api::servers_server_transfer::post::RequestBody {
+                    url: url.to_compact_string(),
+                    token: format!("Bearer {token}").into(),
+                    backups: options.backups,
+                    delete_backups: options.delete_source_backups,
+                    archive_format: options.archive_format,
+                    compression_level: options.compression_level,
+                    multiplex_streams: options.multiplex_channels,
+                },
+            )
+            .await?;
+
+        Server::get_event_emitter().emit(
+            state.clone(),
+            ServerEvent::TransferStarted {
+                server: Box::new(self),
+                destination_node: Box::new(options.destination_node),
+                destination_allocation: destination_allocation_uuid,
+                destination_allocations: options.allocation_uuids,
+            },
+        );
+
+        Ok(())
+    }
+
     pub fn wings_permissions(
         &self,
         settings: &crate::settings::AppSettings,
@@ -1272,10 +1258,13 @@ impl Server {
             permissions.push("websocket.connect");
 
             for permission in subuser_permissions.iter() {
-                if permission == "control.read-console"
-                    && settings.server.allow_viewing_installation_logs
-                {
-                    permissions.push("admin.websocket.install");
+                if permission == "control.read-console" {
+                    if settings.server.allow_viewing_installation_logs {
+                        permissions.push("admin.websocket.install");
+                    }
+                    if settings.server.allow_viewing_transfer_progress {
+                        permissions.push("admin.websocket.transfer");
+                    }
                 }
 
                 permissions.push(permission.as_str());
@@ -1286,6 +1275,9 @@ impl Server {
 
             if settings.server.allow_viewing_installation_logs {
                 permissions.push("admin.websocket.install");
+            }
+            if settings.server.allow_viewing_transfer_progress {
+                permissions.push("admin.websocket.transfer");
             }
 
             permissions.push("*");
@@ -1316,10 +1308,13 @@ impl Server {
         permissions.push("websocket.connect");
 
         for permission in subuser.permissions.iter() {
-            if permission == "control.read-console"
-                && settings.server.allow_viewing_installation_logs
-            {
-                permissions.push("admin.websocket.install");
+            if permission == "control.read-console" {
+                if settings.server.allow_viewing_installation_logs {
+                    permissions.push("admin.websocket.install");
+                }
+                if settings.server.allow_viewing_transfer_progress {
+                    permissions.push("admin.websocket.transfer");
+                }
             }
 
             permissions.push(permission.as_str());
@@ -1331,7 +1326,7 @@ impl Server {
     pub async fn backup_configuration(
         &self,
         database: &crate::database::Database,
-    ) -> Option<super::backup_configurations::BackupConfiguration> {
+    ) -> Option<super::backup_configuration::BackupConfiguration> {
         if let Some(backup_configuration) = &self.backup_configuration
             && let Ok(backup_configuration) = backup_configuration.fetch_cached(database).await
         {
@@ -1459,6 +1454,7 @@ impl Server {
                 },
                 suspended: self.suspended,
                 invocation: self.startup,
+                entrypoint: None,
                 skip_egg_scripts: false,
                 environment: variables
                     .into_iter()
@@ -1514,6 +1510,7 @@ impl Server {
                 },
                 build: wings_api::ServerConfigurationBuild {
                     memory_limit: self.memory,
+                    overhead_memory: self.memory_overhead,
                     swap: self.swap,
                     io_weight: self.io_weight.map(|w| w as u32),
                     cpu_limit: self.cpu as i64,
@@ -1575,6 +1572,18 @@ impl Server {
     ) -> Result<AdminApiServer, anyhow::Error> {
         let allocation_uuid = self.allocation.as_ref().map(|a| a.uuid);
 
+        let feature_limits = ApiServerFeatureLimits::init_hooks(&self, database).await?;
+        let feature_limits = finish_extendible!(
+            ApiServerFeatureLimits {
+                allocations: self.allocation_limit,
+                databases: self.database_limit,
+                backups: self.backup_limit,
+                schedules: self.schedule_limit,
+            },
+            feature_limits,
+            database
+        )?;
+
         let (node, backup_configuration, egg) = tokio::join!(
             async {
                 match self.node.fetch_cached(database).await {
@@ -1612,23 +1621,20 @@ impl Server {
             nest: self.nest.into_admin_api_object(),
             backup_configuration,
             status: self.status,
-            suspended: self.suspended,
+            is_suspended: self.suspended,
+            is_transferring: self.destination_node.is_some(),
             name: self.name,
             description: self.description,
-            limits: ApiServerLimits {
+            limits: AdminApiServerLimits {
                 cpu: self.cpu,
                 memory: self.memory,
+                memory_overhead: self.memory_overhead,
                 swap: self.swap,
                 disk: self.disk,
                 io_weight: self.io_weight,
             },
             pinned_cpus: self.pinned_cpus,
-            feature_limits: ApiServerFeatureLimits {
-                allocations: self.allocation_limit,
-                databases: self.database_limit,
-                backups: self.backup_limit,
-                schedules: self.schedule_limit,
-            },
+            feature_limits,
             startup: self.startup,
             image: self.image,
             auto_kill: self.auto_kill,
@@ -1649,18 +1655,31 @@ impl Server {
         let allocation_uuid = self.allocation.as_ref().map(|a| a.uuid);
         let node = self.node.fetch_cached(database).await?;
 
+        let feature_limits = ApiServerFeatureLimits::init_hooks(&self, database).await?;
+        let feature_limits = finish_extendible!(
+            ApiServerFeatureLimits {
+                allocations: self.allocation_limit,
+                databases: self.database_limit,
+                backups: self.backup_limit,
+                schedules: self.schedule_limit,
+            },
+            feature_limits,
+            database
+        )?;
+
         Ok(ApiServer {
             uuid: self.uuid,
             uuid_short: compact_str::format_compact!("{:08x}", self.uuid_short),
             allocation: self.allocation.map(|a| a.into_api_object(allocation_uuid)),
             egg: self.egg.into_api_object(),
-            is_owner: self.owner.uuid == user.uuid,
             permissions: if user.admin {
                 vec!["*".into()]
             } else {
                 self.subuser_permissions
                     .map_or_else(|| vec!["*".into()], |p| p.to_vec())
             },
+            location_uuid: node.location.uuid,
+            location_name: node.location.name,
             node_uuid: node.uuid,
             node_name: node.name,
             node_maintenance_enabled: node.maintenance_enabled,
@@ -1673,7 +1692,9 @@ impl Server {
             }),
             sftp_port: node.sftp_port,
             status: self.status,
-            suspended: self.suspended,
+            is_suspended: self.suspended,
+            is_owner: self.owner.uuid == user.uuid,
+            is_transferring: self.destination_node.is_some(),
             name: self.name,
             description: self.description,
             limits: ApiServerLimits {
@@ -1681,14 +1702,8 @@ impl Server {
                 memory: self.memory,
                 swap: self.swap,
                 disk: self.disk,
-                io_weight: self.io_weight,
             },
-            feature_limits: ApiServerFeatureLimits {
-                allocations: self.allocation_limit,
-                databases: self.database_limit,
-                backups: self.backup_limit,
-                schedules: self.schedule_limit,
-            },
+            feature_limits,
             startup: self.startup,
             image: self.image,
             auto_kill: self.auto_kill,
@@ -1724,6 +1739,515 @@ impl ByUuid for Server {
         .await?;
 
         Self::map(None, &row)
+    }
+}
+
+#[derive(ToSchema, Validate, Deserialize)]
+pub struct CreateServerOptions {
+    #[garde(skip)]
+    pub node_uuid: uuid::Uuid,
+    #[garde(skip)]
+    pub owner_uuid: uuid::Uuid,
+    #[garde(skip)]
+    pub egg_uuid: uuid::Uuid,
+    #[garde(skip)]
+    pub backup_configuration_uuid: Option<uuid::Uuid>,
+
+    #[garde(skip)]
+    pub allocation_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
+    pub allocation_uuids: Vec<uuid::Uuid>,
+
+    #[garde(skip)]
+    pub start_on_completion: bool,
+    #[garde(skip)]
+    pub skip_installer: bool,
+
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub external_id: Option<compact_str::CompactString>,
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: compact_str::CompactString,
+    #[garde(length(chars, min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<compact_str::CompactString>,
+
+    #[garde(dive)]
+    pub limits: AdminApiServerLimits,
+    #[garde(inner(range(min = 0)))]
+    pub pinned_cpus: Vec<i16>,
+
+    #[garde(length(chars, min = 1, max = 8192))]
+    #[schema(min_length = 1, max_length = 8192)]
+    pub startup: compact_str::CompactString,
+    #[garde(length(chars, min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub image: compact_str::CompactString,
+    #[garde(skip)]
+    #[schema(value_type = Option<String>)]
+    pub timezone: Option<chrono_tz::Tz>,
+
+    #[garde(skip)]
+    pub hugepages_passthrough_enabled: bool,
+    #[garde(skip)]
+    pub kvm_passthrough_enabled: bool,
+
+    #[garde(dive)]
+    pub feature_limits: ApiServerFeatureLimits,
+    #[garde(skip)]
+    pub variables: HashMap<uuid::Uuid, compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for Server {
+    type CreateOptions<'a> = CreateServerOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<Server>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let node = super::node::Node::by_uuid_optional(&state.database, options.node_uuid)
+            .await?
+            .ok_or(crate::database::InvalidRelationError("node"))?;
+
+        super::user::User::by_uuid_optional(&state.database, options.owner_uuid)
+            .await?
+            .ok_or(crate::database::InvalidRelationError("owner"))?;
+
+        super::nest_egg::NestEgg::by_uuid_optional(&state.database, options.egg_uuid)
+            .await?
+            .ok_or(crate::database::InvalidRelationError("egg"))?;
+
+        if let Some(backup_configuration_uuid) = options.backup_configuration_uuid {
+            super::backup_configuration::BackupConfiguration::by_uuid_optional(
+                &state.database,
+                backup_configuration_uuid,
+            )
+            .await?
+            .ok_or(crate::database::InvalidRelationError(
+                "backup_configuration",
+            ))?;
+        }
+
+        let mut transaction = state.database.write().begin().await?;
+        let mut attempts = 0;
+
+        loop {
+            let server_uuid = uuid::Uuid::new_v4();
+            let uuid_short = server_uuid.as_fields().0 as i32;
+
+            let mut query_builder = InsertQueryBuilder::new("servers");
+
+            Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+                .await?;
+
+            query_builder
+                .set("uuid", server_uuid)
+                .set("uuid_short", uuid_short)
+                .set("external_id", &options.external_id)
+                .set("node_uuid", options.node_uuid)
+                .set("owner_uuid", options.owner_uuid)
+                .set("egg_uuid", options.egg_uuid)
+                .set(
+                    "backup_configuration_uuid",
+                    options.backup_configuration_uuid,
+                )
+                .set("name", &options.name)
+                .set("description", &options.description)
+                .set(
+                    "status",
+                    if options.skip_installer {
+                        None::<ServerStatus>
+                    } else {
+                        Some(ServerStatus::Installing)
+                    },
+                )
+                .set("memory", options.limits.memory)
+                .set("memory_overhead", options.limits.memory_overhead)
+                .set("swap", options.limits.swap)
+                .set("disk", options.limits.disk)
+                .set("io_weight", options.limits.io_weight)
+                .set("cpu", options.limits.cpu)
+                .set("pinned_cpus", &options.pinned_cpus)
+                .set("startup", &options.startup)
+                .set("image", &options.image)
+                .set("timezone", options.timezone.as_ref().map(|t| t.name()))
+                .set(
+                    "hugepages_passthrough_enabled",
+                    options.hugepages_passthrough_enabled,
+                )
+                .set("kvm_passthrough_enabled", options.kvm_passthrough_enabled)
+                .set("allocation_limit", options.feature_limits.allocations)
+                .set("database_limit", options.feature_limits.databases)
+                .set("backup_limit", options.feature_limits.backups)
+                .set("schedule_limit", options.feature_limits.schedules);
+
+            match query_builder
+                .returning("uuid")
+                .fetch_one(&mut *transaction)
+                .await
+            {
+                Ok(_) => {
+                    let allocation_uuid: Option<uuid::Uuid> =
+                        if let Some(allocation_uuid) = options.allocation_uuid {
+                            let row = sqlx::query(
+                                r#"
+                                INSERT INTO server_allocations (server_uuid, allocation_uuid)
+                                VALUES ($1, $2)
+                                RETURNING uuid
+                                "#,
+                            )
+                            .bind(server_uuid)
+                            .bind(allocation_uuid)
+                            .fetch_one(&mut *transaction)
+                            .await?;
+
+                            Some(row.get("uuid"))
+                        } else {
+                            None
+                        };
+
+                    for allocation_uuid in &options.allocation_uuids {
+                        sqlx::query(
+                            r#"
+                            INSERT INTO server_allocations (server_uuid, allocation_uuid)
+                            VALUES ($1, $2)
+                            "#,
+                        )
+                        .bind(server_uuid)
+                        .bind(allocation_uuid)
+                        .execute(&mut *transaction)
+                        .await?;
+                    }
+
+                    sqlx::query(
+                        r#"
+                        UPDATE servers
+                        SET allocation_uuid = $1
+                        WHERE servers.uuid = $2
+                        "#,
+                    )
+                    .bind(allocation_uuid)
+                    .bind(server_uuid)
+                    .execute(&mut *transaction)
+                    .await?;
+
+                    for (variable_uuid, value) in &options.variables {
+                        sqlx::query(
+                            r#"
+                            INSERT INTO server_variables (server_uuid, variable_uuid, value)
+                            VALUES ($1, $2, $3)
+                            "#,
+                        )
+                        .bind(server_uuid)
+                        .bind(variable_uuid)
+                        .bind(value.as_str())
+                        .execute(&mut *transaction)
+                        .await?;
+                    }
+
+                    transaction.commit().await?;
+
+                    if let Err(err) = node
+                        .api_client(&state.database)
+                        .await?
+                        .post_servers(&wings_api::servers::post::RequestBody {
+                            uuid: server_uuid,
+                            start_on_completion: options.start_on_completion,
+                            skip_scripts: options.skip_installer,
+                        })
+                        .await
+                    {
+                        tracing::error!(server = %server_uuid, node = %node.uuid, "failed to create server: {:?}", err);
+
+                        sqlx::query!("DELETE FROM servers WHERE servers.uuid = $1", server_uuid)
+                            .execute(state.database.write())
+                            .await?;
+
+                        return Err(err.into());
+                    }
+
+                    return Self::by_uuid(&state.database, server_uuid).await;
+                }
+                Err(_) if attempts < 8 => {
+                    attempts += 1;
+                    continue;
+                }
+                Err(err) => {
+                    transaction.rollback().await?;
+                    return Err(err.into());
+                }
+            }
+        }
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
+pub struct UpdateServerOptions {
+    #[garde(skip)]
+    pub owner_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
+    pub egg_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub backup_configuration_uuid: Option<Option<uuid::Uuid>>,
+
+    #[garde(skip)]
+    pub suspended: Option<bool>,
+
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub external_id: Option<Option<compact_str::CompactString>>,
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: Option<compact_str::CompactString>,
+    #[garde(length(chars, min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub description: Option<Option<compact_str::CompactString>>,
+
+    #[garde(dive)]
+    pub limits: Option<AdminApiServerLimits>,
+    #[garde(inner(inner(range(min = 0))))]
+    pub pinned_cpus: Option<Vec<i16>>,
+
+    #[garde(length(chars, min = 1, max = 8192))]
+    #[schema(min_length = 1, max_length = 8192)]
+    pub startup: Option<compact_str::CompactString>,
+    #[garde(length(chars, min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub image: Option<compact_str::CompactString>,
+    #[garde(skip)]
+    #[schema(value_type = Option<Option<String>>)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub timezone: Option<Option<chrono_tz::Tz>>,
+
+    #[garde(skip)]
+    pub hugepages_passthrough_enabled: Option<bool>,
+    #[garde(skip)]
+    pub kvm_passthrough_enabled: Option<bool>,
+
+    #[garde(dive)]
+    pub feature_limits: Option<ApiServerFeatureLimits>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for Server {
+    type UpdateOptions = UpdateServerOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<Server>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let owner = if let Some(owner_uuid) = options.owner_uuid {
+            Some(
+                super::user::User::by_uuid_optional(&state.database, owner_uuid)
+                    .await?
+                    .ok_or(crate::database::InvalidRelationError("owner"))?,
+            )
+        } else {
+            None
+        };
+
+        let egg = if let Some(egg_uuid) = options.egg_uuid {
+            Some(
+                super::nest_egg::NestEgg::by_uuid_optional(&state.database, egg_uuid)
+                    .await?
+                    .ok_or(crate::database::InvalidRelationError("egg"))?,
+            )
+        } else {
+            None
+        };
+
+        let backup_configuration =
+            if let Some(backup_configuration_uuid) = &options.backup_configuration_uuid {
+                match backup_configuration_uuid {
+                    Some(uuid) => {
+                        super::backup_configuration::BackupConfiguration::by_uuid_optional(
+                            &state.database,
+                            *uuid,
+                        )
+                        .await?
+                        .ok_or(crate::database::InvalidRelationError(
+                            "backup_configuration",
+                        ))?;
+
+                        Some(Some(
+                            super::backup_configuration::BackupConfiguration::get_fetchable(*uuid),
+                        ))
+                    }
+                    None => Some(None),
+                }
+            } else {
+                None
+            };
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("servers");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set("owner_uuid", options.owner_uuid.as_ref())
+            .set("egg_uuid", options.egg_uuid.as_ref())
+            .set(
+                "backup_configuration_uuid",
+                options
+                    .backup_configuration_uuid
+                    .as_ref()
+                    .map(|u| u.as_ref()),
+            )
+            .set("suspended", options.suspended)
+            .set(
+                "external_id",
+                options.external_id.as_ref().map(|e| e.as_ref()),
+            )
+            .set("name", options.name.as_ref())
+            .set(
+                "description",
+                options.description.as_ref().map(|d| d.as_ref()),
+            )
+            .set("pinned_cpus", options.pinned_cpus.as_ref())
+            .set("startup", options.startup.as_ref())
+            .set("image", options.image.as_ref())
+            .set(
+                "timezone",
+                options
+                    .timezone
+                    .as_ref()
+                    .map(|t| t.as_ref().map(|t| t.name())),
+            )
+            .set(
+                "hugepages_passthrough_enabled",
+                options.hugepages_passthrough_enabled,
+            )
+            .set("kvm_passthrough_enabled", options.kvm_passthrough_enabled);
+
+        if let Some(limits) = &options.limits {
+            query_builder
+                .set("cpu", Some(limits.cpu))
+                .set("memory", Some(limits.memory))
+                .set("memory_overhead", Some(limits.memory_overhead))
+                .set("swap", Some(limits.swap))
+                .set("disk", Some(limits.disk))
+                .set("io_weight", Some(limits.io_weight));
+        }
+
+        if let Some(feature_limits) = &options.feature_limits {
+            query_builder
+                .set("allocation_limit", Some(feature_limits.allocations))
+                .set("database_limit", Some(feature_limits.databases))
+                .set("backup_limit", Some(feature_limits.backups))
+                .set("schedule_limit", Some(feature_limits.schedules));
+        }
+
+        query_builder.where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(owner) = owner {
+            self.owner = owner;
+        }
+        if let Some(egg) = egg {
+            *self.egg = egg;
+        }
+        if let Some(backup_configuration) = backup_configuration {
+            self.backup_configuration = backup_configuration;
+        }
+        if let Some(suspended) = options.suspended {
+            self.suspended = suspended;
+        }
+        if let Some(external_id) = options.external_id {
+            self.external_id = external_id;
+        }
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(description) = options.description {
+            self.description = description;
+        }
+        if let Some(limits) = options.limits {
+            self.cpu = limits.cpu;
+            self.memory = limits.memory;
+            self.memory_overhead = limits.memory_overhead;
+            self.swap = limits.swap;
+            self.disk = limits.disk;
+            self.io_weight = limits.io_weight;
+        }
+        if let Some(pinned_cpus) = options.pinned_cpus {
+            self.pinned_cpus = pinned_cpus;
+        }
+        if let Some(startup) = options.startup {
+            self.startup = startup;
+        }
+        if let Some(image) = options.image {
+            self.image = image;
+        }
+        if let Some(timezone) = options.timezone {
+            self.timezone = timezone.map(|t| t.name().into());
+        }
+        if let Some(hugepages_passthrough_enabled) = options.hugepages_passthrough_enabled {
+            self.hugepages_passthrough_enabled = hugepages_passthrough_enabled;
+        }
+        if let Some(kvm_passthrough_enabled) = options.kvm_passthrough_enabled {
+            self.kvm_passthrough_enabled = kvm_passthrough_enabled;
+        }
+        if let Some(feature_limits) = options.feature_limits {
+            self.allocation_limit = feature_limits.allocations;
+            self.database_limit = feature_limits.databases;
+            self.backup_limit = feature_limits.backups;
+            self.schedule_limit = feature_limits.schedules;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 
@@ -1780,6 +2304,7 @@ impl DeletableModel for Server {
 
             match node
                 .api_client(&state.database)
+                .await?
                 .delete_servers_server(server_uuid)
                 .await
             {
@@ -1810,37 +2335,59 @@ pub struct RemoteApiServer {
     process_configuration: super::nest_egg::ProcessConfiguration,
 }
 
-#[derive(ToSchema, Validate, Serialize, Deserialize)]
-pub struct ApiServerLimits {
-    #[validate(range(min = 0))]
+#[derive(ToSchema, Validate, Serialize, Deserialize, Clone, Copy)]
+pub struct AdminApiServerLimits {
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub cpu: i32,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub memory: i64,
-    #[validate(range(min = -1))]
+    #[garde(range(min = 0))]
+    #[schema(minimum = 0)]
+    pub memory_overhead: i64,
+    #[garde(range(min = -1))]
     #[schema(minimum = -1)]
     pub swap: i64,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub disk: i64,
-    #[validate(range(min = 0, max = 1000))]
+    #[garde(range(min = 0, max = 1000))]
     #[schema(minimum = 0, maximum = 1000)]
     pub io_weight: Option<i16>,
 }
 
-#[derive(ToSchema, Validate, Serialize, Deserialize)]
+#[derive(ToSchema, Validate, Serialize, Deserialize, Clone, Copy)]
+pub struct ApiServerLimits {
+    #[garde(range(min = 0))]
+    #[schema(minimum = 0)]
+    pub cpu: i32,
+    #[garde(range(min = 0))]
+    #[schema(minimum = 0)]
+    pub memory: i64,
+    #[garde(range(min = -1))]
+    #[schema(minimum = -1)]
+    pub swap: i64,
+    #[garde(range(min = 0))]
+    #[schema(minimum = 0)]
+    pub disk: i64,
+}
+
+#[schema_extension_derive::extendible]
+#[init_args(Server, crate::database::Database)]
+#[hook_args(crate::database::Database)]
+#[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 pub struct ApiServerFeatureLimits {
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub allocations: i32,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub databases: i32,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub backups: i32,
-    #[validate(range(min = 0))]
+    #[garde(range(min = 0))]
     #[schema(minimum = 0)]
     pub schedules: i32,
 }
@@ -1856,16 +2403,18 @@ pub struct AdminApiServer {
     pub owner: super::user::ApiFullUser,
     pub egg: super::nest_egg::AdminApiNestEgg,
     pub nest: super::nest::AdminApiNest,
-    pub backup_configuration: Option<super::backup_configurations::AdminApiBackupConfiguration>,
+    pub backup_configuration: Option<super::backup_configuration::AdminApiBackupConfiguration>,
 
     pub status: Option<ServerStatus>,
-    pub suspended: bool,
+
+    pub is_suspended: bool,
+    pub is_transferring: bool,
 
     pub name: compact_str::CompactString,
     pub description: Option<compact_str::CompactString>,
 
     #[schema(inline)]
-    pub limits: ApiServerLimits,
+    pub limits: AdminApiServerLimits,
     pub pinned_cpus: Vec<i16>,
     #[schema(inline)]
     pub feature_limits: ApiServerFeatureLimits,
@@ -1892,11 +2441,14 @@ pub struct ApiServer {
     pub egg: super::nest_egg::ApiNestEgg,
 
     pub status: Option<ServerStatus>,
-    pub suspended: bool,
 
     pub is_owner: bool,
+    pub is_suspended: bool,
+    pub is_transferring: bool,
     pub permissions: Vec<compact_str::CompactString>,
 
+    pub location_uuid: uuid::Uuid,
+    pub location_name: compact_str::CompactString,
     pub node_uuid: uuid::Uuid,
     pub node_name: compact_str::CompactString,
     pub node_maintenance_enabled: bool,

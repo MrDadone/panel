@@ -32,7 +32,7 @@ impl shared::extensions::commands::CliCommand<ExportArgs> for ExportCommand {
                         ".sqlx".bright_red(),
                         "directory, make sure you are in the panel root.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let frontend_path = Path::new("frontend/extensions").join(
@@ -53,7 +53,7 @@ impl shared::extensions::commands::CliCommand<ExportArgs> for ExportCommand {
                         .bright_red(),
                         "directory, make sure you are in the panel root.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let backend_path = Path::new("backend-extensions").join(
@@ -74,7 +74,7 @@ impl shared::extensions::commands::CliCommand<ExportArgs> for ExportCommand {
                         .bright_red(),
                         "directory, make sure you are in the panel root.".red()
                     );
-                    std::process::exit(1);
+                    return Ok(1);
                 }
 
                 let schema_path = Path::new("database/src/schema/extensions").join(
@@ -124,7 +124,7 @@ impl shared::extensions::commands::CliCommand<ExportArgs> for ExportCommand {
                     output_path.to_string_lossy().cyan()
                 );
 
-                Ok(())
+                Ok(0)
             })
         })
     }

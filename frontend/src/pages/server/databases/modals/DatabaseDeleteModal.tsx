@@ -1,16 +1,18 @@
 import { ModalProps, Stack, Text } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import deleteDatabase from '@/api/server/databases/deleteDatabase.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { serverDatabaseSchema } from '@/lib/schemas/server/databases.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  database: ServerDatabase;
+  database: z.infer<typeof serverDatabaseSchema>;
 };
 
 export default function DatabaseDeleteModal({ database, opened, onClose }: Props) {
@@ -51,14 +53,14 @@ export default function DatabaseDeleteModal({ database, opened, onClose }: Props
           onChange={(e) => setEnteredName(e.target.value)}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button color='red' onClick={doDelete} loading={loading} disabled={database.name !== enteredName}>
             {t('common.button.delete', {})}
           </Button>
           <Button variant='default' onClick={onClose}>
             {t('common.button.close', {})}
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

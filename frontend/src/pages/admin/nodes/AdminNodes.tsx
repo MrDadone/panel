@@ -29,16 +29,11 @@ function NodesContainer() {
   });
 
   useEffect(() => {
-    // Check if user has any locations
     getLocations(1)
       .then((response) => {
         if (response.data.length === 0) {
           setShowLocationModal(true);
         }
-      })
-      .catch(() => {
-        // If there's an error, don't show the modal
-        // (might be a permissions issue)
       })
       .finally(() => {
         setCheckingLocations(false);

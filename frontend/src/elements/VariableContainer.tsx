@@ -1,5 +1,7 @@
-import { faCog } from '@fortawesome/free-solid-svg-icons';
+import { faCog, faReply } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ActionIcon } from '@mantine/core';
+import { z } from 'zod';
 import Badge from '@/elements/Badge.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
@@ -7,10 +9,12 @@ import Select from '@/elements/input/Select.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
-import Tooltip from '@/elements/Tooltip.tsx';
+import { serverVariableSchema } from '@/lib/schemas/server/startup.ts';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
+import Tooltip from './Tooltip.tsx';
 
 interface Props {
-  variable: ServerVariable;
+  variable: z.infer<typeof serverVariableSchema>;
   overrideReadonly?: boolean;
   loading?: boolean;
   disabled?: boolean;
@@ -26,6 +30,8 @@ export default function VariableContainer({
   value,
   setValue,
 }: Props) {
+  const { t } = useTranslations();
+
   return (
     <TitleCard title={variable.name} icon={<FontAwesomeIcon icon={faCog} />}>
       <div className='flex flex-row w-full justify-between items-start'>
@@ -95,19 +101,28 @@ export default function VariableContainer({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               disabled={disabled || loading || (!variable.isEditable && !overrideReadonly)}
+              rightSection={
+                <Tooltip label={t('common.tooltip.resetToDefault', {})}>
+                  <ActionIcon
+                    variant='subtle'
+                    disabled={
+                      !variable.defaultValue ||
+                      disabled ||
+                      loading ||
+                      (!variable.isEditable && !overrideReadonly) ||
+                      value === variable.defaultValue
+                    }
+                    onClick={() => setValue(variable.defaultValue ?? '')}
+                  >
+                    <FontAwesomeIcon icon={faReply} />
+                  </ActionIcon>
+                </Tooltip>
+              }
             />
           )}
           <p className='text-gray-400 text-sm mt-4'>{variable.description?.md()}</p>
         </div>
-        {!variable.isEditable && overrideReadonly ? (
-          <Tooltip label='This field is not editable by a user, but you can override it.' className='min-w-fit ml-4'>
-            <Badge color='orange' className='min-w-fit'>
-              Override Read Only
-            </Badge>
-          </Tooltip>
-        ) : !variable.isEditable ? (
-          <Badge className='min-w-fit ml-4'>Read Only</Badge>
-        ) : null}
+        {!variable.isEditable ? <Badge className='min-w-fit ml-4'>{t('common.readOnly', {})}</Badge> : null}
       </div>
     </TitleCard>
   );

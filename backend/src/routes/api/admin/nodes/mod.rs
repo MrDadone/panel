@@ -69,48 +69,18 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger,
-            backup_configurations::BackupConfiguration, location::Location, node::Node,
+            CreatableModel,
+            admin_activity::GetAdminActivityLogger,
+            node::{CreateNodeOptions, Node},
             user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        location_uuid: uuid::Uuid,
-        backup_configuration_uuid: Option<uuid::Uuid>,
-
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: compact_str::CompactString,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-
-        deployment_enabled: bool,
-        maintenance_enabled: bool,
-
-        #[validate(length(min = 3, max = 255), url)]
-        #[schema(min_length = 3, max_length = 255, format = "uri")]
-        public_url: Option<compact_str::CompactString>,
-        #[validate(length(min = 3, max = 255), url)]
-        #[schema(min_length = 3, max_length = 255, format = "uri")]
-        url: compact_str::CompactString,
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        sftp_host: Option<compact_str::CompactString>,
-        sftp_port: u16,
-
-        memory: i64,
-        disk: i64,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {
@@ -122,79 +92,23 @@ mod post {
         (status = BAD_REQUEST, body = ApiError),
         (status = NOT_FOUND, body = ApiError),
         (status = CONFLICT, body = ApiError),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(CreateNodeOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<CreateNodeOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("nodes.create")?;
 
-        let location = match Location::by_uuid_optional(&state.database, data.location_uuid).await?
-        {
-            Some(location) => location,
-            None => {
-                return ApiResponse::error("location not found")
-                    .with_status(StatusCode::NOT_FOUND)
-                    .ok();
-            }
-        };
-
-        let backup_configuration = if let Some(backup_configuration_uuid) =
-            data.backup_configuration_uuid
-            && !backup_configuration_uuid.is_nil()
-        {
-            match BackupConfiguration::by_uuid_optional(&state.database, backup_configuration_uuid)
-                .await?
-            {
-                Some(backup_configuration) => Some(backup_configuration),
-                None => {
-                    return ApiResponse::error("backup configuration not found")
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
-                }
-            }
-        } else {
-            None
-        };
-
-        let node = match Node::create(
-            &state.database,
-            location.uuid,
-            backup_configuration.map(|backup_configuration| backup_configuration.uuid),
-            &data.name,
-            data.description.as_deref(),
-            data.deployment_enabled,
-            data.maintenance_enabled,
-            data.public_url.as_deref(),
-            &data.url,
-            data.sftp_host.as_deref(),
-            data.sftp_port as i32,
-            data.memory,
-            data.disk,
-        )
-        .await
-        {
-            Ok(node_uuid) => Node::by_uuid(&state.database, node_uuid).await?,
+        let node = match Node::create(&state, data).await {
+            Ok(node) => node,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("node with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create node: {:?}", err);
-
-                return ApiResponse::error("failed to create node")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger
@@ -202,7 +116,7 @@ mod post {
                 "node:create",
                 serde_json::json!({
                     "uuid": node.uuid,
-                    "location_uuid": location.uuid,
+                    "location_uuid": node.location.uuid,
 
                     "name": node.name,
                     "description": node.description,

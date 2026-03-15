@@ -68,6 +68,7 @@ mod put {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .put_servers_server_files_rename(server.uuid, &request_body)
             .await
         {

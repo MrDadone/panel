@@ -8,7 +8,7 @@ mod get {
     };
     use serde::Serialize;
     use shared::{
-        GetState,
+        ApiError, GetState,
         models::{
             Pagination, PaginationParamsWithSearch,
             server::Server,
@@ -55,6 +55,12 @@ mod get {
         Query(params): Query<PaginationParamsWithSearch>,
         Path(server_group): Path<uuid::Uuid>,
     ) -> ApiResponseResult {
+        if let Err(errors) = shared::utils::validate_data(&params) {
+            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
+                .with_status(StatusCode::BAD_REQUEST)
+                .ok();
+        }
+
         permissions.has_user_permission("servers.read")?;
 
         let server_group =
@@ -90,28 +96,18 @@ mod get {
 
 mod patch {
     use axum::{extract::Path, http::StatusCode};
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
-        ApiError, GetState,
+        GetState,
         models::{
+            UpdatableModel,
             user::{GetPermissionManager, GetUser},
             user_activity::GetUserActivityLogger,
-            user_server_group::UserServerGroup,
+            user_server_group::{UpdateUserServerGroupOptions, UserServerGroup},
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 2, max = 31))]
-        #[schema(min_length = 2, max_length = 31)]
-        name: Option<compact_str::CompactString>,
-        #[validate(length(max = 100))]
-        #[schema(max_length = 100)]
-        server_order: Option<Vec<uuid::Uuid>>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -124,21 +120,15 @@ mod patch {
             description = "The server group identifier",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateUserServerGroupOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         user: GetUser,
         activity_logger: GetUserActivityLogger,
         Path(server_group): Path<uuid::Uuid>,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateUserServerGroupOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_user_permission("servers.update")?;
 
         let mut server_group =
@@ -153,23 +143,7 @@ mod patch {
                 }
             };
 
-        if let Some(name) = data.name {
-            server_group.name = name;
-        }
-        if let Some(server_order) = data.server_order {
-            server_group.server_order = server_order;
-        }
-
-        sqlx::query!(
-            "UPDATE user_server_groups
-            SET name = $2, server_order = $3
-            WHERE user_server_groups.uuid = $1",
-            server_group.uuid,
-            &server_group.name,
-            &server_group.server_order
-        )
-        .execute(state.database.write())
-        .await?;
+        server_group.update(&state, data).await?;
 
         activity_logger
             .log(

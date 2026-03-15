@@ -1,10 +1,9 @@
-import { ReactNode, useContext, useEffect, useState } from 'react';
+import { ReactNode, startTransition, useEffect, useState } from 'react';
 import Markdown from 'react-markdown';
-import { GetPlaceholders, getTranslationMapping, TranslationContext, TranslationItemRecord } from 'shared';
+import { getTranslationMapping, setGlobalTranslationHandle, TranslationContext, TranslationItemRecord } from 'shared';
 import { z } from 'zod';
 import { $ZodConfig } from 'zod/v4/core';
 import { axiosInstance } from '@/api/axios.ts';
-import { languageToZodLocaleMapping } from '@/lib/enums.ts';
 import baseTranslations from '@/translations.ts';
 
 const modules = import.meta.glob('/node_modules/zod/v4/locales/*.js');
@@ -24,65 +23,74 @@ String.prototype.md = function (): ReactNode {
   return <Markdown>{this.toString()}</Markdown>;
 };
 
-let globalTranslationHandle: never = null as never;
-
 const TranslationProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState('en-US');
+  const [language, setLanguage] = useState('en');
   const [languageData, setLanguageData] = useState<LanguageData | null>(null);
 
   const loadZod = async (lang: string) => {
-    if (!modules[`/node_modules/zod/v4/locales/${languageToZodLocaleMapping[lang]}.js`]) {
+    if (!modules[`/node_modules/zod/v4/locales/${lang}.js`]) {
       return;
     }
 
-    const { default: locale } = (await modules[
-      `/node_modules/zod/v4/locales/${languageToZodLocaleMapping[lang]}.js`
-    ]()) as { default: () => $ZodConfig };
+    const { default: locale } = (await modules[`/node_modules/zod/v4/locales/${lang}.js`]()) as {
+      default: () => $ZodConfig;
+    };
 
     z.config(locale());
   };
 
   useEffect(() => {
-    if (language === 'en-US') {
-      setLanguageData(null);
-    } else {
-      axiosInstance
-        .get(`/translations/${language}.json`)
-        .then(({ data }) => {
-          const dataSpace = import.meta.env.DEV ? data : data[''];
+    startTransition(() => {
+      if (language === 'en') {
+        setLanguageData(null);
+      } else {
+        axiosInstance
+          .get(`/translations/${language}.json`)
+          .then(({ data }) => {
+            const dataSpace = import.meta.env.DEV ? data : data[''];
 
-          const result: LanguageData = {
-            items: dataSpace.items,
-            translations: dataSpace.translations,
-          };
+            const result: LanguageData = {
+              items: dataSpace.items,
+              translations: dataSpace.translations,
+            };
 
-          for (const key in data) {
-            if (key === '') continue;
+            for (const key in data) {
+              if (key === '') continue;
 
-            for (const item in data.items) {
-              result.items[`${key}.${item}`] = data.items[item];
+              for (const item in data.items) {
+                result.items[`${key}.${item}`] = data.items[item];
+              }
+              for (const translation in data.translation) {
+                result.items[`${key}.${translation}`] = data.translations[translation];
+              }
             }
-            for (const translation in data.translation) {
-              result.items[`${key}.${translation}`] = data.translations[translation];
+
+            result.translations = getTranslationMapping(result.translations);
+
+            if (import.meta.env.DEV) {
+              console.debug('Loaded language data', language, result);
             }
-          }
 
-          result.translations = getTranslationMapping(result.translations);
+            setLanguageData(result);
+          })
+          .catch((err) => {
+            setLanguage('en');
+            console.error(err);
+          });
+      }
 
-          if (import.meta.env.DEV) {
-            console.debug('Loaded language data', language, result);
-          }
+      loadZod(language);
+    });
 
-          setLanguageData(result);
-        })
-        .catch((err) => {
-          setLanguage('en-US');
-          console.error(err);
-        });
-    }
-
-    loadZod(language);
+    localStorage.setItem('lastLanguage', language);
   }, [language]);
+
+  useEffect(() => {
+    const lastLanguage = localStorage.getItem('lastLanguage');
+    if (lastLanguage) {
+      setLanguage(lastLanguage);
+    }
+  }, []);
 
   const t = (key: string, values: Record<string, string | number>): string => {
     if (!languageData?.translations[key] && !baseTranslations.mapping[key as never]) {
@@ -111,7 +119,7 @@ const TranslationProvider = ({ children }: { children: ReactNode }) => {
     return translationItem[rules.select(count)].replaceAll('{count}', count.toString());
   };
 
-  globalTranslationHandle = { language, setLanguage, t, tItem } as never;
+  setGlobalTranslationHandle({ language, setLanguage, t, tItem });
 
   return (
     <TranslationContext.Provider value={{ language, setLanguage, t, tItem }}>{children}</TranslationContext.Provider>
@@ -119,32 +127,4 @@ const TranslationProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export default TranslationProvider;
-
-export const useTranslations = () => {
-  const context = useContext(TranslationContext);
-  if (!context) {
-    throw new Error('useTranslations must be used within a TranslationProvider');
-  }
-
-  return {
-    language: context.language,
-    setLanguage: context.setLanguage,
-    t<K extends (typeof baseTranslations)['paths']>(
-      key: K,
-      values: Record<GetPlaceholders<(typeof baseTranslations)['mapping'][K]>[number], string | number>,
-    ): string {
-      return context.t(key, values);
-    },
-    tItem(key: keyof (typeof baseTranslations)['items'], count: number): string {
-      return context.tItem(key as string, count);
-    },
-  };
-};
-
-export const getTranslations = (): ReturnType<typeof useTranslations> => {
-  if (!globalTranslationHandle) {
-    throw new Error('getTranslations called before TranslationProvider initialized');
-  }
-
-  return globalTranslationHandle;
-};
+export { getTranslations, useTranslations } from './contexts/translationContext.ts';

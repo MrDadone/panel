@@ -42,22 +42,45 @@ import {
   faUserSecret,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
+import { z } from 'zod';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
+import { processConfigurationConfigParser } from '@/lib/schemas/admin/eggs.ts';
+import { adminSettingsEmailSchema, adminSettingsStorageSchema } from '@/lib/schemas/admin/settings.ts';
+import { databaseType, streamingArchiveFormat } from '@/lib/schemas/generic.ts';
+import { archiveFormat, compressionLevel, fingerprintAlgorithm } from '@/lib/schemas/server/files.ts';
+import {
+  serverScheduleComparator,
+  serverScheduleConditionSchema,
+  serverSchedulePreConditionSchema,
+  serverScheduleStepActionSchema,
+  serverScheduleTriggerSchema,
+} from '@/lib/schemas/server/schedules.ts';
+import { serverBackupStatus, serverPowerAction, serverPowerState } from '@/lib/schemas/server/server.ts';
+import { publicSettingsCaptchaProviderSchema } from '@/lib/schemas/settings.ts';
+import { userSshKeyProvider } from '@/lib/schemas/user/sshKeys.ts';
 
-export const captchaProviderTypeLabelMapping: Record<CaptchaProvider['type'], string> = {
+export const captchaProviderTypeLabelMapping: Record<
+  z.infer<typeof publicSettingsCaptchaProviderSchema>['type'],
+  string
+> = {
   none: 'None',
   turnstile: 'Turnstile',
   recaptcha: 'reCAPTCHA',
   hcaptcha: 'hCaptcha',
+  friendly_captcha: 'Friendly Captcha',
 };
 
-export const compressionLevelLabelMapping: Record<CompressionLevel, string> = {
+export const compressionLevelLabelMapping: Record<z.infer<typeof compressionLevel>, string> = {
   best_speed: 'Best Speed',
   good_speed: 'Good Speed',
   good_compression: 'Good Compression',
   best_compression: 'Best Compression',
 };
 
-export const processConfigurationParserLabelMapping: Record<ProcessConfigurationConfigParser, string> = {
+export const processConfigurationParserLabelMapping: Record<
+  z.infer<typeof processConfigurationConfigParser>,
+  string
+> = {
   file: 'File',
   yaml: 'YAML',
   properties: 'Properties',
@@ -67,12 +90,12 @@ export const processConfigurationParserLabelMapping: Record<ProcessConfiguration
   toml: 'TOML',
 };
 
-export const databaseTypeLabelMapping: Record<DatabaseType, string> = {
+export const databaseTypeLabelMapping: Record<z.infer<typeof databaseType>, string> = {
   mysql: 'MySQL',
   postgres: 'PostgreSQL',
 };
 
-export const backupDiskLabelMapping: Record<BackupDisk, string> = {
+export const backupDiskLabelMapping: Record<z.infer<typeof adminBackupConfigurationSchema>['backupDisk'], string> = {
   local: 'Local',
   s3: 'S3',
   'ddup-bak': 'Ddup-Bak',
@@ -81,19 +104,19 @@ export const backupDiskLabelMapping: Record<BackupDisk, string> = {
   restic: 'Restic',
 };
 
-export const storageDriverTypeLabelMapping: Record<StorageDriverType, string> = {
+export const storageDriverTypeLabelMapping: Record<z.infer<typeof adminSettingsStorageSchema>['type'], string> = {
   filesystem: 'Filesystem',
   s3: 'S3',
 };
 
-export const mailModeTypeLabelMapping: Record<MailModeType, string> = {
+export const mailModeTypeLabelMapping: Record<z.infer<typeof adminSettingsEmailSchema>['type'], string> = {
   none: 'None',
   smtp: 'SMTP',
   sendmail: 'Sendmail Command',
   filesystem: 'Filesystem',
 };
 
-export const archiveFormatLabelMapping: Record<ArchiveFormat, string> = {
+export const archiveFormatLabelMapping: Record<z.infer<typeof archiveFormat>, string> = {
   tar: '.tar',
   tar_gz: '.tar.gz',
   tar_xz: '.tar.xz',
@@ -105,7 +128,7 @@ export const archiveFormatLabelMapping: Record<ArchiveFormat, string> = {
   seven_zip: '.7z',
 };
 
-export const streamingArchiveFormatLabelMapping: Record<StreamingArchiveFormat, string> = {
+export const streamingArchiveFormatLabelMapping: Record<z.infer<typeof streamingArchiveFormat>, string> = {
   tar: '.tar',
   tar_gz: '.tar.gz',
   tar_xz: '.tar.xz',
@@ -116,7 +139,21 @@ export const streamingArchiveFormatLabelMapping: Record<StreamingArchiveFormat, 
   zip: '.zip',
 };
 
-export const schedulePreConditionLabelMapping: Record<SchedulePreCondition['type'], string> = {
+export const fingerprintAlgorithmLabelMapping: Record<z.infer<typeof fingerprintAlgorithm>, string> = {
+  md5: 'MD5',
+  crc32: 'CRC32',
+  sha1: 'SHA-1',
+  sha224: 'SHA-224',
+  sha256: 'SHA-256',
+  sha384: 'SHA-384',
+  sha512: 'SHA-512',
+  curseforge: 'CurseForge',
+};
+
+export const schedulePreConditionLabelMapping: Record<
+  z.infer<typeof serverSchedulePreConditionSchema>['type'],
+  string
+> = {
   none: 'None',
   and: 'AND (All must be true)',
   or: 'OR (Any must be true)',
@@ -129,7 +166,7 @@ export const schedulePreConditionLabelMapping: Record<SchedulePreCondition['type
   file_exists: 'File Exists',
 };
 
-export const scheduleConditionLabelMapping: Record<ScheduleCondition['type'], string> = {
+export const scheduleConditionLabelMapping: Record<z.infer<typeof serverScheduleConditionSchema>['type'], string> = {
   none: 'None',
   and: 'AND (All must be true)',
   or: 'OR (Any must be true)',
@@ -141,7 +178,7 @@ export const scheduleConditionLabelMapping: Record<ScheduleCondition['type'], st
   variable_ends_with: 'Variable Ends With',
 };
 
-export const scheduleComparatorLabelMapping: Record<ScheduleComparator, string> = {
+export const scheduleComparatorLabelMapping: Record<z.infer<typeof serverScheduleComparator>, string> = {
   smaller_than: 'Smaller Than',
   smaller_than_or_equals: 'Smaller Than or Equals',
   equal: 'Equals',
@@ -149,7 +186,7 @@ export const scheduleComparatorLabelMapping: Record<ScheduleComparator, string> 
   greater_than_or_equals: 'Greater Than or Equals',
 };
 
-export const scheduleComparatorOperatorMapping: Record<ScheduleComparator, string> = {
+export const scheduleComparatorOperatorMapping: Record<z.infer<typeof serverScheduleComparator>, string> = {
   smaller_than: '<',
   smaller_than_or_equals: '<=',
   equal: '==',
@@ -157,27 +194,27 @@ export const scheduleComparatorOperatorMapping: Record<ScheduleComparator, strin
   greater_than_or_equals: '>=',
 };
 
-export const serverPowerStateLabelMapping: Record<ServerPowerState, string> = {
+export const serverPowerStateLabelMapping: Record<z.infer<typeof serverPowerState>, string> = {
   running: 'Running',
   offline: 'Offline',
   starting: 'Starting',
   stopping: 'Stopping',
 };
 
-export const serverPowerActionLabelMapping: Record<ServerPowerAction, string> = {
+export const serverPowerActionLabelMapping: Record<z.infer<typeof serverPowerAction>, string> = {
   start: 'Start',
   stop: 'Stop',
   restart: 'Restart',
   kill: 'Kill',
 };
 
-export const serverBackupStatusLabelMapping: Record<ServerBackupStatus, string> = {
+export const serverBackupStatusLabelMapping: Record<z.infer<typeof serverBackupStatus>, string> = {
   starting: 'Starting',
   finished: 'Finished',
   failed: 'Failed',
 };
 
-export const scheduleStepLabelMapping: Record<ScheduleAction['type'], string> = {
+export const scheduleStepLabelMapping: Record<z.infer<typeof serverScheduleStepActionSchema>['type'], string> = {
   sleep: 'Sleep',
   ensure: 'Ensure',
   format: 'Format',
@@ -198,7 +235,10 @@ export const scheduleStepLabelMapping: Record<ScheduleAction['type'], string> = 
   update_startup_docker_image: 'Update Docker Image',
 };
 
-export const scheduleStepDefaultMapping: Record<ScheduleAction['type'], ScheduleAction> = {
+export const scheduleStepDefaultMapping: Record<
+  z.infer<typeof serverScheduleStepActionSchema>['type'],
+  z.infer<typeof serverScheduleStepActionSchema>
+> = {
   sleep: {
     type: 'sleep',
     duration: 0,
@@ -306,7 +346,7 @@ export const scheduleStepDefaultMapping: Record<ScheduleAction['type'], Schedule
   },
 };
 
-export const scheduleStepIconMapping: Record<ScheduleAction['type'], IconDefinition> = {
+export const scheduleStepIconMapping: Record<z.infer<typeof serverScheduleStepActionSchema>['type'], IconDefinition> = {
   sleep: faHourglass,
   ensure: faEquals,
   format: faTextSlash,
@@ -327,7 +367,7 @@ export const scheduleStepIconMapping: Record<ScheduleAction['type'], IconDefinit
   update_startup_docker_image: faDocker,
 };
 
-export const sshKeyProviderLabelMapping: Record<SshKeyProvider, string> = {
+export const sshKeyProviderLabelMapping: Record<z.infer<typeof userSshKeyProvider>, string> = {
   github: 'GitHub',
   gitlab: 'GitLab',
   launchpad: 'Launchpad',
@@ -345,6 +385,7 @@ export const permissionCategoryIconMapping: Record<string, IconDefinition> = {
   'database-hosts': faDatabase,
   databases: faDatabase,
   eggs: faEgg,
+  assets: faFolderOpen,
   extensions: faPuzzlePiece,
   files: faFolderOpen,
   locations: faEarthAmerica,
@@ -366,7 +407,7 @@ export const permissionCategoryIconMapping: Record<string, IconDefinition> = {
   users: faUsers,
 };
 
-export const scheduleTriggerIconMapping: Record<ScheduleTrigger['type'], IconDefinition> = {
+export const scheduleTriggerIconMapping: Record<z.infer<typeof serverScheduleTriggerSchema>['type'], IconDefinition> = {
   cron: faStopwatch,
   power_action: faPowerOff,
   server_state: faServer,
@@ -375,7 +416,7 @@ export const scheduleTriggerIconMapping: Record<ScheduleTrigger['type'], IconDef
   crash: faSkull,
 };
 
-export const scheduleTriggerColorMapping: Record<ScheduleTrigger['type'], string> = {
+export const scheduleTriggerColorMapping: Record<z.infer<typeof serverScheduleTriggerSchema>['type'], string> = {
   cron: 'blue',
   power_action: 'orange',
   server_state: 'green',
@@ -384,7 +425,7 @@ export const scheduleTriggerColorMapping: Record<ScheduleTrigger['type'], string
   crash: 'red',
 };
 
-export const scheduleTriggerLabelMapping: Record<ScheduleTrigger['type'], string> = {
+export const scheduleTriggerLabelMapping: Record<z.infer<typeof serverScheduleTriggerSchema>['type'], string> = {
   cron: 'Cron',
   power_action: 'Power Action',
   server_state: 'Server State',
@@ -393,59 +434,14 @@ export const scheduleTriggerLabelMapping: Record<ScheduleTrigger['type'], string
   crash: 'Crash',
 };
 
-export const scheduleTriggerDefaultMapping: Record<ScheduleTrigger['type'], ScheduleTrigger> = {
+export const scheduleTriggerDefaultMapping: Record<
+  z.infer<typeof serverScheduleTriggerSchema>['type'],
+  z.infer<typeof serverScheduleTriggerSchema>
+> = {
   cron: { type: 'cron', schedule: '' },
   power_action: { type: 'power_action', action: 'start' },
   server_state: { type: 'server_state', state: 'running' },
   backup_status: { type: 'backup_status', status: 'starting' },
   console_line: { type: 'console_line', contains: '', outputInto: null },
   crash: { type: 'crash' },
-};
-
-export const languageToZodLocaleMapping: Record<string, string> = {
-  'ar-SA': 'ar',
-  'az-AZ': 'az',
-  'be-BY': 'be',
-  'bg-BG': 'bg',
-  'ca-ES': 'ca',
-  'cs-CZ': 'cs',
-  'da-DK': 'da',
-  'de-DE': 'de',
-  'en-US': 'en',
-  eo: 'eo',
-  'es-ES': 'es',
-  'fa-IR': 'fa',
-  'fi-FI': 'fi',
-  'fr-FR': 'fr',
-  'fr-CA': 'fr',
-  'he-IL': 'he',
-  'hu-HU': 'hu',
-  'id-ID': 'id',
-  'is-IS': 'is',
-  'it-IT': 'it',
-  'ja-JP': 'ja',
-  'ka-GE': 'ka',
-  'km-KH': 'km',
-  'ko-KR': 'ko',
-  'lt-LT': 'lt',
-  'mk-MK': 'mk',
-  'ms-MY': 'ms',
-  'nl-NL': 'nl',
-  'no-NO': 'no',
-  ota: 'ota', // Ottoman Turkish (historical – no ISO country)
-  'ps-AF': 'ps',
-  'pl-PL': 'pl',
-  'pt-PT': 'pt',
-  'ru-RU': 'ru',
-  'sl-SI': 'sl',
-  'sv-SE': 'sv',
-  'ta-IN': 'ta',
-  'th-TH': 'th',
-  'tr-TR': 'tr',
-  'uk-UA': 'uk',
-  'ur-PK': 'ur',
-  'vi-VN': 'vi',
-  'zh-CN': 'zh',
-  'zh-TW': 'zh',
-  'yo-NG': 'yo',
 };

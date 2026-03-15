@@ -1,7 +1,8 @@
 import { rectSortingStrategy } from '@dnd-kit/sortable';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, startTransition, useEffect, useMemo, useState } from 'react';
+import { z } from 'zod';
 import getEggVariables from '@/api/admin/nests/eggs/variables/getEggVariables.ts';
 import updateEggVariableOrder from '@/api/admin/nests/eggs/variables/updateEggVariableOrder.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -9,11 +10,13 @@ import Button from '@/elements/Button.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import { DndContainer, DndItem, SortableItem } from '@/elements/DragAndDrop.tsx';
 import Spinner from '@/elements/Spinner.tsx';
+import { adminEggSchema, adminEggVariableSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import EggVariableContainer from '@/pages/admin/nests/eggs/variables/EggVariableContainer.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
-interface DndEggVariable extends NestEggVariable, DndItem {
+interface DndEggVariable extends z.infer<typeof adminEggVariableSchema>, DndItem {
   id: string;
 }
 
@@ -23,8 +26,8 @@ export default function AdminEggVariables({
   contextNest,
   contextEgg,
 }: {
-  contextNest: AdminNest;
-  contextEgg: AdminNestEgg;
+  contextNest: z.infer<typeof adminNestSchema>;
+  contextEgg: z.infer<typeof adminEggSchema>;
 }) {
   const { eggVariables, setEggVariables, addEggVariable } = useAdminStore();
   const { addToast } = useToast();
@@ -89,7 +92,10 @@ export default function AdminEggVariables({
                 ...step,
                 order: index + 1,
               }));
-              setEggVariables(variablesWithNewOrder);
+
+              startTransition(() => {
+                setEggVariables(variablesWithNewOrder);
+              });
 
               await updateEggVariableOrder(
                 contextNest.uuid,

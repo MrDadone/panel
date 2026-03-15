@@ -14,13 +14,14 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminMountSchema } from '@/lib/schemas/admin/mounts.ts';
+import { adminMountSchema, adminMountUpdateSchema } from '@/lib/schemas/admin/mounts.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 
-export default function MountCreateOrUpdate({ contextMount }: { contextMount?: Mount }) {
+export default function MountCreateOrUpdate({ contextMount }: { contextMount?: z.infer<typeof adminMountSchema> }) {
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminMountSchema>>({
+  const form = useForm<z.infer<typeof adminMountUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       description: null,
@@ -30,17 +31,22 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: M
       userMountable: false,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminMountSchema),
+    validate: zod4Resolver(adminMountUpdateSchema),
   });
 
-  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminMountSchema>, Mount>({
+  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<
+    z.infer<typeof adminMountUpdateSchema>,
+    z.infer<typeof adminMountSchema>
+  >({
     form,
-    createFn: () => createMount(form.values),
-    updateFn: contextMount ? () => updateMount(contextMount.uuid, form.values) : undefined,
+    createFn: () => createMount(adminMountUpdateSchema.parse(form.getValues())),
+    updateFn: contextMount
+      ? () => updateMount(contextMount.uuid, adminMountUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextMount ? () => deleteMount(contextMount.uuid) : undefined,
     doUpdate: !!contextMount,
-    basePath: '/admin/locations',
-    resourceName: 'Location',
+    basePath: '/admin/mounts',
+    resourceName: 'Mount',
   });
 
   useEffect(() => {
@@ -57,7 +63,11 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: M
   }, [contextMount]);
 
   return (
-    <AdminContentContainer title={`${contextMount ? 'Update' : 'Create'} Mount`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextMount ? 'Update' : 'Create'} Mount`}
+      fullscreen={!!contextMount}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -65,24 +75,56 @@ export default function MountCreateOrUpdate({ contextMount }: { contextMount?: M
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow align='start'>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
-            <TextArea label='Description' placeholder='Description' {...form.getInputProps('description')} rows={3} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
+            <TextArea
+              label='Description'
+              placeholder='Description'
+              rows={3}
+              key={form.key('description')}
+              {...form.getInputProps('description')}
+            />
           </Group>
 
           <Group grow>
-            <TextInput withAsterisk label='Source' placeholder='Source' {...form.getInputProps('source')} />
-            <TextInput withAsterisk label='Target' placeholder='Target' {...form.getInputProps('target')} />
+            <TextInput
+              withAsterisk
+              label='Source'
+              placeholder='Source'
+              key={form.key('source')}
+              {...form.getInputProps('source')}
+            />
+            <TextInput
+              withAsterisk
+              label='Target'
+              placeholder='Target'
+              key={form.key('target')}
+              {...form.getInputProps('target')}
+            />
           </Group>
 
           <Group grow>
-            <Switch label='Read Only' {...form.getInputProps('readOnly', { type: 'checkbox' })} />
-            <Switch label='User Mountable' {...form.getInputProps('userMountable', { type: 'checkbox' })} />
+            <Switch
+              label='Read Only'
+              key={form.key('readOnly')}
+              {...form.getInputProps('readOnly', { type: 'checkbox' })}
+            />
+            <Switch
+              label='User Mountable'
+              key={form.key('userMountable')}
+              {...form.getInputProps('userMountable', { type: 'checkbox' })}
+            />
           </Group>
 
           <Group>

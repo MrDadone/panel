@@ -45,6 +45,7 @@ mod get {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .get_servers_server_schedules_schedule(server.uuid, schedule.uuid)
             .await?;
 

@@ -55,39 +55,45 @@ mod get {
 mod post {
     use crate::routes::api::admin::nests::_nest_::{GetNest, eggs::_egg_::GetNestEgg};
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
         models::{
-            admin_activity::GetAdminActivityLogger, nest_egg_variable::NestEggVariable,
+            CreatableModel,
+            admin_activity::GetAdminActivityLogger,
+            nest_egg_variable::{CreateNestEggVariableOptions, NestEggVariable},
             user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 3, max = 255))]
+        #[garde(length(chars, min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: compact_str::CompactString,
-        #[validate(length(max = 1024))]
+        #[garde(length(max = 1024))]
         #[schema(max_length = 1024)]
         description: Option<compact_str::CompactString>,
+        #[garde(skip)]
         order: i16,
 
-        #[validate(length(min = 1, max = 255))]
+        #[garde(length(chars, min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
         env_variable: compact_str::CompactString,
-        #[validate(length(max = 1024))]
+        #[garde(length(max = 1024))]
         #[schema(max_length = 1024)]
         default_value: Option<String>,
 
+        #[garde(skip)]
         user_viewable: bool,
+        #[garde(skip)]
         user_editable: bool,
+        #[garde(skip)]
         secret: bool,
-        #[validate(custom(function = "rule_validator::validate_rules"))]
+        #[garde(custom(rule_validator::validate_rules))]
         rules: Vec<compact_str::CompactString>,
     }
 
@@ -120,26 +126,22 @@ mod post {
         activity_logger: GetAdminActivityLogger,
         shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("eggs.update")?;
 
         let egg_variable = match NestEggVariable::create(
-            &state.database,
-            egg.uuid,
-            &data.name,
-            data.description.as_deref(),
-            data.order,
-            &data.env_variable,
-            data.default_value.as_deref(),
-            data.user_viewable,
-            data.user_editable,
-            data.secret,
-            &data.rules,
+            &state,
+            CreateNestEggVariableOptions {
+                egg_uuid: egg.uuid,
+                name: data.name,
+                description: data.description,
+                order: data.order,
+                env_variable: data.env_variable,
+                default_value: data.default_value,
+                user_viewable: data.user_viewable,
+                user_editable: data.user_editable,
+                secret: data.secret,
+                rules: data.rules,
+            },
         )
         .await
         {
@@ -149,13 +151,7 @@ mod post {
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create variable: {:?}", err);
-
-                return ApiResponse::error("failed to create variable")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger
@@ -175,6 +171,7 @@ mod post {
 
                     "user_viewable": egg_variable.user_viewable,
                     "user_editable": egg_variable.user_editable,
+                    "secret": egg_variable.secret,
                     "rules": egg_variable.rules,
                 }),
             )

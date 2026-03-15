@@ -13,26 +13,32 @@ import AdminContentContainer from '@/elements/containers/AdminContentContainer.t
 import TextArea from '@/elements/input/TextArea.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
-import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
+import { adminNestSchema, adminNestUpdateSchema } from '@/lib/schemas/admin/nests.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 
-export default function NestCreateOrUpdate({ contextNest }: { contextNest?: AdminNest }) {
+export default function NestCreateOrUpdate({ contextNest }: { contextNest?: z.infer<typeof adminNestSchema> }) {
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
-  const form = useForm<z.infer<typeof adminNestSchema>>({
+  const form = useForm<z.infer<typeof adminNestUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       author: '',
       name: '',
       description: null,
     },
     validateInputOnBlur: true,
-    validate: zod4Resolver(adminNestSchema),
+    validate: zod4Resolver(adminNestUpdateSchema),
   });
 
-  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<z.infer<typeof adminNestSchema>, AdminNest>({
+  const { loading, doCreateOrUpdate, doDelete } = useResourceForm<
+    z.infer<typeof adminNestUpdateSchema>,
+    z.infer<typeof adminNestSchema>
+  >({
     form,
-    createFn: () => createNest(form.values),
-    updateFn: contextNest ? () => updateNest(contextNest.uuid, form.values) : undefined,
+    createFn: () => createNest(adminNestUpdateSchema.parse(form.getValues())),
+    updateFn: contextNest
+      ? () => updateNest(contextNest.uuid, adminNestUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextNest ? () => deleteNest(contextNest.uuid) : undefined,
     doUpdate: !!contextNest,
     basePath: '/admin/nests',
@@ -50,7 +56,11 @@ export default function NestCreateOrUpdate({ contextNest }: { contextNest?: Admi
   }, [contextNest]);
 
   return (
-    <AdminContentContainer title={`${contextNest ? 'Update' : 'Create'} Nest`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextNest ? 'Update' : 'Create'} Nest`}
+      fullscreen={!!contextNest}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -58,17 +68,35 @@ export default function NestCreateOrUpdate({ contextNest }: { contextNest?: Admi
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Author' placeholder='Author' {...form.getInputProps('author')} />
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Author'
+              placeholder='Author'
+              key={form.key('author')}
+              {...form.getInputProps('author')}
+            />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
           </Group>
 
-          <TextArea label='Description' placeholder='Description' rows={3} {...form.getInputProps('description')} />
+          <TextArea
+            label='Description'
+            placeholder='Description'
+            rows={3}
+            key={form.key('description')}
+            {...form.getInputProps('description')}
+          />
         </Stack>
 
         <Group mt='md'>

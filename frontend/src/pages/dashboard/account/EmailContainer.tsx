@@ -1,7 +1,8 @@
 import { faAt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Grid, Group, Stack } from '@mantine/core';
+import { Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import classNames from 'classnames';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -10,6 +11,7 @@ import updateEmail from '@/api/me/account/updateEmail.ts';
 import Button from '@/elements/Button.tsx';
 import PasswordInput from '@/elements/input/PasswordInput.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
+import Spinner from '@/elements/Spinner.tsx';
 import TitleCard from '@/elements/TitleCard.tsx';
 import { dashboardEmailSchema } from '@/lib/schemas/dashboard.ts';
 import { useAuth } from '@/providers/AuthProvider.tsx';
@@ -17,7 +19,7 @@ import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { AccountCardProps } from './DashboardAccount.tsx';
 
-export default function EmailContainer({ blurred }: AccountCardProps) {
+export default function EmailContainer({ requireTwoFactorActivation }: AccountCardProps) {
   const { t } = useTranslations();
   const { addToast } = useToast();
   const { user, setUser } = useAuth();
@@ -34,15 +36,22 @@ export default function EmailContainer({ blurred }: AccountCardProps) {
   });
 
   useEffect(() => {
-    form.setValues({
-      email: user?.email,
-    });
+    if (user) {
+      form.setValues({
+        email: user.email,
+      });
+    }
   }, [user]);
 
   const doUpdate = () => {
+    if (!user) return;
+
     setLoading(true);
 
-    updateEmail(form.values)
+    updateEmail({
+      password: user.hasPassword ? form.values.password : 'aaa',
+      email: form.values.email,
+    })
       .then(() => {
         addToast(t('pages.account.account.containers.email.toast.updated', {}), 'success');
 
@@ -55,22 +64,26 @@ export default function EmailContainer({ blurred }: AccountCardProps) {
       .finally(() => setLoading(false));
   };
 
+  if (!user) {
+    return <Spinner.Centered />;
+  }
+
   return (
-    <Grid.Col span={{ base: 12, md: 6, lg: 4 }} className={blurred ? 'blur-xs pointer-events-none select-none' : ''}>
-      <TitleCard
-        title={t('pages.account.account.containers.email.title', {})}
-        icon={<FontAwesomeIcon icon={faAt} />}
-        className='h-full'
-      >
-        <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack>
-            <TextInput
-              withAsterisk
-              label={t('pages.account.account.containers.email.form.newEmail', {})}
-              placeholder={t('pages.account.account.containers.email.form.newEmail', {})}
-              autoComplete='email'
-              {...form.getInputProps('email')}
-            />
+    <TitleCard
+      title={t('pages.account.account.containers.email.title', {})}
+      icon={<FontAwesomeIcon icon={faAt} />}
+      className={classNames('h-full order-20', requireTwoFactorActivation && 'blur-xs pointer-events-none select-none')}
+    >
+      <form onSubmit={form.onSubmit(() => doUpdate())}>
+        <Stack>
+          <TextInput
+            withAsterisk
+            label={t('pages.account.account.containers.email.form.newEmail', {})}
+            placeholder={t('pages.account.account.containers.email.form.newEmail', {})}
+            autoComplete='email'
+            {...form.getInputProps('email')}
+          />
+          {user.hasPassword && (
             <PasswordInput
               withAsterisk
               label={t('pages.account.account.containers.email.form.currentPassword', {})}
@@ -78,14 +91,14 @@ export default function EmailContainer({ blurred }: AccountCardProps) {
               autoComplete='current-password'
               {...form.getInputProps('password')}
             />
-          </Stack>
-          <Group className='mt-auto pt-4'>
-            <Button type='submit' disabled={!form.isValid()} loading={loading}>
-              {t('common.button.update', {})}
-            </Button>
-          </Group>
-        </form>
-      </TitleCard>
-    </Grid.Col>
+          )}
+        </Stack>
+        <Group className='mt-auto pt-4'>
+          <Button type='submit' disabled={!form.isValid()} loading={loading}>
+            {t('common.button.update', {})}
+          </Button>
+        </Group>
+      </form>
+    </TitleCard>
   );
 }

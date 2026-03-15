@@ -3,6 +3,7 @@ import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useGlobalStore } from '@/stores/global.ts';
+import FriendlyCaptcha, { Ref as FriendlyCaptchaRef } from './FriendlyCaptcha.tsx';
 
 export interface CaptchaRef {
   getToken: () => Promise<string | null>;
@@ -14,6 +15,7 @@ const Captcha = forwardRef((_, ref) => {
   const turnstileRef = useRef<TurnstileInstance>(null);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const hcaptchaRef = useRef<HCaptcha>(null);
+  const friendlyCaptchaRef = useRef<FriendlyCaptchaRef>(null);
 
   // Expose getToken and resetCaptcha
   useImperativeHandle(ref, () => ({
@@ -40,6 +42,10 @@ const Captcha = forwardRef((_, ref) => {
         return hcaptchaRef.current?.getResponse?.();
       }
 
+      if (captchaProvider.type === 'friendly_captcha') {
+        return friendlyCaptchaRef.current?.getResponse?.();
+      }
+
       return null;
     },
 
@@ -50,6 +56,8 @@ const Captcha = forwardRef((_, ref) => {
         recaptchaRef.current?.reset?.();
       } else if (captchaProvider.type === 'hcaptcha') {
         hcaptchaRef.current?.resetCaptcha?.();
+      } else if (captchaProvider.type === 'friendly_captcha') {
+        friendlyCaptchaRef.current?.reset();
       }
     },
   }));
@@ -82,6 +90,10 @@ const Captcha = forwardRef((_, ref) => {
 
   if (captchaProvider.type === 'hcaptcha') {
     return <HCaptcha sitekey={captchaProvider.siteKey} ref={hcaptchaRef} />;
+  }
+
+  if (captchaProvider.type === 'friendly_captcha') {
+    return <FriendlyCaptcha sitekey={captchaProvider.siteKey} ref={friendlyCaptchaRef} />;
   }
 
   return null;

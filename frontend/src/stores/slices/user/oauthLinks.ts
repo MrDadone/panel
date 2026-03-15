@@ -1,16 +1,18 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { userOAuthLinkSchema } from '@/lib/schemas/user/oAuth.ts';
 import { UserStore } from '@/stores/user.ts';
 
 export interface OAuthLinksSlice {
-  oauthLinks: ResponseMeta<UserOAuthLink>;
+  oauthLinks: Pagination<z.infer<typeof userOAuthLinkSchema>>;
 
-  setOAuthLinks: (links: ResponseMeta<UserOAuthLink>) => void;
-  removeOAuthLink: (link: UserOAuthLink) => void;
+  setOAuthLinks: (links: Pagination<z.infer<typeof userOAuthLinkSchema>>) => void;
+  removeOAuthLink: (link: z.infer<typeof userOAuthLinkSchema>) => void;
 }
 
 export const createOAuthLinksSlice: StateCreator<UserStore, [], [], OAuthLinksSlice> = (set): OAuthLinksSlice => ({
-  oauthLinks: getEmptyPaginationSet<UserOAuthLink>(),
+  oauthLinks: getEmptyPaginationSet<z.infer<typeof userOAuthLinkSchema>>(),
 
   setOAuthLinks: (value) => set((state) => ({ ...state, oauthLinks: value })),
   removeOAuthLink: (link) =>

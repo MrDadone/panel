@@ -1,35 +1,39 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { adminServerMountSchema, adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import { serverAllocationSchema } from '@/lib/schemas/server/allocations.ts';
+import { serverVariableSchema } from '@/lib/schemas/server/startup.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface ServersSlice {
-  servers: ResponseMeta<AdminServer>;
-  serverAllocations: ResponseMeta<ServerAllocation>;
-  serverVariables: ServerVariable[];
-  serverMounts: ResponseMeta<AdminServerMount>;
+  servers: Pagination<z.infer<typeof adminServerSchema>>;
+  serverAllocations: Pagination<z.infer<typeof serverAllocationSchema>>;
+  serverVariables: z.infer<typeof serverVariableSchema>[];
+  serverMounts: Pagination<z.infer<typeof adminServerMountSchema>>;
 
-  setServers: (servers: ResponseMeta<AdminServer>) => void;
-  addServer: (server: AdminServer) => void;
-  removeServer: (server: AdminServer) => void;
-  updateServer: (server: AdminServer) => void;
+  setServers: (servers: Pagination<z.infer<typeof adminServerSchema>>) => void;
+  addServer: (server: z.infer<typeof adminServerSchema>) => void;
+  removeServer: (server: z.infer<typeof adminServerSchema>) => void;
+  updateServer: (server: z.infer<typeof adminServerSchema>) => void;
 
-  setServerAllocations: (allocations: ResponseMeta<ServerAllocation>) => void;
-  addServerAllocation: (allocation: ServerAllocation) => void;
-  removeServerAllocation: (allocation: ServerAllocation) => void;
+  setServerAllocations: (allocations: Pagination<z.infer<typeof serverAllocationSchema>>) => void;
+  addServerAllocation: (allocation: z.infer<typeof serverAllocationSchema>) => void;
+  removeServerAllocation: (allocation: z.infer<typeof serverAllocationSchema>) => void;
 
-  setServerVariables: (variables: ServerVariable[]) => void;
-  updateServerVariable: (envVariable: string, updatedProps: Partial<ServerVariable>) => void;
+  setServerVariables: (variables: z.infer<typeof serverVariableSchema>[]) => void;
+  updateServerVariable: (envVariable: string, updatedProps: Partial<z.infer<typeof serverVariableSchema>>) => void;
 
-  setServerMounts: (mounts: ResponseMeta<AdminServerMount>) => void;
-  addServerMount: (mount: AdminServerMount) => void;
-  removeServerMount: (mount: AdminServerMount) => void;
+  setServerMounts: (mounts: Pagination<z.infer<typeof adminServerMountSchema>>) => void;
+  addServerMount: (mount: z.infer<typeof adminServerMountSchema>) => void;
+  removeServerMount: (mount: z.infer<typeof adminServerMountSchema>) => void;
 }
 
 export const createServersSlice: StateCreator<AdminStore, [], [], ServersSlice> = (set): ServersSlice => ({
-  servers: getEmptyPaginationSet<AdminServer>(),
-  serverAllocations: getEmptyPaginationSet<ServerAllocation>(),
+  servers: getEmptyPaginationSet<z.infer<typeof adminServerSchema>>(),
+  serverAllocations: getEmptyPaginationSet<z.infer<typeof serverAllocationSchema>>(),
   serverVariables: [],
-  serverMounts: getEmptyPaginationSet<AdminServerMount>(),
+  serverMounts: getEmptyPaginationSet<z.infer<typeof adminServerMountSchema>>(),
 
   setServers: (value) => set((state) => ({ ...state, servers: value })),
   addServer: (server) =>

@@ -1,6 +1,8 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 
-export default async (page: number, search?: string): Promise<ResponseMeta<AdminNest>> => {
+export default async (page: number, search?: string): Promise<Pagination<z.infer<typeof adminNestSchema>>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get('/api/admin/nests', {

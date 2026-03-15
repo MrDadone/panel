@@ -12,7 +12,7 @@ import {
   TableTrProps,
   Text,
 } from '@mantine/core';
-import { forwardRef, ReactNode, useEffect } from 'react';
+import { forwardRef, ReactNode, startTransition, useEffect } from 'react';
 import Spinner from '@/elements/Spinner.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
@@ -53,7 +53,7 @@ export const TableData = forwardRef<HTMLTableCellElement, TableTdProps>(({ class
 });
 
 interface PaginationProps<T> {
-  data: ResponseMeta<T>;
+  data: Pagination<T>;
   onPageSelect: (page: number) => void;
 }
 
@@ -67,7 +67,9 @@ export function Pagination<T>({ data, onPageSelect, ...props }: PaginationProps<
       return;
     }
 
-    onPageSelect(page);
+    startTransition(() => {
+      onPageSelect(page);
+    });
   };
 
   useEffect(() => {
@@ -132,7 +134,7 @@ export const NoItems = () => {
 interface TableProps {
   columns: string[];
   loading?: boolean;
-  pagination?: ResponseMeta<unknown>;
+  pagination?: Pagination<unknown>;
   onPageSelect?: (page: number) => void;
   allowSelect?: boolean;
   children: ReactNode;
@@ -152,7 +154,7 @@ export default ({ columns, loading, pagination, onPageSelect, allowSelect = true
       >
         <TableHead>
           {columns.map((column, index) => (
-            <TableHeader name={column} key={`column-${index}`} />
+            <TableHeader key={`column-${index}`} name={column} />
           ))}
         </TableHead>
         <Table.Tbody>

@@ -126,16 +126,25 @@ mod post {
     ) -> ApiResponseResult {
         permissions.has_server_permission("allocations.create")?;
 
-        let allocations =
-            ServerAllocation::count_by_server_uuid(&state.database, server.uuid).await;
-        if allocations >= server.allocation_limit as i64 {
-            return ApiResponse::error("maximum number of allocations reached")
+        if !server.egg.config_allocations.user_self_assign.enabled {
+            return ApiResponse::error("self-assigning allocations is not enabled for this server")
                 .with_status(StatusCode::EXPECTATION_FAILED)
                 .ok();
         }
 
-        if !server.egg.config_allocations.user_self_assign.enabled {
-            return ApiResponse::error("self-assigning allocations is not enabled for this server")
+        let allocations_lock = state
+            .cache
+            .lock(
+                format!("servers::{}::allocations", server.uuid),
+                Some(30),
+                Some(5),
+            )
+            .await?;
+
+        let allocations =
+            ServerAllocation::count_by_server_uuid(&state.database, server.uuid).await;
+        if allocations >= server.allocation_limit as i64 {
+            return ApiResponse::error("maximum number of allocations reached")
                 .with_status(StatusCode::EXPECTATION_FAILED)
                 .ok();
         }
@@ -149,14 +158,10 @@ mod post {
                     .with_status(StatusCode::EXPECTATION_FAILED)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!(server = %server.uuid, "failed to create allocation: {:?}", err);
-
-                return ApiResponse::error("failed to create allocation")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
+
+        drop(allocations_lock);
 
         activity_logger
             .log(

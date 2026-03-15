@@ -10,20 +10,28 @@ import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { archiveFormatLabelMapping } from '@/lib/enums.ts';
 import { generateArchiveName } from '@/lib/files.ts';
-import { serverFilesArchiveCreateSchema } from '@/lib/schemas/server/files.ts';
+import {
+  archiveFormat,
+  serverDirectoryEntrySchema,
+  serverFilesArchiveCreateSchema,
+} from '@/lib/schemas/server/files.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  files: DirectoryEntry[];
+  files: z.infer<typeof serverDirectoryEntrySchema>[];
 };
 
 export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
-  const { server, browsingDirectory, setSelectedFiles } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory, doSelectFiles } = useFileManager();
 
   const [loading, setLoading] = useState(false);
 
@@ -41,15 +49,15 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
 
     compressFiles(server.uuid, {
       name: form.values.name
-        ? form.values.name.concat(archiveFormatLabelMapping[form.values.format as ArchiveFormat])
-        : generateArchiveName(archiveFormatLabelMapping[form.values.format as ArchiveFormat]),
+        ? form.values.name.concat(archiveFormatLabelMapping[form.values.format as z.infer<typeof archiveFormat>])
+        : generateArchiveName(archiveFormatLabelMapping[form.values.format as z.infer<typeof archiveFormat>]),
       format: form.values.format,
-      root: browsingDirectory!,
+      root: browsingDirectory,
       files: files.map((f) => f.name),
     })
       .then(() => {
-        setSelectedFiles([]);
-        addToast('Archive creation has begun.', 'success');
+        doSelectFiles([]);
+        addToast(t('pages.server.files.toast.archiveCreationStarted', {}), 'success');
         onClose();
       })
       .catch((msg) => {
@@ -59,14 +67,18 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
   };
 
   return (
-    <Modal title='Create Archive' onClose={onClose} opened={opened}>
+    <Modal title={t('pages.server.files.modal.createArchive.title', {})} onClose={onClose} opened={opened}>
       <form onSubmit={form.onSubmit(() => doArchive())}>
         <Stack>
-          <TextInput label='Archive Name' placeholder='Archive Name' {...form.getInputProps('name')} />
+          <TextInput
+            label={t('pages.server.files.modal.createArchive.form.archiveName', {})}
+            placeholder={t('pages.server.files.modal.createArchive.form.archiveName', {})}
+            {...form.getInputProps('name')}
+          />
 
           <Select
             withAsterisk
-            label='Format'
+            label={t('pages.server.files.modal.createArchive.form.format', {})}
             data={Object.entries(archiveFormatLabelMapping).map(([format, extension]) => ({
               label: extension,
               value: format,
@@ -75,28 +87,30 @@ export default function ArchiveCreateModal({ files, opened, onClose }: Props) {
           />
 
           <p className='text-sm md:text-base break-all'>
-            <span className='text-neutral-200'>This archive will be created as&nbsp;</span>
+            <span className='text-neutral-200'>{t('pages.server.files.modal.createArchive.createdAs', {})}</span>
             <Code>
               /home/container/
               <span className='text-cyan-200'>
                 {join(
-                  browsingDirectory!,
+                  browsingDirectory,
                   form.values.name
-                    ? `${form.values.name}${archiveFormatLabelMapping[form.values.format as ArchiveFormat]}`
-                    : generateArchiveName(archiveFormatLabelMapping[form.values.format as ArchiveFormat]),
+                    ? `${form.values.name}${archiveFormatLabelMapping[form.values.format as z.infer<typeof archiveFormat>]}`
+                    : generateArchiveName(
+                        archiveFormatLabelMapping[form.values.format as z.infer<typeof archiveFormat>],
+                      ),
                 ).replace(/^(\.\.\/|\/)+/, '')}
               </span>
             </Code>
           </p>
 
-          <Modal.Footer>
+          <ModalFooter>
             <Button type='submit' loading={loading}>
-              Create
+              {t('common.button.create', {})}
             </Button>
             <Button variant='default' onClick={onClose}>
-              Close
+              {t('common.button.close', {})}
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Stack>
       </form>
     </Modal>

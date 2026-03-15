@@ -1,0 +1,13 @@
+ALTER INDEX "user_activities_user_id_idx" RENAME TO "user_activities_user_uuid_idx";
+ALTER INDEX "user_activities_user_id_event_idx" RENAME TO "user_activities_user_uuid_event_idx";
+ALTER INDEX "user_sessions_user_id_idx" RENAME TO "user_sessions_user_uuid_idx";
+ALTER TABLE "admin_activities" ADD COLUMN "impersonator_uuid" uuid;
+ALTER TABLE "server_activities" ADD COLUMN "impersonator_uuid" uuid;
+ALTER TABLE "servers" ADD COLUMN "memory_overhead" bigint DEFAULT 0 NOT NULL;
+ALTER TABLE "user_activities" ADD COLUMN "impersonator_uuid" uuid;
+CREATE INDEX "admin_activities_impersonator_uuid_idx" ON "admin_activities" ("impersonator_uuid");
+CREATE INDEX "server_activities_impersonator_uuid_idx" ON "server_activities" ("impersonator_uuid");
+CREATE INDEX "user_activities_impersonator_uuid_idx" ON "user_activities" ("impersonator_uuid");
+ALTER TABLE "admin_activities" ADD CONSTRAINT "admin_activities_impersonator_uuid_users_uuid_fkey" FOREIGN KEY ("impersonator_uuid") REFERENCES "users"("uuid") ON DELETE SET NULL;
+ALTER TABLE "server_activities" ADD CONSTRAINT "server_activities_impersonator_uuid_users_uuid_fkey" FOREIGN KEY ("impersonator_uuid") REFERENCES "users"("uuid") ON DELETE SET NULL;
+ALTER TABLE "user_activities" ADD CONSTRAINT "user_activities_impersonator_uuid_users_uuid_fkey" FOREIGN KEY ("impersonator_uuid") REFERENCES "users"("uuid") ON DELETE SET NULL;

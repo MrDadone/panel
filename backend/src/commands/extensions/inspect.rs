@@ -150,7 +150,7 @@ impl shared::extensions::commands::CliCommand<InspectArgs> for InspectCommand {
                     println!("    dependencies (0)");
                 }
 
-                Ok(())
+                Ok(0)
             })
         })
     }

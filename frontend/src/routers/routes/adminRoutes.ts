@@ -7,7 +7,8 @@ import {
   faEarthAmerica,
   faFileZipper,
   faFingerprint,
-  faFolder,
+  faFolderOpen,
+  faFolderTree,
   faPuzzlePiece,
   faScroll,
   faServer,
@@ -17,6 +18,7 @@ import {
 import { faComputer } from '@fortawesome/free-solid-svg-icons/faComputer';
 import type { AdminRouteDefinition } from 'shared';
 import AdminActivity from '@/pages/admin/activity/AdminActivity.tsx';
+import AdminAssets from '@/pages/admin/assets/AdminAssets.tsx';
 import AdminBackupConfigurations from '@/pages/admin/backupConfigurations/AdminBackupConfigurations.tsx';
 import AdminDatabaseHosts from '@/pages/admin/databaseHosts/AdminDatabaseHosts.tsx';
 import AdminEggRepositories from '@/pages/admin/eggRepositories/AdminEggRepositories.tsx';
@@ -47,6 +49,13 @@ const routes: AdminRouteDefinition[] = [
     path: '/settings/*',
     element: AdminSettings,
     permission: ['settings.*'],
+  },
+  {
+    name: 'Assets',
+    icon: faFolderOpen,
+    path: '/assets',
+    element: AdminAssets,
+    permission: ['assets.*'],
   },
   {
     name: 'Extensions',
@@ -126,7 +135,7 @@ const routes: AdminRouteDefinition[] = [
   },
   {
     name: 'Mounts',
-    icon: faFolder,
+    icon: faFolderTree,
     path: '/mounts/*',
     element: AdminMounts,
     permission: ['mounts.*'],

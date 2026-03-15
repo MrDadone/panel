@@ -1,9 +1,11 @@
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { roleSchema } from '@/lib/schemas/user.ts';
 
-export default function RoleRow({ role }: { role: Role }) {
+export default function RoleRow({ role }: { role: z.infer<typeof roleSchema> }) {
   return (
     <TableRow>
       <TableData>

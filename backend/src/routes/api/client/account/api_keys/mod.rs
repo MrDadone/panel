@@ -82,34 +82,37 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
         models::{
+            CreatableModel,
             user::{AuthMethod, GetAuthMethod, GetPermissionManager, GetUser},
             user_activity::GetUserActivityLogger,
-            user_api_key::UserApiKey,
+            user_api_key::{CreateUserApiKeyOptions, UserApiKey},
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(length(min = 3, max = 31))]
+        #[garde(length(chars, min = 3, max = 31))]
         #[schema(min_length = 3, max_length = 31)]
         name: compact_str::CompactString,
+        #[garde(skip)]
         #[schema(value_type = Vec<String>)]
         allowed_ips: Vec<sqlx::types::ipnetwork::IpNetwork>,
 
-        #[validate(custom(function = "shared::permissions::validate_user_permissions"))]
+        #[garde(custom(shared::permissions::validate_user_permissions))]
         user_permissions: Vec<compact_str::CompactString>,
-        #[validate(custom(function = "shared::permissions::validate_admin_permissions"))]
+        #[garde(custom(shared::permissions::validate_admin_permissions))]
         admin_permissions: Vec<compact_str::CompactString>,
-        #[validate(custom(function = "shared::permissions::validate_server_permissions"))]
+        #[garde(custom(shared::permissions::validate_server_permissions))]
         server_permissions: Vec<compact_str::CompactString>,
 
+        #[garde(inner(custom(shared::utils::validate_time_in_future)))]
         expires: Option<chrono::DateTime<chrono::Utc>>,
     }
 
@@ -133,12 +136,6 @@ mod post {
         activity_logger: GetUserActivityLogger,
         shared::Payload(data): shared::Payload<Payload>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_user_permission("api-keys.create")?;
 
         if let AuthMethod::ApiKey(api_key) = &*auth
@@ -160,31 +157,23 @@ mod post {
                 .ok();
         }
 
-        let (key, api_key) = match UserApiKey::create(
-            &state.database,
-            user.uuid,
-            &data.name,
-            &data.allowed_ips,
-            &data.user_permissions,
-            &data.admin_permissions,
-            &data.server_permissions,
-            data.expires.map(|dt| dt.naive_utc()),
-        )
-        .await
-        {
-            Ok(api_key) => api_key,
+        let options = CreateUserApiKeyOptions {
+            user_uuid: user.uuid,
+            name: data.name,
+            allowed_ips: data.allowed_ips,
+            user_permissions: data.user_permissions,
+            admin_permissions: data.admin_permissions,
+            server_permissions: data.server_permissions,
+            expires: data.expires,
+        };
+        let (key, api_key) = match UserApiKey::create(&state, options).await {
+            Ok(result) => result,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("api key with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create api key: {:?}", err);
-
-                return ApiResponse::error("failed to create api key")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

@@ -1,11 +1,14 @@
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { getTranslations } from '@/providers/TranslationProvider.tsx';
 
 export function copyToClipboard(text: string) {
   if (!window.isSecureContext) {
     const textArea = document.createElement('textarea');
     textArea.value = text;
-    textArea.style.position = 'absolute';
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
     textArea.style.left = '-999999px';
+    textArea.style.opacity = '0';
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
@@ -14,7 +17,7 @@ export function copyToClipboard(text: string) {
       document.execCommand('copy') ? resolve() : reject();
       textArea.remove();
     }).catch(() => {
-      const successful = window.prompt('Copy to clipboard: Ctrl+C or Command+C, Enter', text);
+      const successful = window.prompt(getTranslations().t('elements.copyOnClick.toast.copyManual', {}), text);
       if (successful === null) {
         return Promise.reject();
       }
@@ -30,11 +33,11 @@ export function handleCopyToClipboard(text: string, addToast?: ReturnType<typeof
 
     copyToClipboard(text)
       .then(() => {
-        addToast?.('Copied to clipboard');
+        addToast?.(getTranslations().t('elements.copyOnClick.toast.copied', {}), 'success');
       })
       .catch((err) => {
         console.error(err);
-        addToast?.('Failed to copy to clipboard.', 'error');
+        addToast?.(getTranslations().t('elements.copyOnClick.toast.failed', {}), 'error');
       });
   };
 }

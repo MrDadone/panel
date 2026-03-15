@@ -1,24 +1,22 @@
-import { faArrowUpRightFromSquare, faCancel, faGraduationCap, faServer } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowUpRightFromSquare, faGraduationCap, faServer } from '@fortawesome/free-solid-svg-icons';
 import { Suspense, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useParams } from 'react-router';
 import { httpErrorToHuman } from '@/api/axios.ts';
+import getEggCommandSnippets from '@/api/me/servers/eggs/getEggCommandSnippets.ts';
 import getServer from '@/api/server/getServer.ts';
-import cancelServerInstall from '@/api/server/settings/cancelServerInstall.ts';
-import Button from '@/elements/Button.tsx';
 import { ServerCan } from '@/elements/Can.tsx';
 import Container from '@/elements/Container.tsx';
-import Notification from '@/elements/Notification.tsx';
-import Progress from '@/elements/Progress.tsx';
+import ServerContentContainer from '@/elements/containers/ServerContentContainer.tsx';
+import ScreenBlock from '@/elements/ScreenBlock.tsx';
 import ServerStatusIndicator from '@/elements/ServerStatusIndicator.tsx';
 import ServerSwitcher from '@/elements/ServerSwitcher.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { isAdmin } from '@/lib/permissions.ts';
 import { to } from '@/lib/routes.ts';
-import NotFound from '@/pages/NotFound.tsx';
 import WebsocketHandler from '@/pages/server/WebsocketHandler.tsx';
 import WebsocketListener from '@/pages/server/WebsocketListener.tsx';
+import WebsocketStatusBanner from '@/pages/server/WebsocketStatusBanner.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -26,20 +24,21 @@ import ServerPermissionGuard from '@/routers/guards/ServerPermissionGuard.tsx';
 import serverRoutes from '@/routers/routes/serverRoutes.ts';
 import { useGlobalStore } from '@/stores/global.ts';
 import { useServerStore } from '@/stores/server.ts';
+import ServerStateGuard from './guards/ServerStateGuard.tsx';
 
 export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
   const { t } = useTranslations();
   const { settings } = useGlobalStore();
-  const { addToast } = useToast();
   const { user } = useAuth();
+  const { addToast } = useToast();
 
   const params = useParams<'id'>();
   const [loading, setLoading] = useState(true);
-  const [abortLoading, setAbortLoading] = useState(false);
 
-  const { server, updateServer, backupRestoreProgress, setSocketInstance } = useServerStore();
+  const { server, setSocketInstance } = useServerStore();
   const resetState = useServerStore((state) => state.reset);
   const setServer = useServerStore((state) => state.setServer);
+  const setCommandSnippets = useServerStore((state) => state.setCommandSnippets);
 
   useEffect(() => {
     return () => {
@@ -48,35 +47,27 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
   }, []);
 
   useEffect(() => {
-    if (!server?.status && abortLoading) {
-      addToast(t('pages.server.console.toast.installCancelled', {}), 'success');
-      setAbortLoading(false);
-    }
-  }, [abortLoading, server?.status]);
-
-  useEffect(() => {
     if (params.id) {
       setLoading(true);
       getServer(params.id)
         .then((data) => {
           setSocketInstance(null);
           setServer(data);
+
+          getEggCommandSnippets(data.egg.uuid)
+            .then((snippets) => {
+              setCommandSnippets(snippets);
+            })
+            .catch((error) => {
+              addToast(httpErrorToHuman(error), 'error');
+            });
+        })
+        .catch((error) => {
+          addToast(httpErrorToHuman(error), 'error');
         })
         .finally(() => setLoading(false));
     }
   }, [params.id]);
-
-  const doAbortInstall = () => {
-    setAbortLoading(true);
-
-    cancelServerInstall(server.uuid)
-      .then((instantCancel) => {
-        if (instantCancel) {
-          updateServer({ status: null });
-        }
-      })
-      .catch((err) => addToast(httpErrorToHuman(err), 'error'));
-  };
 
   return (
     <div className='lg:flex h-full'>
@@ -84,13 +75,12 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
         <Sidebar>
           <NavLink to='/' className='w-full'>
             <div className='h-16 w-full flex flex-row items-center justify-between mt-1 select-none cursor-pointer'>
-              <img src='/icon.svg' className='h-12 w-12' alt='Calagopus Icon' />
+              <img src={settings.app.icon} className='h-12 w-12' alt='Calagopus Icon' />
               <h1 className='grow text-md font-bold! ml-2'>{settings.app.name}</h1>
             </div>
           </NavLink>
 
           <div className='flex flex-col gap-2 mt-2 mb-1'>
-            <ServerSwitcher />
             <ServerStatusIndicator />
           </div>
 
@@ -133,8 +123,10 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
                 />
               ),
             )}
-
-          <Sidebar.Footer />
+          <div className='mt-auto pt-4'>
+            <ServerSwitcher isServer className='mb-2' />
+            <Sidebar.Footer />
+          </div>
         </Sidebar>
       )}
 
@@ -149,42 +141,31 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
               {window.extensionContext.extensionRegistry.pages.server.prependedComponents.map((Component, i) => (
                 <Component key={`server-prepended-component-${i}`} />
               ))}
-              {server.status === 'restoring_backup' ? (
-                <div className='pt-2 px-12'>
-                  <Notification loading>
-                    {t('pages.server.console.notification.restoringBackup', {})}
-                    <Progress value={backupRestoreProgress} />
-                  </Notification>
-                </div>
-              ) : server.status === 'installing' ? (
-                <div className='pt-2 px-12'>
-                  <Notification loading>
-                    {t('pages.server.console.notification.installing', {})}
-                    <ServerCan action='settings.cancel-install'>
-                      <Button
-                        className='ml-2'
-                        leftSection={<FontAwesomeIcon icon={faCancel} />}
-                        variant='subtle'
-                        loading={abortLoading}
-                        onClick={doAbortInstall}
-                      >
-                        {t('common.button.cancel', {})}
-                      </Button>
-                    </ServerCan>
-                  </Notification>
-                </div>
-              ) : null}
+
+              <WebsocketStatusBanner />
 
               <Suspense fallback={<Spinner.Centered />}>
                 <Routes>
-                  {[...serverRoutes, ...window.extensionContext.extensionRegistry.routes.serverRoutes]
-                    .filter((route) => !route.filter || route.filter())
-                    .map(({ path, element: Element, permission }) => (
-                      <Route key={path} element={<ServerPermissionGuard permission={permission ?? []} />}>
-                        <Route path={path} element={<Element />} />
-                      </Route>
-                    ))}
-                  <Route path='*' element={<NotFound />} />
+                  <Route element={<ServerStateGuard />}>
+                    {[...serverRoutes, ...window.extensionContext.extensionRegistry.routes.serverRoutes]
+                      .filter((route) => !route.filter || route.filter())
+                      .map(({ path, element: Element, permission }) => (
+                        <Route key={path} element={<ServerPermissionGuard permission={permission ?? []} />}>
+                          <Route path={path} element={<Element />} />
+                        </Route>
+                      ))}
+                  </Route>
+                  <Route
+                    path='*'
+                    element={
+                      <ServerContentContainer title={t('elements.screenBlock.notFound.title', {})} hideTitleComponent>
+                        <ScreenBlock
+                          title={t('elements.screenBlock.notFound.title', {})}
+                          content={t('elements.screenBlock.notFound.content', {})}
+                        />
+                      </ServerContentContainer>
+                    }
+                  />
                 </Routes>
               </Suspense>
 
@@ -193,7 +174,12 @@ export default function ServerRouter({ isNormal }: { isNormal: boolean }) {
               ))}
             </>
           ) : (
-            <NotFound />
+            <ServerContentContainer title={t('elements.screenBlock.notFound.title', {})} hideTitleComponent>
+              <ScreenBlock
+                title={t('elements.screenBlock.notFound.title', {})}
+                content={t('elements.screenBlock.notFound.content', {})}
+              />
+            </ServerContentContainer>
           )}
         </Container>
       </div>

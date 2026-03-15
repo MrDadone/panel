@@ -1,5 +1,6 @@
 import { Group } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import getUserActivity from '@/api/admin/users/getUserActivity.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import ActivityInfoButton from '@/elements/activity/ActivityInfoButton.tsx';
@@ -7,10 +8,14 @@ import Code from '@/elements/Code.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table, { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { userActivitySchema } from '@/lib/schemas/user/activity.ts';
+import { fullUserSchema } from '@/lib/schemas/user.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 
-export default function AdminUserActivity({ user }: { user: User }) {
-  const [userActivity, setUserActivity] = useState<ResponseMeta<UserActivity>>(getEmptyPaginationSet());
+export default function AdminUserActivity({ user }: { user: z.infer<typeof fullUserSchema> }) {
+  const [userActivity, setUserActivity] = useState<Pagination<z.infer<typeof userActivitySchema>>>(
+    getEmptyPaginationSet(),
+  );
 
   const { loading, search, setSearch, setPage } = useSearchablePaginatedTable({
     fetcher: (page, search) => getUserActivity(user.uuid, page, search),

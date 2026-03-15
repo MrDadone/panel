@@ -30,7 +30,7 @@ impl EventHandlerHandle {
 }
 
 #[async_trait::async_trait]
-trait DisconnectEventHandler {
+pub(crate) trait DisconnectEventHandler {
     async fn disconnect(&self, id: uuid::Uuid);
     fn blocking_disconnect(&self, id: uuid::Uuid);
 }

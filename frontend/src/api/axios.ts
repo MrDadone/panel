@@ -7,10 +7,16 @@ export const axiosInstance: AxiosInstance = axios.create({
   },
 });
 
+axiosInstance.interceptors.request.use((request) => {
+  request.headers.set('Calagopus-User', localStorage.getItem('impersonatedUser'));
+
+  return request;
+});
+
 // Auto transform all data to camel case keys
 axiosInstance.interceptors.response.use(
   (response) => {
-    if (!response.request.responseURL.endsWith('/export')) {
+    if (response.headers['content-type'] === 'application/json' && !response.request.responseURL.endsWith('/export')) {
       response.data = transformKeysToCamelCase(response.data);
     }
 
@@ -69,7 +75,7 @@ export function httpErrorToHuman(error: unknown): string {
   }
 }
 
-export function getPaginationSet(data: ResponseMeta<unknown>) {
+export function getPaginationSet(data: Pagination<unknown>) {
   return {
     total: data.total,
     perPage: data.perPage,
@@ -77,7 +83,7 @@ export function getPaginationSet(data: ResponseMeta<unknown>) {
   };
 }
 
-export function getEmptyPaginationSet<T>(): ResponseMeta<T> {
+export function getEmptyPaginationSet<T>(): Pagination<T> {
   return {
     total: 0,
     perPage: 0,

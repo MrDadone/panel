@@ -1,6 +1,6 @@
 import { faShieldAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Grid } from '@mantine/core';
+import { Title } from '@mantine/core';
 import Alert from '@/elements/Alert.tsx';
 import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
@@ -12,17 +12,24 @@ import PasswordContainer from './PasswordContainer.tsx';
 import TwoFactorContainer from './TwoFactorContainer.tsx';
 
 export interface AccountCardProps {
-  blurred?: boolean;
+  requireTwoFactorActivation?: boolean;
 }
 
 export default function DashboardAccount() {
   const { t } = useTranslations();
   const { user } = useAuth();
 
-  const requireTwoFactorActivation = !user?.totpEnabled && user?.requireTwoFactor;
+  const requireTwoFactorActivation = Boolean(!user?.totpEnabled && user?.requireTwoFactor);
 
   return (
-    <AccountContentContainer title={t('pages.account.account.title', {})}>
+    <AccountContentContainer
+      title={t('pages.account.account.title', {})}
+      registry={window.extensionContext.extensionRegistry.pages.dashboard.account.container}
+    >
+      <Title order={1} c='white'>
+        {t('pages.account.account.title', {})}
+      </Title>
+
       {requireTwoFactorActivation && (
         <Alert
           icon={<FontAwesomeIcon icon={faShieldAlt} />}
@@ -34,13 +41,31 @@ export default function DashboardAccount() {
         </Alert>
       )}
 
-      <Grid grow>
-        <PasswordContainer blurred={requireTwoFactorActivation} />
-        <EmailContainer blurred={requireTwoFactorActivation} />
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+        {window.extensionContext.extensionRegistry.pages.dashboard.account.accountContainers.prependedComponents.map(
+          (Component, i) => (
+            <Component
+              key={`account-accountContainer-prepended-${i}`}
+              requireTwoFactorActivation={requireTwoFactorActivation}
+            />
+          ),
+        )}
+
+        <PasswordContainer requireTwoFactorActivation={requireTwoFactorActivation} />
+        <EmailContainer requireTwoFactorActivation={requireTwoFactorActivation} />
         <TwoFactorContainer />
-        <AccountContainer blurred={requireTwoFactorActivation} />
-        <AvatarContainer blurred={requireTwoFactorActivation} />
-      </Grid>
+        <AccountContainer requireTwoFactorActivation={requireTwoFactorActivation} />
+        <AvatarContainer requireTwoFactorActivation={requireTwoFactorActivation} />
+
+        {window.extensionContext.extensionRegistry.pages.dashboard.account.accountContainers.appendedComponents.map(
+          (Component, i) => (
+            <Component
+              key={`account-accountContainer-appended-${i}`}
+              requireTwoFactorActivation={requireTwoFactorActivation}
+            />
+          ),
+        )}
+      </div>
     </AccountContentContainer>
   );
 }

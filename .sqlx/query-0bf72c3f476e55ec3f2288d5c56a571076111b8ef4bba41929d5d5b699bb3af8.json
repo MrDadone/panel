@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT server_allocations.uuid FROM server_allocations\n                    JOIN node_allocations ON node_allocations.uuid = server_allocations.allocation_uuid\n                    WHERE server_allocations.server_uuid = $1 AND node_allocations.node_uuid != $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "uuid",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "0bf72c3f476e55ec3f2288d5c56a571076111b8ef4bba41929d5d5b699bb3af8"
+}

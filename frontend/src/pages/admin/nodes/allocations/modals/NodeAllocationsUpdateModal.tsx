@@ -1,10 +1,12 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useEffect, useMemo, useState } from 'react';
+import { z } from 'zod';
 import updateNodeAllocations from '@/api/admin/nodes/allocations/updateNodeAllocations.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
 
@@ -13,14 +15,14 @@ export default function NodeAllocationsUpdateModal({
   loadAllocations,
   opened,
   onClose,
-}: ModalProps & { node: Node; loadAllocations: () => void }) {
+}: ModalProps & { node: z.infer<typeof adminNodeSchema>; loadAllocations: () => void }) {
   const { addToast } = useToast();
   const { selectedNodeAllocations, setSelectedNodeAllocations } = useAdminStore();
 
   const mostCommonIp = useMemo(() => {
     const ipCounts = new Map<string, number>();
 
-    for (const allocation of selectedNodeAllocations) {
+    for (const allocation of selectedNodeAllocations.values()) {
       if (ipCounts.get(allocation.ip)) {
         ipCounts.set(allocation.ip, ipCounts.get(allocation.ip)! + 1);
       } else {
@@ -44,7 +46,7 @@ export default function NodeAllocationsUpdateModal({
   const mostCommonIpAlias = useMemo(() => {
     const ipAliasCounts = new Map<string, number>();
 
-    for (const allocation of selectedNodeAllocations) {
+    for (const allocation of selectedNodeAllocations.values()) {
       if (!allocation.ipAlias) {
         continue;
       }
@@ -117,14 +119,14 @@ export default function NodeAllocationsUpdateModal({
           onChange={(e) => setIpAlias(e.target.value)}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doUpdate} loading={loading} disabled={!ip}>
             Update
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

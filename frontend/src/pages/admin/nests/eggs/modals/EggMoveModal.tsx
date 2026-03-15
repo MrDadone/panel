@@ -1,12 +1,15 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import moveEgg from '@/api/admin/nests/eggs/moveEgg.ts';
 import getNests from '@/api/admin/nests/getNests.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { adminEggSchema } from '@/lib/schemas/admin/eggs.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
@@ -15,14 +18,14 @@ export default function EggMoveModal({
   egg,
   opened,
   onClose,
-}: ModalProps & { nest: AdminNest; egg: AdminNestEgg }) {
+}: ModalProps & { nest: z.infer<typeof adminNestSchema>; egg: z.infer<typeof adminEggSchema> }) {
   const { addToast } = useToast();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
-  const [selectedNest, setSelectedNest] = useState<AdminNest | null>(null);
+  const [selectedNest, setSelectedNest] = useState<z.infer<typeof adminNestSchema> | null>(null);
 
-  const nests = useSearchableResource<AdminNest>({ fetcher: (search) => getNests(1, search) });
+  const nests = useSearchableResource<z.infer<typeof adminNestSchema>>({ fetcher: (search) => getNests(1, search) });
 
   const doMove = () => {
     if (!selectedNest) {
@@ -62,14 +65,14 @@ export default function EggMoveModal({
           onSearchChange={nests.setSearch}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doMove} loading={loading} disabled={!selectedNest}>
             Move
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

@@ -1,39 +1,43 @@
+import { z } from 'zod';
 import { StateCreator } from 'zustand';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
+import { ObjectSet } from '@/lib/objectSet.ts';
+import { adminNodeAllocationSchema, adminNodeMountSchema, adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { adminServerBackupSchema } from '@/lib/schemas/admin/servers.ts';
 import { AdminStore } from '@/stores/admin.tsx';
 
 export interface NodesSlice {
-  nodes: ResponseMeta<Node>;
-  nodeMounts: ResponseMeta<NodeMount>;
-  nodeBackups: ResponseMeta<AdminServerBackup>;
-  nodeAllocations: ResponseMeta<NodeAllocation>;
-  selectedNodeAllocations: NodeAllocation[];
+  nodes: Pagination<z.infer<typeof adminNodeSchema>>;
+  nodeMounts: Pagination<z.infer<typeof adminNodeMountSchema>>;
+  nodeBackups: Pagination<z.infer<typeof adminServerBackupSchema>>;
+  nodeAllocations: Pagination<z.infer<typeof adminNodeAllocationSchema>>;
+  selectedNodeAllocations: ObjectSet<z.infer<typeof adminNodeAllocationSchema>, 'uuid'>;
 
-  setNodes: (nodes: ResponseMeta<Node>) => void;
-  addNode: (node: Node) => void;
-  removeNode: (node: Node) => void;
+  setNodes: (nodes: Pagination<z.infer<typeof adminNodeSchema>>) => void;
+  addNode: (node: z.infer<typeof adminNodeSchema>) => void;
+  removeNode: (node: z.infer<typeof adminNodeSchema>) => void;
 
-  setNodeMounts: (mounts: ResponseMeta<NodeMount>) => void;
-  addNodeMount: (mount: NodeMount) => void;
-  removeNodeMount: (mount: NodeMount) => void;
+  setNodeMounts: (mounts: Pagination<z.infer<typeof adminNodeMountSchema>>) => void;
+  addNodeMount: (mount: z.infer<typeof adminNodeMountSchema>) => void;
+  removeNodeMount: (mount: z.infer<typeof adminNodeMountSchema>) => void;
 
-  setNodeBackups: (backups: ResponseMeta<AdminServerBackup>) => void;
-  removeNodeBackup: (backup: AdminServerBackup) => void;
+  setNodeBackups: (backups: Pagination<z.infer<typeof adminServerBackupSchema>>) => void;
+  removeNodeBackup: (backup: z.infer<typeof adminServerBackupSchema>) => void;
 
-  setNodeAllocations: (allocations: ResponseMeta<NodeAllocation>) => void;
-  removeNodeAllocations: (allocations: NodeAllocation[]) => void;
+  setNodeAllocations: (allocations: Pagination<z.infer<typeof adminNodeAllocationSchema>>) => void;
+  removeNodeAllocations: (allocations: z.infer<typeof adminNodeAllocationSchema>[]) => void;
 
-  setSelectedNodeAllocations: (allocations: NodeAllocation[]) => void;
-  addSelectedNodeAllocation: (allocation: NodeAllocation) => void;
-  removeSelectedNodeAllocation: (allocation: NodeAllocation) => void;
+  setSelectedNodeAllocations: (allocations: z.infer<typeof adminNodeAllocationSchema>[]) => void;
+  addSelectedNodeAllocation: (allocation: z.infer<typeof adminNodeAllocationSchema>) => void;
+  removeSelectedNodeAllocation: (allocation: z.infer<typeof adminNodeAllocationSchema>) => void;
 }
 
 export const createNodesSlice: StateCreator<AdminStore, [], [], NodesSlice> = (set, get): NodesSlice => ({
-  nodes: getEmptyPaginationSet<Node>(),
-  nodeMounts: getEmptyPaginationSet<NodeMount>(),
-  nodeBackups: getEmptyPaginationSet<AdminServerBackup>(),
-  nodeAllocations: getEmptyPaginationSet<NodeAllocation>(),
-  selectedNodeAllocations: [],
+  nodes: getEmptyPaginationSet<z.infer<typeof adminNodeSchema>>(),
+  nodeMounts: getEmptyPaginationSet<z.infer<typeof adminNodeMountSchema>>(),
+  nodeBackups: getEmptyPaginationSet<z.infer<typeof adminServerBackupSchema>>(),
+  nodeAllocations: getEmptyPaginationSet<z.infer<typeof adminNodeAllocationSchema>>(),
+  selectedNodeAllocations: new ObjectSet('uuid'),
 
   setNodes: (value) => set((state) => ({ ...state, nodes: value })),
   addNode: (node) =>
@@ -91,17 +95,18 @@ export const createNodesSlice: StateCreator<AdminStore, [], [], NodesSlice> = (s
       },
     })),
 
-  setSelectedNodeAllocations: (value) => set((state) => ({ ...state, selectedNodeAllocations: value })),
+  setSelectedNodeAllocations: (value) =>
+    set((state) => ({ ...state, selectedNodeAllocations: new ObjectSet('uuid', value) })),
   addSelectedNodeAllocation: (value) =>
     set((state) => {
-      if (state.selectedNodeAllocations.every((a) => a.uuid !== value.uuid)) {
-        return { ...state, selectedNodeAllocations: [...state.selectedNodeAllocations, value] };
-      }
-
-      return { ...state };
+      const next = new ObjectSet('uuid', state.selectedNodeAllocations.values());
+      next.add(value);
+      return { ...state, selectedNodeAllocations: next };
     }),
   removeSelectedNodeAllocation: (value) =>
     set((state) => {
-      return { ...state, selectedNodeAllocations: state.selectedNodeAllocations.filter((a) => a.uuid !== value.uuid) };
+      const next = new ObjectSet('uuid', state.selectedNodeAllocations.values());
+      next.delete(value);
+      return { ...state, selectedNodeAllocations: next };
     }),
 });

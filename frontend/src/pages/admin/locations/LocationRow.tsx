@@ -1,9 +1,11 @@
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
 
-export default ({ location }: { location: Location }) => {
+export default ({ location }: { location: z.infer<typeof adminLocationSchema> }) => {
   return (
     <TableRow>
       <TableData>

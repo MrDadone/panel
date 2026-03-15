@@ -49,7 +49,7 @@ export default function ForgotPassword() {
 
   return (
     <AuthWrapper>
-      <Stack>
+      <div className='flex flex-col space-y-4 mb-4 w-full'>
         {error && (
           <Alert
             icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
@@ -72,16 +72,18 @@ export default function ForgotPassword() {
             {success}
           </Alert>
         )}
+      </div>
+
+      <Stack className='w-full'>
+        <div>
+          <Title order={2}>Forgot Password</Title>
+          <Text className='text-neutral-400!'>
+            Enter your email to receive instructions on how to reset your password
+          </Text>
+        </div>
 
         <Card>
           <Stack>
-            <Title order={2} ta='center'>
-              Forgot Password
-            </Title>
-            <Text c='dimmed' ta='center'>
-              Enter your email to receive instructions on how to reset your password
-            </Text>
-
             <TextInput placeholder='Email' {...form.getInputProps('email')} />
             <Captcha ref={captchaRef} />
 

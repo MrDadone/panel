@@ -57,11 +57,11 @@ impl shared::extensions::commands::CliCommand<MigrateArgs> for MigrateCommand {
                             "please setup the panel environment before using this tool.".red()
                         );
 
-                        std::process::exit(1);
+                        return Ok(1);
                     }
                 };
 
-                let cache = Arc::new(shared::cache::Cache::new(&env).await);
+                let cache = shared::cache::Cache::new(&env).await;
                 let database = Arc::new(shared::database::Database::new(&env, cache.clone()).await);
 
                 crate::ensure_migrations_table(database.write()).await?;
@@ -82,7 +82,7 @@ impl shared::extensions::commands::CliCommand<MigrateArgs> for MigrateCommand {
                             tracing::error!(
                                 "failed to find live migrations folder, expected one of: ./migrations, ./database/migrations, ../database/migrations"
                             );
-                            std::process::exit(1);
+                            return Ok(1);
                         }
                     };
 
@@ -137,7 +137,7 @@ impl shared::extensions::commands::CliCommand<MigrateArgs> for MigrateCommand {
                             crate::mark_migration_as_applied(database.write(), &migration).await?;
                         } else {
                             eprintln!("{}: {}", "failed to apply migration".red(), err);
-                            std::process::exit(1);
+                            return Ok(1);
                         }
                     }
 
@@ -149,7 +149,7 @@ impl shared::extensions::commands::CliCommand<MigrateArgs> for MigrateCommand {
 
                 tracing::info!("applied {} new migrations.", ran_migrations);
 
-                Ok(())
+                Ok(0)
             })
         })
     }

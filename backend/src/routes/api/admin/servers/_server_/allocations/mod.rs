@@ -155,13 +155,7 @@ mod post {
             Ok(allocation_uuid) => ServerAllocation::by_uuid(&state.database, allocation_uuid)
                 .await?
                 .ok_or_else(|| anyhow::anyhow!("allocation not found after creation"))?,
-            Err(err) => {
-                tracing::error!(server = %server.uuid, "failed to create allocation: {:?}", err);
-
-                return ApiResponse::error("failed to create allocation")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

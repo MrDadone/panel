@@ -1,6 +1,6 @@
 import { faClock } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Grid, Group, Stack, Text } from '@mantine/core';
+import { Group, Stack, Text } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useState } from 'react';
@@ -24,7 +24,7 @@ const timezones = Object.keys(zones)
   }));
 
 export default function TimezoneContainer() {
-  const { t } = useTranslations();
+  const { t, language } = useTranslations();
   const { addToast } = useToast();
   const server = useServerStore((state) => state.server);
 
@@ -33,7 +33,7 @@ export default function TimezoneContainer() {
 
   const form = useForm<z.infer<typeof serverSettingsTimezoneSchema>>({
     initialValues: {
-      timezone: server.timezone ?? '',
+      timezone: server.timezone ?? null,
     },
     validateInputOnBlur: true,
     validate: zod4Resolver(serverSettingsTimezoneSchema),
@@ -53,10 +53,10 @@ export default function TimezoneContainer() {
 
   useEffect(() => {
     if (form.values.timezone) {
-      setTime(new Date().toLocaleString('en-US', { timeZone: form.values.timezone }));
+      setTime(new Date().toLocaleString(language, { timeZone: form.values.timezone }));
 
       const interval = setInterval(() => {
-        setTime(new Date().toLocaleString('en-US', { timeZone: form.values.timezone! }));
+        setTime(new Date().toLocaleString(language, { timeZone: form.values.timezone! }));
       }, 1000);
 
       return () => clearInterval(interval);
@@ -64,39 +64,34 @@ export default function TimezoneContainer() {
   }, [form.values.timezone]);
 
   return (
-    <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-      <TitleCard
-        title={t('pages.server.settings.timezone.title', {})}
-        icon={<FontAwesomeIcon icon={faClock} />}
-        className='h-full'
-      >
-        <form onSubmit={form.onSubmit(() => doUpdate())}>
-          <Stack>
-            <Stack gap='xs'>
-              <Select
-                withAsterisk
-                label={t('pages.server.settings.timezone.form.timezone', {})}
-                data={[
-                  {
-                    label: t('pages.server.settings.timezone.form.system', {}),
-                    value: '',
-                  },
-                  ...timezones,
-                ]}
-                searchable
-                {...form.getInputProps('timezone')}
-              />
-              <Text>{time}</Text>
-            </Stack>
-
-            <Group mt='auto'>
-              <Button type='submit' loading={loading} disabled={!form.isValid()}>
-                {t('common.button.save', {})}
-              </Button>
-            </Group>
+    <TitleCard
+      title={t('pages.server.settings.timezone.title', {})}
+      icon={<FontAwesomeIcon icon={faClock} />}
+      className='h-full order-40'
+    >
+      <form onSubmit={form.onSubmit(() => doUpdate())}>
+        <Stack>
+          <Stack gap='xs'>
+            <Select
+              withAsterisk
+              label={t('pages.server.settings.timezone.form.timezone', {})}
+              placeholder={t('pages.server.settings.timezone.form.system', {})}
+              data={timezones}
+              allowDeselect
+              clearable
+              searchable
+              {...form.getInputProps('timezone')}
+            />
+            <Text>{time}</Text>
           </Stack>
-        </form>
-      </TitleCard>
-    </Grid.Col>
+
+          <Group mt='auto'>
+            <Button type='submit' loading={loading} disabled={!form.isValid()}>
+              {t('common.button.save', {})}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </TitleCard>
   );
 }

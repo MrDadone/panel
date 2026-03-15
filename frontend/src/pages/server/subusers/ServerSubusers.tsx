@@ -61,6 +61,7 @@ export default function ServerSubusers() {
           </Button>
         </ServerCan>
       }
+      registry={window.extensionContext.extensionRegistry.pages.server.subusers.container}
     >
       <SubuserCreateOrUpdateModal
         onCreate={doCreate}

@@ -8,7 +8,7 @@ mod post {
         ApiError, GetState,
         models::{
             server::{GetServer, GetServerActivityLogger},
-            user::GetPermissionManager,
+            user::{GetPermissionManager, GetUser},
         },
         response::{ApiResponse, ApiResponseResult},
     };
@@ -31,13 +31,27 @@ mod post {
     ))]
     pub async fn route(
         state: GetState,
+        user: GetUser,
         permissions: GetPermissionManager,
         server: GetServer,
         activity_logger: GetServerActivityLogger,
     ) -> ApiResponseResult {
         permissions.has_server_permission("settings.cancel-install")?;
 
-        if server.status != Some(shared::models::server::ServerStatus::Installing) {
+        if server.status == Some(shared::models::server::ServerStatus::InstallFailed) {
+            if !state
+                .settings
+                .get()
+                .await?
+                .server
+                .allow_acknowledging_installation_failure
+                && !user.admin
+            {
+                return ApiResponse::error("acknowledging installation failure is not allowed")
+                    .with_status(StatusCode::FORBIDDEN)
+                    .ok();
+            }
+        } else if server.status != Some(shared::models::server::ServerStatus::Installing) {
             return ApiResponse::error("server is not installing")
                 .with_status(StatusCode::CONFLICT)
                 .ok();
@@ -48,6 +62,7 @@ mod post {
             .fetch_cached(&state.database)
             .await?
             .api_client(&state.database)
+            .await?
             .post_servers_server_install_abort(server.uuid)
             .await
         {

@@ -2,7 +2,7 @@ use anyhow::Context;
 use axum::{extract::ConnectInfo, http::HeaderMap};
 use colored::Colorize;
 use dotenvy::dotenv;
-use std::sync::Arc;
+use std::sync::{Arc, atomic::AtomicBool};
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 
 #[derive(Clone)]
@@ -30,7 +30,6 @@ pub struct EnvGuard(
     pub tracing_appender::non_blocking::WorkerGuard,
 );
 
-#[derive(Clone)]
 pub struct Env {
     pub redis_mode: RedisMode,
 
@@ -43,7 +42,7 @@ pub struct Env {
     pub port: u16,
 
     pub app_primary: bool,
-    pub app_debug: bool,
+    pub app_debug: AtomicBool,
     pub app_use_decryption_cache: bool,
     pub app_use_internal_cache: bool,
     pub app_trusted_proxies: Vec<cidr::IpCidr>,
@@ -116,11 +115,13 @@ impl Env {
                 .trim_matches('"')
                 .parse()
                 .context("Invalid APP_DEBUG value")?,
-            app_debug: std::env::var("APP_DEBUG")
-                .unwrap_or("false".to_string())
-                .trim_matches('"')
-                .parse()
-                .context("Invalid APP_DEBUG value")?,
+            app_debug: AtomicBool::new(
+                std::env::var("APP_DEBUG")
+                    .unwrap_or("false".to_string())
+                    .trim_matches('"')
+                    .parse()
+                    .context("Invalid APP_DEBUG value")?,
+            ),
             app_use_decryption_cache: std::env::var("APP_USE_DECRYPTION_CACHE")
                 .unwrap_or("false".to_string())
                 .trim_matches('"')
@@ -197,7 +198,7 @@ impl Env {
                     .with_level(true)
                     .with_file(true)
                     .with_line_number(true)
-                    .with_max_level(if env.app_debug {
+                    .with_max_level(if env.is_debug() {
                         tracing::Level::DEBUG
                     } else {
                         tracing::Level::INFO
@@ -207,13 +208,15 @@ impl Env {
         } else {
             tracing::subscriber::set_global_default(
                 tracing_subscriber::fmt()
-                    .with_timer(tracing_subscriber::fmt::time::ChronoLocal::rfc_3339())
+                    .with_timer(tracing_subscriber::fmt::time::ChronoLocal::new(
+                        "%Y-%m-%d %H:%M:%S %z".to_string(),
+                    ))
                     .with_writer(stdout_writer)
                     .with_target(false)
                     .with_level(true)
                     .with_file(true)
                     .with_line_number(true)
-                    .with_max_level(if env.app_debug {
+                    .with_max_level(if env.is_debug() {
                         tracing::Level::DEBUG
                     } else {
                         tracing::Level::INFO
@@ -249,5 +252,10 @@ impl Env {
         }
 
         connect_info.ip()
+    }
+
+    #[inline]
+    pub fn is_debug(&self) -> bool {
+        self.app_debug.load(std::sync::atomic::Ordering::Relaxed)
     }
 }

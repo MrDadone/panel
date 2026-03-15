@@ -1,14 +1,20 @@
-use crate::{prelude::*, storage::StorageUrlRetriever};
+use crate::{models::InsertQueryBuilder, prelude::*, storage::StorageUrlRetriever};
+use compact_str::ToCompactString;
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, LazyLock},
+};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize)]
 pub struct ServerActivity {
     pub user: Option<super::user::User>,
-    pub api_key_uuid: Option<uuid::Uuid>,
-    pub schedule_uuid: Option<uuid::Uuid>,
+    pub impersonator: Option<Fetchable<super::user::User>>,
+    pub api_key: Option<Fetchable<super::user_api_key::UserApiKey>>,
+    pub schedule: Option<Fetchable<super::server_schedule::ServerSchedule>>,
 
     pub event: compact_str::CompactString,
     pub ip: Option<sqlx::types::ipnetwork::IpNetwork>,
@@ -25,6 +31,10 @@ impl BaseModel for ServerActivity {
         let prefix = prefix.unwrap_or_default();
 
         let mut columns = BTreeMap::from([
+            (
+                "server_activities.impersonator_uuid",
+                compact_str::format_compact!("{prefix}impersonator_uuid"),
+            ),
             (
                 "server_activities.api_key_uuid",
                 compact_str::format_compact!("{prefix}api_key_uuid"),
@@ -69,10 +79,18 @@ impl BaseModel for ServerActivity {
             } else {
                 None
             },
-            api_key_uuid: row
-                .try_get(compact_str::format_compact!("{prefix}api_key_uuid").as_str())?,
-            schedule_uuid: row
-                .try_get(compact_str::format_compact!("{prefix}schedule_uuid").as_str())?,
+            impersonator: super::user::User::get_fetchable_from_row(
+                row,
+                compact_str::format_compact!("{prefix}impersonator_uuid"),
+            ),
+            api_key: super::user_api_key::UserApiKey::get_fetchable_from_row(
+                row,
+                compact_str::format_compact!("{prefix}api_key_uuid"),
+            ),
+            schedule: super::server_schedule::ServerSchedule::get_fetchable_from_row(
+                row,
+                compact_str::format_compact!("{prefix}schedule_uuid"),
+            ),
             event: row.try_get(compact_str::format_compact!("{prefix}event").as_str())?,
             ip: row.try_get(compact_str::format_compact!("{prefix}ip").as_str())?,
             data: row.try_get(compact_str::format_compact!("{prefix}data").as_str())?,
@@ -82,63 +100,6 @@ impl BaseModel for ServerActivity {
 }
 
 impl ServerActivity {
-    pub async fn log(
-        database: &crate::database::Database,
-        server_uuid: uuid::Uuid,
-        user_uuid: Option<uuid::Uuid>,
-        api_key_uuid: Option<uuid::Uuid>,
-        event: &str,
-        ip: Option<sqlx::types::ipnetwork::IpNetwork>,
-        data: serde_json::Value,
-    ) -> Result<(), crate::database::DatabaseError> {
-        sqlx::query(
-            r#"
-            INSERT INTO server_activities (server_uuid, user_uuid, api_key_uuid, event, ip, data)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            "#,
-        )
-        .bind(server_uuid)
-        .bind(user_uuid)
-        .bind(api_key_uuid)
-        .bind(event)
-        .bind(ip)
-        .bind(data)
-        .execute(database.write())
-        .await?;
-
-        Ok(())
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub async fn log_remote(
-        database: &crate::database::Database,
-        server_uuid: uuid::Uuid,
-        user_uuid: Option<uuid::Uuid>,
-        schedule_uuid: Option<uuid::Uuid>,
-        event: &str,
-        ip: Option<sqlx::types::ipnetwork::IpNetwork>,
-        data: serde_json::Value,
-        timestamp: chrono::DateTime<chrono::Utc>,
-    ) -> Result<(), crate::database::DatabaseError> {
-        sqlx::query(
-            r#"
-            INSERT INTO server_activities (server_uuid, user_uuid, schedule_uuid, event, ip, data, created)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            "#,
-        )
-        .bind(server_uuid)
-        .bind(user_uuid)
-        .bind(schedule_uuid)
-        .bind(event)
-        .bind(ip)
-        .bind(data)
-        .bind(timestamp.naive_utc())
-        .execute(database.write())
-        .await?;
-
-        Ok(())
-    }
-
     pub async fn by_server_uuid_with_pagination(
         database: &crate::database::Database,
         server_uuid: uuid::Uuid,
@@ -198,23 +159,104 @@ impl ServerActivity {
     }
 
     #[inline]
-    pub fn into_api_object(
+    pub async fn into_api_object(
         self,
+        database: &crate::database::Database,
         storage_url_retriever: &StorageUrlRetriever<'_>,
-    ) -> ApiServerActivity {
-        ApiServerActivity {
+    ) -> Result<ApiServerActivity, anyhow::Error> {
+        Ok(ApiServerActivity {
             user: self
                 .user
                 .map(|user| user.into_api_object(storage_url_retriever)),
+            impersonator: if let Some(impersonator) = self.impersonator {
+                Some(
+                    impersonator
+                        .fetch_cached(database)
+                        .await?
+                        .into_api_object(storage_url_retriever),
+                )
+            } else {
+                None
+            },
             event: self.event,
-            ip: self
-                .ip
-                .map(|ip| compact_str::format_compact!("{}", ip.ip())),
+            ip: self.ip.map(|ip| ip.ip().to_compact_string()),
             data: self.data,
-            is_api: self.api_key_uuid.is_some(),
-            is_schedule: self.schedule_uuid.is_some(),
+            is_api: self.api_key.is_some(),
+            is_schedule: self.schedule.is_some(),
             created: self.created.and_utc(),
+        })
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateServerActivityOptions {
+    #[garde(skip)]
+    pub server_uuid: uuid::Uuid,
+    #[garde(skip)]
+    pub user_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
+    pub impersonator_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
+    pub api_key_uuid: Option<uuid::Uuid>,
+    #[garde(skip)]
+    pub schedule_uuid: Option<uuid::Uuid>,
+    #[garde(length(chars, min = 1, max = 255))]
+    #[schema(min_length = 1, max_length = 255)]
+    pub event: compact_str::CompactString,
+    #[garde(skip)]
+    #[schema(value_type = Option<String>)]
+    pub ip: Option<sqlx::types::ipnetwork::IpNetwork>,
+    #[garde(skip)]
+    pub data: serde_json::Value,
+
+    #[garde(skip)]
+    pub created: Option<chrono::NaiveDateTime>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for ServerActivity {
+    type CreateOptions<'a> = CreateServerActivityOptions;
+    type CreateResult = ();
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<ServerActivity>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self::CreateResult, crate::database::DatabaseError> {
+        options.validate()?;
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("server_activities");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("server_uuid", options.server_uuid)
+            .set("user_uuid", options.user_uuid)
+            .set("impersonator_uuid", options.impersonator_uuid)
+            .set("api_key_uuid", options.api_key_uuid)
+            .set("schedule_uuid", options.schedule_uuid)
+            .set("event", &options.event)
+            .set("ip", options.ip)
+            .set("data", options.data);
+
+        if let Some(created) = options.created {
+            query_builder.set("created", created);
         }
+
+        query_builder.execute(&mut *transaction).await?;
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 
@@ -222,6 +264,7 @@ impl ServerActivity {
 #[schema(title = "ServerActivity")]
 pub struct ApiServerActivity {
     pub user: Option<super::user::ApiUser>,
+    pub impersonator: Option<super::user::ApiUser>,
 
     pub event: compact_str::CompactString,
     pub ip: Option<compact_str::CompactString>,

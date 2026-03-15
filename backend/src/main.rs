@@ -55,11 +55,15 @@ async fn handle_request(
         .bright_cyan()
     );
 
-    Ok(shared::response::ACCEPT_HEADER
-        .scope(
-            shared::response::accept_from_headers(req.headers()),
-            async { next.run(req).await },
-        )
+    Ok(shared::response::APP_DEBUG
+        .scope(state.env.is_debug(), async {
+            shared::response::ACCEPT_HEADER
+                .scope(
+                    shared::response::accept_from_headers(req.headers()),
+                    async { next.run(req).await },
+                )
+                .await
+        })
         .await)
 }
 
@@ -105,8 +109,12 @@ async fn handle_postprocessing(req: Request, next: Next) -> Result<Response, Sta
     }
 
     let (etag, mut response) = if let Some(etag) = response.headers().get("ETag") {
-        (etag.to_str().unwrap().to_string(), response)
-    } else {
+        (etag.to_str().map(|e| e.to_string()).ok(), response)
+    } else if response
+        .headers()
+        .get("Content-Type")
+        .is_some_and(|c| c.to_str().is_ok_and(|c| c != "text/plain"))
+    {
         let (mut parts, body) = response.into_parts();
         let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
 
@@ -116,10 +124,18 @@ async fn handle_postprocessing(req: Request, next: Next) -> Result<Response, Sta
 
         parts.headers.insert("ETag", hash.parse().unwrap());
 
-        (hash, Response::from_parts(parts, Body::from(body_bytes)))
+        (
+            Some(hash),
+            Response::from_parts(parts, Body::from(body_bytes)),
+        )
+    } else {
+        (None, response)
     };
 
-    if if_none_match == Some(etag) {
+    // we cant directly compare because if both are None, It'd return NOT_MODIFIED
+    if let Some(etag) = etag
+        && if_none_match == Some(etag)
+    {
         let mut cached_response = Response::builder()
             .status(StatusCode::NOT_MODIFIED)
             .body(Body::empty())
@@ -152,14 +168,37 @@ async fn main() {
         .init_cli(env.as_ref().ok().map(|e| &e.0), cli)
         .await;
 
-    match cli.get_matches().remove_subcommand() {
+    let mut matches = cli.get_matches();
+    let debug = *matches.get_one::<bool>("debug").unwrap();
+
+    if debug && let Ok((env, _)) = &env {
+        env.app_debug
+            .store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    match matches.remove_subcommand() {
         Some((command, arg_matches)) => {
             if let Some((func, arg_matches)) = cli.match_command(command, arg_matches) {
                 match func(env.as_ref().ok().map(|e| e.0.clone()), arg_matches).await {
-                    Ok(()) => {
-                        std::process::exit(0);
+                    Ok(exit_code) => {
+                        drop(env);
+                        std::process::exit(exit_code);
                     }
                     Err(err) => {
+                        drop(env);
+                        if let Some(shared::database::DatabaseError::Validation(error)) =
+                            err.downcast_ref::<shared::database::DatabaseError>()
+                        {
+                            let error_messages = shared::utils::flatten_validation_errors(error);
+
+                            eprintln!("{}", "validation error(s) occurred:".red());
+                            for message in error_messages {
+                                eprintln!("  {}", message.red());
+                            }
+
+                            std::process::exit(1);
+                        }
+
                         eprintln!(
                             "{}: {:#?}",
                             "an error occurred while running cli command".red(),
@@ -201,22 +240,15 @@ async fn main() {
         env.sentry_url.clone(),
         sentry::ClientOptions {
             server_name: env.server_name.clone().map(|s| s.into()),
-            release: Some(
-                format!(
-                    "{}:{}@{}",
-                    shared::VERSION,
-                    shared::GIT_COMMIT,
-                    shared::GIT_BRANCH
-                )
-                .into(),
-            ),
+            release: Some(shared::full_version().into()),
             traces_sample_rate: 1.0,
             ..Default::default()
         },
     ));
 
     let jwt = Arc::new(shared::jwt::Jwt::new(&env));
-    let cache = Arc::new(shared::cache::Cache::new(&env).await);
+    let ntp = shared::ntp::Ntp::new();
+    let cache = shared::cache::Cache::new(&env).await;
     let database = Arc::new(shared::database::Database::new(&env, cache.clone()).await);
 
     if env.database_migrate {
@@ -305,12 +337,7 @@ async fn main() {
             Ok(_) => shared::AppContainerType::Unknown,
             Err(_) => shared::AppContainerType::None,
         },
-        version: format!(
-            "{}:{}@{}",
-            shared::VERSION,
-            shared::GIT_COMMIT,
-            shared::GIT_BRANCH
-        ),
+        version: shared::full_version(),
 
         client: reqwest::ClientBuilder::new()
             .user_agent(format!("github.com/calagopus/panel {}", shared::VERSION))
@@ -322,6 +349,7 @@ async fn main() {
         shutdown_handlers: shutdown_handlers.clone(),
         settings: settings.clone(),
         jwt,
+        ntp,
         storage,
         captcha,
         mail,
@@ -498,6 +526,25 @@ async fn main() {
         })
         .await;
     background_task_builder
+        .add_task("delete_unconfigured_security_keys", async |state| {
+            let deleted_security_keys =
+                shared::models::user_security_key::UserSecurityKey::delete_unconfigured(
+                    &state.database,
+                )
+                .await?;
+            if deleted_security_keys > 0 {
+                tracing::info!(
+                    "deleted {} unconfigured user security keys",
+                    deleted_security_keys
+                );
+            }
+
+            tokio::time::sleep(std::time::Duration::from_mins(30)).await;
+
+            Ok(())
+        })
+        .await;
+    background_task_builder
         .add_task("delete_old_activity", async |state| {
             let settings = state.settings.get().await?;
             let admin_retention_days = settings.activity.admin_log_retention_days;
@@ -623,7 +670,14 @@ async fn main() {
                     None => (true, FRONTEND_ASSETS.get_entry("index.html").unwrap()),
                 };
 
-                if entry.as_file().is_none() && path.starts_with("assets") {
+                if (entry.as_file().is_none() || is_index) && path.starts_with("assets") {
+                    // technically not needed (cap filesystem) but never hurts
+                    if path.contains("..") {
+                        return ApiResponse::error("file not found")
+                            .with_status(StatusCode::NOT_FOUND)
+                            .ok();
+                    }
+
                     let settings = state.settings.get().await?;
 
                     let base_filesystem = match settings.storage_driver.get_cap_filesystem().await {
@@ -636,7 +690,9 @@ async fn main() {
                     };
                     drop(settings);
 
-                    let metadata = match base_filesystem.async_metadata(path).await {
+                    let path = urlencoding::decode(path)?;
+
+                    let metadata = match base_filesystem.async_metadata(&*path).await {
                         Ok(metadata) => metadata,
                         Err(_) => {
                             return ApiResponse::error("file not found")
@@ -645,7 +701,7 @@ async fn main() {
                         }
                     };
 
-                    let tokio_file = match base_filesystem.async_open(path).await {
+                    let tokio_file = match base_filesystem.async_open(&*path).await {
                         Ok(file) => file,
                         Err(_) => {
                             return ApiResponse::error("file not found")
@@ -719,10 +775,10 @@ async fn main() {
                                 frame-src 'self' {frame_csp}; \
                                 style-src 'self' 'unsafe-inline' {style_csp}; \
                                 connect-src *; \
-                                font-src 'self' data:; \
-                                img-src *; \
-                                media-src 'self'; \
-                                object-src 'none'; \
+                                font-src 'self' blob: data:; \
+                                img-src * blob: data:; \
+                                media-src 'self' blob: data:; \
+                                object-src 'none' blob: data:; \
                                 base-uri 'self'; \
                                 form-action 'self'; \
                                 frame-ancestors 'self';"
@@ -779,7 +835,7 @@ async fn main() {
         SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("Authorization"))),
     );
 
-    for (path, item) in openapi.paths.paths.iter_mut() {
+    for (original_path, item) in openapi.paths.paths.iter_mut() {
         let operations = [
             ("get", &mut item.get),
             ("post", &mut item.post),
@@ -788,13 +844,24 @@ async fn main() {
             ("delete", &mut item.delete),
         ];
 
-        let path = path
+        let path = original_path
             .replace('/', "_")
             .replace(|c| ['{', '}'].contains(&c), "");
 
         for (method, operation) in operations {
+            const OPERATION_GROUPS: &[&str] =
+                &["/api/admin", "/api/client", "/api/auth", "/api/remote"];
+
             if let Some(operation) = operation {
-                operation.operation_id = Some(format!("{method}{path}"))
+                operation.operation_id = Some(format!("{method}{path}"));
+                operation.tags = if let Some(group) = OPERATION_GROUPS
+                    .iter()
+                    .find(|g| original_path.starts_with(**g))
+                {
+                    Some(vec![group.to_string()])
+                } else {
+                    None
+                };
             }
         }
     }

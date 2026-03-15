@@ -2,6 +2,7 @@ import { Tooltip } from '@mantine/core';
 import { ReactNode } from 'react';
 import Button from '@/elements/Button.tsx';
 import { useAdminPermissions, useCan, useServerPermissions } from '@/plugins/usePermissions.ts';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 
 interface Props {
   action: string | string[];
@@ -12,19 +13,27 @@ interface Props {
   children: ReactNode;
 }
 
-export const CantSaveTooltip = () => (
-  <Tooltip label='You do not have permission to save.'>
-    <Button disabled>Save</Button>
-  </Tooltip>
-);
+export const CantSaveTooltip = () => {
+  const { t } = useTranslations();
 
-export const CantDeleteTooltip = () => (
-  <Tooltip label='You do not have permission to delete.'>
-    <Button color='red' disabled>
-      Delete
-    </Button>
-  </Tooltip>
-);
+  return (
+    <Tooltip label={t('elements.can.tooltip.cantSave', {})}>
+      <Button disabled>{t('common.button.save', {})}</Button>
+    </Tooltip>
+  );
+};
+
+export const CantDeleteTooltip = () => {
+  const { t } = useTranslations();
+
+  return (
+    <Tooltip label={t('elements.can.tooltip.cantDelete', {})}>
+      <Button color='red' disabled>
+        {t('common.button.delete', {})}
+      </Button>
+    </Tooltip>
+  );
+};
 
 export const AdminCan = ({ action, matchAny = false, renderOnCant, cantSave, cantDelete, children }: Props) => {
   const canMatrix = useAdminPermissions(action);

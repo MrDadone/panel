@@ -1,6 +1,8 @@
 import { createRoot } from 'react-dom/client';
 import { Extension, ExtensionContext } from 'shared';
 import App from '@/App.tsx';
+
+import.meta.glob('../extensions/*/src/app.css', { eager: true });
 import '@/app.css';
 
 const extensionModules = import.meta.glob('../extensions/*/src/index.ts', { eager: true });
@@ -25,4 +27,4 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload();
 });
 
-createRoot(document.getElementById('root')!).render(<App />);
+createRoot(document.getElementById('root')!).render(<App theme={window.extensionContext.getMantineTheme()} />);

@@ -53,7 +53,7 @@ export function SortableItem({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    touchAction: 'none',
+    touchAction: isDragging ? 'none' : 'manipulation',
   };
 
   const dragHandleProps = {
@@ -61,8 +61,8 @@ export function SortableItem({
     ...listeners,
     style: {
       cursor: isDragging ? 'grabbing' : 'grab',
-      touchAction: 'none' as const,
-    },
+      touchAction: isDragging ? 'none' : 'manipulation',
+    } satisfies CSSProperties,
   };
 
   return (

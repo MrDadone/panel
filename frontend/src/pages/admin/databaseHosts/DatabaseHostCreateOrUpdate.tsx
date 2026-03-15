@@ -18,20 +18,25 @@ import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
-import { adminDatabaseHostCreateSchema, adminDatabaseHostUpdateSchema } from '@/lib/schemas/admin/databaseHosts.ts';
+import {
+  adminDatabaseHostCreateSchema,
+  adminDatabaseHostSchema,
+  adminDatabaseHostUpdateSchema,
+} from '@/lib/schemas/admin/databaseHosts.ts';
 import { useResourceForm } from '@/plugins/useResourceForm.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function DatabaseHostCreateOrUpdate({
   contextDatabaseHost,
 }: {
-  contextDatabaseHost?: AdminDatabaseHost;
+  contextDatabaseHost?: z.infer<typeof adminDatabaseHostSchema>;
 }) {
   const { addToast } = useToast();
 
   const [openModal, setOpenModal] = useState<'delete' | null>(null);
 
   const form = useForm<z.infer<typeof adminDatabaseHostUpdateSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       username: '',
@@ -50,11 +55,13 @@ export default function DatabaseHostCreateOrUpdate({
 
   const { loading, setLoading, doCreateOrUpdate, doDelete } = useResourceForm<
     z.infer<typeof adminDatabaseHostUpdateSchema>,
-    AdminDatabaseHost
+    z.infer<typeof adminDatabaseHostSchema>
   >({
     form,
-    createFn: () => createDatabaseHost(form.values),
-    updateFn: contextDatabaseHost ? () => updateDatabaseHost(contextDatabaseHost.uuid, form.values) : undefined,
+    createFn: () => createDatabaseHost(adminDatabaseHostCreateSchema.parse(form.getValues())),
+    updateFn: contextDatabaseHost
+      ? () => updateDatabaseHost(contextDatabaseHost.uuid, adminDatabaseHostUpdateSchema.parse(form.getValues()))
+      : undefined,
     deleteFn: contextDatabaseHost ? () => deleteDatabaseHost(contextDatabaseHost.uuid) : undefined,
     doUpdate: !!contextDatabaseHost,
     basePath: '/admin/database-hosts',
@@ -79,8 +86,13 @@ export default function DatabaseHostCreateOrUpdate({
   }, [contextDatabaseHost]);
 
   const doTest = () => {
+    if (!contextDatabaseHost) {
+      return;
+    }
+
     setLoading(true);
-    testDatabaseHost(contextDatabaseHost!.uuid)
+
+    testDatabaseHost(contextDatabaseHost.uuid)
       .then(() => {
         addToast('Test successfully completed', 'success');
       })
@@ -91,7 +103,11 @@ export default function DatabaseHostCreateOrUpdate({
   };
 
   return (
-    <AdminContentContainer title={`${contextDatabaseHost ? 'Update' : 'Create'} Database Host`} titleOrder={2}>
+    <AdminContentContainer
+      title={`${contextDatabaseHost ? 'Update' : 'Create'} Database Host`}
+      fullscreen={!!contextDatabaseHost}
+      titleOrder={2}
+    >
       <ConfirmationModal
         opened={openModal === 'delete'}
         onClose={() => setOpenModal(null)}
@@ -99,13 +115,19 @@ export default function DatabaseHostCreateOrUpdate({
         confirm='Delete'
         onConfirmed={doDelete}
       >
-        Are you sure you want to delete <Code>{form.values.name}</Code>?
+        Are you sure you want to delete <Code>{form.getValues().name}</Code>?
       </ConfirmationModal>
 
       <form onSubmit={form.onSubmit(() => doCreateOrUpdate(false))}>
         <Stack mt='xs'>
           <Group grow>
-            <TextInput withAsterisk label='Name' placeholder='Name' {...form.getInputProps('name')} />
+            <TextInput
+              withAsterisk
+              label='Name'
+              placeholder='Name'
+              key={form.key('name')}
+              {...form.getInputProps('name')}
+            />
             <Select
               withAsterisk
               label='Type'
@@ -114,42 +136,74 @@ export default function DatabaseHostCreateOrUpdate({
                 label,
               }))}
               disabled={!!contextDatabaseHost}
+              key={form.key('type')}
               {...form.getInputProps('type')}
             />
           </Group>
 
           <Group grow>
-            <TextInput withAsterisk label='Username' placeholder='Username' {...form.getInputProps('username')} />
+            <TextInput
+              withAsterisk
+              label='Username'
+              placeholder='Username'
+              key={form.key('username')}
+              {...form.getInputProps('username')}
+            />
             <TextInput
               withAsterisk={!contextDatabaseHost}
               label='Password'
               placeholder='Password'
               type='password'
+              key={form.key('password')}
               {...form.getInputProps('password')}
-              onChange={(e) => form.setFieldValue('password', e.target.value || null)}
             />
           </Group>
 
           <Group grow>
-            <TextInput withAsterisk label='Host' placeholder='Host' {...form.getInputProps('host')} />
-            <NumberInput withAsterisk label='Port' placeholder='Port' min={0} {...form.getInputProps('port')} />
+            <TextInput
+              withAsterisk
+              label='Host'
+              placeholder='Host'
+              key={form.key('host')}
+              {...form.getInputProps('host')}
+            />
+            <NumberInput
+              withAsterisk
+              label='Port'
+              placeholder='Port'
+              min={0}
+              key={form.key('port')}
+              {...form.getInputProps('port')}
+            />
           </Group>
 
           <Group grow>
-            <TextInput label='Public Host' placeholder='Public Host' {...form.getInputProps('publicHost')} />
+            <TextInput
+              label='Public Host'
+              placeholder='Public Host'
+              key={form.key('publicHost')}
+              {...form.getInputProps('publicHost')}
+            />
             <NumberInput
               label='Public Port'
               placeholder='Public Port'
               min={0}
+              key={form.key('publicPort')}
               {...form.getInputProps('publicPort')}
-              value={form.values.publicPort || ''}
-              onChange={(v) => form.setFieldValue('publicPort', Number(v) || 0)}
             />
           </Group>
 
           <Group grow>
-            <Switch label='Deployment Enabled' {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })} />
-            <Switch label='Maintenance Enabled' {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })} />
+            <Switch
+              label='Deployment Enabled'
+              key={form.key('deploymentEnabled')}
+              {...form.getInputProps('deploymentEnabled', { type: 'checkbox' })}
+            />
+            <Switch
+              label='Maintenance Enabled'
+              key={form.key('maintenanceEnabled')}
+              {...form.getInputProps('maintenanceEnabled', { type: 'checkbox' })}
+            />
           </Group>
 
           <Group>
@@ -165,9 +219,9 @@ export default function DatabaseHostCreateOrUpdate({
             </AdminCan>
             {contextDatabaseHost && (
               <>
-                <AdminCan action='database-hosts.test'>
+                <AdminCan action='database-hosts.read'>
                   <Button variant='outline' onClick={doTest} loading={loading}>
-                    Test
+                    Test Connection
                   </Button>
                 </AdminCan>
                 <AdminCan action='database-hosts.delete' cantDelete>

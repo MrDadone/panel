@@ -18,7 +18,7 @@ mod get {
     #[derive(ToSchema, Serialize)]
     struct Response {
         #[schema(inline)]
-        backups: Pagination<shared::models::server_backup::AdminApiServerBackup>,
+        backups: Pagination<shared::models::server_backup::AdminApiNodeServerBackup>,
     }
 
     #[utoipa::path(get, path = "/", responses(
@@ -73,7 +73,7 @@ mod get {
         ApiResponse::new_serialized(Response {
             backups: backups
                 .try_async_map(|backup| {
-                    backup.into_admin_api_object(&state.database, &storage_url_retriever)
+                    backup.into_admin_node_api_object(&state.database, &storage_url_retriever)
                 })
                 .await?,
         })

@@ -20,7 +20,7 @@ export default function AccountContentContainer({
 
   return (
     <ContentContainer title={`${title} | ${settings.app.name}`}>
-      <div className={`${fullscreen || id ? 'mb-4' : 'px-4 lg:px-12 mb-4 lg:mt-12'}`}>
+      <div className={`${fullscreen || id ? 'mb-4' : 'px-4 lg:px-6 mb-4 lg:mt-6'}`}>
         {registry?.prependedComponents.map((Component, index) => (
           <Component key={`prepended-${index}`} />
         ))}

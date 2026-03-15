@@ -2,7 +2,9 @@ use super::State;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod _egg_;
+mod delete;
 mod import;
+mod r#move;
 
 mod get {
     use crate::routes::api::admin::nests::_nest_::GetNest;
@@ -81,53 +83,65 @@ mod get {
 mod post {
     use crate::routes::api::admin::nests::_nest_::GetNest;
     use axum::http::StatusCode;
+    use garde::Validate;
     use indexmap::IndexMap;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger, egg_repository_egg::EggRepositoryEgg,
-            nest_egg::NestEgg, user::GetPermissionManager,
+            CreatableModel,
+            admin_activity::GetAdminActivityLogger,
+            nest_egg::{CreateNestEggOptions, NestEgg},
+            user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         egg_repository_egg_uuid: Option<uuid::Uuid>,
 
-        #[validate(length(min = 2, max = 255))]
+        #[garde(length(chars, min = 2, max = 255))]
         #[schema(min_length = 2, max_length = 255)]
         author: compact_str::CompactString,
-        #[validate(length(min = 3, max = 255))]
+        #[garde(length(chars, min = 3, max = 255))]
         #[schema(min_length = 3, max_length = 255)]
         name: compact_str::CompactString,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
+        #[garde(length(chars, min = 1, max = 1024))]
+        #[schema(min_length = 1, max_length = 1024)]
         description: Option<compact_str::CompactString>,
 
+        #[garde(skip)]
         #[schema(inline)]
         config_files: Vec<shared::models::nest_egg::ProcessConfigurationFile>,
+        #[garde(skip)]
         #[schema(inline)]
         config_startup: shared::models::nest_egg::NestEggConfigStartup,
+        #[garde(skip)]
         #[schema(inline)]
         config_stop: shared::models::nest_egg::NestEggConfigStop,
+        #[garde(skip)]
         #[schema(inline)]
         config_script: shared::models::nest_egg::NestEggConfigScript,
         #[schema(inline)]
+        #[garde(custom(shared::models::nest_egg::validate_config_allocations))]
         config_allocations: shared::models::nest_egg::NestEggConfigAllocations,
 
-        #[validate(length(min = 1, max = 4096))]
+        #[garde(length(chars, min = 1, max = 4096))]
         #[schema(min_length = 1, max_length = 4096)]
         startup: compact_str::CompactString,
+        #[garde(skip)]
         force_outgoing_ip: bool,
+        #[garde(skip)]
         separate_port: bool,
 
+        #[garde(skip)]
         features: Vec<compact_str::CompactString>,
-        #[validate(custom(function = "shared::models::nest_egg::validate_docker_images"))]
+        #[garde(custom(shared::models::nest_egg::validate_docker_images))]
         docker_images: IndexMap<compact_str::CompactString, compact_str::CompactString>,
+        #[garde(skip)]
         file_denylist: Vec<compact_str::CompactString>,
     }
 
@@ -162,63 +176,33 @@ mod post {
 
         permissions.has_admin_permission("eggs.create")?;
 
-        let egg_repository_egg = if let Some(egg_repository_egg_uuid) = data.egg_repository_egg_uuid
-            && !egg_repository_egg_uuid.is_nil()
-        {
-            match EggRepositoryEgg::by_uuid_optional(&state.database, egg_repository_egg_uuid)
-                .await?
-            {
-                Some(egg_repository_egg) => Some(egg_repository_egg),
-                None => {
-                    return ApiResponse::error("egg repository egg not found")
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
-                }
-            }
-        } else {
-            None
+        let options = CreateNestEggOptions {
+            nest_uuid: nest.uuid,
+            egg_repository_egg_uuid: data.egg_repository_egg_uuid,
+            author: data.author,
+            name: data.name,
+            description: data.description,
+            config_files: data.config_files,
+            config_startup: data.config_startup,
+            config_stop: data.config_stop,
+            config_script: data.config_script,
+            config_allocations: data.config_allocations,
+            startup: data.startup,
+            force_outgoing_ip: data.force_outgoing_ip,
+            separate_port: data.separate_port,
+            features: data.features,
+            docker_images: data.docker_images,
+            file_denylist: data.file_denylist,
         };
 
-        if !data.config_allocations.user_self_assign.is_valid() {
-            return ApiResponse::error("config_allocations.user_self_assign: port ranges must be 1024-65535 and start_port < end_port")
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
-        let egg = match NestEgg::create(
-            &state.database,
-            nest.uuid,
-            egg_repository_egg.map(|e| e.uuid),
-            &data.author,
-            &data.name,
-            data.description.as_deref(),
-            data.config_files,
-            data.config_startup,
-            data.config_stop,
-            data.config_script,
-            data.config_allocations,
-            &data.startup,
-            data.force_outgoing_ip,
-            data.separate_port,
-            &data.features,
-            data.docker_images,
-            &data.file_denylist,
-        )
-        .await
-        {
+        let egg = match NestEgg::create(&state, options).await {
             Ok(egg) => egg,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("egg with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create egg: {:?}", err);
-
-                return ApiResponse::error("failed to create egg")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger
@@ -262,6 +246,8 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
         .routes(routes!(get::route))
         .routes(routes!(post::route))
         .nest("/import", import::router(state))
+        .nest("/move", r#move::router(state))
+        .nest("/delete", delete::router(state))
         .nest("/{egg}", _egg_::router(state))
         .with_state(state.clone())
 }

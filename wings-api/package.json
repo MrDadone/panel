@@ -10,12 +10,12 @@
   "license": "MIT",
   "dependencies": {
     "change-case": "^5.4.4",
-    "module-alias": "^2.2.3",
+    "module-alias": "^2.3.4",
     "openapi3-ts": "^4.5.0"
   },
   "devDependencies": {
-    "@types/node": "^22.19.1",
-    "esbuild": "^0.25.12",
+    "@types/node": "^24.10.1",
+    "esbuild": "^0.27.3",
     "typescript": "^5.9.3"
   },
   "pnpm": {

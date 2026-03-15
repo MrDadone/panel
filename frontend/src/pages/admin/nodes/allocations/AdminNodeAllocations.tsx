@@ -1,7 +1,8 @@
 import { faCheckDouble, faPlus, faX } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group } from '@mantine/core';
-import { MouseEvent as ReactMouseEvent, Ref, useCallback, useEffect, useMemo, useState } from 'react';
+import { MouseEvent as ReactMouseEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { z } from 'zod';
 import getNodeAllocations from '@/api/admin/nodes/allocations/getNodeAllocations.ts';
 import Button from '@/elements/Button.tsx';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
@@ -9,6 +10,7 @@ import Select from '@/elements/input/Select.tsx';
 import SelectionArea from '@/elements/SelectionArea.tsx';
 import Table from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
+import { adminNodeAllocationSchema, adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
 import { nodeAllocationTableColumns } from '@/lib/tableColumns.ts';
 import { useKeyboardShortcuts } from '@/plugins/useKeyboardShortcuts.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
@@ -17,13 +19,13 @@ import AllocationActionBar from './AllocationActionBar.tsx';
 import NodeAllocationsCreateModal from './modals/NodeAllocationsCreateModal.tsx';
 import NodeAllocationRow from './NodeAllocationRow.tsx';
 
-export default function AdminNodeAllocations({ node }: { node: Node }) {
+export default function AdminNodeAllocations({ node }: { node: z.infer<typeof adminNodeSchema> }) {
   const { nodeAllocations, setNodeAllocations, selectedNodeAllocations, setSelectedNodeAllocations } = useAdminStore();
 
   const [openModal, setOpenModal] = useState<'create' | null>(null);
-  const [selectedNodeAllocationsPrevious, setSelectedNodeAllocationsPrevious] = useState(selectedNodeAllocations);
   const [ipFilter, setIpFilter] = useState('');
   const [portFilter, setPortFilter] = useState('');
+  const selectedNodeAllocationsPreviousRef = useRef(selectedNodeAllocations.values());
 
   const uniqueIps = useMemo(() => {
     const ips = new Set<string>();
@@ -62,39 +64,20 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
     refetch();
   }, [ipFilter, portFilter]);
 
-  const onSelectedStart = (event: ReactMouseEvent | MouseEvent) => {
-    setSelectedNodeAllocationsPrevious(event.shiftKey ? selectedNodeAllocations : []);
-  };
+  const onSelectedStart = useCallback(
+    (event: ReactMouseEvent | MouseEvent) => {
+      selectedNodeAllocationsPreviousRef.current = event.shiftKey ? selectedNodeAllocations.values() : [];
+    },
+    [selectedNodeAllocations],
+  );
 
-  const onSelected = (selected: NodeAllocation[]) => {
-    setSelectedNodeAllocations([...selectedNodeAllocationsPrevious, ...selected]);
-  };
+  const onSelected = useCallback((selected: z.infer<typeof adminNodeAllocationSchema>[]) => {
+    setSelectedNodeAllocations([...selectedNodeAllocationsPreviousRef.current, ...selected]);
+  }, []);
 
   useEffect(() => {
     setSelectedNodeAllocations([]);
   }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-
-      if ((event.ctrlKey || event.metaKey) && event.key === 'Escape') {
-        event.preventDefault();
-        setSelectedNodeAllocations([]);
-      }
-
-      if ((event.ctrlKey || event.metaKey) && event.key === 'a' && !isInputFocused) {
-        event.preventDefault();
-        setSelectedNodeAllocations(nodeAllocations.data);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [nodeAllocations.data]);
 
   useKeyboardShortcuts({
     shortcuts: [
@@ -105,20 +88,19 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
       },
       {
         key: 'Escape',
-        modifiers: ['ctrlOrMeta'],
         callback: () => setSelectedNodeAllocations([]),
       },
     ],
     deps: [nodeAllocations.data],
   });
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     setSelectedNodeAllocations(nodeAllocations.data);
-  };
+  }, [nodeAllocations.data]);
 
-  const handleClearSelection = () => {
+  const handleClearSelection = useCallback(() => {
     setSelectedNodeAllocations([]);
-  };
+  }, []);
 
   return (
     <AdminSubContentContainer
@@ -157,7 +139,7 @@ export default function AdminNodeAllocations({ node }: { node: Node }) {
             <ActionIcon
               variant='subtle'
               onClick={handleClearSelection}
-              disabled={selectedNodeAllocations.length === 0}
+              disabled={selectedNodeAllocations.size === 0}
               color='gray'
             >
               <FontAwesomeIcon icon={faX} />

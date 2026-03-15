@@ -1,14 +1,20 @@
 import { useState } from 'react';
+import { z } from 'zod';
 import getOAuthProviderUsers from '@/api/admin/oauth-providers/users/getOAuthProviderUsers.ts';
 import { getEmptyPaginationSet } from '@/api/axios.ts';
 import AdminSubContentContainer from '@/elements/containers/AdminSubContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
+import { adminOAuthProviderSchema, adminOAuthUserLinkSchema } from '@/lib/schemas/admin/oauthProviders.ts';
 import { adminOAuthProviderUsersTableColumns } from '@/lib/tableColumns.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import UserOAuthLinkRow from './UserOAuthLinkRow.tsx';
 
-export default function AdminOAuthProviderUsers({ oauthProvider }: { oauthProvider: AdminOAuthProvider }) {
-  const [oauthProviderUsers, setOAuthProviderUsers] = useState<ResponseMeta<AdminUserOAuthLink>>(
+export default function AdminOAuthProviderUsers({
+  oauthProvider,
+}: {
+  oauthProvider: z.infer<typeof adminOAuthProviderSchema>;
+}) {
+  const [oauthProviderUsers, setOAuthProviderUsers] = useState<Pagination<z.infer<typeof adminOAuthUserLinkSchema>>>(
     getEmptyPaginationSet(),
   );
 

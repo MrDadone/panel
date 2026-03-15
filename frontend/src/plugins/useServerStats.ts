@@ -1,34 +1,19 @@
-import debounce from 'debounce';
-import { useEffect, useState } from 'react';
-import getNodeResources from '@/api/me/servers/resources/getNodeResources.ts';
+import { useEffect } from 'react';
+import { z } from 'zod';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
+import { serverSchema } from '@/lib/schemas/server/server.ts';
 import { useUserStore } from '@/stores/user.ts';
 
-export function useServerStats(servers: Server[]) {
-  const [loadingStats, setLoadingStats] = useState(true);
-  const { addServerResourceUsage } = useUserStore();
+export function useServerStats(server: z.infer<typeof adminServerSchema> | z.infer<typeof serverSchema>) {
+  const subscribeToNode = useUserStore((state) => state.subscribeToNode);
+  const nodeUuid = 'nodeUuid' in server ? server.nodeUuid : server.node?.uuid;
+
+  const stats = useUserStore((state) => state.serverResourceUsage[server.uuid] ?? null);
 
   useEffect(() => {
-    setLoadingStats(true);
-    const uniqueNodeIds = new Set([...servers.map((s) => s.nodeUuid)]);
+    if (!nodeUuid) return;
+    return subscribeToNode(nodeUuid);
+  }, [nodeUuid, subscribeToNode]);
 
-    const debouncedSetLoading = debounce(() => {
-      setLoadingStats(false);
-    }, 50);
-
-    Promise.all(
-      [...uniqueNodeIds].map((nodeId) =>
-        getNodeResources(nodeId).then((response) => {
-          for (const [serverId, resources] of Object.entries(response)) {
-            addServerResourceUsage(serverId, resources);
-          }
-        }),
-      ),
-    ).finally(debouncedSetLoading);
-
-    return () => {
-      debouncedSetLoading.clear();
-    };
-  }, [servers]);
-
-  return loadingStats;
+  return stats;
 }

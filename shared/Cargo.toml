@@ -7,10 +7,13 @@ edition = { workspace = true }
 [dependencies]
 wings-api = { workspace = true }
 rule-validator = { workspace = true }
+schema-extension-core = { workspace = true }
+schema-extension-derive = { workspace = true }
 rustis = { workspace = true }
 rust-s3 = { workspace = true }
 reqwest = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true }
 utoipa = { workspace = true }
 anyhow = { workspace = true }
 axum = { workspace = true }
@@ -21,8 +24,8 @@ clap = { workspace = true }
 include_dir = { workspace = true }
 cron = { workspace = true }
 lettre = { version = "0.11.17", default-features = false, features = ["tokio1-native-tls", "builder", "pool", "smtp-transport", "sendmail-transport", "file-transport"] }
-zip = { version = "7.0.0", default-features = false, features = ["deflate"] }
-toml = "0.9.7"
+zip = { version = "8.0.0", default-features = false, features = ["deflate"] }
+toml = "1.0.1"
 serde = { workspace = true }
 serde_json_path = "0.7.2"
 serde_json = { workspace = true }
@@ -31,19 +34,21 @@ rmp-serde = { workspace = true }
 serde-xml-rs = { workspace = true }
 utoipa-axum = { workspace = true }
 base32 = "0.5.1"
+base64 = { workspace = true }
 sqlx = { workspace = true }
 webauthn-rs = { workspace = true }
 jwt = "0.16.0"
 async-trait = { workspace = true }
 hmac = { version = "0.12.1", features = ["std"] }
 chrono = { workspace = true }
+chrono-tz = { workspace = true }
 sha2 = { workspace = true }
 dotenvy = { workspace = true }
 colored = { workspace = true }
 uuid = { workspace = true }
 simple_crypt = "0.2.3"
 cidr = { version = "0.3.1", features = ["serde"] }
-validator = { workspace = true }
+garde = { workspace = true }
 indexmap = { workspace = true }
 regex = { workspace = true }
 sentry = { workspace = true }
@@ -64,3 +69,7 @@ sysinfo = { workspace = true }
 accept-header = "0.2.3"
 mime = "0.3.17"
 moka = { version = "0.12.12", features = ["future"] }
+serde_with = { workspace = true }
+minijinja = { workspace = true }
+sntpc-net-tokio = "1.0.1"
+sntpc = { version = "0.8.1", features = ["std"] }

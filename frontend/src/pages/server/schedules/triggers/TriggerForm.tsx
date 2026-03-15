@@ -1,8 +1,11 @@
 import { Popover } from '@mantine/core';
+import { UseFormReturnType } from '@mantine/form';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import Select from '@/elements/input/Select.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
 import { serverBackupStatusLabelMapping, serverPowerStateLabelMapping } from '@/lib/enums.ts';
+import { serverScheduleTriggerSchema, serverScheduleUpdateSchema } from '@/lib/schemas/server/schedules.ts';
 import ScheduleDynamicParameterInput from '../ScheduleDynamicParameterInput.tsx';
 
 const CRON_SEGMENTS = ['Second', 'Minute', 'Hour', 'Day', 'Month', 'Weekday'] as const;
@@ -54,103 +57,106 @@ function CrontabEditor({ value, setValue }: CrontabEditorProps) {
 }
 
 interface TriggerFormProps {
-  trigger: ScheduleTrigger;
-  onUpdate: (trigger: ScheduleTrigger) => void;
+  form: UseFormReturnType<z.infer<typeof serverScheduleUpdateSchema>>;
+  index: number;
 }
 
-function CronTriggerForm({ trigger, onUpdate }: TriggerFormProps) {
-  if (trigger.type !== 'cron') return null;
+function CronTriggerForm({ form, index }: TriggerFormProps) {
+  if (form.values.triggers[index].type !== 'cron') return null;
 
   return (
     <Popover>
       <Popover.Target>
         <TextInput
+          withAsterisk
           label='Cron Schedule'
           placeholder='Cron Schedule'
-          value={trigger.schedule}
           className='flex-1'
-          onChange={(e) => onUpdate({ type: 'cron', schedule: e.target.value })}
+          {...form.getInputProps(`triggers.${index}.schedule`)}
         />
       </Popover.Target>
       <Popover.Dropdown>
-        <CrontabEditor value={trigger.schedule} setValue={(value) => onUpdate({ type: 'cron', schedule: value })} />
+        <CrontabEditor
+          value={form.values.triggers[index].schedule}
+          setValue={(value) => form.setFieldValue(`triggers.${index}.schedule`, value)}
+        />
       </Popover.Dropdown>
     </Popover>
   );
 }
 
-function PowerActionTriggerForm({ trigger, onUpdate }: TriggerFormProps) {
-  if (trigger.type !== 'power_action') return null;
+function PowerActionTriggerForm({ form, index }: TriggerFormProps) {
+  if (form.values.triggers[index].type !== 'power_action') return null;
 
   return (
     <Select
+      withAsterisk
       label='Power Action'
       placeholder='Power Action'
-      value={trigger.action}
       className='flex-1'
-      onChange={(value) => onUpdate({ type: 'power_action', action: value as ServerPowerAction })}
       data={[
         { value: 'start', label: 'Start' },
         { value: 'stop', label: 'Stop' },
         { value: 'restart', label: 'Restart' },
         { value: 'kill', label: 'Kill' },
       ]}
+      {...form.getInputProps(`triggers.${index}.action`)}
     />
   );
 }
 
-function ServerStateTriggerForm({ trigger, onUpdate }: TriggerFormProps) {
-  if (trigger.type !== 'server_state') return null;
+function ServerStateTriggerForm({ form, index }: TriggerFormProps) {
+  if (form.values.triggers[index].type !== 'server_state') return null;
 
   return (
     <Select
+      withAsterisk
       label='Server State'
       placeholder='Server State'
-      value={trigger.state}
       className='flex-1'
-      onChange={(value) => onUpdate({ type: 'server_state', state: value as ServerPowerState })}
       data={Object.entries(serverPowerStateLabelMapping).map(([value, label]) => ({
         value,
         label,
       }))}
+      {...form.getInputProps(`triggers.${index}.state`)}
     />
   );
 }
 
-function BackupStatusTriggerForm({ trigger, onUpdate }: TriggerFormProps) {
-  if (trigger.type !== 'backup_status') return null;
+function BackupStatusTriggerForm({ form, index }: TriggerFormProps) {
+  if (form.values.triggers[index].type !== 'backup_status') return null;
 
   return (
     <Select
+      withAsterisk
       label='Backup Status'
       placeholder='Backup Status'
-      value={trigger.status}
       className='flex-1'
-      onChange={(value) => onUpdate({ type: 'backup_status', status: value as ServerBackupStatus })}
       data={Object.entries(serverBackupStatusLabelMapping).map(([value, label]) => ({
         value,
         label,
       }))}
+      {...form.getInputProps(`triggers.${index}.status`)}
     />
   );
 }
 
-function ConsoleLineTriggerForm({ trigger, onUpdate }: TriggerFormProps) {
-  if (trigger.type !== 'console_line') return null;
+function ConsoleLineTriggerForm({ form, index }: TriggerFormProps) {
+  if (form.values.triggers[index].type !== 'console_line') return null;
 
   return (
     <TextInput
+      withAsterisk
       label='Line Contains'
       placeholder='Line Contains'
-      value={trigger.contains}
       className='flex-1'
-      onChange={(e) => onUpdate({ ...trigger, contains: e.target.value })}
+      {...form.getInputProps(`triggers.${index}.contains`)}
     />
   );
 }
 
-function ConsoleLineOutputForm({ trigger, onUpdate }: TriggerFormProps) {
-  if (trigger.type !== 'console_line') return null;
+function ConsoleLineOutputForm({ form, index }: TriggerFormProps) {
+  if (form.values.triggers[index].type !== 'console_line') return null;
 
   return (
     <ScheduleDynamicParameterInput
@@ -159,13 +165,15 @@ function ConsoleLineOutputForm({ trigger, onUpdate }: TriggerFormProps) {
       className='mb-2'
       allowNull
       allowString={false}
-      value={trigger.outputInto}
-      onChange={(v) => onUpdate({ ...trigger, outputInto: v })}
+      value={form.values.triggers[index].outputInto}
+      onChange={(v) => form.setFieldValue(`triggers.${index}.outputInto`, v)}
     />
   );
 }
 
-const TRIGGER_INLINE_FORMS: Record<ScheduleTrigger['type'], React.FC<TriggerFormProps> | null> = {
+type ServerScheduleTriggerType = z.infer<typeof serverScheduleTriggerSchema>['type'];
+
+const TRIGGER_INLINE_FORMS: Record<ServerScheduleTriggerType, React.FC<TriggerFormProps> | null> = {
   cron: CronTriggerForm,
   power_action: PowerActionTriggerForm,
   server_state: ServerStateTriggerForm,
@@ -174,7 +182,7 @@ const TRIGGER_INLINE_FORMS: Record<ScheduleTrigger['type'], React.FC<TriggerForm
   crash: null,
 };
 
-const TRIGGER_EXTRA_FORMS: Record<ScheduleTrigger['type'], React.FC<TriggerFormProps> | null> = {
+const TRIGGER_EXTRA_FORMS: Record<ServerScheduleTriggerType, React.FC<TriggerFormProps> | null> = {
   cron: null,
   power_action: null,
   server_state: null,
@@ -183,14 +191,14 @@ const TRIGGER_EXTRA_FORMS: Record<ScheduleTrigger['type'], React.FC<TriggerFormP
   crash: null,
 };
 
-export function TriggerInlineForm({ trigger, onUpdate }: TriggerFormProps) {
-  const FormComponent = TRIGGER_INLINE_FORMS[trigger.type];
+export function TriggerInlineForm({ form, index }: TriggerFormProps) {
+  const FormComponent = TRIGGER_INLINE_FORMS[form.values.triggers[index].type];
   if (!FormComponent) return null;
-  return <FormComponent trigger={trigger} onUpdate={onUpdate} />;
+  return <FormComponent form={form} index={index} />;
 }
 
-export function TriggerExtraForm({ trigger, onUpdate }: TriggerFormProps) {
-  const FormComponent = TRIGGER_EXTRA_FORMS[trigger.type];
+export function TriggerExtraForm({ form, index }: TriggerFormProps) {
+  const FormComponent = TRIGGER_EXTRA_FORMS[form.values.triggers[index].type];
   if (!FormComponent) return null;
-  return <FormComponent trigger={trigger} onUpdate={onUpdate} />;
+  return <FormComponent form={form} index={index} />;
 }

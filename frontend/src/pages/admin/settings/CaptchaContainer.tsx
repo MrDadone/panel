@@ -11,6 +11,7 @@ import AdminSubContentContainer from '@/elements/containers/AdminSubContentConta
 import Select from '@/elements/input/Select.tsx';
 import { captchaProviderTypeLabelMapping } from '@/lib/enums.ts';
 import {
+  adminSettingsCaptchaProviderFriendlyCaptchaSchema,
   adminSettingsCaptchaProviderHcaptchaSchema,
   adminSettingsCaptchaProviderRecaptchaSchema,
   adminSettingsCaptchaProviderSchema,
@@ -18,6 +19,7 @@ import {
 } from '@/lib/schemas/admin/settings.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
+import CaptchaFriendlyCaptcha from './forms/CaptchaFriendlyCaptcha.tsx';
 import CaptchaHcaptcha from './forms/CaptchaHcaptcha.tsx';
 import CaptchaRecaptcha from './forms/CaptchaRecaptcha.tsx';
 import CaptchaTurnstile from './forms/CaptchaTurnstile.tsx';
@@ -29,6 +31,7 @@ export default function CaptchaContainer() {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof adminSettingsCaptchaProviderSchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       type: 'none',
     },
@@ -45,7 +48,7 @@ export default function CaptchaContainer() {
   const doUpdate = () => {
     setLoading(true);
 
-    updateCaptchaSettings(form.values)
+    updateCaptchaSettings(adminSettingsCaptchaProviderSchema.parse(form.getValues()))
       .then(() => {
         addToast('Captcha settings updated.', 'success');
       })
@@ -64,20 +67,25 @@ export default function CaptchaContainer() {
             value,
             label,
           }))}
+          key={form.key('type')}
           {...form.getInputProps('type')}
         />
 
-        {form.values.type === 'turnstile' ? (
+        {form.getValues().type === 'turnstile' ? (
           <CaptchaTurnstile
             form={form as UseFormReturnType<z.infer<typeof adminSettingsCaptchaProviderTurnstileSchema>>}
           />
-        ) : form.values.type === 'recaptcha' ? (
+        ) : form.getValues().type === 'recaptcha' ? (
           <CaptchaRecaptcha
             form={form as UseFormReturnType<z.infer<typeof adminSettingsCaptchaProviderRecaptchaSchema>>}
           />
-        ) : form.values.type === 'hcaptcha' ? (
+        ) : form.getValues().type === 'hcaptcha' ? (
           <CaptchaHcaptcha
             form={form as UseFormReturnType<z.infer<typeof adminSettingsCaptchaProviderHcaptchaSchema>>}
+          />
+        ) : form.getValues().type === 'friendly_captcha' ? (
+          <CaptchaFriendlyCaptcha
+            form={form as UseFormReturnType<z.infer<typeof adminSettingsCaptchaProviderFriendlyCaptchaSchema>>}
           />
         ) : null}
 

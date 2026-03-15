@@ -1,11 +1,13 @@
 import { faArchive, faChartBar, faCog, faDesktop, faEarthAmerica, faServer } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { z } from 'zod';
 import getBackupConfiguration from '@/api/admin/backup-configurations/getBackupConfiguration.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import AdminContentContainer from '@/elements/containers/AdminContentContainer.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import SubNavigation from '@/elements/SubNavigation.tsx';
+import { adminBackupConfigurationSchema } from '@/lib/schemas/admin/backupConfigurations.ts';
 import AdminBackupConfigurationLocations from '@/pages/admin/backupConfigurations/locations/AdminBackupConfigurationLocations.tsx';
 import AdminBackupConfigurationNodes from '@/pages/admin/backupConfigurations/nodes/AdminBackupConfigurationNodes.tsx';
 import AdminBackupConfigurationServers from '@/pages/admin/backupConfigurations/servers/AdminBackupConfigurationServers.tsx';
@@ -17,7 +19,9 @@ import AdminBackupConfigurationBackups from './backups/AdminBackupConfigurationB
 export default function BackupConfigurationView() {
   const params = useParams<'id'>();
   const { addToast } = useToast();
-  const [backupConfiguration, setBackupConfiguration] = useState<BackupConfiguration | null>(null);
+  const [backupConfiguration, setBackupConfiguration] = useState<z.infer<typeof adminBackupConfigurationSchema> | null>(
+    null,
+  );
 
   useEffect(() => {
     if (params.id) {

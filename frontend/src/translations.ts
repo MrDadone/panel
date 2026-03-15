@@ -10,6 +10,7 @@ try {
 const baseTranslations = defineTranslations({
   items: {
     user: defineEnglishItem('User', 'Users'),
+    file: defineEnglishItem('File', 'Files'),
     server: defineEnglishItem('Server', 'Servers'),
     sshKey: defineEnglishItem('SSH Key', 'SSH Keys'),
   },
@@ -30,15 +31,25 @@ const baseTranslations = defineTranslations({
         cancel: 'Cancel',
         continue: 'Continue',
         skip: 'Skip',
-        logout: 'Logout',
+        okay: 'Okay',
         back: 'Back',
         next: 'Next',
         install: 'Install',
         selectAll: 'Select All',
         deselectAll: 'Deselect All',
+        restore: 'Restore',
+        download: 'Download',
+        downloadAs: 'Download as {format}',
+        export: 'Export',
+        exportAs: 'Export as {format}',
       },
       input: {
         search: 'Search...',
+      },
+      tooltip: {
+        resetToDefault: 'Reset to default',
+        edit: 'Edit',
+        delete: 'Delete',
       },
       form: {
         name: 'Name',
@@ -69,13 +80,23 @@ const baseTranslations = defineTranslations({
           command: 'Command',
         },
       },
+      badge: {
+        active: 'Active',
+        inactive: 'Inactive',
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        successful: 'Successful',
+        failed: 'Failed',
+      },
       server: {
         noAllocation: 'No Allocation',
         state: {
           suspended: 'Suspended',
+          transferring: 'Server is being transferred',
+          nodeMaintenance: 'Node is under Maintenance',
           restoringBackup: 'Restoring Backup',
           installing: 'Installing',
-          InstallFailed: 'Install Failed',
+          installFailed: 'Install Failed',
         },
       },
       enum: {
@@ -111,11 +132,109 @@ const baseTranslations = defineTranslations({
         },
       },
       unlimited: 'Unlimited',
+      readOnly: 'Read-Only',
       na: 'N/A',
+      never: 'Never',
       yes: 'Yes',
       no: 'No',
+      web: 'Web',
+      api: 'API',
       system: 'System',
       schedule: 'Schedule',
+      impersonatedBy: 'Impersonated by {username}',
+    },
+    elements: {
+      errorBoundary: {
+        message: 'An error was encountered by the application while rendering this view. Try refreshing the page.',
+        hideDetails: 'Hide Details',
+        showDetails: 'Show Details',
+        errorMessage: 'Error Message:',
+        stackTrace: 'Stack Trace:',
+        componentStack: 'Component Stack:',
+      },
+      copyOnClick: {
+        toast: {
+          copied: 'Copied to clipboard.',
+          failed: 'Failed to copy to clipboard.',
+          copyManual: 'Copy to clipboard: Ctrl+C or Command+C, Enter',
+        },
+      },
+      container: {
+        alert: {
+          impersonating:
+            'You are currently impersonating a user. Please be aware that your actions may affect the impersonated user\'s account. To exit impersonation mode, click the "Stop Impersonating" button in the bottom left corner.',
+        },
+      },
+      sidebar: {
+        button: {
+          logout: 'Logout',
+          stopImpersonating: 'Stop Impersonating',
+        },
+      },
+      permissionSelector: {
+        selectedPermissions: 'Selected Permissions ({count})',
+        noPermissions: 'No permissions selected.',
+      },
+      can: {
+        tooltip: {
+          cantSave: 'You do not have permission to save.',
+          cantDelete: 'You do not have permission to delete.',
+        },
+      },
+      activityInfoButton: {
+        modal: {
+          info: {
+            title: 'Activity Details',
+          },
+        },
+      },
+      screenBlock: {
+        permissionDenied: {
+          title: 'Permission Denied',
+          content: 'You do not have permission to access this page.',
+        },
+        notFound: {
+          title: 'Not Found',
+          content: 'The page you are looking for could not be found.',
+        },
+        serverConflict: {
+          title: 'Conflicting Server State',
+          contentSuspended: 'This server is suspended and cannot be accessed.',
+          contentNodeMaintenance:
+            'This server is on a node that is currently under maintenance and cannot be accessed.',
+          contentTransferring:
+            'This server is currently being transferred and cannot be accessed until the transfer is complete.',
+          contentInstallFailed: 'This server failed to install and cannot be accessed until acknowledged.',
+          contentInstalling: 'This server is currently installing and cannot be accessed until completed.',
+          contentRestoringBackup:
+            'This server is currently restoring from a backup and cannot be accessed until completed.',
+          button: {
+            viewInstallLogs: 'View Installation Logs',
+            acknowledgeFailure: 'Acknowledge Failure',
+          },
+          modal: {
+            acknowledgeFailure: {
+              title: 'Acknowledge Installation Failure',
+              content:
+                'By acknowledging this installation failure, you are confirming that you are aware of the failed installation and have taken any necessary steps to resolve the issue. This will allow you to regain control over the server.',
+            },
+          },
+        },
+      },
+      serverWebsocket: {
+        error: {
+          connectionFailed: 'Unable to connect after multiple attempts. Please refresh the page.',
+          connectionClosed: 'Connection to server was closed. Attempting to reconnect...',
+          connectionRetry: 'Connection lost. Retrying (attempt {attempt})...',
+          authFailed: 'Authentication failed. Attempting to refresh credentials...',
+          authRefreshFailed: 'Failed to refresh credentials. Please refresh the page to try again.',
+          permissionRevoked: 'Connection closed: your access to this server has been revoked.',
+          tokenRefreshLoop: 'Authentication loop detected. Please refresh the page to try again.',
+        },
+        banner: {
+          retrying: 'Retrying in {countdown}...',
+        },
+      },
     },
     pages: {
       oobe: {
@@ -256,6 +375,8 @@ const baseTranslations = defineTranslations({
           tooltip: {
             removeFromGroup: 'Remove from Group',
             addToGroup: 'Add to Group',
+            addServerToGroup: 'Add Server to Group',
+            groupActions: 'Group Actions',
             noGroups: 'No groups available to add server to',
             noGroup: 'This server is not in any group',
           },
@@ -425,6 +546,14 @@ const baseTranslations = defineTranslations({
         },
         securityKeys: {
           title: 'Security Keys',
+          table: {
+            columns: {
+              credentialId: 'Credential ID',
+            },
+          },
+          tooltip: {
+            secureContextRequired: 'A secure context (HTTPS) is required to use security keys.',
+          },
           modal: {
             createSecurityKey: {
               title: 'Create Security Key',
@@ -475,12 +604,17 @@ const baseTranslations = defineTranslations({
           fileManager: {
             title: 'File Manager',
             selectAll: 'Select all files',
-            deselectAll: 'Deselect all files',
             cutFiles: 'Cut selected files',
+            copyFiles: 'Copy selected files',
+            duplicateFile: 'Duplicate selected file',
             pasteFiles: 'Paste files',
+            searchFiles: 'Search files',
+            moveUpDirectory: 'Move Up a directory',
+            moveUpSelection: 'Move Up the selection',
+            moveDownSelection: 'Move Down the selection',
+            renameFile: 'Rename file',
+            deselectAll: 'Deselect all files',
             deleteFiles: 'Delete selected files',
-            dragToMove: 'Drag files or folder to move into folder',
-            search: 'Search files',
           },
           table: {
             title: 'Table Navigation',
@@ -491,6 +625,7 @@ const baseTranslations = defineTranslations({
           },
           console: {
             title: 'Server Console',
+            searchContent: 'Search in console output',
             previousCommand: 'Previous command in history',
             nextCommand: 'Next command in history',
           },
@@ -514,6 +649,9 @@ const baseTranslations = defineTranslations({
               title: 'Create SSH Key',
               toast: {
                 created: 'SSH key created.',
+              },
+              button: {
+                uploadKeyFile: 'Upload Key File',
               },
               form: {
                 publicKey: 'Public Key',
@@ -544,6 +682,39 @@ const baseTranslations = defineTranslations({
             },
           },
         },
+        commandSnippets: {
+          title: 'Command Snippets',
+          table: {
+            columns: {
+              eggs: 'Eggs',
+            },
+          },
+          form: {
+            eggs: 'Eggs',
+            command: 'Command',
+          },
+          modal: {
+            createCommandSnippet: {
+              title: 'Create Command Snippet',
+              toast: {
+                created: 'Command snippet created.',
+              },
+            },
+            editCommandSnippet: {
+              title: 'Edit Command Snippet',
+              toast: {
+                updated: 'Command snippet updated.',
+              },
+            },
+            deleteCommandSnippet: {
+              title: 'Confirm Command Snippet Deletion',
+              content: 'Are you sure you want to delete **{name}** from your account?',
+              toast: {
+                removed: 'Command snippet removed.',
+              },
+            },
+          },
+        },
         oauthLinks: {
           title: 'OAuth Links',
           button: {
@@ -568,6 +739,9 @@ const baseTranslations = defineTranslations({
         },
         apiKeys: {
           title: 'API Keys',
+          button: {
+            apiDocumentation: 'API Documentation',
+          },
           table: {
             columns: {
               key: 'Key',
@@ -622,12 +796,31 @@ const baseTranslations = defineTranslations({
           toast: {
             installCancelled: 'Server install cancelled.',
           },
+          modal: {
+            sshDetails: {
+              title: 'SSH Details',
+              form: {
+                protocol: 'Protocol',
+                port: 'Port',
+                host: 'Host',
+                username: 'Username',
+                password: 'Password',
+                yourPassword: 'Your Control Panel Password',
+                command: 'SSH Command',
+              },
+              launch: 'Launch',
+            },
+          },
           notification: {
+            nodeMaintenance: 'Your Server is on a node that is currently under maintenance.',
+            transferring: 'Your Server is currently being transferred to another node.',
             restoringBackup: 'Your Server is currently restoring from a backup. Please wait...',
             installing: 'Your Server is currently being installed. Please wait...',
           },
           message: {
             serverMarkedAs: 'Server marked as {state}...',
+            installFailed: 'Installation has failed.',
+            installCompleted: 'Installation has completed successfully.',
             transferFailed: 'Transfer has failed.',
             pullingImage: "Your Server is currently pulling it's docker image. Please wait...",
             pulling: 'Pulling',
@@ -635,6 +828,8 @@ const baseTranslations = defineTranslations({
             layer: 'Layer',
           },
           tooltip: {
+            search: 'Search',
+            sshDetails: 'SSH Details',
             commandHistory: 'Command History',
             decreaseFontSize: 'Decrease Font Size',
             increaseFontSize: 'Increase Font Size',
@@ -699,6 +894,223 @@ const baseTranslations = defineTranslations({
         },
         files: {
           title: 'Files',
+          titleEditorViewing: 'Viewing {file}',
+          titleEditorEditing: 'Editing {file}',
+          titleEditorNew: 'New File',
+          table: {
+            columns: {
+              modified: 'Modified',
+            },
+          },
+          button: {
+            new: 'New',
+            sftpDetails: 'SFTP Details',
+            openInNewWindow: 'Open in new Window',
+            details: 'Details',
+            rename: 'Rename',
+            copy: 'Copy',
+            move: 'Move',
+            fingerprint: 'Fingerprint',
+            permissions: 'Permissions',
+            unarchive: 'Unarchive',
+            archive: 'Archive',
+            remoteCopy: 'Remote Copy',
+            search: 'Search',
+            exitBackup: 'Exit Backup',
+            fileFromEditor: 'File from Editor',
+            directory: 'Directory',
+            fileFromPull: 'File from Pull',
+            fileFromUpload: 'File from Upload',
+            directoryFromUpload: 'Directory from Upload',
+          },
+          actionBar: {
+            copyHere: 'Copy {files} here',
+            moveHere: 'Move {files} here',
+          },
+          searchBanner: {
+            resultsTitle: 'Search Results ({files} found)',
+            query: 'Query:',
+            excluded: 'Excluded:',
+            content: 'Content:',
+            size: 'Size:',
+            min: 'Min:',
+            max: 'Max:',
+          },
+          operations: {
+            uploadingFolder: 'Uploading folder: {folder} ({current}/{total} files)',
+            waiting: 'Waiting: ',
+            uploading: 'Uploading: ',
+            compressing: 'Compressing {files} from {path}',
+            decompressing: 'Decompressing {path}',
+            pulling: 'Pulling {path}',
+            copying: 'Copying {path} to {destination}',
+            copyingMany: 'Copying {files}',
+            receivingRemote: 'Receiving {files} from remote server',
+            sendingRemote: 'Sending {files} to remote server',
+          },
+          dropzone: {
+            title: 'Drop files here to upload',
+            subtitle: 'Release to start uploading',
+          },
+          settings: {
+            clickOnce: 'Click once to open file or folder',
+            preferPhysicalSize: 'Show physical size instead of logical size',
+            editorMinimap: 'Show File Minimap',
+            editorLineOverflow: 'Wrap Line Overflow',
+            imageViewerSmoothing: 'Smoothen Image (Anti-Aliasing)',
+          },
+          toast: {
+            operationCancelled: 'Operation cancelled',
+            copyingStarted: '{files} started copying.',
+            filesCouldNotBeMoved: 'Files could not be moved.',
+            filesMoved: '{files} moved.',
+            downloadStarted: 'Download started.',
+            filesDeleted: 'Files have been deleted.',
+            archiveCreationStarted: 'Archive creation has begun.',
+            fileCopyingStarted: 'File copying has started.',
+            fileInfoRetrieved: 'File information retrieved successfully.',
+            filePullingStarted: 'File pulling has started.',
+            fileRenamed: 'File has been renamed.',
+            fileCouldNotBeRenamed: 'File could not be renamed.',
+            permissionsUpdated: 'Permissions have been updated.',
+            fileSaved: 'File has been saved.',
+          },
+          modal: {
+            activeUploads: {
+              title: 'Active Uploads',
+              content:
+                'Are you sure you want to leave this page? You have {files} active file uploads. If you leave this page, the file uploads will abort.',
+              button: {
+                leave: 'Leave Page',
+              },
+            },
+            unsavedChanges: {
+              title: 'Unsaved Changes',
+              content:
+                'You have unsaved changes in the file editor. Are you sure you want to leave this page? If you leave, your changes will be lost.',
+              button: {
+                leave: 'Leave Page',
+              },
+            },
+            createArchive: {
+              title: 'Create Archive',
+              form: {
+                archiveName: 'Archive Name',
+                format: 'Format',
+              },
+              createdAs: 'This archive will be created as ',
+            },
+            createDirectory: {
+              title: 'Create Directory',
+              form: {
+                directoryName: 'Directory Name',
+              },
+              createdAs: 'This directory will be created as ',
+            },
+            copyFile: {
+              title: 'Copy File',
+              form: {
+                fileName: 'File Name',
+              },
+              createdAs: 'This file will be created as ',
+            },
+            copyRemote: {
+              title: 'Remote Copy Files',
+              form: {
+                server: 'Server',
+                destination: 'Destination',
+              },
+              createdAs: 'These files will be created on the remote server under ',
+            },
+            fileFingerprints: {
+              title: 'File Fingerprint',
+              form: {
+                algorithm: 'Algorithm',
+                fingerprint: 'Fingerprint',
+              },
+              button: {
+                calculate: 'Calculate Fingerprint',
+              },
+            },
+            deleteFile: {
+              title: 'Delete File',
+              singleFileWarning: 'You will not be able to recover the contents of {file} once deleted.',
+              multipleFilesWarning: 'You will not be able to recover the contents of the following files once deleted.',
+            },
+            createFile: {
+              title: 'Create File',
+              form: {
+                fileName: 'File Name',
+              },
+            },
+            details: {
+              title: 'File Details',
+              path: 'Path',
+              mode: 'Mode',
+              logicalSize: 'Logical Size',
+              physicalSize: 'Physical Size',
+              mimeType: 'MIME Type',
+              lastModifiedAt: 'Last Modified At',
+              createdAt: 'Created At',
+            },
+            filePermissions: {
+              title: 'File Permissions',
+              symbolic: 'Symbolic:',
+              octal: 'Octal:',
+              owner: 'Owner',
+              group: 'Group',
+              other: 'Other',
+              breakdown: 'Permission Breakdown',
+              readPermission: 'Read permission (4)',
+              writePermission: 'Write permission (2)',
+              executePermission: 'Execute permission (1)',
+            },
+            renameFile: {
+              title: 'Rename File',
+              form: {
+                fileName: 'File Name',
+              },
+            },
+            searchFiles: {
+              title: 'Search Files',
+              placeholder: 'Search for files...',
+              advancedFilters: 'Advanced Filters',
+              pathPatterns: 'Path Patterns',
+              include: 'Include',
+              exclude: 'Exclude',
+              caseInsensitive: 'Case insensitive',
+              fileContent: 'File Content',
+              searchText: 'Search text',
+              maxFileSize: 'Max file size',
+              includeOversized: 'Include oversized files',
+              includeOversizedDescription: 'Include files that match other filters but are too large to search',
+              fileSize: 'File Size',
+              minimum: 'Minimum',
+              maximum: 'Maximum',
+            },
+            pullFile: {
+              title: 'Pull File',
+              form: {
+                fileUrl: 'File URL',
+                query: 'Query',
+                fileName: 'File Name',
+              },
+              createdAs: 'This file will be created as ',
+              pull: 'Pull',
+            },
+            sftpDetails: {
+              title: 'SFTP Details',
+              form: {
+                protocol: 'Protocol',
+                port: 'Port',
+                host: 'Host',
+                username: 'Username',
+                password: 'Password',
+                yourPassword: 'Your Control Panel Password',
+              },
+              launch: 'Launch',
+            },
+          },
         },
         databases: {
           title: 'Databases',
@@ -759,6 +1171,10 @@ const baseTranslations = defineTranslations({
         },
         schedules: {
           title: 'Schedules',
+          dropzone: {
+            title: 'Drop some files here to import them as Schedules',
+            subtitle: 'Release to start importing',
+          },
         },
         subusers: {
           title: 'Subusers',
@@ -812,9 +1228,6 @@ const baseTranslations = defineTranslations({
           },
           button: {
             browse: 'Browse',
-            download: 'Download',
-            downloadAs: 'Download as {format}',
-            restore: 'Restore',
           },
           toast: {
             downloadStarted: 'Download started.',
@@ -906,8 +1319,44 @@ const baseTranslations = defineTranslations({
             variablesUpdated: 'Variables updated.',
           },
         },
+        mounts: {
+          title: 'Mounts',
+          table: {
+            columns: {
+              target: 'Target',
+              mounted: 'Mounted',
+              readOnly: 'Read Only',
+            },
+          },
+          modal: {
+            attachMount: {
+              title: 'Attach Mount',
+              content: 'Do you want to attach **{name}** to `{target}`?',
+              confirm: 'Attach',
+              toast: {
+                attached: '{name} has been mounted to your server.',
+              },
+            },
+            detachMount: {
+              title: 'Detach Mount',
+              content: 'Do you want to detach **{name}** from `{target}`?',
+              confirm: 'Detach',
+              toast: {
+                detached: '{name} has been removed from your server.',
+              },
+            },
+          },
+        },
         settings: {
           title: 'Settings',
+          debugInformation: {
+            title: 'Debug Information',
+            form: {
+              nodeName: 'Node (UUID)',
+              locationName: 'Location (UUID)',
+              serverUuid: 'Server UUID',
+            },
+          },
           rename: {
             title: 'Rename Server',
             form: {

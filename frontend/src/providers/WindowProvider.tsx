@@ -1,16 +1,19 @@
 import { faX, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon, Title } from '@mantine/core';
-import { FC, ReactNode, useCallback, useMemo, useState } from 'react';
+import { ActionIcon } from '@mantine/core';
+import { FC, ReactNode, startTransition, useCallback, useMemo, useState } from 'react';
 import { Rnd } from 'react-rnd';
-import Card from '@/elements/Card.tsx';
+import TitleCard from '@/elements/TitleCard.tsx';
 import { CurrentWindowProvider } from '@/providers/CurrentWindowProvider.tsx';
 import { WindowContext } from '@/providers/contexts/windowContext.ts';
 
+const MAX_WINDOWS = 32;
+const BASE_Z_INDEX = 100;
+
 interface WindowType {
   id: number;
-  icon: IconDefinition | undefined;
-  title: string | undefined;
+  icon: IconDefinition;
+  title: string;
   component: ReactNode;
   zIndex: number;
 }
@@ -19,54 +22,62 @@ let windowId = 1;
 
 const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [windows, setWindows] = useState<WindowType[]>([]);
-  const [maxZIndex, setMaxZIndex] = useState(100);
 
   const closeWindow = useCallback((id: number) => {
     setWindows((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const closeAllWindows = useCallback(() => {
+    setWindows([]);
+  }, []);
+
   const addWindow = useCallback(
-    (icon: IconDefinition | undefined, title: string | undefined, component: ReactNode) => {
+    (icon: IconDefinition, title: string, component: ReactNode) => {
+      if (windows.length >= MAX_WINDOWS) return -1;
+
       const id = windowId++;
-      setMaxZIndex((prev) => prev + 1);
-      setWindows((prev) => [...prev, { id, icon, title, component, zIndex: maxZIndex + 1 }]);
+
+      startTransition(() => {
+        setWindows((prev) => [...prev, { id, icon, title, component, zIndex: BASE_Z_INDEX + prev.length }]);
+      });
 
       return id;
     },
-    [maxZIndex],
+    [windows.length],
   );
 
-  const updateWindow = useCallback((id: number, title: string | undefined) => {
+  const updateWindow = useCallback((id: number, title: string) => {
     setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, title } : w)));
   }, []);
 
-  const bringToFront = useCallback(
-    (id: number) => {
+  const bringToFront = useCallback((id: number) => {
+    startTransition(() => {
       setWindows((prev) => {
-        const window = prev.find((w) => w.id === id);
-        if (!window) return prev;
+        const target = prev.find((w) => w.id === id);
+        if (!target) return prev;
 
-        // Check if already on top
-        const isOnTop = prev.every((w) => w.id === id || w.zIndex < window.zIndex);
+        const isOnTop = prev.every((w) => w.id === id || w.zIndex < target.zIndex);
         if (isOnTop) return prev;
 
-        // Bring to front
-        const newZIndex = maxZIndex + 1;
-        setMaxZIndex(newZIndex);
+        const others = prev.filter((w) => w.id !== id).sort((a, b) => a.zIndex - b.zIndex);
 
-        return prev.map((w) => (w.id === id ? { ...w, zIndex: newZIndex } : w));
+        const reindexed = new Map<number, number>();
+        others.forEach((w, i) => reindexed.set(w.id, BASE_Z_INDEX + i));
+        reindexed.set(id, BASE_Z_INDEX + others.length);
+
+        return prev.map((w) => ({ ...w, zIndex: reindexed.get(w.id)! }));
       });
-    },
-    [maxZIndex],
-  );
+    });
+  }, []);
 
   const contextValue = useMemo(
     () => ({
       addWindow,
       updateWindow,
       closeWindow,
+      closeAllWindows,
     }),
-    [addWindow, updateWindow, closeWindow],
+    [addWindow, updateWindow, closeWindow, closeAllWindows],
   );
 
   return (
@@ -98,30 +109,33 @@ const WindowProvider: FC<{ children: ReactNode }> = ({ children }) => {
             topRight: true,
           }}
         >
-          <Card p='sm' shadow='xl' className='h-full' id={`window_${w.id}_card`}>
-            <div className={`window_${w.id}_drag flex flex-row justify-between items-center cursor-grab`}>
-              <Title order={3}>
-                {w.icon && <FontAwesomeIcon icon={w.icon} />} {w.title}
-              </Title>
-              <div className='flex flex-row'>
-                <ActionIcon
-                  variant='subtle'
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    closeWindow(w.id);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faX} />
-                </ActionIcon>
-              </div>
-            </div>
+          <TitleCard
+            key={`window_${w.id}_card`}
+            className={`h-full window_${w.id}_card`}
+            titleClassName={`window_${w.id}_drag cursor-grab select-none`}
+            childrenClassName='h-full pb-16'
+            icon={<FontAwesomeIcon icon={w.icon} />}
+            title={w.title}
+            rightSection={
+              <ActionIcon
+                variant='subtle'
+                className='ml-auto self-end'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeWindow(w.id);
+                }}
+              >
+                <FontAwesomeIcon icon={faX} />
+              </ActionIcon>
+            }
+          >
             <CurrentWindowProvider id={w.id}>{w.component}</CurrentWindowProvider>
-          </Card>
+          </TitleCard>
         </Rnd>
       ))}
     </WindowContext.Provider>
   );
 };
 
-export { WindowProvider };
 export { useWindows } from './contexts/windowContext.ts';
+export { WindowProvider };

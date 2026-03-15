@@ -5,18 +5,18 @@ use axum::{
     http::StatusCode,
     routing::get,
 };
+use compact_str::ToCompactString;
 use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, ClientSecret, HttpRequest, HttpResponse, RedirectUrl,
     TokenResponse, TokenUrl, basic::BasicClient,
 };
-use rand::distr::SampleString;
 use rustis::commands::StringCommands;
 use serde::Deserialize;
 use shared::{
     GetState,
     models::{
-        ByUuid, oauth_provider::OAuthProvider, user::User, user_activity::UserActivity,
-        user_oauth_link::UserOAuthLink, user_session::UserSession,
+        ByUuid, CreatableModel, oauth_provider::OAuthProvider, user::User,
+        user_activity::UserActivity, user_oauth_link::UserOAuthLink, user_session::UserSession,
     },
     response::ApiResponse,
 };
@@ -123,7 +123,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                 }
 
                 let (user, session) =
-                    match User::by_session(&state.database, session_id.value()).await? {
+                    match User::by_session_cached(&state.database, session_id.value()).await? {
                         Some(data) => data,
                         None => {
                             return ApiResponse::error("invalid session")
@@ -132,34 +132,15 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                         }
                     };
 
-                state
-                    .database
-                    .batch_action("update_user_session", session.uuid, {
-                        let state = state.clone();
-                        let user_agent = shared::utils::slice_up_to(
-                            headers
-                                .get("User-Agent")
-                                .and_then(|ua| ua.to_str().ok())
-                                .unwrap_or("unknown"),
-                            255,
-                        )
-                        .to_string();
-
-                        async move {
-                            sqlx::query!(
-                                "UPDATE user_sessions
-                                SET ip = $1, user_agent = $2, last_used = NOW()
-                                WHERE user_sessions.uuid = $3",
-                                sqlx::types::ipnetwork::IpNetwork::from(ip.0),
-                                user_agent,
-                                session.uuid,
-                            )
-                            .execute(state.database.write())
-                            .await?;
-
-                            Ok(())
-                        }
-                    })
+                session
+                    .update_last_used(
+                        &state.database,
+                        ip.0,
+                        headers
+	                          .get("User-Agent")
+		                        .and_then(|ua| ua.to_str().ok())
+		                        .unwrap_or("unknown")
+                    )
                     .await;
 
                 let settings = state.settings.get().await?;
@@ -193,32 +174,49 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                     .json()
                     .await?;
 
-                let identifier = match oauth_provider.extract_identifier(&info) {
-                    Ok(identifier) => identifier,
-                    Err(err) => {
-                        return ApiResponse::error(&err.to_string())
-                            .with_status(StatusCode::INTERNAL_SERVER_ERROR)
+                let identifier = oauth_provider.extract_identifier(&info)?;
+
+                let options = shared::models::user_oauth_link::CreateUserOAuthLinkOptions {
+                    user_uuid: user.uuid,
+                    oauth_provider_uuid: oauth_provider.uuid,
+                    identifier: identifier.to_compact_string(),
+                };
+                match shared::models::user_oauth_link::UserOAuthLink::create(&state, options).await {
+                    Ok(_) => {},
+                    Err(err) if err.is_unique_violation() => {
+                        return ApiResponse::error("you have already connected with this oauth provider")
+                            .with_status(StatusCode::CONFLICT)
                             .ok();
                     }
-                };
+                    Err(err) => return ApiResponse::from(err).ok(),
+                }
 
-                UserOAuthLink::create(&state.database, user.uuid, oauth_provider.uuid, &identifier)
-                    .await?;
-
-                if let Err(err) = UserActivity::log(
-                    &state.database,
-                    user.uuid,
-                    None,
-                    "account:oauth-links.create",
-                    Some(ip.0.into()),
-                    serde_json::json!({
-                        "provider": oauth_provider.name,
-                        "identifier": identifier,
-                    }),
+                if let Err(err) = UserActivity::create(
+                    &state,
+                    shared::models::user_activity::CreateUserActivityOptions {
+                        user_uuid: user.uuid,
+                        impersonator_uuid: None,
+                        api_key_uuid: None,
+                        event: "account:oauth-links.create".into(),
+                        ip: Some(ip.0.into()),
+                        data: serde_json::json!({
+                            "provider": oauth_provider.name,
+                            "identifier": identifier,
+                            "user_agent": headers
+                                .get("User-Agent")
+                                .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                                .unwrap_or("unknown"),
+                        }),
+                        created: None,
+                    },
                 )
                 .await
                 {
-                    tracing::warn!(user = %user.uuid, "failed to log user activity: {:?}", err);
+                    tracing::warn!(
+                        user = %user.uuid,
+                        "failed to log user activity: {:#?}",
+                        err
+                    );
                 }
 
                 let settings = state.settings.get().await?;
@@ -242,27 +240,23 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                     .json()
                     .await?;
 
-                let identifier = match oauth_provider.extract_identifier(&info) {
-                    Ok(identifier) => identifier,
-                    Err(err) => {
-                        return ApiResponse::error(&err.to_string())
-                            .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                            .ok();
-                    }
-                };
+                let identifier = oauth_provider.extract_identifier(&info)?;
 
                 match UserOAuthLink::by_oauth_provider_uuid_identifier(&state.database, oauth_provider.uuid, &identifier).await? {
                     Some(oauth_link) => {
                         let user = oauth_link.user.fetch(&state.database).await?;
 
                         let key = UserSession::create(
-                            &state.database,
-                            user.uuid,
-                            ip.0.into(),
-                            headers
-                                .get("User-Agent")
-                                .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
-                                .unwrap_or("unknown"),
+                            &state,
+                            shared::models::user_session::CreateUserSessionOptions {
+                                user_uuid: user.uuid,
+                                ip: ip.0.into(),
+                                user_agent: headers
+                                    .get("User-Agent")
+                                    .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                                    .unwrap_or("unknown")
+                                    .into(),
+                            },
                         )
                         .await?;
 
@@ -283,20 +277,33 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                                 .build(),
                         );
 
-                        if let Err(err) = UserActivity::log(
-                            &state.database,
-                            user.uuid,
-                            None,
-                            "auth:success",
-                            Some(ip.0.into()),
-                            serde_json::json!({
-                                "using": "oauth2",
-                                "oauth_provider": oauth_provider.name,
-                            }),
+                        if let Err(err) = UserActivity::create(
+                            &state,
+                            shared::models::user_activity::CreateUserActivityOptions {
+                                user_uuid: user.uuid,
+                                impersonator_uuid: None,
+                                api_key_uuid: None,
+                                event: "auth:success".into(),
+                                ip: Some(ip.0.into()),
+                                data: serde_json::json!({
+                                    "using": "oauth2",
+                                    "oauth_provider": oauth_provider.name,
+
+                                    "user_agent": headers
+                                        .get("User-Agent")
+                                        .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                                        .unwrap_or("unknown"),
+                                }),
+                                created: None,
+                            },
                         )
                         .await
                         {
-                            tracing::warn!(user = %user.uuid, "failed to log user activity: {:?}", err);
+                            tracing::warn!(
+                                user = %user.uuid,
+                                "failed to log user activity: {:#?}",
+                                err
+                            );
                         }
 
                         sqlx::query!(
@@ -324,55 +331,25 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                         }
                         let secure = settings.app.url.starts_with("https://");
 
-                        let username = match oauth_provider.extract_username(&info) {
-                            Ok(username) => username,
-                            Err(err) => {
-                                return ApiResponse::error(&err.to_string())
-                                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                                    .ok();
-                            }
-                        };
-                        let email = match oauth_provider.extract_email(&info) {
-                            Ok(email) => email,
-                            Err(err) => {
-                                return ApiResponse::error(&err.to_string())
-                                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                                    .ok();
-                            }
-                        };
-                        let name_first = match oauth_provider.extract_name_first(&info) {
-                            Ok(name_first) => name_first,
-                            Err(err) => {
-                                return ApiResponse::error(&err.to_string())
-                                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                                    .ok();
-                            }
-                        };
-                        let name_last = match oauth_provider.extract_name_last(&info) {
-                            Ok(name_last) => name_last,
-                            Err(err) => {
-                                return ApiResponse::error(&err.to_string())
-                                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                                    .ok();
-                            }
-                        };
+                        let username = oauth_provider.extract_username(&info)?.into();
+                        let email = oauth_provider.extract_email(&info)?.into();
+                        let name_first = oauth_provider.extract_name_first(&info)?.into();
+                        let name_last = oauth_provider.extract_name_last(&info)?.into();
 
-                        let password = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 16);
-                        let user = match User::create(
-                            &state.database,
-                            None,
-                            None,
-                            &username,
-                            &email,
-                            &name_first,
-                            &name_last,
-                            &password,
-                            false,
-                            &settings.app.language,
-                        )
-                        .await
-                        {
-                            Ok(user_uuid) => User::by_uuid(&state.database, user_uuid).await?,
+                        let options = shared::models::user::CreateUserOptions {
+                            role_uuid: None,
+                            external_id: None,
+                            username,
+                            email,
+                            name_first,
+                            name_last,
+                            password: None,
+                            admin: false,
+                            language: settings.app.language.clone(),
+                        };
+                        drop(settings);
+                        let user = match User::create(&state, options).await {
+                            Ok(user) => user,
                             Err(err) if err.is_unique_violation() => {
                                 return ApiResponse::error("user with username or email already exists")
                                     .with_status(StatusCode::BAD_REQUEST)
@@ -387,16 +364,17 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
                             }
                         };
 
-                        drop(settings);
-
                         let key = UserSession::create(
-                            &state.database,
-                            user.uuid,
-                            ip.0.into(),
-                            headers
-                                .get("User-Agent")
-                                .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
-                                .unwrap_or("unknown"),
+                            &state,
+                            shared::models::user_session::CreateUserSessionOptions {
+                                user_uuid: user.uuid,
+                                ip: ip.0.into(),
+                                user_agent: headers
+                                    .get("User-Agent")
+                                    .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                                    .unwrap_or("unknown")
+                                    .into(),
+                            },
                         )
                         .await?;
 

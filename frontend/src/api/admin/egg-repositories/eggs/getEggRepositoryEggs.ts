@@ -1,10 +1,12 @@
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
+import { adminEggRepositoryEggSchema } from '@/lib/schemas/admin/eggRepositories.ts';
 
 export default async (
   eggRepositoryUuid: string,
   page: number,
   search?: string,
-): Promise<ResponseMeta<AdminEggRepositoryEgg>> => {
+): Promise<Pagination<z.infer<typeof adminEggRepositoryEggSchema>>> => {
   return new Promise((resolve, reject) => {
     axiosInstance
       .get(`/api/admin/egg-repositories/${eggRepositoryUuid}/eggs`, {

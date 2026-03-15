@@ -15,6 +15,7 @@ export enum SocketEvent {
   STATS = 'stats',
   TRANSFER_LOGS = 'transfer logs',
   TRANSFER_STATUS = 'transfer status',
+  TRANSFER_PROGRESS = 'transfer progress',
   BACKUP_STARTED = 'backup started',
   BACKUP_PROGRESS = 'backup progress',
   BACKUP_COMPLETED = 'backup completed',
@@ -34,6 +35,7 @@ export enum SocketRequest {
   CONFIGURE_SOCKET = 'configure socket',
   SEND_LOGS = 'send logs',
   SEND_STATS = 'send stats',
+  SEND_COMMAND = 'send command',
   SET_STATE = 'set state',
   PING = 'ping',
 }

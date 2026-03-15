@@ -82,57 +82,17 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid,
+            CreatableModel,
             admin_activity::GetAdminActivityLogger,
-            role::Role,
-            user::{GetPermissionManager, User},
+            user::{CreateUserOptions, GetPermissionManager, User},
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        role_uuid: Option<uuid::Uuid>,
-
-        #[validate(length(max = 255))]
-        #[schema(max_length = 255)]
-        external_id: Option<compact_str::CompactString>,
-
-        #[validate(
-            length(min = 3, max = 15),
-            regex(path = "*shared::models::user::USERNAME_REGEX")
-        )]
-        #[schema(min_length = 3, max_length = 15)]
-        #[schema(pattern = "^[a-zA-Z0-9_]+$")]
-        username: compact_str::CompactString,
-        #[validate(email)]
-        #[schema(format = "email")]
-        email: String,
-        #[validate(length(min = 2, max = 255))]
-        #[schema(min_length = 2, max_length = 255)]
-        name_first: compact_str::CompactString,
-        #[validate(length(min = 2, max = 255))]
-        #[schema(min_length = 2, max_length = 255)]
-        name_last: compact_str::CompactString,
-        #[validate(length(min = 8, max = 512))]
-        #[schema(min_length = 8, max_length = 512)]
-        password: String,
-
-        admin: bool,
-
-        #[validate(
-            length(min = 5, max = 15),
-            custom(function = "shared::validate_language")
-        )]
-        #[schema(min_length = 5, max_length = 15)]
-        language: compact_str::CompactString,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {
@@ -143,61 +103,23 @@ mod post {
         (status = OK, body = inline(Response)),
         (status = BAD_REQUEST, body = ApiError),
         (status = CONFLICT, body = ApiError),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(CreateUserOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<CreateUserOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("users.create")?;
 
-        let role = if let Some(role_uuid) = data.role_uuid
-            && !role_uuid.is_nil()
-        {
-            match Role::by_uuid_optional(&state.database, role_uuid).await? {
-                Some(role) => Some(role),
-                None => {
-                    return ApiResponse::error("role not found")
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
-                }
-            }
-        } else {
-            None
-        };
-
-        let user = match User::create(
-            &state.database,
-            role.as_ref().map(|role| role.uuid),
-            data.external_id.as_deref(),
-            &data.username,
-            &data.email,
-            &data.name_first,
-            &data.name_last,
-            &data.password,
-            data.admin,
-            &data.language,
-        )
-        .await
-        {
-            Ok(user_uuid) => User::by_uuid(&state.database, user_uuid).await?,
+        let user = match User::create(&state, data).await {
+            Ok(user) => user,
             Err(err) if err.is_unique_violation() => {
-                return ApiResponse::error("user with email/username already exists").ok();
-            }
-            Err(err) => {
-                tracing::error!("failed to create user: {:?}", err);
-
-                return ApiResponse::error("failed to create user")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
+                return ApiResponse::error("user with email/username already exists")
+                    .with_status(StatusCode::CONFLICT)
                     .ok();
             }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger
@@ -205,7 +127,7 @@ mod post {
                 "user:create",
                 serde_json::json!({
                     "uuid": user.uuid,
-                    "role_uuid": role.map(|r| r.uuid),
+                    "role_uuid": user.role.as_ref().map(|r| r.uuid),
                     "username": user.username,
                     "email": user.email,
                     "name_first": user.name_first,

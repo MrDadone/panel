@@ -21,8 +21,20 @@ export default function CaptchaTurnstile({
   return (
     <Stack mt='md'>
       <Group grow>
-        <TextInput withAsterisk label='Site Key' placeholder='Site Key' {...form.getInputProps('siteKey')} />
-        <PasswordInput withAsterisk label='Secret Key' placeholder='Secret Key' {...form.getInputProps('secretKey')} />
+        <TextInput
+          withAsterisk
+          label='Site Key'
+          placeholder='Site Key'
+          key={form.key('siteKey')}
+          {...form.getInputProps('siteKey')}
+        />
+        <PasswordInput
+          withAsterisk
+          label='Secret Key'
+          placeholder='Secret Key'
+          key={form.key('secretKey')}
+          {...form.getInputProps('secretKey')}
+        />
       </Group>
     </Stack>
   );

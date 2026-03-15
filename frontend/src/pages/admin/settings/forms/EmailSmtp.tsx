@@ -13,6 +13,8 @@ export default function EmailSmtp({ form }: { form: UseFormReturnType<z.infer<ty
     form.setValues({
       host: form.values.host ?? '',
       port: form.values.port ?? 587,
+      username: form.values.username ?? null,
+      password: form.values.password ?? null,
       useTls: form.values.useTls ?? true,
       fromAddress: form.values.fromAddress ?? '',
       fromName: form.values.fromName ?? null,
@@ -22,15 +24,38 @@ export default function EmailSmtp({ form }: { form: UseFormReturnType<z.infer<ty
   return (
     <Stack mt='md'>
       <Group grow>
-        <TextInput withAsterisk label='Host' placeholder='Host' {...form.getInputProps('host')} />
-        <NumberInput withAsterisk label='Port' placeholder='Port' min={0} {...form.getInputProps('port')} />
+        <TextInput
+          withAsterisk
+          label='Host'
+          placeholder='Host'
+          key={form.key('host')}
+          {...form.getInputProps('host')}
+        />
+        <NumberInput
+          withAsterisk
+          label='Port'
+          placeholder='Port'
+          min={0}
+          key={form.key('port')}
+          {...form.getInputProps('port')}
+        />
       </Group>
 
-      <Switch label='Use TLS' {...form.getInputProps('useTls', { type: 'checkbox' })} />
+      <Switch label='Use TLS' key={form.key('useTls')} {...form.getInputProps('useTls', { type: 'checkbox' })} />
 
       <Group grow>
-        <TextInput label='Username' placeholder='Username' {...form.getInputProps('username')} />
-        <PasswordInput label='Password' placeholder='Password' {...form.getInputProps('password')} />
+        <TextInput
+          label='Username'
+          placeholder='Username'
+          key={form.key('username')}
+          {...form.getInputProps('username')}
+        />
+        <PasswordInput
+          label='Password'
+          placeholder='Password'
+          key={form.key('password')}
+          {...form.getInputProps('password')}
+        />
       </Group>
 
       <Group grow>
@@ -38,9 +63,15 @@ export default function EmailSmtp({ form }: { form: UseFormReturnType<z.infer<ty
           withAsterisk
           label='From Address'
           placeholder='From Address'
+          key={form.key('fromAddress')}
           {...form.getInputProps('fromAddress')}
         />
-        <TextInput label='From Name' placeholder='From Name' {...form.getInputProps('fromName')} />
+        <TextInput
+          label='From Name'
+          placeholder='From Name'
+          key={form.key('fromName')}
+          {...form.getInputProps('fromName')}
+        />
       </Group>
     </Stack>
   );

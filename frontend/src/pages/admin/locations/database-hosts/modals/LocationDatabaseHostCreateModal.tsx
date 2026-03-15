@@ -1,12 +1,15 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
+import { z } from 'zod';
 import getDatabaseHosts from '@/api/admin/database-hosts/getDatabaseHosts.ts';
 import createLocationDatabaseHost from '@/api/admin/locations/database-hosts/createLocationDatabaseHost.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { databaseTypeLabelMapping } from '@/lib/enums.ts';
+import { adminDatabaseHostSchema } from '@/lib/schemas/admin/databaseHosts.ts';
+import { adminLocationSchema } from '@/lib/schemas/admin/locations.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useAdminStore } from '@/stores/admin.tsx';
@@ -15,14 +18,14 @@ export default function LocationDatabaseHostCreateModal({
   location,
   opened,
   onClose,
-}: ModalProps & { location: Location }) {
+}: ModalProps & { location: z.infer<typeof adminLocationSchema> }) {
   const { addToast } = useToast();
   const { addLocationDatabaseHost } = useAdminStore();
 
   const [loading, setLoading] = useState(false);
-  const [databaseHost, setDatabaseHost] = useState<DatabaseHost | null>(null);
+  const [databaseHost, setDatabaseHost] = useState<z.infer<typeof adminDatabaseHostSchema> | null>(null);
 
-  const databaseHosts = useSearchableResource<DatabaseHost>({
+  const databaseHosts = useSearchableResource<z.infer<typeof adminDatabaseHostSchema>>({
     fetcher: (search) => getDatabaseHosts(1, search),
   });
 
@@ -38,7 +41,7 @@ export default function LocationDatabaseHostCreateModal({
         addToast('Location Database Host created.', 'success');
 
         onClose();
-        addLocationDatabaseHost({ databaseHost, created: new Date().toString() });
+        addLocationDatabaseHost({ databaseHost, created: new Date() });
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
@@ -72,14 +75,14 @@ export default function LocationDatabaseHostCreateModal({
           onSearchChange={databaseHosts.setSearch}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doCreate} loading={loading} disabled={!databaseHost}>
             Create
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

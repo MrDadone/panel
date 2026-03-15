@@ -21,6 +21,7 @@ export default function ActivityContainer() {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof adminSettingsActivitySchema>>({
+    mode: 'uncontrolled',
     initialValues: {
       adminLogRetentionDays: 1,
       userLogRetentionDays: 1,
@@ -41,7 +42,7 @@ export default function ActivityContainer() {
   const doUpdate = () => {
     setLoading(true);
 
-    updateActivitySettings(form.values)
+    updateActivitySettings(adminSettingsActivitySchema.parse(form.getValues()))
       .then(() => {
         addToast('Activity settings updated.', 'success');
       })
@@ -60,6 +61,7 @@ export default function ActivityContainer() {
               withAsterisk
               label='Admin Activity Retention Days'
               placeholder='Admin Activity Retention Days'
+              key={form.key('adminLogRetentionDays')}
               {...form.getInputProps('adminLogRetentionDays')}
             />
 
@@ -67,6 +69,7 @@ export default function ActivityContainer() {
               withAsterisk
               label='User Activity Retention Days'
               placeholder='User Activity Retention Days'
+              key={form.key('userLogRetentionDays')}
               {...form.getInputProps('userLogRetentionDays')}
             />
 
@@ -74,6 +77,7 @@ export default function ActivityContainer() {
               withAsterisk
               label='Server Activity Retention Days'
               placeholder='Server Activity Retention Days'
+              key={form.key('serverLogRetentionDays')}
               {...form.getInputProps('serverLogRetentionDays')}
             />
           </Group>
@@ -82,12 +86,14 @@ export default function ActivityContainer() {
             <Switch
               label='Log Server Admin Activity'
               description="Enable or disable logging of admin activity on servers where the admin isn't an owner or subuser."
+              key={form.key('serverLogAdminActivity')}
               {...form.getInputProps('serverLogAdminActivity', { type: 'checkbox' })}
             />
 
             <Switch
               label='Log Server Schedule Activity'
               description='Enable or disable logging of activity done by server schedules.'
+              key={form.key('serverLogScheduleActivity')}
               {...form.getInputProps('serverLogScheduleActivity', { type: 'checkbox' })}
             />
           </Group>

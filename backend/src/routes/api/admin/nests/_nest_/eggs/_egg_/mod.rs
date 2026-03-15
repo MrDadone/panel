@@ -174,57 +174,16 @@ mod delete {
 mod patch {
     use crate::routes::api::admin::nests::_nest_::{GetNest, eggs::_egg_::GetNestEgg};
     use axum::http::StatusCode;
-    use indexmap::IndexMap;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger, egg_repository_egg::EggRepositoryEgg,
+            UpdatableModel, admin_activity::GetAdminActivityLogger, nest_egg::UpdateNestEggOptions,
             user::GetPermissionManager,
         },
-        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        egg_repository_egg_uuid: Option<uuid::Uuid>,
-
-        #[validate(length(min = 2, max = 255))]
-        #[schema(min_length = 2, max_length = 255)]
-        author: Option<compact_str::CompactString>,
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: Option<compact_str::CompactString>,
-
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-
-        #[schema(inline)]
-        config_files: Option<Vec<shared::models::nest_egg::ProcessConfigurationFile>>,
-        #[schema(inline)]
-        config_startup: Option<shared::models::nest_egg::NestEggConfigStartup>,
-        #[schema(inline)]
-        config_stop: Option<shared::models::nest_egg::NestEggConfigStop>,
-        #[schema(inline)]
-        config_script: Option<shared::models::nest_egg::NestEggConfigScript>,
-        #[schema(inline)]
-        config_allocations: Option<shared::models::nest_egg::NestEggConfigAllocations>,
-
-        #[validate(length(min = 1, max = 4096))]
-        #[schema(min_length = 1, max_length = 4096)]
-        startup: Option<compact_str::CompactString>,
-        force_outgoing_ip: Option<bool>,
-        separate_port: Option<bool>,
-
-        features: Option<Vec<compact_str::CompactString>>,
-        #[validate(custom(function = "shared::models::nest_egg::validate_docker_images"))]
-        docker_images: Option<IndexMap<compact_str::CompactString, compact_str::CompactString>>,
-        file_denylist: Option<Vec<compact_str::CompactString>>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -245,140 +204,25 @@ mod patch {
             description = "The egg ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateNestEggOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         nest: GetNest,
         mut egg: GetNestEgg,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateNestEggOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("eggs.update")?;
 
-        if let Some(egg_repository_egg_uuid) = data.egg_repository_egg_uuid {
-            if egg_repository_egg_uuid.is_nil() {
-                egg.egg_repository_egg = None;
-            } else {
-                let egg_repository_egg = match EggRepositoryEgg::by_uuid_optional(
-                    &state.database,
-                    egg_repository_egg_uuid,
-                )
-                .await?
-                {
-                    Some(egg_repository_egg) => egg_repository_egg,
-                    None => {
-                        return ApiResponse::error("backup configuration not found")
-                            .with_status(StatusCode::NOT_FOUND)
-                            .ok();
-                    }
-                };
-
-                egg.egg_repository_egg =
-                    Some(EggRepositoryEgg::get_fetchable(egg_repository_egg.uuid));
-            }
-        }
-        if let Some(name) = data.name {
-            egg.name = name;
-        }
-        if let Some(author) = data.author {
-            egg.author = author;
-        }
-        if let Some(description) = data.description {
-            if description.is_empty() {
-                egg.description = None;
-            } else {
-                egg.description = Some(description);
-            }
-        }
-        if let Some(config_files) = data.config_files {
-            egg.config_files = config_files;
-        }
-        if let Some(config_startup) = data.config_startup {
-            egg.config_startup = config_startup;
-        }
-        if let Some(config_stop) = data.config_stop {
-            egg.config_stop = config_stop;
-        }
-        if let Some(config_script) = data.config_script {
-            egg.config_script = config_script;
-        }
-        if let Some(config_allocations) = data.config_allocations {
-            if !config_allocations.user_self_assign.is_valid() {
-                return ApiResponse::error("config_allocations.user_self_assign: port ranges must be 1024-65535 and start_port < end_port")
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-            }
-
-            egg.config_allocations = config_allocations;
-        }
-        if let Some(startup) = data.startup {
-            egg.startup = startup;
-        }
-        if let Some(force_outgoing_ip) = data.force_outgoing_ip {
-            egg.force_outgoing_ip = force_outgoing_ip;
-        }
-        if let Some(separate_port) = data.separate_port {
-            egg.separate_port = separate_port;
-        }
-        if let Some(features) = data.features {
-            egg.features = features;
-        }
-        if let Some(docker_images) = data.docker_images {
-            egg.docker_images = docker_images;
-        }
-        if let Some(file_denylist) = data.file_denylist {
-            egg.file_denylist = file_denylist;
-        }
-
-        match sqlx::query!(
-            "UPDATE nest_eggs
-            SET
-                egg_repository_egg_uuid = $2, author = $3, name = $4, description = $5,
-                config_files = $6, config_startup = $7, config_stop = $8,
-                config_script = $9, config_allocations = $10, startup = $11,
-                force_outgoing_ip = $12, separate_port = $13, features = $14,
-                docker_images = $15, file_denylist = $16
-            WHERE nest_eggs.uuid = $1",
-            egg.uuid,
-            egg.egg_repository_egg.as_ref().map(|e| e.uuid),
-            &egg.author,
-            &egg.name,
-            egg.description.as_deref(),
-            serde_json::to_value(&egg.config_files)?,
-            serde_json::to_value(&egg.config_startup)?,
-            serde_json::to_value(&egg.config_stop)?,
-            serde_json::to_value(&egg.config_script)?,
-            serde_json::to_value(&egg.config_allocations)?,
-            &egg.startup,
-            egg.force_outgoing_ip,
-            egg.separate_port,
-            &egg.features as &[compact_str::CompactString],
-            serde_json::to_string(&egg.docker_images)?,
-            &egg.file_denylist as &[compact_str::CompactString],
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match egg.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("egg with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update egg: {:?}", err);
-
-                return ApiResponse::error("failed to update egg")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

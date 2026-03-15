@@ -3,38 +3,36 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod post {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
-        models::{ByUuid, user::User, user_session::UserSession},
+        models::{ByUuid, CreatableModel, user::User, user_session::UserSession},
         response::{ApiResponse, ApiResponseResult},
     };
     use tower_cookies::{Cookie, Cookies};
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
-        #[validate(
-            length(min = 3, max = 15),
-            regex(path = "*shared::models::user::USERNAME_REGEX")
-        )]
+        #[garde(length(chars, min = 3, max = 15), pattern("^[a-zA-Z0-9_]+$"))]
         #[schema(min_length = 3, max_length = 15)]
         #[schema(pattern = "^[a-zA-Z0-9_]+$")]
         username: String,
-        #[validate(email)]
+        #[garde(email)]
         #[schema(format = "email")]
         email: String,
-        #[validate(length(min = 2, max = 255))]
+        #[garde(length(chars, min = 2, max = 255))]
         #[schema(min_length = 2, max_length = 255)]
         name_first: String,
-        #[validate(length(min = 2, max = 255))]
+        #[garde(length(chars, min = 2, max = 255))]
         #[schema(min_length = 2, max_length = 255)]
         name_last: String,
-        #[validate(length(min = 8, max = 512))]
+        #[garde(length(chars, min = 8, max = 512))]
         #[schema(min_length = 8, max_length = 512)]
         password: String,
 
+        #[garde(skip)]
         captcha: Option<String>,
     }
 
@@ -82,8 +80,6 @@ mod post {
 
         let user = match User::create_automatic_admin(
             &state.database,
-            None,
-            None,
             &data.username,
             &data.email,
             &data.name_first,
@@ -108,13 +104,16 @@ mod post {
         };
 
         let key = UserSession::create(
-            &state.database,
-            user.uuid,
-            ip.0.into(),
-            headers
-                .get("User-Agent")
-                .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
-                .unwrap_or("unknown"),
+            &state,
+            shared::models::user_session::CreateUserSessionOptions {
+                user_uuid: user.uuid,
+                ip: ip.0.into(),
+                user_agent: headers
+                    .get("User-Agent")
+                    .map(|ua| shared::utils::slice_up_to(ua.to_str().unwrap_or("unknown"), 255))
+                    .unwrap_or("unknown")
+                    .into(),
+            },
         )
         .await?;
 

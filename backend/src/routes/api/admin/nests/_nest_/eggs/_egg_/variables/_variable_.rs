@@ -81,42 +81,18 @@ mod delete {
 mod patch {
     use crate::routes::api::admin::nests::_nest_::{GetNest, eggs::_egg_::GetNestEgg};
     use axum::{extract::Path, http::StatusCode};
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
-            admin_activity::GetAdminActivityLogger, nest_egg_variable::NestEggVariable,
+            UpdatableModel,
+            admin_activity::GetAdminActivityLogger,
+            nest_egg_variable::{NestEggVariable, UpdateNestEggVariableOptions},
             user::GetPermissionManager,
         },
-        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: Option<compact_str::CompactString>,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-        order: Option<i16>,
-
-        #[validate(length(min = 1, max = 255))]
-        #[schema(min_length = 1, max_length = 255)]
-        env_variable: Option<compact_str::CompactString>,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        default_value: Option<String>,
-
-        user_viewable: Option<bool>,
-        user_editable: Option<bool>,
-        secret: Option<bool>,
-        #[validate(custom(function = "rule_validator::validate_rules"))]
-        rules: Option<Vec<compact_str::CompactString>>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -142,7 +118,7 @@ mod patch {
             description = "The variable ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateNestEggVariableOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
@@ -150,14 +126,8 @@ mod patch {
         egg: GetNestEgg,
         activity_logger: GetAdminActivityLogger,
         Path((_nest, _egg, variable)): Path<(uuid::Uuid, uuid::Uuid, uuid::Uuid)>,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateNestEggVariableOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("eggs.update")?;
 
         let mut egg_variable =
@@ -170,75 +140,14 @@ mod patch {
                 }
             };
 
-        if let Some(name) = data.name {
-            egg_variable.name = name;
-        }
-        if let Some(description) = data.description {
-            if description.is_empty() {
-                egg_variable.description = None;
-            } else {
-                egg_variable.description = Some(description);
-            }
-        }
-        if let Some(order) = data.order {
-            egg_variable.order = order;
-        }
-        if let Some(env_variable) = data.env_variable {
-            egg_variable.env_variable = env_variable;
-        }
-        if let Some(default_value) = data.default_value {
-            if default_value.is_empty() {
-                egg_variable.default_value = None;
-            } else {
-                egg_variable.default_value = Some(default_value);
-            }
-        }
-        if let Some(user_viewable) = data.user_viewable {
-            egg_variable.user_viewable = user_viewable;
-        }
-        if let Some(user_editable) = data.user_editable {
-            egg_variable.user_editable = user_editable;
-        }
-        if let Some(secret) = data.secret {
-            egg_variable.secret = secret;
-        }
-        if let Some(rules) = data.rules {
-            egg_variable.rules = rules;
-        }
-
-        match sqlx::query!(
-            "UPDATE nest_egg_variables
-            SET
-                name = $1, description = $2, order_ = $3, env_variable = $4,
-                default_value = $5, user_viewable = $6, user_editable = $7, secret = $8, rules = $9
-            WHERE nest_egg_variables.uuid = $10",
-            &egg_variable.name,
-            egg_variable.description.as_deref(),
-            egg_variable.order,
-            &egg_variable.env_variable,
-            egg_variable.default_value,
-            egg_variable.user_viewable,
-            egg_variable.user_editable,
-            egg_variable.secret,
-            &egg_variable.rules as &[compact_str::CompactString],
-            egg_variable.uuid,
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match egg_variable.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("variable with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create variable: {:?}", err);
-
-                return ApiResponse::error("failed to create variable")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger
@@ -258,6 +167,7 @@ mod patch {
 
                     "user_viewable": egg_variable.user_viewable,
                     "user_editable": egg_variable.user_editable,
+                    "secret": egg_variable.secret,
                     "rules": egg_variable.rules,
                 }),
             )

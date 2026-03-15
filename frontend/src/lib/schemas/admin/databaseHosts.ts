@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { nullableNumber, nullableString } from '@/lib/transformers.ts';
 
-export const adminDatabaseHostCreateSchema = z.object({
+export const adminDatabaseHostSchema = z.object({
+  uuid: z.string(),
   name: z.string().min(3).max(255),
   username: z.string().min(3).max(255),
   password: z.string().min(1).max(512),
@@ -8,20 +10,22 @@ export const adminDatabaseHostCreateSchema = z.object({
   port: z.number().min(0).max(65535),
   deploymentEnabled: z.boolean(),
   maintenanceEnabled: z.boolean(),
-  publicHost: z.string().min(3).max(255).nullable(),
-  publicPort: z.number().min(0).max(65535).nullable(),
+  publicHost: z.preprocess(nullableString, z.string().max(255).nullable()),
+  publicPort: z.preprocess(nullableNumber, z.number().min(0).max(65535).nullable()),
   type: z.enum(['mysql', 'postgres']),
+  created: z.date(),
 });
 
-export const adminDatabaseHostUpdateSchema = z.object({
-  name: z.string().min(3).max(255),
-  username: z.string().min(3).max(255),
-  password: z.string().min(1).max(512).nullable(),
-  host: z.string().min(3).max(255),
-  port: z.number().min(0).max(65535),
-  deploymentEnabled: z.boolean(),
-  maintenanceEnabled: z.boolean(),
-  publicHost: z.string().max(255).nullable(),
-  publicPort: z.number().min(0).max(65535).nullable(),
-  type: z.enum(['mysql', 'postgres']),
+export const adminDatabaseHostCreateSchema = adminDatabaseHostSchema.omit({
+  uuid: true,
+  created: true,
 });
+
+export const adminDatabaseHostUpdateSchema = adminDatabaseHostSchema
+  .omit({
+    uuid: true,
+    created: true,
+  })
+  .extend({
+    password: adminDatabaseHostSchema.shape.password.nullable(),
+  });

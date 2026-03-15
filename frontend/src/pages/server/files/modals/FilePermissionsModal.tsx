@@ -1,5 +1,6 @@
 import { Group, ModalProps, Stack, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import chmodFiles from '@/api/server/files/chmodFiles.ts';
 import Badge from '@/elements/Badge.tsx';
@@ -7,21 +8,26 @@ import Button from '@/elements/Button.tsx';
 import Card from '@/elements/Card.tsx';
 import Code from '@/elements/Code.tsx';
 import Checkbox from '@/elements/input/Checkbox.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 import { permissionStringToNumber } from '@/lib/files.ts';
+import { serverDirectoryEntrySchema } from '@/lib/schemas/server/files.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  file: DirectoryEntry;
+  file: z.infer<typeof serverDirectoryEntrySchema> | null;
 };
 
 type PermissionKey = 'owner' | 'group' | 'other';
 type PermissionType = 'read' | 'write' | 'execute';
 
 export default function FilePermissionsModal({ file, opened, onClose }: Props) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
-  const { server, browsingWritableDirectory, browsingDirectory } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingWritableDirectory, browsingDirectory } = useFileManager();
 
   const [permissions, setPermissions] = useState<Record<PermissionKey, Record<PermissionType, boolean>>>({
     owner: { read: false, write: false, execute: false },
@@ -31,7 +37,7 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (file.mode) {
+    if (file?.mode) {
       const octalValue = permissionStringToNumber(file.mode);
       const octalString = octalValue.toString().padStart(3, '0');
 
@@ -56,7 +62,7 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
         },
       });
     }
-  }, [file.mode]);
+  }, [file?.mode]);
 
   const togglePermission = (category: PermissionKey, type: PermissionType) => {
     setPermissions((prev) => ({
@@ -120,18 +126,20 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
   );
 
   const doChmod = () => {
+    if (!file) return;
+
     const newPermissions = getOctalValue();
 
     setLoading(true);
 
     chmodFiles({
       uuid: server.uuid,
-      root: browsingDirectory!,
+      root: browsingDirectory,
       files: [{ file: file.name, mode: newPermissions.toString() }],
     })
       .then(() => {
         onClose();
-        addToast('Permissions have been updated.', 'success');
+        addToast(t('pages.server.files.toast.permissionsUpdated', {}), 'success');
       })
       .catch((msg) => {
         addToast(httpErrorToHuman(msg), 'error');
@@ -140,11 +148,11 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
   };
 
   return (
-    <Modal title='File Permissions' onClose={onClose} opened={opened}>
+    <Modal title={t('pages.server.files.modal.filePermissions.title', {})} onClose={onClose} opened={opened} size='lg'>
       <Card>
         <div className='flex flex-row justify-between'>
           <Title order={3} c='white'>
-            Symbolic:
+            {t('pages.server.files.modal.filePermissions.symbolic', {})}
           </Title>
           <Badge variant='light' color='blue' size='xl' className='lowercase!'>
             {getPermissionString()}
@@ -152,7 +160,7 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
         </div>
         <div className='mt-2 flex flex-row justify-between'>
           <Title order={3} c='white'>
-            Octal:
+            {t('pages.server.files.modal.filePermissions.octal', {})}
           </Title>
           <Badge variant='light' color='green' size='xl'>
             {getOctalValue()}
@@ -161,36 +169,48 @@ export default function FilePermissionsModal({ file, opened, onClose }: Props) {
       </Card>
 
       <Group mt='md' grow>
-        <PermissionGroup title='Owner' category='owner' perms={permissions.owner} />
-        <PermissionGroup title='Group' category='group' perms={permissions.group} />
-        <PermissionGroup title='Other' category='other' perms={permissions.other} />
+        <PermissionGroup
+          title={t('pages.server.files.modal.filePermissions.owner', {})}
+          category='owner'
+          perms={permissions.owner}
+        />
+        <PermissionGroup
+          title={t('pages.server.files.modal.filePermissions.group', {})}
+          category='group'
+          perms={permissions.group}
+        />
+        <PermissionGroup
+          title={t('pages.server.files.modal.filePermissions.other', {})}
+          category='other'
+          perms={permissions.other}
+        />
       </Group>
 
       <Card mt='md'>
         <Title order={3} c='white'>
-          Permission Breakdown
+          {t('pages.server.files.modal.filePermissions.breakdown', {})}
         </Title>
         <div className='text-sm space-y-1'>
           <div>
-            <Code className='font-bold'>r</Code> - Read permission (4)
+            <Code className='font-bold'>r</Code> - {t('pages.server.files.modal.filePermissions.readPermission', {})}
           </div>
           <div>
-            <Code className='font-bold'>w</Code> - Write permission (2)
+            <Code className='font-bold'>w</Code> - {t('pages.server.files.modal.filePermissions.writePermission', {})}
           </div>
           <div>
-            <Code className='font-bold'>x</Code> - Execute permission (1)
+            <Code className='font-bold'>x</Code> - {t('pages.server.files.modal.filePermissions.executePermission', {})}
           </div>
         </div>
       </Card>
 
-      <Modal.Footer>
+      <ModalFooter>
         <Button onClick={doChmod} loading={loading} disabled={!browsingWritableDirectory}>
-          Save
+          {t('common.button.save', {})}
         </Button>
         <Button variant='default' onClick={onClose}>
-          Close
+          {t('common.button.close', {})}
         </Button>
-      </Modal.Footer>
+      </ModalFooter>
     </Modal>
   );
 }

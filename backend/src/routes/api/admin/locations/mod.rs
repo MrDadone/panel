@@ -71,30 +71,18 @@ mod get {
 
 mod post {
     use axum::http::StatusCode;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
-            ByUuid, admin_activity::GetAdminActivityLogger,
-            backup_configurations::BackupConfiguration, location::Location,
+            CreatableModel,
+            admin_activity::GetAdminActivityLogger,
+            location::{CreateLocationOptions, Location},
             user::GetPermissionManager,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        backup_configuration_uuid: Option<uuid::Uuid>,
-
-        #[validate(length(min = 3, max = 255))]
-        #[schema(min_length = 3, max_length = 255)]
-        name: compact_str::CompactString,
-        #[validate(length(max = 1024))]
-        #[schema(max_length = 1024)]
-        description: Option<compact_str::CompactString>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {
@@ -105,60 +93,23 @@ mod post {
         (status = OK, body = inline(Response)),
         (status = BAD_REQUEST, body = ApiError),
         (status = CONFLICT, body = ApiError),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(CreateLocationOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         activity_logger: GetAdminActivityLogger,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<CreateLocationOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_admin_permission("locations.create")?;
 
-        let backup_configuration = if let Some(backup_configuration_uuid) =
-            data.backup_configuration_uuid
-            && !backup_configuration_uuid.is_nil()
-        {
-            match BackupConfiguration::by_uuid_optional(&state.database, backup_configuration_uuid)
-                .await?
-            {
-                Some(backup_configuration) => Some(backup_configuration),
-                None => {
-                    return ApiResponse::error("backup configuration not found")
-                        .with_status(StatusCode::NOT_FOUND)
-                        .ok();
-                }
-            }
-        } else {
-            None
-        };
-
-        let location = match Location::create(
-            &state.database,
-            backup_configuration.map(|backup_configuration| backup_configuration.uuid),
-            &data.name,
-            data.description.as_deref(),
-        )
-        .await
-        {
+        let location = match Location::create(&state, data).await {
             Ok(location) => location,
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("location with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to create location: {:?}", err);
-
-                return ApiResponse::error("failed to create location")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         };
 
         activity_logger

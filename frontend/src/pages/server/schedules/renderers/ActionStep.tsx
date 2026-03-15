@@ -1,15 +1,17 @@
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Text, ThemeIcon, Timeline } from '@mantine/core';
+import { z } from 'zod';
 import AnimatedHourglass from '@/elements/AnimatedHourglass.tsx';
 import Badge from '@/elements/Badge.tsx';
 import Card from '@/elements/Card.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import { scheduleStepIconMapping } from '@/lib/enums.ts';
+import { serverScheduleStepSchema } from '@/lib/schemas/server/schedules.ts';
 import ActionRenderer from './ActionRenderer.tsx';
 
 interface ActionStepProps {
-  step: ScheduleStep;
+  step: z.infer<typeof serverScheduleStepSchema>;
   isActive: boolean;
 }
 
@@ -24,14 +26,12 @@ export default function ActionStep({ step, isActive }: ActionStepProps) {
         )
       }
       title={
-        <Group gap='sm'>
-          <Text fw={600}>
-            Step {step.order}: {step.action.type.replace(/_/g, ' ').toUpperCase()}{' '}
-          </Text>
+        <Group gap='sm' align='start'>
+          <Text fw={600}>{step.action.type.replace(/_/g, ' ').toUpperCase()} </Text>
           {isActive && <Badge ml='md'>Running</Badge>}
           {step.error && (
             <Tooltip label={step.error}>
-              <ThemeIcon size='sm' color='red'>
+              <ThemeIcon size='sm' color='red' className='cursor-help'>
                 <FontAwesomeIcon icon={faExclamationTriangle} size='xs' />
               </ThemeIcon>
             </Tooltip>

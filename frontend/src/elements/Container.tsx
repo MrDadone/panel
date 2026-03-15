@@ -1,5 +1,8 @@
-import { ReactNode, useRef } from 'react';
+import { ReactNode } from 'react';
+import { useAuth } from '@/providers/AuthProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useGlobalStore } from '@/stores/global.ts';
+import Alert from './Alert.tsx';
 import Tooltip from './Tooltip.tsx';
 
 interface LayoutProps {
@@ -8,8 +11,9 @@ interface LayoutProps {
 }
 
 export default function Container({ children, isNormal }: LayoutProps) {
+  const { t } = useTranslations();
+  const { impersonating } = useAuth();
   const { settings } = useGlobalStore();
-  const bodyRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
@@ -19,7 +23,15 @@ export default function Container({ children, isNormal }: LayoutProps) {
           : 'flex flex-col justify-between h-full overflow-auto p-4'
       }
     >
-      <div ref={bodyRef}>{children}</div>
+      <div>
+        {impersonating && (
+          <Alert color='yellow' className='mt-2 mx-2'>
+            {t('elements.container.alert.impersonating', {})}
+          </Alert>
+        )}
+
+        {children}
+      </div>
       <div className='my-2 text-xs transition-all text-gray-400 mr-12'>
         <span className='flex flex-row justify-end gap-2'>
           <Tooltip label={settings.version}>

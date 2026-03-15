@@ -68,26 +68,18 @@ mod delete {
 
 mod patch {
     use axum::{extract::Path, http::StatusCode};
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
     use shared::{
         ApiError, GetState,
         models::{
+            UpdatableModel,
             user::{GetPermissionManager, GetUser},
             user_activity::GetUserActivityLogger,
-            user_ssh_key::UserSshKey,
+            user_ssh_key::{UpdateUserSshKeyOptions, UserSshKey},
         },
-        prelude::SqlxErrorExt,
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
-
-    #[derive(ToSchema, Validate, Deserialize)]
-    pub struct Payload {
-        #[validate(length(min = 3, max = 31))]
-        #[schema(min_length = 3, max_length = 31)]
-        name: Option<compact_str::CompactString>,
-    }
 
     #[derive(ToSchema, Serialize)]
     struct Response {}
@@ -103,21 +95,15 @@ mod patch {
             description = "The SSH key ID",
             example = "123e4567-e89b-12d3-a456-426614174000",
         ),
-    ), request_body = inline(Payload))]
+    ), request_body = inline(UpdateUserSshKeyOptions))]
     pub async fn route(
         state: GetState,
         permissions: GetPermissionManager,
         user: GetUser,
         activity_logger: GetUserActivityLogger,
         Path(ssh_key): Path<uuid::Uuid>,
-        shared::Payload(data): shared::Payload<Payload>,
+        shared::Payload(data): shared::Payload<UpdateUserSshKeyOptions>,
     ) -> ApiResponseResult {
-        if let Err(errors) = shared::utils::validate_data(&data) {
-            return ApiResponse::new_serialized(ApiError::new_strings_value(errors))
-                .with_status(StatusCode::BAD_REQUEST)
-                .ok();
-        }
-
         permissions.has_user_permission("ssh-keys.update")?;
 
         let mut ssh_key =
@@ -130,33 +116,14 @@ mod patch {
                 }
             };
 
-        if let Some(name) = data.name {
-            ssh_key.name = name;
-        }
-
-        match sqlx::query!(
-            "UPDATE user_ssh_keys
-            SET name = $1
-            WHERE user_ssh_keys.uuid = $2",
-            &ssh_key.name,
-            ssh_key.uuid,
-        )
-        .execute(state.database.write())
-        .await
-        {
+        match ssh_key.update(&state, data).await {
             Ok(_) => {}
             Err(err) if err.is_unique_violation() => {
                 return ApiResponse::error("ssh key with name already exists")
                     .with_status(StatusCode::CONFLICT)
                     .ok();
             }
-            Err(err) => {
-                tracing::error!("failed to update ssh key: {:?}", err);
-
-                return ApiResponse::error("failed to update ssh key")
-                    .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .ok();
-            }
+            Err(err) => return ApiResponse::from(err).ok(),
         }
 
         activity_logger

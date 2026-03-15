@@ -1,26 +1,39 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import installEgg from '@/api/admin/egg-repositories/eggs/installEgg.ts';
+import { z } from 'zod';
+import installEggs from '@/api/admin/egg-repositories/eggs/installEggs.ts';
 import getNests from '@/api/admin/nests/getNests.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Select from '@/elements/input/Select.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { ObjectSet } from '@/lib/objectSet.ts';
+import { adminEggRepositoryEggSchema, adminEggRepositorySchema } from '@/lib/schemas/admin/eggRepositories.ts';
+import { adminNestSchema } from '@/lib/schemas/admin/nests.ts';
 import { useSearchableResource } from '@/plugins/useSearchableResource.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
 export default function EggRepositoryEggsInstallModal({
   eggRepository,
-  egg,
+  selectedEggs,
+  setSelectedEggs,
   opened,
   onClose,
-}: ModalProps & { eggRepository: AdminEggRepository; egg: AdminEggRepositoryEgg }) {
+}: ModalProps & {
+  eggRepository: z.infer<typeof adminEggRepositorySchema>;
+  selectedEggs: ObjectSet<z.infer<typeof adminEggRepositoryEggSchema>, 'uuid'>;
+  setSelectedEggs: (eggs: ObjectSet<z.infer<typeof adminEggRepositoryEggSchema>, 'uuid'>) => void;
+}) {
   const { addToast } = useToast();
 
   const [loading, setLoading] = useState(false);
-  const [selectedNest, setSelectedNest] = useState<AdminNest | null>(null);
+  const [selectedNest, setSelectedNest] = useState<z.infer<typeof adminNestSchema> | null>(null);
 
-  const nests = useSearchableResource<AdminNest>({ fetcher: (search) => getNests(1, search) });
+  const nests = useSearchableResource<z.infer<typeof adminNestSchema>>({
+    canRequest: opened,
+    fetcher: (search) => getNests(1, search),
+    deps: [opened],
+  });
 
   useEffect(() => {
     if (!opened) {
@@ -30,11 +43,16 @@ export default function EggRepositoryEggsInstallModal({
   }, [opened]);
 
   const doInstall = () => {
+    if (!selectedNest) {
+      return;
+    }
+
     setLoading(true);
 
-    installEgg(eggRepository.uuid, egg.uuid, selectedNest!.uuid)
-      .then(() => {
-        addToast('Egg installed.', 'success');
+    installEggs(eggRepository.uuid, selectedEggs.keys(), selectedNest.uuid)
+      .then((installed) => {
+        addToast(`${installed} Egg${installed !== 1 ? 's' : ''} installed.`, 'success');
+        setSelectedEggs(new ObjectSet('uuid'));
 
         onClose();
       })
@@ -45,7 +63,7 @@ export default function EggRepositoryEggsInstallModal({
   };
 
   return (
-    <Modal title='Install Egg Repository Egg' onClose={onClose} opened={opened}>
+    <Modal title='Install Egg Repository Eggs' onClose={onClose} opened={opened}>
       <Stack>
         <Select
           withAsterisk
@@ -62,14 +80,14 @@ export default function EggRepositoryEggsInstallModal({
           onSearchChange={nests.setSearch}
         />
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button onClick={doInstall} loading={loading} disabled={!selectedNest}>
-            Install
+            Install {selectedEggs.size} Egg{selectedEggs.size !== 1 && 's'}
           </Button>
           <Button variant='default' onClick={onClose}>
             Close
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Stack>
     </Modal>
   );

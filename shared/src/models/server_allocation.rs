@@ -92,7 +92,8 @@ impl ServerAllocation {
                 LEFT JOIN server_allocations ON server_allocations.allocation_uuid = node_allocations.uuid
                 WHERE
                     node_allocations.node_uuid = $2
-                    AND node_allocations.port BETWEEN $3 AND $4
+                    AND ($3 IS NULL OR node_allocations.ip = $3)
+                    AND node_allocations.port BETWEEN $4 AND $5
                     AND server_allocations.uuid IS NULL
                 ORDER BY RANDOM()
                 LIMIT 1
@@ -102,6 +103,7 @@ impl ServerAllocation {
         )
         .bind(server.uuid)
         .bind(server.node.uuid)
+        .bind(server.allocation.as_ref().map(|a| a.allocation.ip))
         .bind(server.egg.config_allocations.user_self_assign.start_port as i32)
         .bind(server.egg.config_allocations.user_self_assign.end_port as i32)
         .fetch_one(database.write())

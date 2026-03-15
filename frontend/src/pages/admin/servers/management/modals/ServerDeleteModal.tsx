@@ -1,15 +1,21 @@
 import { ModalProps, Stack } from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
 import deleteServer from '@/api/admin/servers/deleteServer.ts';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/Button.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { adminServerSchema } from '@/lib/schemas/admin/servers.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 
-export default function ServerDeleteModal({ server, opened, onClose }: ModalProps & { server: AdminServer }) {
+export default function ServerDeleteModal({
+  server,
+  opened,
+  onClose,
+}: ModalProps & { server: z.infer<typeof adminServerSchema> }) {
   const { addToast } = useToast();
   const navigate = useNavigate();
 
@@ -62,14 +68,14 @@ export default function ServerDeleteModal({ server, opened, onClose }: ModalProp
           />
         </Stack>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button color='red' disabled={server.name != deleteServerName} loading={loading} onClick={doDelete}>
             Okay
           </Button>
           <Button variant='default' onClick={() => onClose()}>
             Cancel
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Modal>
     </>
   );

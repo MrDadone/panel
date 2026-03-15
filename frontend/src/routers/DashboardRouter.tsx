@@ -2,13 +2,15 @@ import { faGraduationCap, faServer } from '@fortawesome/free-solid-svg-icons';
 import { Suspense } from 'react';
 import { NavLink, Route, Routes } from 'react-router';
 import Container from '@/elements/Container.tsx';
+import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
+import ScreenBlock from '@/elements/ScreenBlock.tsx';
+import ServerSwitcher from '@/elements/ServerSwitcher.tsx';
 import Sidebar from '@/elements/Sidebar.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { isAdmin } from '@/lib/permissions.ts';
 import { to } from '@/lib/routes.ts';
 import DashboardHomeAll from '@/pages/dashboard/home/DashboardHomeAll.tsx';
 import DashboardHomeGrouped from '@/pages/dashboard/home/DashboardHomeGrouped.tsx';
-import NotFound from '@/pages/NotFound.tsx';
 import { useAuth } from '@/providers/AuthProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import accountRoutes from '@/routers/routes/accountRoutes.ts';
@@ -25,7 +27,7 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
         <Sidebar>
           <NavLink to='/' className='w-full'>
             <div className='h-16 w-full flex flex-row items-center justify-between mt-1 select-none cursor-pointer'>
-              <img src='/icon.svg' className='h-12 w-12' alt='Calagopus Icon' />
+              <img src={settings.app.icon} className='h-12 w-12' alt='Calagopus Icon' />
               <h1 className='grow text-md font-bold! ml-2'>{settings.app.name}</h1>
             </div>
           </NavLink>
@@ -51,12 +53,19 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
               />
             ))}
 
-          <Sidebar.Footer />
+          <div className='mt-auto pt-4'>
+            <ServerSwitcher className='mb-2' />
+            <Sidebar.Footer />
+          </div>
         </Sidebar>
       )}
 
       <div id='dashboard-root' className={isNormal ? 'max-w-[100vw] flex-1 lg:ml-0' : 'flex-1 lg:ml-0 overflow-auto'}>
         <Container isNormal={isNormal}>
+          {window.extensionContext.extensionRegistry.pages.dashboard.prependedComponents.map((Component, i) => (
+            <Component key={`dashboard-prepended-component-${i}`} />
+          ))}
+
           <Suspense fallback={<Spinner.Centered />}>
             <Routes>
               {user?.startOnGroupedServers ? (
@@ -75,9 +84,23 @@ export default function DashboardRouter({ isNormal }: { isNormal: boolean }) {
                 .map(({ path, element: Element }) => (
                   <Route key={path} path={`/account/${path}`.replace('//', '/')} element={<Element />} />
                 ))}
-              <Route path='*' element={<NotFound />} />
+              <Route
+                path='*'
+                element={
+                  <AccountContentContainer title={t('elements.screenBlock.notFound.title', {})}>
+                    <ScreenBlock
+                      title={t('elements.screenBlock.notFound.title', {})}
+                      content={t('elements.screenBlock.notFound.content', {})}
+                    />
+                  </AccountContentContainer>
+                }
+              />
             </Routes>
           </Suspense>
+
+          {window.extensionContext.extensionRegistry.pages.dashboard.appendedComponents.map((Component, i) => (
+            <Component key={`dashboard-appended-component-${i}`} />
+          ))}
         </Container>
       </div>
     </div>

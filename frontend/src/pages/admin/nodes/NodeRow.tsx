@@ -2,14 +2,20 @@ import { faGlobe, faHeart, faHeartBroken } from '@fortawesome/free-solid-svg-ico
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import { axiosInstance } from '@/api/axios.ts';
 import Code from '@/elements/Code.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import Tooltip from '@/elements/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminNodeSchema } from '@/lib/schemas/admin/nodes.ts';
+import { parseVersion } from '@/lib/version.ts';
+import { useAdminStore } from '@/stores/admin.tsx';
 
-export default function NodeRow({ node }: { node: Node }) {
+export default function NodeRow({ node }: { node: z.infer<typeof adminNodeSchema> }) {
+  const { latestVersions } = useAdminStore();
+
   const [version, setVersion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,10 +26,11 @@ export default function NodeRow({ node }: { node: Node }) {
         },
       })
       .then(({ data }) => {
-        setVersion(data.version);
+        setVersion(data.version ?? 'Unavailable');
       })
       .catch((msg) => {
         console.error('Error while connecting to node', msg);
+        setVersion('Unavailable');
       });
   }, []);
 
@@ -34,6 +41,10 @@ export default function NodeRow({ node }: { node: Node }) {
           version === 'Unavailable' ? (
             <Tooltip label='Error while fetching version'>
               <FontAwesomeIcon icon={faHeartBroken} className='text-red-500' />
+            </Tooltip>
+          ) : latestVersions && parseVersion(latestVersions.wings).isNewerThan(version) ? (
+            <Tooltip label={`${version} (Update Available)`}>
+              <FontAwesomeIcon icon={faHeart} className='text-yellow-500 animate-pulse' />
             </Tooltip>
           ) : (
             <Tooltip label={version}>
@@ -54,12 +65,12 @@ export default function NodeRow({ node }: { node: Node }) {
       <TableData>
         <span className='flex gap-2 items-center'>
           {node.name}&nbsp;
-          {node.public ? (
-            <Tooltip label='Public Node'>
+          {node.deploymentEnabled ? (
+            <Tooltip label='Deployment Enabled'>
               <FontAwesomeIcon icon={faGlobe} className='text-green-500' />
             </Tooltip>
           ) : (
-            <Tooltip label='Private Node'>
+            <Tooltip label='Deployment Disabled'>
               <FontAwesomeIcon icon={faGlobe} className='text-red-500' />
             </Tooltip>
           )}

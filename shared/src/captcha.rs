@@ -128,6 +128,30 @@ impl Captcha {
 
                 Err("captcha: verification failed".into())
             }
+            super::settings::CaptchaProvider::FriendlyCaptcha { api_key, site_key } => {
+                let response = CLIENT
+                    .post("https://global.frcapi.com/api/v2/captcha/siteverify")
+                    .header("X-API-Key", api_key.as_str())
+                    .json(&serde_json::json!({
+                        "sitekey": site_key.as_str(),
+                        "response": captcha.as_str(),
+                    }))
+                    .send()
+                    .await
+                    .map_err(|e| e.to_compact_string())?;
+
+                if response.status().is_success() {
+                    let body: serde_json::Value =
+                        response.json().await.map_err(|e| e.to_compact_string())?;
+                    if let Some(success) = body.get("success")
+                        && success.as_bool().unwrap_or(false)
+                    {
+                        return Ok(());
+                    }
+                }
+
+                Err("captcha: verification failed".into())
+            }
         }
     }
 }

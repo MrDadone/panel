@@ -1,4 +1,4 @@
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faCode, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Title } from '@mantine/core';
 import { useState } from 'react';
@@ -26,7 +26,10 @@ export default function DashboardApiKeys() {
   });
 
   return (
-    <AccountContentContainer title={t('pages.account.apiKeys.title', {})}>
+    <AccountContentContainer
+      title={t('pages.account.apiKeys.title', {})}
+      registry={window.extensionContext.extensionRegistry.pages.dashboard.apiKeys.container}
+    >
       <ApiKeyCreateOrUpdateModal opened={openModal === 'create'} onClose={() => setOpenModal(null)} />
 
       <Group justify='space-between' align='start' mb='md'>
@@ -40,6 +43,11 @@ export default function DashboardApiKeys() {
             onChange={(e) => setSearch(e.target.value)}
             w={250}
           />
+          <a href='/api' target='_blank'>
+            <Button variant='light' color='gray' leftSection={<FontAwesomeIcon icon={faCode} />}>
+              {t('pages.account.apiKeys.button.apiDocumentation', {})}
+            </Button>
+          </a>
           <Button onClick={() => setOpenModal('create')} color='blue' leftSection={<FontAwesomeIcon icon={faPlus} />}>
             {t('common.button.create', {})}
           </Button>

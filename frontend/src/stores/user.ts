@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ApiKeySlice, createApiKeysSlice } from '@/stores/slices/user/apiKeys.ts';
+import { CommandSnippetsSlice, createCommandSnippetsSlice } from '@/stores/slices/user/commandSnippets.ts';
 import { createOAuthLinksSlice, OAuthLinksSlice } from '@/stores/slices/user/oauthLinks.ts';
 import { createSecurityKeysSlice, SecurityKeySlice } from '@/stores/slices/user/securityKeys.ts';
 import { createServersSlice, ServerSlice } from '@/stores/slices/user/servers.ts';
@@ -11,6 +12,7 @@ export interface UserStore
     ApiKeySlice,
     SessionSlice,
     SshKeySlice,
+    CommandSnippetsSlice,
     SecurityKeySlice,
     OAuthLinksSlice {}
 
@@ -19,6 +21,11 @@ export const useUserStore = create<UserStore>()((...a) => ({
   ...createApiKeysSlice(...a),
   ...createSessionsSlice(...a),
   ...createSshKeysSlice(...a),
+  ...createCommandSnippetsSlice(...a),
   ...createSecurityKeysSlice(...a),
   ...createOAuthLinksSlice(...a),
 }));
+
+export function getUserStore() {
+  return useUserStore.getState();
+}

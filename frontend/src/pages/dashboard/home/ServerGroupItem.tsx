@@ -11,7 +11,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Badge, Collapse, Menu } from '@mantine/core';
-import { ComponentProps, memo, useState } from 'react';
+import { ComponentProps, memo, startTransition, useEffect, useState } from 'react';
+import { z } from 'zod';
 import { getEmptyPaginationSet, httpErrorToHuman } from '@/api/axios.ts';
 import deleteServerGroup from '@/api/me/servers/groups/deleteServerGroup.ts';
 import getServerGroupServers from '@/api/me/servers/groups/getServerGroupServers.ts';
@@ -23,10 +24,12 @@ import TextInput from '@/elements/input/TextInput.tsx';
 import ConfirmationModal from '@/elements/modals/ConfirmationModal.tsx';
 import Spinner from '@/elements/Spinner.tsx';
 import { Pagination } from '@/elements/Table.tsx';
+import Tooltip from '@/elements/Tooltip.tsx';
+import { serverPowerAction, serverSchema } from '@/lib/schemas/server/server.ts';
+import { userServerGroupSchema } from '@/lib/schemas/user.ts';
 import ServerItem from '@/pages/dashboard/home/ServerItem.tsx';
 import { useBulkPowerActions } from '@/plugins/useBulkPowerActions.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
-import { useServerStats } from '@/plugins/useServerStats.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -43,7 +46,7 @@ function insertItems<T>(list: T[], items: T[], startIndex: number): T[] {
   return result;
 }
 
-interface DndServer extends Server, DndItem {
+interface DndServer extends z.infer<typeof serverSchema>, DndItem {
   id: string;
 }
 
@@ -53,25 +56,30 @@ export default function ServerGroupItem({
   serverGroup,
   dragHandleProps,
 }: {
-  serverGroup: UserServerGroup;
+  serverGroup: z.infer<typeof userServerGroupSchema>;
   dragHandleProps: ComponentProps<'div'>;
 }) {
   const { t, tItem } = useTranslations();
   const { updateServerGroup: updateStateServerGroup, removeServerGroup } = useUserStore();
   const { addToast } = useToast();
 
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [servers, setServers] = useState(getEmptyPaginationSet<Server>());
+  const [isExpanded, setIsExpanded] = useState(
+    localStorage.getItem(`server-group-expanded-${serverGroup.uuid}`) !== 'false',
+  );
+  const [servers, setServers] = useState(getEmptyPaginationSet<z.infer<typeof serverSchema>>());
   const [openModal, setOpenModal] = useState<'edit' | 'delete' | 'add-server' | null>(null);
 
   const { handleBulkPowerAction, bulkActionLoading: groupActionLoading } = useBulkPowerActions();
-  const loadingStats = useServerStats(servers.data);
 
   const { loading, search, setSearch, setPage, refetch } = useSearchablePaginatedTable({
     fetcher: (page, search) => getServerGroupServers(serverGroup.uuid, page, search),
     setStoreData: setServers,
     modifyParams: false,
   });
+
+  useEffect(() => {
+    localStorage.setItem(`server-group-expanded-${serverGroup.uuid}`, String(isExpanded));
+  }, [isExpanded, serverGroup.uuid]);
 
   const doDelete = async () => {
     await deleteServerGroup(serverGroup.uuid)
@@ -84,7 +92,7 @@ export default function ServerGroupItem({
       });
   };
 
-  const handleGroupPowerAction = async (action: ServerPowerAction) => {
+  const handleGroupPowerAction = async (action: z.infer<typeof serverPowerAction>) => {
     await handleBulkPowerAction(serverGroup.serverOrder, action);
   };
 
@@ -159,15 +167,17 @@ export default function ServerGroupItem({
             />
             <Menu shadow='md' width={200} position='bottom-end'>
               <Menu.Target>
-                <ActionIcon
-                  variant='subtle'
-                  color='gray'
-                  size='sm'
-                  disabled={groupActionLoading !== null}
-                  loading={groupActionLoading !== null}
-                >
-                  <FontAwesomeIcon icon={faEllipsisVertical} className='w-3.5 h-3.5' />
-                </ActionIcon>
+                <Tooltip label={t('pages.account.home.tooltip.groupActions', {})}>
+                  <ActionIcon
+                    variant='subtle'
+                    color='gray'
+                    size='sm'
+                    disabled={groupActionLoading !== null}
+                    loading={groupActionLoading !== null}
+                  >
+                    <FontAwesomeIcon icon={faEllipsisVertical} className='w-3.5 h-3.5' />
+                  </ActionIcon>
+                </Tooltip>
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Label>{t('pages.account.home.bulkActions.groupActions', {})}</Menu.Label>
@@ -197,21 +207,27 @@ export default function ServerGroupItem({
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
-            <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('add-server')}>
-              <FontAwesomeIcon icon={faPlus} className='w-3.5 h-3.5' />
-            </ActionIcon>
-            <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('edit')}>
-              <FontAwesomeIcon icon={faPen} className='w-3.5 h-3.5' />
-            </ActionIcon>
-            <ActionIcon variant='subtle' color='red' size='sm' onClick={() => setOpenModal('delete')}>
-              <FontAwesomeIcon icon={faTrash} className='w-3.5 h-3.5' />
-            </ActionIcon>
+            <Tooltip label={t('pages.account.home.tooltip.addServerToGroup', {})}>
+              <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('add-server')}>
+                <FontAwesomeIcon icon={faPlus} className='w-3.5 h-3.5' />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('common.tooltip.edit', {})}>
+              <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setOpenModal('edit')}>
+                <FontAwesomeIcon icon={faPen} className='w-3.5 h-3.5' />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('common.tooltip.delete', {})}>
+              <ActionIcon variant='subtle' color='red' size='sm' onClick={() => setOpenModal('delete')}>
+                <FontAwesomeIcon icon={faTrash} className='w-3.5 h-3.5' />
+              </ActionIcon>
+            </Tooltip>
           </div>
         </div>
 
         <Collapse in={isExpanded}>
           <div className='p-3'>
-            {loading || loadingStats ? (
+            {loading ? (
               <Spinner.Centered />
             ) : servers.total === 0 ? (
               <p className='text-gray-500 text-sm text-center py-4'>{t('pages.account.home.noServers', {})}</p>
@@ -227,7 +243,9 @@ export default function ServerGroupItem({
                       (servers.page - 1) * servers.perPage,
                     );
 
-                    setServers({ ...servers, data: items });
+                    startTransition(() => {
+                      setServers({ ...servers, data: items });
+                    });
 
                     await updateServerGroup(serverGroup.uuid, { serverOrder }).catch((err) => {
                       addToast(httpErrorToHuman(err), 'error');

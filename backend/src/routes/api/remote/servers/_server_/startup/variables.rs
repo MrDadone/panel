@@ -3,26 +3,28 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod put {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
         models::{
-            server::GetServer, server_activity::ServerActivity, server_variable::ServerVariable,
+            CreatableModel, server::GetServer, server_activity::ServerActivity,
+            server_variable::ServerVariable,
         },
         response::{ApiResponse, ApiResponseResult},
     };
     use std::collections::HashMap;
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         schedule_uuid: Option<uuid::Uuid>,
 
-        #[validate(length(min = 1, max = 255))]
+        #[garde(length(chars, min = 1, max = 255))]
         #[schema(min_length = 1, max_length = 255)]
         env_variable: String,
-        #[validate(length(max = 4096))]
+        #[garde(length(max = 4096))]
         #[schema(max_length = 4096)]
         value: String,
     }
@@ -110,22 +112,26 @@ mod put {
 
         ServerVariable::create(&state.database, server.uuid, variable_uuid, &data.value).await?;
 
-        if let Err(err) = ServerActivity::log_remote(
-            &state.database,
-            server.uuid,
-            None,
-            data.schedule_uuid,
-            "server:startup.variables",
-            None,
-            serde_json::json!({
-                "variables": [
-                    {
-                        "env_variable": data.env_variable,
-                        "value": data.value,
-                    }
-                ]
-            }),
-            chrono::Utc::now(),
+        if let Err(err) = ServerActivity::create(
+            &state,
+            shared::models::server_activity::CreateServerActivityOptions {
+                server_uuid: server.uuid,
+                user_uuid: None,
+                impersonator_uuid: None,
+                api_key_uuid: None,
+                schedule_uuid: data.schedule_uuid,
+                event: "server:startup.variables".into(),
+                ip: None,
+                data: serde_json::json!({
+                    "variables": [
+                        {
+                            "env_variable": data.env_variable,
+                            "value": data.value,
+                        }
+                    ]
+                }),
+                created: None,
+            },
         )
         .await
         {

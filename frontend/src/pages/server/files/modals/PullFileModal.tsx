@@ -11,18 +11,22 @@ import queryFilePull from '@/api/server/files/queryFilePull.ts';
 import Button from '@/elements/Button.tsx';
 import Code from '@/elements/Code.tsx';
 import TextInput from '@/elements/input/TextInput.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
-import { serverFilesPullSchema } from '@/lib/schemas/server/files.ts';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { serverFilesPullQueryResultSchema, serverFilesPullSchema } from '@/lib/schemas/server/files.ts';
 import { bytesToString } from '@/lib/size.ts';
+import { useFileManager } from '@/providers/contexts/fileManagerContext.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
+import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 export default function PullFileModal({ opened, onClose }: ModalProps) {
+  const { t } = useTranslations();
   const { addToast } = useToast();
-  const { server, browsingDirectory } = useServerStore();
+  const { server } = useServerStore();
+  const { browsingDirectory } = useFileManager();
 
   const [loading, setLoading] = useState(false);
-  const [queryResult, setQueryResult] = useState<null | ServerPullQueryResult>(null);
+  const [queryResult, setQueryResult] = useState<null | z.infer<typeof serverFilesPullQueryResultSchema>>(null);
 
   const form = useForm<z.infer<typeof serverFilesPullSchema>>({
     initialValues: {
@@ -42,7 +46,7 @@ export default function PullFileModal({ opened, onClose }: ModalProps) {
 
     queryFilePull(server.uuid, form.values.url)
       .then((data) => {
-        addToast('File information retrieved successfully.', 'success');
+        addToast(t('pages.server.files.toast.fileInfoRetrieved', {}), 'success');
         setQueryResult(data);
         form.setFieldValue('name', data.fileName ?? form.values.url.split('/').pop() ?? '');
       })
@@ -56,12 +60,12 @@ export default function PullFileModal({ opened, onClose }: ModalProps) {
     setLoading(true);
 
     pullFile(server.uuid, {
-      root: browsingDirectory!,
+      root: browsingDirectory,
       url: form.values.url,
       name: form.values.name,
     })
       .then(() => {
-        addToast('File pulling has started.', 'success');
+        addToast(t('pages.server.files.toast.filePullingStarted', {}), 'success');
         onClose();
       })
       .catch((msg) => {
@@ -71,14 +75,14 @@ export default function PullFileModal({ opened, onClose }: ModalProps) {
   };
 
   return (
-    <Modal title='Pull File' onClose={onClose} opened={opened}>
+    <Modal title={t('pages.server.files.modal.pullFile.title', {})} onClose={onClose} opened={opened}>
       <form onSubmit={form.onSubmit(() => doPullFile())}>
         <div className='grid grid-cols-4 gap-2'>
           <TextInput
             withAsterisk
             className='col-span-3'
-            label='File URL'
-            placeholder='File URL'
+            label={t('pages.server.files.modal.pullFile.form.fileUrl', {})}
+            placeholder={t('pages.server.files.modal.pullFile.form.fileUrl', {})}
             {...form.getInputProps('url')}
           />
           <Button
@@ -87,36 +91,37 @@ export default function PullFileModal({ opened, onClose }: ModalProps) {
             loading={loading}
             disabled={!form.isValid('url')}
           >
-            Query
+            {t('pages.server.files.modal.pullFile.form.query', {})}
           </Button>
         </div>
 
         <TextInput
           withAsterisk
-          label='File Name'
-          placeholder={queryResult?.fileName ?? 'File Name'}
+          label={t('pages.server.files.modal.pullFile.form.fileName', {})}
+          placeholder={queryResult?.fileName ?? t('pages.server.files.modal.pullFile.form.fileName', {})}
           className='mt-2'
           {...form.getInputProps('name')}
         />
 
         <p className='mt-2 text-sm md:text-base break-all'>
-          <span className='text-neutral-200'>This file will be created as&nbsp;</span>
+          <span className='text-neutral-200'>{t('pages.server.files.modal.pullFile.createdAs', {})}</span>
           <Code>
             /home/container/
             <span className='text-cyan-200'>
-              {join(browsingDirectory!, form.values.name ?? '').replace(/^(\.\.\/|\/)+/, '')}
+              {join(browsingDirectory, form.values.name ?? '').replace(/^(\.\.\/|\/)+/, '')}
             </span>
           </Code>
         </p>
 
-        <Modal.Footer>
+        <ModalFooter>
           <Button type='submit' loading={loading} disabled={!form.isValid()}>
-            Pull{queryResult?.fileSize ? ` (${bytesToString(queryResult.fileSize)})` : ''}
+            {t('pages.server.files.modal.pullFile.pull', {})}
+            {queryResult?.fileSize ? ` (${bytesToString(queryResult.fileSize)})` : ''}
           </Button>
           <Button variant='default' onClick={onClose}>
-            Close
+            {t('common.button.close', {})}
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </form>
     </Modal>
   );

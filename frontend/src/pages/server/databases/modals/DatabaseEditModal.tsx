@@ -7,14 +7,14 @@ import { httpErrorToHuman } from '@/api/axios.ts';
 import updateDatabase from '@/api/server/databases/updateDatabase.ts';
 import Button from '@/elements/Button.tsx';
 import Switch from '@/elements/input/Switch.tsx';
-import Modal from '@/elements/modals/Modal.tsx';
-import { serverDatabaseEditSchema } from '@/lib/schemas/server/databases.ts';
+import { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
+import { serverDatabaseEditSchema, serverDatabaseSchema } from '@/lib/schemas/server/databases.ts';
 import { useToast } from '@/providers/ToastProvider.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useServerStore } from '@/stores/server.ts';
 
 type Props = ModalProps & {
-  database: ServerDatabase;
+  database: z.infer<typeof serverDatabaseSchema>;
 };
 
 export default function DatabaseEditModal({ database, opened, onClose }: Props) {
@@ -57,14 +57,14 @@ export default function DatabaseEditModal({ database, opened, onClose }: Props) 
             {...form.getInputProps('locked', { type: 'checkbox' })}
           />
 
-          <Modal.Footer>
+          <ModalFooter>
             <Button type='submit' loading={loading}>
               {t('common.button.save', {})}
             </Button>
             <Button variant='default' onClick={onClose}>
               {t('common.button.close', {})}
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Stack>
       </form>
     </Modal>

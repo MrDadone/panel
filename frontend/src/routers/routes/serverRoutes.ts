@@ -4,6 +4,7 @@ import {
   faCog,
   faDatabase,
   faFolderOpen,
+  faFolderTree,
   faNetworkWired,
   faPlay,
   faStopwatch,
@@ -15,7 +16,9 @@ import type { ServerRouteDefinition } from 'shared';
 import ServerActivity from '@/pages/server/activity/ServerActivity.tsx';
 import ServerBackups from '@/pages/server/backups/ServerBackups.tsx';
 import ServerDatabases from '@/pages/server/databases/ServerDatabases.tsx';
+import ServerFilesEditor from '@/pages/server/files/FileEditor.tsx';
 import ServerFiles from '@/pages/server/files/ServerFiles.tsx';
+import ServerMounts from '@/pages/server/mounts/ServerMounts.tsx';
 import ServerNetwork from '@/pages/server/network/ServerNetwork.tsx';
 import ScheduleView from '@/pages/server/schedules/ScheduleView.tsx';
 import ServerSchedules from '@/pages/server/schedules/ServerSchedules.tsx';
@@ -25,7 +28,6 @@ import ServerSubusers from '@/pages/server/subusers/ServerSubusers.tsx';
 import { getTranslations } from '@/providers/TranslationProvider.tsx';
 
 const ServerConsole = lazy(() => import('@/pages/server/console/ServerConsole.tsx'));
-const FileEditor = lazy(() => import('@/pages/server/files/FileEditor.tsx'));
 
 const routes: ServerRouteDefinition[] = [
   {
@@ -46,7 +48,7 @@ const routes: ServerRouteDefinition[] = [
   {
     name: undefined,
     path: '/files/:action',
-    element: FileEditor,
+    element: ServerFilesEditor,
     permission: 'files.read',
   },
   {
@@ -96,6 +98,13 @@ const routes: ServerRouteDefinition[] = [
     path: '/startup',
     element: ServerStartup,
     permission: 'startup.read',
+  },
+  {
+    name: () => getTranslations().t('pages.server.mounts.title', {}),
+    icon: faFolderTree,
+    path: '/mounts',
+    element: ServerMounts,
+    permission: 'mounts.read',
   },
   {
     name: () => getTranslations().t('pages.server.settings.title', {}),

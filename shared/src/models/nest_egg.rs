@@ -1,4 +1,10 @@
-use crate::prelude::*;
+use crate::{
+    models::{
+        InsertQueryBuilder, UpdateQueryBuilder, nest_egg_variable::CreateNestEggVariableOptions,
+    },
+    prelude::*,
+};
+use garde::Validate;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow};
@@ -7,17 +13,32 @@ use std::{
     sync::{Arc, LazyLock},
 };
 use utoipa::ToSchema;
-use validator::{Validate, ValidationError};
 
 pub fn validate_docker_images(
     docker_images: &IndexMap<compact_str::CompactString, compact_str::CompactString>,
-) -> Result<(), ValidationError> {
+    _context: &(),
+) -> Result<(), garde::Error> {
     let mut seen_images = HashSet::new();
     for image in docker_images.values() {
         if !seen_images.insert(image) {
-            return Err(ValidationError::new("duplicate_docker_image")
-                .with_message(format!("duplicate docker image: {}", image).into()));
+            return Err(garde::Error::new(compact_str::format_compact!(
+                "duplicate docker image: {}",
+                image
+            )));
         }
+    }
+
+    Ok(())
+}
+
+pub fn validate_config_allocations(
+    config_allocations: &NestEggConfigAllocations,
+    _context: &(),
+) -> Result<(), garde::Error> {
+    if !config_allocations.user_self_assign.is_valid() {
+        return Err(garde::Error::new(
+            "port ranges must be 1024-65535 and start_port < end_port",
+        ));
     }
 
     Ok(())
@@ -143,24 +164,28 @@ pub struct ExportedNestEggConfigsFilesFile {
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 pub struct ExportedNestEggConfigs {
+    #[garde(skip)]
     #[schema(inline)]
     #[serde(
         default,
         deserialize_with = "crate::deserialize::deserialize_nest_egg_config_files"
     )]
     pub files: IndexMap<compact_str::CompactString, ExportedNestEggConfigsFilesFile>,
+    #[garde(skip)]
     #[schema(inline)]
     #[serde(
         default,
         deserialize_with = "crate::deserialize::deserialize_pre_stringified"
     )]
     pub startup: NestEggConfigStartup,
+    #[garde(skip)]
     #[schema(inline)]
     #[serde(
         default,
         deserialize_with = "crate::deserialize::deserialize_nest_egg_config_stop"
     )]
     pub stop: NestEggConfigStop,
+    #[garde(skip)]
     #[schema(inline)]
     #[serde(default)]
     pub allocations: NestEggConfigAllocations,
@@ -168,51 +193,60 @@ pub struct ExportedNestEggConfigs {
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 pub struct ExportedNestEggScripts {
+    #[garde(skip)]
     #[schema(inline)]
     pub installation: NestEggConfigScript,
 }
 
 #[derive(ToSchema, Validate, Serialize, Deserialize, Clone)]
 pub struct ExportedNestEgg {
+    #[garde(skip)]
     #[serde(default = "uuid::Uuid::new_v4")]
     pub uuid: uuid::Uuid,
-    #[validate(length(min = 3, max = 255))]
+    #[garde(length(chars, min = 3, max = 255))]
     #[schema(min_length = 3, max_length = 255)]
     pub name: compact_str::CompactString,
-    #[validate(length(max = 1024))]
+    #[garde(length(max = 1024))]
     #[schema(max_length = 1024)]
     #[serde(deserialize_with = "crate::deserialize::deserialize_string_option")]
     pub description: Option<compact_str::CompactString>,
-    #[validate(length(min = 2, max = 255))]
+    #[garde(length(chars, min = 2, max = 255))]
     #[schema(min_length = 2, max_length = 255)]
     pub author: compact_str::CompactString,
 
+    #[garde(skip)]
     #[schema(inline)]
     pub config: ExportedNestEggConfigs,
+    #[garde(skip)]
     #[schema(inline)]
     pub scripts: ExportedNestEggScripts,
 
-    #[validate(length(min = 1, max = 8192))]
+    #[garde(length(chars, min = 1, max = 8192))]
     #[schema(min_length = 1, max_length = 8192)]
     pub startup: compact_str::CompactString,
+    #[garde(skip)]
     #[serde(default)]
     pub force_outgoing_ip: bool,
+    #[garde(skip)]
     #[serde(default)]
     pub separate_port: bool,
 
+    #[garde(skip)]
     #[serde(
         default,
         deserialize_with = "crate::deserialize::deserialize_defaultable"
     )]
     pub features: Vec<compact_str::CompactString>,
-    #[validate(custom(function = "validate_docker_images"))]
+    #[garde(custom(validate_docker_images))]
     pub docker_images: IndexMap<compact_str::CompactString, compact_str::CompactString>,
+    #[garde(skip)]
     #[serde(
         default,
         deserialize_with = "crate::deserialize::deserialize_defaultable"
     )]
     pub file_denylist: Vec<compact_str::CompactString>,
 
+    #[garde(skip)]
     #[schema(inline)]
     pub variables: Vec<super::nest_egg_variable::ExportedNestEggVariable>,
 }
@@ -382,114 +416,64 @@ impl BaseModel for NestEgg {
 }
 
 impl NestEgg {
-    #[allow(clippy::too_many_arguments)]
-    pub async fn create(
-        database: &crate::database::Database,
-        nest_uuid: uuid::Uuid,
-        egg_repository_egg_uuid: Option<uuid::Uuid>,
-        author: &str,
-        name: &str,
-        description: Option<&str>,
-        config_files: Vec<ProcessConfigurationFile>,
-        config_startup: NestEggConfigStartup,
-        config_stop: NestEggConfigStop,
-        config_script: NestEggConfigScript,
-        config_allocations: NestEggConfigAllocations,
-        startup: &str,
-        force_outgoing_ip: bool,
-        separate_port: bool,
-        features: &[compact_str::CompactString],
-        docker_images: IndexMap<compact_str::CompactString, compact_str::CompactString>,
-        file_denylist: &[compact_str::CompactString],
-    ) -> Result<Self, crate::database::DatabaseError> {
-        let row = sqlx::query(&format!(
-            r#"
-            INSERT INTO nest_eggs (
-                nest_uuid, egg_repository_egg_uuid, author, name, description, config_files, config_startup,
-                config_stop, config_script, config_allocations, startup, force_outgoing_ip,
-                separate_port, features, docker_images, file_denylist
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-            RETURNING {}
-            "#,
-            Self::columns_sql(None)
-        ))
-        .bind(nest_uuid)
-        .bind(egg_repository_egg_uuid)
-        .bind(author)
-        .bind(name)
-        .bind(description)
-        .bind(serde_json::to_value(config_files)?)
-        .bind(serde_json::to_value(config_startup)?)
-        .bind(serde_json::to_value(config_stop)?)
-        .bind(serde_json::to_value(config_script)?)
-        .bind(serde_json::to_value(config_allocations)?)
-        .bind(startup)
-        .bind(force_outgoing_ip)
-        .bind(separate_port)
-        .bind(features)
-        .bind(serde_json::to_string(&docker_images)?)
-        .bind(file_denylist)
-        .fetch_one(database.write())
-        .await?;
-
-        Self::map(None, &row)
-    }
-
     pub async fn import(
-        database: &crate::database::Database,
+        state: &crate::State,
         nest_uuid: uuid::Uuid,
         egg_repository_egg_uuid: Option<uuid::Uuid>,
         exported_egg: ExportedNestEgg,
     ) -> Result<Self, crate::database::DatabaseError> {
         let egg = Self::create(
-            database,
-            nest_uuid,
-            egg_repository_egg_uuid,
-            &exported_egg.author,
-            &exported_egg.name,
-            exported_egg.description.as_deref(),
-            exported_egg
-                .config
-                .files
-                .into_iter()
-                .map(|(file, config)| ProcessConfigurationFile {
-                    file,
-                    create_new: config.create_new,
-                    parser: config.parser,
-                    replace: config.replace,
-                })
-                .collect(),
-            exported_egg.config.startup,
-            exported_egg.config.stop,
-            exported_egg.scripts.installation,
-            exported_egg.config.allocations,
-            &exported_egg.startup,
-            exported_egg.force_outgoing_ip,
-            exported_egg.separate_port,
-            &exported_egg.features,
-            exported_egg.docker_images,
-            &exported_egg.file_denylist,
+            state,
+            CreateNestEggOptions {
+                nest_uuid,
+                egg_repository_egg_uuid,
+                author: exported_egg.author,
+                name: exported_egg.name,
+                description: exported_egg.description,
+                config_files: exported_egg
+                    .config
+                    .files
+                    .into_iter()
+                    .map(|(file, config)| ProcessConfigurationFile {
+                        file,
+                        create_new: config.create_new,
+                        parser: config.parser,
+                        replace: config.replace,
+                    })
+                    .collect(),
+                config_startup: exported_egg.config.startup,
+                config_stop: exported_egg.config.stop,
+                config_script: exported_egg.scripts.installation,
+                config_allocations: exported_egg.config.allocations,
+                startup: exported_egg.startup,
+                force_outgoing_ip: exported_egg.force_outgoing_ip,
+                separate_port: exported_egg.separate_port,
+                features: exported_egg.features,
+                docker_images: exported_egg.docker_images,
+                file_denylist: exported_egg.file_denylist,
+            },
         )
         .await?;
 
         for variable in exported_egg.variables {
-            if rule_validator::validate_rules(&variable.rules).is_err() {
+            if rule_validator::validate_rules(&variable.rules, &()).is_err() {
                 continue;
             }
 
             if let Err(err) = super::nest_egg_variable::NestEggVariable::create(
-                database,
-                egg.uuid,
-                &variable.name,
-                variable.description.as_deref(),
-                variable.order,
-                &variable.env_variable,
-                variable.default_value.as_deref(),
-                variable.user_viewable,
-                variable.user_editable,
-                variable.secret,
-                &variable.rules,
+                state,
+                CreateNestEggVariableOptions {
+                    egg_uuid: egg.uuid,
+                    name: variable.name,
+                    description: variable.description,
+                    order: variable.order,
+                    env_variable: variable.env_variable,
+                    default_value: variable.default_value,
+                    user_viewable: variable.user_viewable,
+                    user_editable: variable.user_editable,
+                    secret: variable.secret,
+                    rules: variable.rules,
+                },
             )
             .await
             {
@@ -568,7 +552,7 @@ impl NestEgg {
         .await?;
 
         for (i, variable) in exported_egg.variables.iter().enumerate() {
-            if rule_validator::validate_rules(&variable.rules).is_err() {
+            if rule_validator::validate_rules(&variable.rules, &()).is_err() {
                 continue;
             }
 
@@ -675,6 +659,54 @@ impl NestEgg {
         })
     }
 
+    pub async fn by_user_with_pagination(
+        database: &crate::database::Database,
+        user: &super::user::User,
+        page: i64,
+        per_page: i64,
+        search: Option<&str>,
+    ) -> Result<super::Pagination<Self>, crate::database::DatabaseError> {
+        let offset = (page - 1) * per_page;
+
+        let rows = sqlx::query(&format!(
+            r#"
+            SELECT *, COUNT(*) OVER() AS total_count
+            FROM (
+                SELECT DISTINCT ON (nest_eggs.uuid) {}
+                FROM servers
+                JOIN nest_eggs ON nest_eggs.uuid = servers.egg_uuid
+                LEFT JOIN server_subusers ON server_subusers.server_uuid = servers.uuid AND server_subusers.user_uuid = $1
+                JOIN nests ON nests.uuid = nest_eggs.nest_uuid
+                WHERE (servers.owner_uuid = $1 OR server_subusers.user_uuid = $1 OR $2)
+                    AND ($3 IS NULL OR nest_eggs.name ILIKE '%' || $3 || '%')
+                ORDER BY nest_eggs.uuid
+            ) AS eggs
+            ORDER BY eggs.created
+            LIMIT $4 OFFSET $5
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(user.uuid)
+        .bind(user.admin || user.role.as_ref().is_some_and(|r| r.admin_permissions.iter().any(|p| p == "servers.read")))
+        .bind(search)
+        .bind(per_page)
+        .bind(offset)
+        .fetch_all(database.read())
+        .await?;
+
+        Ok(super::Pagination {
+            total: rows
+                .first()
+                .map_or(Ok(0), |row| row.try_get("total_count"))?,
+            per_page,
+            page,
+            data: rows
+                .into_iter()
+                .map(|row| Self::map(None, &row))
+                .try_collect_vec()?,
+        })
+    }
+
     pub async fn by_nest_uuid_uuid(
         database: &crate::database::Database,
         nest_uuid: uuid::Uuid,
@@ -690,6 +722,27 @@ impl NestEgg {
         ))
         .bind(nest_uuid)
         .bind(uuid)
+        .fetch_optional(database.read())
+        .await?;
+
+        row.try_map(|row| Self::map(None, &row))
+    }
+
+    pub async fn by_nest_uuid_name(
+        database: &crate::database::Database,
+        nest_uuid: uuid::Uuid,
+        name: &str,
+    ) -> Result<Option<Self>, crate::database::DatabaseError> {
+        let row = sqlx::query(&format!(
+            r#"
+            SELECT {}
+            FROM nest_eggs
+            WHERE nest_eggs.nest_uuid = $1 AND nest_eggs.name = $2
+            "#,
+            Self::columns_sql(None)
+        ))
+        .bind(nest_uuid)
+        .bind(name)
         .fetch_optional(database.read())
         .await?;
 
@@ -830,6 +883,351 @@ impl ByUuid for NestEgg {
         .await?;
 
         Self::map(None, &row)
+    }
+}
+
+#[derive(ToSchema, Deserialize, Validate)]
+pub struct CreateNestEggOptions {
+    #[garde(skip)]
+    pub nest_uuid: uuid::Uuid,
+    #[garde(skip)]
+    pub egg_repository_egg_uuid: Option<uuid::Uuid>,
+    #[garde(length(chars, min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub author: compact_str::CompactString,
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: compact_str::CompactString,
+    #[garde(length(chars, min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    pub description: Option<compact_str::CompactString>,
+    #[garde(skip)]
+    #[schema(inline)]
+    pub config_files: Vec<ProcessConfigurationFile>,
+    #[garde(skip)]
+    #[schema(inline)]
+    pub config_startup: NestEggConfigStartup,
+    #[garde(skip)]
+    #[schema(inline)]
+    pub config_stop: NestEggConfigStop,
+    #[garde(skip)]
+    #[schema(inline)]
+    pub config_script: NestEggConfigScript,
+    #[schema(inline)]
+    #[garde(custom(validate_config_allocations))]
+    pub config_allocations: NestEggConfigAllocations,
+    #[garde(length(chars, min = 1, max = 4096))]
+    #[schema(min_length = 1, max_length = 4096)]
+    pub startup: compact_str::CompactString,
+    #[garde(skip)]
+    pub force_outgoing_ip: bool,
+    #[garde(skip)]
+    pub separate_port: bool,
+    #[garde(skip)]
+    pub features: Vec<compact_str::CompactString>,
+    #[garde(custom(validate_docker_images))]
+    pub docker_images: IndexMap<compact_str::CompactString, compact_str::CompactString>,
+    #[garde(skip)]
+    pub file_denylist: Vec<compact_str::CompactString>,
+}
+
+#[async_trait::async_trait]
+impl CreatableModel for NestEgg {
+    type CreateOptions<'a> = CreateNestEggOptions;
+    type CreateResult = Self;
+
+    fn get_create_handlers() -> &'static LazyLock<CreateListenerList<Self>> {
+        static CREATE_LISTENERS: LazyLock<CreateListenerList<NestEgg>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &CREATE_LISTENERS
+    }
+
+    async fn create(
+        state: &crate::State,
+        mut options: Self::CreateOptions<'_>,
+    ) -> Result<Self, crate::database::DatabaseError> {
+        options.validate()?;
+
+        if let Some(egg_repository_egg_uuid) = options.egg_repository_egg_uuid {
+            super::egg_repository_egg::EggRepositoryEgg::by_uuid_optional_cached(
+                &state.database,
+                egg_repository_egg_uuid,
+            )
+            .await?
+            .ok_or(crate::database::InvalidRelationError("egg_repository_egg"))?;
+        }
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = InsertQueryBuilder::new("nest_eggs");
+
+        Self::run_create_handlers(&mut options, &mut query_builder, state, &mut transaction)
+            .await?;
+
+        query_builder
+            .set("nest_uuid", options.nest_uuid)
+            .set("egg_repository_egg_uuid", options.egg_repository_egg_uuid)
+            .set("author", &options.author)
+            .set("name", &options.name)
+            .set("description", &options.description)
+            .set("config_files", serde_json::to_value(&options.config_files)?)
+            .set(
+                "config_startup",
+                serde_json::to_value(&options.config_startup)?,
+            )
+            .set("config_stop", serde_json::to_value(&options.config_stop)?)
+            .set(
+                "config_script",
+                serde_json::to_value(&options.config_script)?,
+            )
+            .set(
+                "config_allocations",
+                serde_json::to_value(&options.config_allocations)?,
+            )
+            .set("startup", &options.startup)
+            .set("force_outgoing_ip", options.force_outgoing_ip)
+            .set("separate_port", options.separate_port)
+            .set("features", &options.features)
+            .set(
+                "docker_images",
+                serde_json::to_string(&options.docker_images)?,
+            )
+            .set("file_denylist", &options.file_denylist);
+
+        let row = query_builder
+            .returning(&Self::columns_sql(None))
+            .fetch_one(&mut *transaction)
+            .await?;
+        let nest_egg = Self::map(None, &row)?;
+
+        transaction.commit().await?;
+
+        Ok(nest_egg)
+    }
+}
+
+#[derive(ToSchema, Serialize, Deserialize, Validate, Clone, Default)]
+pub struct UpdateNestEggOptions {
+    #[garde(skip)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub egg_repository_egg_uuid: Option<Option<uuid::Uuid>>,
+    #[garde(length(chars, min = 2, max = 255))]
+    #[schema(min_length = 2, max_length = 255)]
+    pub author: Option<compact_str::CompactString>,
+    #[garde(length(chars, min = 3, max = 255))]
+    #[schema(min_length = 3, max_length = 255)]
+    pub name: Option<compact_str::CompactString>,
+    #[garde(length(chars, min = 1, max = 1024))]
+    #[schema(min_length = 1, max_length = 1024)]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "::serde_with::rust::double_option"
+    )]
+    pub description: Option<Option<compact_str::CompactString>>,
+    #[garde(skip)]
+    #[schema(inline)]
+    pub config_files: Option<Vec<ProcessConfigurationFile>>,
+    #[garde(skip)]
+    #[schema(inline)]
+    pub config_startup: Option<NestEggConfigStartup>,
+    #[garde(skip)]
+    #[schema(inline)]
+    pub config_stop: Option<NestEggConfigStop>,
+    #[garde(skip)]
+    #[schema(inline)]
+    pub config_script: Option<NestEggConfigScript>,
+    #[schema(inline)]
+    #[garde(inner(custom(validate_config_allocations)))]
+    pub config_allocations: Option<NestEggConfigAllocations>,
+    #[garde(length(chars, min = 1, max = 4096))]
+    #[schema(min_length = 1, max_length = 4096)]
+    pub startup: Option<compact_str::CompactString>,
+    #[garde(skip)]
+    pub force_outgoing_ip: Option<bool>,
+    #[garde(skip)]
+    pub separate_port: Option<bool>,
+    #[garde(skip)]
+    pub features: Option<Vec<compact_str::CompactString>>,
+    #[garde(inner(custom(validate_docker_images)))]
+    pub docker_images: Option<IndexMap<compact_str::CompactString, compact_str::CompactString>>,
+    #[garde(skip)]
+    pub file_denylist: Option<Vec<compact_str::CompactString>>,
+}
+
+#[async_trait::async_trait]
+impl UpdatableModel for NestEgg {
+    type UpdateOptions = UpdateNestEggOptions;
+
+    fn get_update_handlers() -> &'static LazyLock<UpdateListenerList<Self>> {
+        static UPDATE_LISTENERS: LazyLock<UpdateListenerList<NestEgg>> =
+            LazyLock::new(|| Arc::new(ModelHandlerList::default()));
+
+        &UPDATE_LISTENERS
+    }
+
+    async fn update(
+        &mut self,
+        state: &crate::State,
+        mut options: Self::UpdateOptions,
+    ) -> Result<(), crate::database::DatabaseError> {
+        options.validate()?;
+
+        let egg_repository_egg =
+            if let Some(egg_repository_egg_uuid) = &options.egg_repository_egg_uuid {
+                match egg_repository_egg_uuid {
+                    Some(uuid) => {
+                        super::egg_repository_egg::EggRepositoryEgg::by_uuid_optional_cached(
+                            &state.database,
+                            *uuid,
+                        )
+                        .await?
+                        .ok_or(crate::database::InvalidRelationError("egg_repository_egg"))?;
+                        Some(Some(
+                            super::egg_repository_egg::EggRepositoryEgg::get_fetchable(*uuid),
+                        ))
+                    }
+                    None => Some(None),
+                }
+            } else {
+                None
+            };
+
+        let mut transaction = state.database.write().begin().await?;
+
+        let mut query_builder = UpdateQueryBuilder::new("nest_eggs");
+
+        Self::run_update_handlers(
+            self,
+            &mut options,
+            &mut query_builder,
+            state,
+            &mut transaction,
+        )
+        .await?;
+
+        query_builder
+            .set(
+                "egg_repository_egg_uuid",
+                options.egg_repository_egg_uuid.as_ref().map(|o| o.as_ref()),
+            )
+            .set("author", options.author.as_ref())
+            .set("name", options.name.as_ref())
+            .set(
+                "description",
+                options.description.as_ref().map(|d| d.as_ref()),
+            )
+            .set(
+                "config_files",
+                options
+                    .config_files
+                    .as_ref()
+                    .map(serde_json::to_value)
+                    .transpose()?,
+            )
+            .set(
+                "config_startup",
+                options
+                    .config_startup
+                    .as_ref()
+                    .map(serde_json::to_value)
+                    .transpose()?,
+            )
+            .set(
+                "config_stop",
+                options
+                    .config_stop
+                    .as_ref()
+                    .map(serde_json::to_value)
+                    .transpose()?,
+            )
+            .set(
+                "config_script",
+                options
+                    .config_script
+                    .as_ref()
+                    .map(serde_json::to_value)
+                    .transpose()?,
+            )
+            .set(
+                "config_allocations",
+                options
+                    .config_allocations
+                    .as_ref()
+                    .map(serde_json::to_value)
+                    .transpose()?,
+            )
+            .set("startup", options.startup.as_ref())
+            .set("force_outgoing_ip", options.force_outgoing_ip)
+            .set("separate_port", options.separate_port)
+            .set("features", options.features.as_ref())
+            .set(
+                "docker_images",
+                options
+                    .docker_images
+                    .as_ref()
+                    .map(serde_json::to_string)
+                    .transpose()?,
+            )
+            .set("file_denylist", options.file_denylist.as_ref())
+            .where_eq("uuid", self.uuid);
+
+        query_builder.execute(&mut *transaction).await?;
+
+        if let Some(egg_repository_egg) = egg_repository_egg {
+            self.egg_repository_egg = egg_repository_egg;
+        }
+        if let Some(author) = options.author {
+            self.author = author;
+        }
+        if let Some(name) = options.name {
+            self.name = name;
+        }
+        if let Some(description) = options.description {
+            self.description = description;
+        }
+        if let Some(config_files) = options.config_files {
+            self.config_files = config_files;
+        }
+        if let Some(config_startup) = options.config_startup {
+            self.config_startup = config_startup;
+        }
+        if let Some(config_stop) = options.config_stop {
+            self.config_stop = config_stop;
+        }
+        if let Some(config_script) = options.config_script {
+            self.config_script = config_script;
+        }
+        if let Some(config_allocations) = options.config_allocations {
+            self.config_allocations = config_allocations;
+        }
+        if let Some(startup) = options.startup {
+            self.startup = startup;
+        }
+        if let Some(force_outgoing_ip) = options.force_outgoing_ip {
+            self.force_outgoing_ip = force_outgoing_ip;
+        }
+        if let Some(separate_port) = options.separate_port {
+            self.separate_port = separate_port;
+        }
+        if let Some(features) = options.features {
+            self.features = features;
+        }
+        if let Some(docker_images) = options.docker_images {
+            self.docker_images = docker_images;
+        }
+        if let Some(file_denylist) = options.file_denylist {
+            self.file_denylist = file_denylist;
+        }
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 }
 

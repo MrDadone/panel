@@ -33,6 +33,7 @@ mod get {
 
 mod put {
     use axum::http::StatusCode;
+    use garde::Validate;
     use serde::{Deserialize, Serialize};
     use shared::{
         ApiError, GetState,
@@ -40,71 +41,95 @@ mod put {
         response::{ApiResponse, ApiResponseResult},
     };
     use utoipa::ToSchema;
-    use validator::Validate;
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct PayloadApp {
-        #[validate(length(min = 1, max = 64))]
+        #[garde(length(chars, min = 1, max = 64))]
         name: Option<compact_str::CompactString>,
-        #[validate(url)]
+        #[garde(length(chars, min = 1, max = 255))]
+        icon: Option<compact_str::CompactString>,
+        #[garde(url)]
         url: Option<compact_str::CompactString>,
-        #[validate(
-            length(min = 5, max = 15),
-            custom(function = "shared::validate_language")
+        #[garde(
+            length(chars, min = 2, max = 15),
+            inner(custom(shared::utils::validate_language))
         )]
         language: Option<compact_str::CompactString>,
-        two_factor_requirement: Option<shared::settings::TwoFactorRequirement>,
+        #[garde(skip)]
+        two_factor_requirement: Option<shared::settings::app::TwoFactorRequirement>,
+        #[garde(skip)]
         telemetry_enabled: Option<bool>,
+        #[garde(skip)]
         registration_enabled: Option<bool>,
     }
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct PayloadWebauthn {
-        #[validate(length(min = 1, max = 255))]
+        #[garde(length(chars, min = 1, max = 255))]
         rp_id: Option<compact_str::CompactString>,
-        #[validate(url)]
+        #[garde(url)]
         rp_origin: Option<compact_str::CompactString>,
     }
 
-    #[derive(ToSchema, Deserialize)]
+    #[derive(ToSchema, Validate, Deserialize)]
     pub struct PayloadServer {
+        #[garde(skip)]
         max_file_manager_view_size: Option<u64>,
+        #[garde(skip)]
         max_file_manager_content_search_size: Option<u64>,
+        #[garde(skip)]
         max_file_manager_search_results: Option<u64>,
+        #[garde(skip)]
         max_schedules_step_count: Option<u64>,
 
+        #[garde(skip)]
         allow_overwriting_custom_docker_image: Option<bool>,
+        #[garde(skip)]
         allow_editing_startup_command: Option<bool>,
+        #[garde(skip)]
+        allow_viewing_installation_logs: Option<bool>,
+        #[garde(skip)]
+        allow_viewing_transfer_progress: Option<bool>,
     }
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct PayloadActivity {
-        #[validate(range(min = 1, max = 3650))]
+        #[garde(range(min = 1, max = 3650))]
         admin_log_retention_days: Option<u16>,
-        #[validate(range(min = 1, max = 3650))]
+        #[garde(range(min = 1, max = 3650))]
         user_log_retention_days: Option<u16>,
-        #[validate(range(min = 1, max = 3650))]
+        #[garde(range(min = 1, max = 3650))]
         server_log_retention_days: Option<u16>,
 
+        #[garde(skip)]
         server_log_admin_activity: Option<bool>,
+        #[garde(skip)]
         server_log_schedule_activity: Option<bool>,
     }
 
     #[derive(ToSchema, Validate, Deserialize)]
     pub struct Payload {
+        #[garde(skip)]
         oobe_step: Option<compact_str::CompactString>,
 
+        #[garde(dive)]
         storage_driver: Option<shared::settings::StorageDriver>,
+        #[garde(dive)]
         mail_mode: Option<shared::settings::MailMode>,
+        #[garde(dive)]
         captcha_provider: Option<shared::settings::CaptchaProvider>,
 
         #[schema(inline)]
+        #[garde(dive)]
         app: Option<PayloadApp>,
         #[schema(inline)]
+        #[garde(dive)]
         webauthn: Option<PayloadWebauthn>,
         #[schema(inline)]
+        #[garde(dive)]
         server: Option<PayloadServer>,
         #[schema(inline)]
+        #[garde(dive)]
         activity: Option<PayloadActivity>,
     }
 
@@ -151,6 +176,9 @@ mod put {
         if let Some(app) = data.app {
             if let Some(name) = app.name {
                 settings.app.name = name;
+            }
+            if let Some(icon) = app.icon {
+                settings.app.icon = icon;
             }
             if let Some(url) = app.url {
                 settings.app.url = url;
@@ -200,6 +228,12 @@ mod put {
             }
             if let Some(allow_editing_startup_command) = server.allow_editing_startup_command {
                 settings.server.allow_editing_startup_command = allow_editing_startup_command;
+            }
+            if let Some(allow_viewing_installation_logs) = server.allow_viewing_installation_logs {
+                settings.server.allow_viewing_installation_logs = allow_viewing_installation_logs;
+            }
+            if let Some(allow_viewing_transfer_progress) = server.allow_viewing_transfer_progress {
+                settings.server.allow_viewing_transfer_progress = allow_viewing_transfer_progress;
             }
         }
         if let Some(activity) = data.activity {

@@ -46,7 +46,9 @@ nestify::nest! {
             pub version: compact_str::CompactString,
             pub container_type: wings_api::AppContainerType,
 
+            #[schema(inline)]
             pub memory: wings_api::system_overview::get::Response200Memory,
+            #[schema(inline)]
             pub servers: wings_api::system_overview::get::Response200Servers,
 
             pub architecture: compact_str::CompactString,
@@ -84,7 +86,12 @@ impl TelemetryData {
             }
 
             for node in nodes.data {
-                let overview = match node.api_client(&state.database).get_system_overview().await {
+                let overview = match node
+                    .api_client(&state.database)
+                    .await?
+                    .get_system_overview()
+                    .await
+                {
                     Ok(overview) => overview,
                     Err(_) => continue,
                 };

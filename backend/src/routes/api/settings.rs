@@ -12,6 +12,7 @@ mod get {
     #[derive(ToSchema, Serialize)]
     struct ResponseApp<'a> {
         url: &'a str,
+        icon: &'a str,
         name: &'a str,
         language: &'a str,
         registration_enabled: bool,
@@ -26,6 +27,7 @@ mod get {
 
         allow_overwriting_custom_docker_image: bool,
         allow_editing_startup_command: bool,
+        allow_acknowledging_installation_failure: bool,
     }
 
     #[derive(ToSchema, Serialize)]
@@ -51,10 +53,11 @@ mod get {
         ApiResponse::new_serialized(Response {
             version: &state.version,
             oobe_step: settings.oobe_step.as_deref(),
-            app_debug: state.env.app_debug,
+            app_debug: state.env.is_debug(),
             captcha_provider: settings.captcha_provider.to_public_provider(),
             app: ResponseApp {
                 url: &settings.app.url,
+                icon: &settings.app.icon,
                 name: &settings.app.name,
                 language: &settings.app.language,
                 registration_enabled: settings.app.registration_enabled,
@@ -71,6 +74,9 @@ mod get {
                     .server
                     .allow_overwriting_custom_docker_image,
                 allow_editing_startup_command: settings.server.allow_editing_startup_command,
+                allow_acknowledging_installation_failure: settings
+                    .server
+                    .allow_acknowledging_installation_failure,
             },
         })
         .ok()

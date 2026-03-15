@@ -1,9 +1,11 @@
 import { NavLink } from 'react-router';
+import { z } from 'zod';
 import Code from '@/elements/Code.tsx';
 import { TableData, TableRow } from '@/elements/Table.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
+import { adminMountSchema } from '@/lib/schemas/admin/mounts.ts';
 
-export default function MountRow({ mount }: { mount: Mount }) {
+export default function MountRow({ mount }: { mount: z.infer<typeof adminMountSchema> }) {
   return (
     <TableRow>
       <TableData>

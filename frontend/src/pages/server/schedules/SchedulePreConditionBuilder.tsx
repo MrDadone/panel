@@ -1,6 +1,7 @@
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Group, Select, Stack, Text } from '@mantine/core';
+import { z } from 'zod';
 import Button from '@/elements/Button.tsx';
 import NumberInput from '@/elements/input/NumberInput.tsx';
 import SizeInput from '@/elements/input/SizeInput.tsx';
@@ -10,12 +11,14 @@ import {
   schedulePreConditionLabelMapping,
   serverPowerStateLabelMapping,
 } from '@/lib/enums.ts';
+import { serverScheduleComparator, serverSchedulePreConditionSchema } from '@/lib/schemas/server/schedules.ts';
+import { serverPowerState } from '@/lib/schemas/server/server.ts';
 
 const maxConditionDepth = 3;
 
 interface PreConditionBuilderProps {
-  condition: SchedulePreCondition;
-  onChange: (condition: SchedulePreCondition) => void;
+  condition: z.infer<typeof serverSchedulePreConditionSchema>;
+  onChange: (condition: z.infer<typeof serverSchedulePreConditionSchema>) => void;
   depth?: number;
 }
 
@@ -54,7 +57,10 @@ export default function SchedulePreConditionBuilder({ condition, onChange, depth
     }
   };
 
-  const handleNestedConditionChange = (index: number, newCondition: SchedulePreCondition) => {
+  const handleNestedConditionChange = (
+    index: number,
+    newCondition: z.infer<typeof serverSchedulePreConditionSchema>,
+  ) => {
     if (condition.type === 'and' || condition.type === 'or') {
       const newConditions = [...condition.conditions];
       newConditions[index] = newCondition;
@@ -97,7 +103,7 @@ export default function SchedulePreConditionBuilder({ condition, onChange, depth
           <Select
             label='Server State'
             value={condition.state}
-            onChange={(value) => value && onChange({ ...condition, state: value as ServerPowerState })}
+            onChange={(value) => value && onChange({ ...condition, state: value as z.infer<typeof serverPowerState> })}
             data={Object.entries(serverPowerStateLabelMapping).map(([value, label]) => ({
               value,
               label,
@@ -113,7 +119,9 @@ export default function SchedulePreConditionBuilder({ condition, onChange, depth
             <Select
               label='Comparator'
               value={condition.comparator}
-              onChange={(value) => value && onChange({ ...condition, comparator: value as ScheduleComparator })}
+              onChange={(value) =>
+                value && onChange({ ...condition, comparator: value as z.infer<typeof serverScheduleComparator> })
+              }
               data={Object.entries(scheduleComparatorLabelMapping).map(([value, label]) => ({
                 value,
                 label,

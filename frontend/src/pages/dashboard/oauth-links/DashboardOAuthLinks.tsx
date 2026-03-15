@@ -2,12 +2,14 @@ import { faChevronDown, faFingerprint } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Group, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import getOAuthProviders from '@/api/auth/getOAuthProviders.ts';
 import getOAuthLinks from '@/api/me/oauth-links/getOAuthLinks.ts';
 import Button from '@/elements/Button.tsx';
 import ContextMenu, { ContextMenuProvider } from '@/elements/ContextMenu.tsx';
 import AccountContentContainer from '@/elements/containers/AccountContentContainer.tsx';
 import Table from '@/elements/Table.tsx';
+import { oAuthProviderSchema } from '@/lib/schemas/generic.ts';
 import { useSearchablePaginatedTable } from '@/plugins/useSearchablePageableTable.ts';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
 import { useUserStore } from '@/stores/user.ts';
@@ -16,7 +18,7 @@ import OAuthLinkRow from './OAuthLinkRow.tsx';
 export default function DashboardOAuthLinks() {
   const { t } = useTranslations();
   const { oauthLinks, setOAuthLinks } = useUserStore();
-  const [oAuthProviders, setOAuthProviders] = useState<OAuthProvider[]>([]);
+  const [oAuthProviders, setOAuthProviders] = useState<z.infer<typeof oAuthProviderSchema>[]>([]);
 
   useEffect(() => {
     getOAuthProviders().then((oAuthProviders) => {
@@ -30,7 +32,10 @@ export default function DashboardOAuthLinks() {
   });
 
   return (
-    <AccountContentContainer title={t('pages.account.oauthLinks.title', {})}>
+    <AccountContentContainer
+      title={t('pages.account.oauthLinks.title', {})}
+      registry={window.extensionContext.extensionRegistry.pages.dashboard.oauthLinks.container}
+    >
       <Group justify='space-between' align='center' mb='md'>
         <Title order={1} c='white'>
           {t('pages.account.oauthLinks.title', {})}
@@ -46,6 +51,7 @@ export default function DashboardOAuthLinks() {
                       icon: faFingerprint,
                       label: t('pages.account.oauthLinks.button.connectTo', { provider: oauthProvider.name }),
                       onClick: () => window.location.replace(`/api/auth/oauth/redirect/${oauthProvider.uuid}`),
+                      disabled: !oauthProvider.linkViewable,
                       color: 'gray',
                     }) as const,
                 )}
