@@ -112,7 +112,7 @@ export default function ServerStartup() {
       title={t('pages.server.startup.title', {})}
       registry={window.extensionContext.extensionRegistry.pages.server.startup.container}
     >
-      <div className='grid grid-cols-3 gap-4 mt-2.5'>
+      <div className='flex flex-col md:grid md:grid-cols-3 gap-4 mt-2.5'>
         <TitleCard
           title={t('pages.server.startup.form.startupCommand', {})}
           icon={<FontAwesomeIcon icon={faPlay} />}

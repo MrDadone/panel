@@ -12,6 +12,7 @@ import {
   TableTrProps,
   Text,
 } from '@mantine/core';
+import classNames from 'classnames';
 import { forwardRef, ReactNode, startTransition, useEffect } from 'react';
 import Spinner from '@/elements/Spinner.tsx';
 import { useTranslations } from '@/providers/TranslationProvider.tsx';
@@ -113,7 +114,15 @@ export function Pagination<T>({ data, onPageSelect, ...props }: PaginationProps<
           total: data.total,
         })}
       </p>
-      <MantinePagination value={data.page} total={totalPages} withEdges onChange={setPage} />
+      <MantinePagination
+        styles={{
+          dots: { display: 'none' },
+        }}
+        boundaries={0}
+        value={data.page}
+        total={totalPages}
+        onChange={setPage}
+      />
     </Group>
   );
 }
